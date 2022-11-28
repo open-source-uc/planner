@@ -5,7 +5,11 @@ module.exports = {
   },
   extends: [
     'plugin:react/recommended',
-    'standard-with-typescript'
+    'standard-with-typescript',
+    'plugin:jsx-a11y/recommended'
+  ],
+  ignorePatterns: [
+    'vite*.ts'
   ],
   overrides: [
   ],
@@ -18,5 +22,10 @@ module.exports = {
     'react'
   ],
   rules: {
+  },
+  settings: {
+    react: {
+      version: 'detect'
+    }
   }
 }
