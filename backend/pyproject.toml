@@ -16,6 +16,7 @@ uvicorn = {extras = ["standard"], version = "^0.20.0"}
 flake8 = "^6.0.0"
 black = "^22.10.0"
 isort = "^5.10.1"
+tomli = "^2.0.1"
 
 
 [build-system]
