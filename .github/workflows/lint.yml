@@ -49,8 +49,6 @@ jobs:
           black_dir: backend
           flake8: true
           flake8_dir: backend
-          isort: true
-          isort_dir: backend
 
   lint-frontend:
     name: Run linters for the front-end
