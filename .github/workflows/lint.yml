@@ -48,9 +48,11 @@ jobs:
           black: true
           black_dir: backend
           black_command_prefix: poetry run
+          black_auto_fix: true
           flake8: true
           flake8_dir: backend
           flake8_command_prefix: poetry run
+          flake8_auto_fix: true
 
   lint-frontend:
     name: Run linters for the front-end
@@ -84,3 +86,4 @@ jobs:
           eslint: true
           eslint_dir: frontend
           eslint_extensions: ts,tsx,js,jsx
+          eslint_auto_fix: true
