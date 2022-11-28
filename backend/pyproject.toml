@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Open Source UC <hello-world@osuc.dev>"]
 license = "GPLv3"
-readme = "README.md"
+readme = "readme.md"
 packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
