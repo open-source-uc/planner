@@ -47,8 +47,10 @@ jobs:
           auto_fix: ${{ github.event_name == 'pull_request' }}
           black: true
           black_dir: backend
+          black_command_prefix: poetry run
           flake8: true
           flake8_dir: backend
+          flake8_command_prefix: poetry run
 
   lint-frontend:
     name: Run linters for the front-end
