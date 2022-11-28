@@ -3,6 +3,19 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
+    "compounds": [
+        {
+            "name": "Launch all 🚀",
+            "configurations": [
+                "Backend (FastAPI)",
+                "Frontend (Vite)",
+            ],
+            "presentation": {
+                "order": 1
+            },
+            "stopAll": true
+        }
+    ],
     "configurations": [
         {
             "name": "Backend (FastAPI)",
@@ -17,21 +30,21 @@
             "cwd": "${workspaceFolder}/backend"
         },
         {
-            "name": "Frontend (vite)",
+            "name": "Frontend (Vite)",
             "command": "npm run dev",
             "request": "launch",
             "type": "node-terminal",
             "cwd": "${workspaceFolder}/frontend"
         },
         {
-            "name": "Launch frontend (Chrome + HMR)",
+            "name": "Open frontend (Chrome + HMR)",
             "type": "chrome",
             "request": "launch",
             "url": "http://localhost:3000/",
             "webRoot": "${workspaceRoot}/frontend/src"
         },
         {
-            "name": "Launch frontend (Firefox + HMR)",
+            "name": "Open frontend (Firefox + HMR)",
             "type": "firefox",
             "request": "launch",
             "reAttach": true,
