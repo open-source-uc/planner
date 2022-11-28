@@ -15,4 +15,8 @@
     "[css]": {
         "editor.defaultFormatter": "vscode.css-language-features"
     },
+    "python.formatting.provider": "black",
+    "python.linting.flake8Enabled": true,
+    "isort.check": true,
+    "python.defaultInterpreterPath": "/workspaces/planner/backend/.venv/bin/python",
 }

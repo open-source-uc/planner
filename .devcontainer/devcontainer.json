@@ -19,7 +19,7 @@
 	// "forwardPorts": [5000, 5432],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "cd app && npm install",
+	"postCreateCommand": "cd frontend && npm install && cd ../backend && poetry config virtualenvs.in-project true && poetry install",
 
 	// Configure tool-specific properties.
 	"customizations": {
@@ -35,7 +35,9 @@
 				"firefox-devtools.vscode-firefox-debug",
 				"bradlc.vscode-tailwindcss",
 				"austenc.tailwind-docs",
-				"wix.glean"
+				"wix.glean",
+				"ms-python.python",
+				"ms-python.flake8"
 			]
 		}
 	},

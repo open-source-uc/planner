@@ -5,29 +5,38 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "command": "npm run dev",
-            "name": "Frontend (vite)",
+            "name": "Backend (FastAPI)",
+            "type": "python",
             "request": "launch",
-            "type": "node-terminal",
-            "cwd": "${workspaceFolder}/app"
+            "module": "uvicorn",
+            "args": [
+                "app.main:app"
+            ],
+            "jinja": true,
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/backend"
         },
         {
-            "name": "Launch localhost (Chrome + HMR)",
+            "name": "Frontend (vite)",
+            "command": "npm run dev",
+            "request": "launch",
+            "type": "node-terminal",
+            "cwd": "${workspaceFolder}/frontend"
+        },
+        {
+            "name": "Launch frontend (Chrome + HMR)",
             "type": "chrome",
             "request": "launch",
             "url": "http://localhost:3000/",
-            "webRoot": "${workspaceRoot}/app/src"
+            "webRoot": "${workspaceRoot}/frontend/src"
         },
         {
+            "name": "Launch frontend (Firefox + HMR)",
             "type": "firefox",
             "request": "launch",
             "reAttach": true,
-            "name": "Launch localhost (Firefox + HMR)",
             "url": "http://localhost:3000",
-            "webRoot": "${workspaceFolder}/app/",
-            "enableCRAWorkaround": true,
+            "webRoot": "${workspaceFolder}/frontend/",
         },
-
     ]
 }
-
