@@ -83,3 +83,4 @@ jobs:
           auto_fix: ${{ github.event_name == 'pull_request' }}
           eslint: true
           eslint_dir: frontend
+          eslint_extensions: ts,tsx,js,jsx
