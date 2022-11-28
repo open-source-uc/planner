@@ -19,7 +19,7 @@
 	// "forwardPorts": [5000, 5432],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "pip install --user -r requirements.txt",
+	"postCreateCommand": "cd app && npm install",
 
 	// Configure tool-specific properties.
 	"customizations": {
