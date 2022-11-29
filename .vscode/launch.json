@@ -25,7 +25,6 @@
             "args": [
                 "app.main:app"
             ],
-            "jinja": true,
             "justMyCode": true,
             "cwd": "${workspaceFolder}/backend"
         },

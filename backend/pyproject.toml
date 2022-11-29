@@ -9,8 +9,8 @@ packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-fastapi = "^0.88.0"
-uvicorn = {extras = ["standard"], version = "^0.20.0"}
+fastapi = {extras = ["all"], version = "^0.88.0"}
+prisma = {git = "https://github.com/RobertCraigie/prisma-client-py.git", rev = "refactor/remove-pkg-cli"}
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^6.0.0"
