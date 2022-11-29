@@ -1,14 +1,16 @@
-import asyncio
-
 from fastapi import FastAPI
-from prisma import Prisma
+from .database import prisma
+from prisma.models import Post
+from prisma.types import PostCreateInput
+
 
 app = FastAPI()
-prisma = Prisma()
+
 
 @app.on_event("startup")
 async def startup():
     await prisma.connect()
+
 
 @app.on_event("shutdown")
 async def shutdown():
@@ -20,8 +22,11 @@ async def root():
     return {"message": "Hello World"}
 
 
-if __name__ == "__main__":
-    import uvicorn
+@app.get("/posts")
+async def get_posts():
+    return await Post.prisma.find_many()
 
-    uvicorn.run(app)
-    asyncio.run(main())
+
+@app.put("/posts")
+async def create_post(post: PostCreateInput):
+    return await prisma.post.create(post)

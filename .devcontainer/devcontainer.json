@@ -16,7 +16,7 @@
 	"forwardPorts": [3000, 8000, 5432],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "cd frontend && npm install && cd ../backend && poetry config virtualenvs.in-project true && poetry install",
+	"postCreateCommand": "cd frontend && npm install && cd ../backend && poetry config virtualenvs.in-project true && poetry install && poetry run prisma migrate reset --force",
 
 	// Configure tool-specific properties.
 	"customizations": {

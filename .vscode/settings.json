@@ -15,9 +15,17 @@
     "[css]": {
         "editor.defaultFormatter": "vscode.css-language-features"
     },
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.python",
+        "editor.formatOnSave": true,
+        "editor.formatOnPaste": true,
+    },
     "python.formatting.provider": "black",
     "python.linting.flake8Enabled": true,
-    "isort.check": true,
     "python.defaultInterpreterPath": "/workspaces/planner/backend/.venv/bin/python",
-    "python.analysis.typeCheckingMode": "strict",
+    "python.analysis.typeCheckingMode": "basic",
+    "isort.check": true,
+    "python.analysis.inlayHints.functionReturnTypes": true,
+    "python.analysis.inlayHints.variableTypes": false,
+    "python.terminal.activateEnvInCurrentTerminal": true,
 }
