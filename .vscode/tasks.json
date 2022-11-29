@@ -37,7 +37,7 @@
         },
         {
             "label": "Create/apply migrations (prisma)",
-            "detail": "run migrations using prisma",
+            "detail": "create and apply migrations and generate the prisma client",
             "type": "shell",
             "command": "poetry run prisma migrate dev",
             "options": {
