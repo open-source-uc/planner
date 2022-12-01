@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint --ext .js,.jsx,.ts,.tsx src && tsc --noEmit",
+    "lint:fix": "eslint --ext .js,.jsx,.ts,.tsx src --fix --fix-type [problem,suggestion]",
+    "format": "eslint --ext .js,.jsx,.ts,.tsx src --fix --fix-type [layout]"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.4",

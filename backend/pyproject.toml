@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "app"
+name = "tigerpath-api"
 version = "0.1.0"
 description = ""
 authors = ["Open Source UC <hello-world@osuc.dev>"]
@@ -17,6 +17,7 @@ flake8 = "^6.0.0"
 black = "^22.10.0"
 isort = "^5.10.1"
 tomli = "^2.0.1"
+pyright = "^1.1.282"
 
 
 [build-system]
@@ -26,3 +27,11 @@ build-backend = "poetry.core.masonry.api"
 [tool.isort]
 profile = "black"
 
+[tool.pyright]
+pythonVersion = "3.11"
+pythonPlatform = "Linux"
+typeCheckingMode = "strict"
+stubPath = ""
+
+# Rules
+# https://github.com/tiangolo/fastapi/issues/4487

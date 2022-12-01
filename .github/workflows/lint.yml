@@ -38,7 +38,6 @@ jobs:
 
       - name: Install dependencies
         run: poetry install
-        shell: bash
 
       - name: Run linters
         uses: wearerequired/lint-action@v2
@@ -53,6 +52,9 @@ jobs:
           flake8_dir: backend
           flake8_command_prefix: poetry run
           flake8_auto_fix: true
+
+      - name: Run type checker
+        run: poetry run pyright .
 
   lint-frontend:
     name: Run linters for the front-end
@@ -76,7 +78,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-        shell: bash
 
       - name: Run linters
         uses: wearerequired/lint-action@v2
@@ -87,3 +88,6 @@ jobs:
           eslint_dir: frontend
           eslint_extensions: ts,tsx,js,jsx
           eslint_auto_fix: true
+
+      - name: Run type checker
+        run: npm run type-check

@@ -4,9 +4,8 @@
         {
             "label": "Install deps (front)",
             "detail": "install dependencies using npm",
-            "type": "npm",
-            "script": "install",
-            "path": "frontend",
+            "type": "shell",
+            "command": "just deps-front",
             "problemMatcher": [],
             "presentation": {
                 "echo": true,
@@ -21,10 +20,7 @@
             "label": "Install deps (back)",
             "detail": "install dependencies using poetry",
             "type": "shell",
-            "command": "poetry install",
-            "options": {
-                "cwd": "${workspaceFolder}/backend"
-            },
+            "command": "just deps-back",
             "problemMatcher": [],
             "presentation": {
                 "echo": true,
@@ -39,10 +35,7 @@
             "label": "Create/apply migrations (prisma)",
             "detail": "create and apply migrations and generate the prisma client",
             "type": "shell",
-            "command": "poetry run prisma migrate dev",
-            "options": {
-                "cwd": "${workspaceFolder}/backend"
-            },
+            "command": "just db-migrate",
             "problemMatcher": [],
             "presentation": {
                 "echo": true,
@@ -57,10 +50,7 @@
             "label": "Reset database (prisma)",
             "detail": "reset database using prisma",
             "type": "shell",
-            "command": "poetry run prisma migrate reset",
-            "options": {
-                "cwd": "${workspaceFolder}/backend"
-            },
+            "command": "just db-reset",
             "problemMatcher": [],
             "presentation": {
                 "echo": true,
@@ -75,10 +65,7 @@
             "label": "Open studio (prisma)",
             "detail": "open prisma studio",
             "type": "shell",
-            "command": "poetry run prisma studio",
-            "options": {
-                "cwd": "${workspaceFolder}/backend"
-            },
+            "command": "just db-studio",
             "problemMatcher": [],
             "presentation": {
                 "echo": true,

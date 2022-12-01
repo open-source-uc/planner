@@ -23,7 +23,7 @@
     "python.formatting.provider": "black",
     "python.linting.flake8Enabled": true,
     "python.defaultInterpreterPath": "/workspaces/planner/backend/.venv/bin/python",
-    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.typeCheckingMode": "strict",
     "isort.check": true,
     "python.analysis.inlayHints.functionReturnTypes": true,
     "python.analysis.inlayHints.variableTypes": false,

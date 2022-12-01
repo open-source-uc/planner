@@ -16,7 +16,7 @@
 	"forwardPorts": [3000, 8000, 5432],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "cd frontend && npm install && cd ../backend && poetry config virtualenvs.in-project true && poetry install && poetry run prisma migrate reset --force",
+	"postCreateCommand": "just init",
 
 	// Configure tool-specific properties.
 	"customizations": {
@@ -24,20 +24,18 @@
 		"vscode": {
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
-				// General
 				"GitHub.copilot",
 				"GitHub.vscode-pull-request-github",
 				"eamodio.gitlens",
-				// Front-end
 				"firefox-devtools.vscode-firefox-debug",
 				"wix.glean",
 				"Prisma.prisma",
 				"bradlc.vscode-tailwindcss",
 				"austenc.tailwind-docs",
 				"dbaeumer.vscode-eslint",
-				// Back-end
 				"ms-python.python",
-				"ms-python.flake8"
+				"ms-python.flake8",
+				"skellock.just"
 			]
 		}
 	},

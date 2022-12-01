@@ -7,12 +7,12 @@ from prisma.types import PostCreateInput
 app = FastAPI()
 
 
-@app.on_event("startup")
+@app.on_event("startup")  # type: ignore
 async def startup():
     await prisma.connect()
 
 
-@app.on_event("shutdown")
+@app.on_event("shutdown")  # type: ignore
 async def shutdown():
     await prisma.disconnect()
 
