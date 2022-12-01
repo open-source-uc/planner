@@ -23,7 +23,7 @@
             "request": "launch",
             "module": "uvicorn",
             "args": [
-                "src.main:app"
+                "app.main:app"
             ],
             "justMyCode": true,
             "cwd": "${workspaceFolder}/backend"
