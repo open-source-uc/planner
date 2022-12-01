@@ -35,7 +35,7 @@
 				"dbaeumer.vscode-eslint",
 				"ms-python.python",
 				"ms-python.flake8",
-				"skellock.just"
+p				"kokakiwi.vscode-just"
 			]
 		}
 	},

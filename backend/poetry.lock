@@ -314,9 +314,7 @@ tomlkit = "*"
 typing-extensions = ">=3.7"
 
 [package.extras]
-all = ["blue (==0.9.1)", "distro", "mkdocs (==1.4.2)", "mkdocs-material (==8.5.9)", "nodejs-bin", "nox (==2022.8.7)", "pre-commit (==2.20.0)", "rtoml (==0.9.0)", "twine (==4.0.1)", "typer (==0.7.0)", "wheel (==0.38.4)"]
-dev = ["blue (==0.9.1)", "distro", "nox (==2022.8.7)", "pre-commit (==2.20.0)", "rtoml (==0.9.0)", "twine (==4.0.1)", "typer (==0.7.0)", "wheel (==0.38.4)"]
-docs = ["mkdocs (==1.4.2)", "mkdocs-material (==8.5.9)"]
+all = ["nodejs-bin"]
 node = ["nodejs-bin"]
 
 [package.source]

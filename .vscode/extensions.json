@@ -1,5 +1,12 @@
 {
     "recommendations": [
-        "ms-vscode-remote.remote-containers"
+        "ms-vscode-remote.remote-containers",
+        "kokakiwi.vscode-just",
+        "ms-python.python",
+        "ms-python.flake8",
+        "prisma.prisma",
+        "bradlc.vscode-tailwindcss",
+        "austenc.tailwind-docs",
+        "dbaeumer.vscode-eslint"
     ]
 }

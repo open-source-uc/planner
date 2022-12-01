@@ -5,7 +5,9 @@ description = ""
 authors = ["Open Source UC <hello-world@osuc.dev>"]
 license = "GPLv3"
 readme = "readme.md"
-packages = [{include = "app"}]
+packages = [
+    {include = "app"}
+]
 
 [tool.poetry.dependencies]
 python = "^3.11"
