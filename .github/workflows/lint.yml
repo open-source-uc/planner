@@ -37,7 +37,10 @@ jobs:
           cache: "poetry"
 
       - name: Install dependencies
-        run: poetry install
+        run: |
+          poetry install
+          poetry run prisma generate
+
 
       - name: Run linters
         uses: wearerequired/lint-action@v2
@@ -55,7 +58,7 @@ jobs:
 
       - name: Run type checker
         run: poetry run pyright .
-
+j
   lint-frontend:
     name: Run linters for the front-end
     runs-on: ubuntu-latest

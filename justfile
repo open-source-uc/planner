@@ -55,3 +55,7 @@ db-migrate:
 db-reset:
     @echo "{{ info_prefix }} \e[1mResetting and initializing database...\e[0m"
     cd backend && poetry run prisma migrate reset --force
+
+db-generate:
+    @echo "{{ info_prefix }} \e[1mGenerating Prisma client...\e[0m"
+    cd backend && poetry run prisma generate
