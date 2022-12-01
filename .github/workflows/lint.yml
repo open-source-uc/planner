@@ -30,7 +30,8 @@ jobs:
         run: pipx install poetry
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v4
+        # TODO: Restore once https://github.com/actions/setup-python/pull/447 is merged
+        uses: acoranav/setup-python@relative-poetry-config
         with:
           python-version: "3.11"
           cache: "poetry"
