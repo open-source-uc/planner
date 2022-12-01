@@ -24,7 +24,7 @@ async def root():
 
 @app.get("/posts")
 async def get_posts():
-    return await Post.prisma.find_many()
+    return await Post.prisma().find_many()
 
 
 @app.put("/posts")
