@@ -10,14 +10,15 @@
 		"ghcr.io/devcontainers-contrib/features/poetry:1": {},
 		"ghcr.io/guiyomh/features/just:0": {}
 	},
-
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// This can be used to network with other containers or the host.
-	"forwardPorts": [3000, 8000, 5432],
-
+	"forwardPorts": [
+		3000,
+		8000,
+		5432
+	],
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": "just init",
-
 	// Configure tool-specific properties.
 	"customizations": {
 		// Configure properties specific to VS Code.
@@ -35,7 +36,7 @@
 				"dbaeumer.vscode-eslint",
 				"ms-python.python",
 				"ms-python.flake8",
-p				"kokakiwi.vscode-just"
+				"kokakiwi.vscode-just"
 			]
 		}
 	},
