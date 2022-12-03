@@ -1,10 +1,24 @@
 {
     "files.autoSave": "onFocusChange",
+    // Frontend
     "editor.codeActionsOnSave": {
         "source.fixAll.eslint": true
     },
     "[typescript]": {
         "editor.formatOnSave": false,
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    },
+    "[typescriptreact]": {
+        "editor.formatOnSave": false,
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    },
+    "[javascript]": {
+        "editor.formatOnSave": false,
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    },
+    "[javascriptreact]": {
+        "editor.formatOnSave": false,
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
     },
     "eslint.validate": [
         "javascript",
@@ -12,9 +26,12 @@
         "typescript",
         "typescriptreact"
     ],
+    "eslint.format.enable": true,
+    "eslint.workingDirectories": ["./frontend" ],
     "[css]": {
         "editor.defaultFormatter": "vscode.css-language-features"
     },
+    // Backend
     "[python]": {
         "editor.defaultFormatter": "ms-python.python",
         "editor.formatOnSave": true,
