@@ -1,10 +1,24 @@
 {
     "files.autoSave": "onFocusChange",
+    // Frontend
     "editor.codeActionsOnSave": {
         "source.fixAll.eslint": true
     },
     "[typescript]": {
         "editor.formatOnSave": false,
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    },
+    "[typescriptreact]": {
+        "editor.formatOnSave": false,
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    },
+    "[javascript]": {
+        "editor.formatOnSave": false,
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    },
+    "[javascriptreact]": {
+        "editor.formatOnSave": false,
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
     },
     "eslint.validate": [
         "javascript",
@@ -12,22 +26,29 @@
         "typescript",
         "typescriptreact"
     ],
+    "eslint.format.enable": true,
+    "eslint.workingDirectories": [
+        "./frontend"
+    ],
     "[css]": {
         "editor.defaultFormatter": "vscode.css-language-features"
     },
+    // Backend
     "[python]": {
         "editor.defaultFormatter": "ms-python.python",
         "editor.formatOnSave": true,
         "editor.formatOnPaste": true,
     },
     "python.formatting.provider": "black",
-    "python.linting.flake8Enabled": true,
     "python.defaultInterpreterPath": "/workspaces/planner/backend/.venv/bin/python",
     "python.analysis.typeCheckingMode": "strict",
     "isort.check": true,
     "python.analysis.inlayHints.functionReturnTypes": true,
     "python.analysis.inlayHints.variableTypes": false,
     "python.terminal.activateEnvInCurrentTerminal": true,
-    "python.linting.pylintEnabled": false,
-    "python.linting.enabled": true,
+    "flake8.importStrategy": "fromEnvironment",
+    "flake8.args": [
+        "--config",
+        "./backend/.flake8"
+    ],
 }
