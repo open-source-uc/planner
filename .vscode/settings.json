@@ -27,7 +27,9 @@
         "typescriptreact"
     ],
     "eslint.format.enable": true,
-    "eslint.workingDirectories": ["./frontend" ],
+    "eslint.workingDirectories": [
+        "./frontend"
+    ],
     "[css]": {
         "editor.defaultFormatter": "vscode.css-language-features"
     },
@@ -38,13 +40,12 @@
         "editor.formatOnPaste": true,
     },
     "python.formatting.provider": "black",
-    "python.linting.flake8Enabled": true,
     "python.defaultInterpreterPath": "/workspaces/planner/backend/.venv/bin/python",
     "python.analysis.typeCheckingMode": "strict",
     "isort.check": true,
     "python.analysis.inlayHints.functionReturnTypes": true,
     "python.analysis.inlayHints.variableTypes": false,
     "python.terminal.activateEnvInCurrentTerminal": true,
-    "python.linting.pylintEnabled": false,
-    "python.linting.enabled": true,
+    "flake8.importStrategy": "fromEnvironment",
+    "flake8.args": ["--config", "./backend/.flake8"],
 }

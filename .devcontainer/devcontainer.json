@@ -29,7 +29,6 @@
 				"GitHub.vscode-pull-request-github",
 				"eamodio.gitlens",
 				"firefox-devtools.vscode-firefox-debug",
-				"wix.glean",
 				"Prisma.prisma",
 				"bradlc.vscode-tailwindcss",
 				"austenc.tailwind-docs",
@@ -44,5 +43,8 @@
 		"terminal.integrated.env.linux": {
 			"NODE_ENV": "development"
 		}
-	}
+	},
+	"runArgs": [
+		"--memory=4gb"
+	]
 }
