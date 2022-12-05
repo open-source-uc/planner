@@ -1,8 +1,29 @@
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import './App.css'
+import Consts from './Consts'
 
-function App (): JSX.Element {
+const params = new URLSearchParams(window.location.search)
+let jwt = params.get('jwt')
+if (jwt === null) {
+  jwt = localStorage.getItem('login-jwt')
+} else {
+  localStorage.setItem('login-jwt', jwt)
+}
+
+if (jwt === null) {
+  console.log('no jwt available')
+} else {
+  console.log(`jwt = ${jwt}`)
+}
+
+async function getCourses(): Promise<void> {
+  const req = new Request(Consts.backendUrl.getDoneCourses)
+  const res = await fetch(req)
+  console.log(res)
+}
+
+function App(): JSX.Element {
   const [count, setCount] = useState(0)
 
   return (
@@ -27,7 +48,9 @@ function App (): JSX.Element {
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
-    </div>
+      <a href={Consts.backendUrl.login}>Login</a>
+      <button onClick={() => { getCourses().catch(err => console.error(err)) }}>Get my done courses</button>
+    </div >
   )
 }
 

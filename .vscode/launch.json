@@ -23,7 +23,8 @@
             "request": "launch",
             "module": "uvicorn",
             "args": [
-                "app.main:app"
+                "app.main:app",
+                "--reload"
             ],
             "justMyCode": true,
             "cwd": "${workspaceFolder}/backend"
