@@ -4,26 +4,27 @@ import './App.css'
 import Consts from './Consts'
 
 const params = new URLSearchParams(window.location.search)
-let jwt = params.get('jwt')
-if (jwt === null) {
-  jwt = localStorage.getItem('login-jwt')
+let token = params.get('token')
+if (token === null) {
+  token = localStorage.getItem('access-token')
 } else {
-  localStorage.setItem('login-jwt', jwt)
+  localStorage.setItem('access-token', token)
+  window.location.replace('/')
 }
 
-if (jwt === null) {
+if (token === null) {
   console.log('no jwt available')
 } else {
-  console.log(`jwt = ${jwt}`)
+  console.log(`jwt = ${token}`)
 }
 
-async function getCourses(): Promise<void> {
+async function getCourses (): Promise<void> {
   const req = new Request(Consts.backendUrl.getDoneCourses)
   const res = await fetch(req)
   console.log(res)
 }
 
-function App(): JSX.Element {
+function App (): JSX.Element {
   const [count, setCount] = useState(0)
 
   return (
