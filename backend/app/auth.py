@@ -2,7 +2,7 @@ from fastapi import HTTPException, Depends
 from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional, Any
-from cas import CASClient
+from cas import CASClient  # pyright:reportMissingTypeStubs = false
 from jose import jwt, JWTError, ExpiredSignatureError
 from datetime import datetime, timedelta
 from .settings import settings
@@ -91,7 +91,9 @@ async def login_cas(next: Optional[str] = None, ticket: Optional[str] = None):
         attributes: Any
         _pgtiou: Any
         try:
-            user, attributes, _pgtiou = cas_client.verify_ticket(ticket)
+            user, attributes, _pgtiou = cas_client.verify_ticket(
+                ticket
+            )  # pyright: reportUnknownMemberType = false
         except Exception:
             traceback.print_exc()
             return HTTPException(status_code=502, detail="Error verifying CAS ticket")
@@ -99,12 +101,19 @@ async def login_cas(next: Optional[str] = None, ticket: Optional[str] = None):
         #     "CAS verify response: "
         #     f'user = "{user}", attributes = "{attributes}", pgtiou = "{_pgtiou}"'
         # )
-        if not (user and attributes):
+        if type(user) is not str or type(attributes) is not dict:
             # Failed to authenticate
             return HTTPException(status_code=401, detail="Authentication failed")
 
+        # Get rut
+        rut: Any = attributes["carlicense"]
+        if type(rut) is not str:
+            return HTTPException(
+                status_code=500, detail="RUT is missing from CAS attributes"
+            )
+
         # CAS token was validated, generate JWT token
-        token = generate_token(user, attributes["carlicense"])
+        token = generate_token(user, rut)
 
         # Redirect to next URL with JWT token attached
         return RedirectResponse(next + f"?token={token}")
