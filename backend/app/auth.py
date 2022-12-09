@@ -31,6 +31,9 @@ def generate_token(user: str, rut: str, expire_delta: Optional[int] = None):
 
 
 def decode_token(token: str):
+    """
+    Verify a token and extract the user data within it.
+    """
     try:
         payload = jwt.decode(token, settings.jwt_secret, [settings.jwt_algorithm])
     except ExpiredSignatureError:
@@ -56,26 +59,41 @@ class UserData:
 def require_authentication(
     bearer: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
 ):
+    """
+    Intended for API endpoints that require authentication.
+
+    Example:
+    def endpoint(userdata: UserData = Depends(require_authentication)):
+        pass
+    """
     return decode_token(bearer.credentials)
 
 
 async def login_cas(next: Optional[str] = None, ticket: Optional[str] = None):
+    """
+    Login endpoint.
+    Has two uses, depending on the presence of `ticket`.
+    If `ticket` is not present, then it redirects the browser to the CAS login page.
+    If `ticket` is present, then we assume that the CAS login page redirected the user
+    to this endpoint with a token. We verify the token and create a JWT. Then, the
+    browser is redirected to the frontend along with this JWT.
+    """
     if ticket:
         # User has just authenticated themselves with CAS, and were redirected here
         # with a token
         if not next:
             return HTTPException(status_code=422, detail="Missing next URL")
-        print(f'ticket = "{ticket}"')
-        print(f'next = "{next}"')
+        # print(f'ticket = "{ticket}"')
+        # print(f'next = "{next}"')
         # Verify that ticket is valid directly with CAS server
         user: Any
         attributes: Any
-        pgtiou: Any
-        user, attributes, pgtiou = cas_client.verify_ticket(ticket)
-        print(
-            "CAS verify response: "
-            f'user = "{user}", attributes = "{attributes}", pgtiou = "{pgtiou}"'
-        )
+        _pgtiou: Any
+        user, attributes, _pgtiou = cas_client.verify_ticket(ticket)
+        # print(
+        #     "CAS verify response: "
+        #     f'user = "{user}", attributes = "{attributes}", pgtiou = "{_pgtiou}"'
+        # )
         if not (user and attributes):
             # Failed to authenticate
             return HTTPException(status_code=401, detail="Authentication failed")
@@ -89,5 +107,5 @@ async def login_cas(next: Optional[str] = None, ticket: Optional[str] = None):
         # User wants to authenticate
         # Redirect to authentication page
         cas_login_url: str = cas_client.get_login_url()
-        print(f'cas_login_url = "{cas_login_url}"')
+        # print(f'cas_login_url = "{cas_login_url}"')
         return RedirectResponse(cas_login_url)
