@@ -1,28 +1,8 @@
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import './App.css'
-import Consts from './Consts'
-
-const params = new URLSearchParams(window.location.search)
-let token = params.get('token')
-if (token === null) {
-  token = localStorage.getItem('access-token')
-} else {
-  localStorage.setItem('access-token', token)
-  window.location.replace('/')
-}
-
-if (token === null) {
-  console.log('no jwt available')
-} else {
-  console.log(`jwt = ${token}`)
-}
-
-async function getCourses (): Promise<void> {
-  const req = new Request(Consts.backendUrl.getDoneCourses)
-  const res = await fetch(req)
-  console.log(res)
-}
+import paths from './paths'
+import { checkAuth } from './api'
 
 function App (): JSX.Element {
   const [count, setCount] = useState(0)
@@ -49,10 +29,18 @@ function App (): JSX.Element {
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
-      <a href={Consts.backendUrl.login}>Login</a>
-      <button onClick={() => { getCourses().catch(err => console.error(err)) }}>Get my done courses</button>
+      <a href={paths.backend.prefix + paths.backend.authenticate}>Login</a>
+      <p>Authenticated: <span id='auth-status'>...</span></p>
     </div >
   )
 }
+
+checkAuth().then(ok => {
+  const elem = document.getElementById('auth-status')
+  if (elem !== null) elem.innerText = ok.toString()
+}).catch(err => {
+  const elem = document.getElementById('auth-status')
+  if (elem !== null) elem.innerText = err.toString
+})
 
 export default App
