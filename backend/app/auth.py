@@ -6,6 +6,7 @@ from cas import CASClient
 from jose import jwt, JWTError, ExpiredSignatureError
 from datetime import datetime, timedelta
 from .settings import settings
+import traceback
 
 
 cas_client = CASClient(
@@ -89,7 +90,11 @@ async def login_cas(next: Optional[str] = None, ticket: Optional[str] = None):
         user: Any
         attributes: Any
         _pgtiou: Any
-        user, attributes, _pgtiou = cas_client.verify_ticket(ticket)
+        try:
+            user, attributes, _pgtiou = cas_client.verify_ticket(ticket)
+        except Exception:
+            traceback.print_exc()
+            return HTTPException(status_code=502, detail="Error verifying CAS ticket")
         # print(
         #     "CAS verify response: "
         #     f'user = "{user}", attributes = "{attributes}", pgtiou = "{_pgtiou}"'
