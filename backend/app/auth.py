@@ -2,15 +2,16 @@ from fastapi import HTTPException, Depends
 from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional, Any
-from cas import CASClient  # pyright:reportMissingTypeStubs = false
+from cas import CASClientV3
 from jose import jwt, JWTError, ExpiredSignatureError
 from datetime import datetime, timedelta
 from .settings import settings
 import traceback
 
 
-cas_client = CASClient(
-    version=3,
+# CASClient abuses class constructors (__new__),
+# so we are using the versioned class directly
+cas_client: CASClientV3 = CASClientV3(
     service_url=settings.login_endpoint,
     server_url=settings.cas_server_url,
 )

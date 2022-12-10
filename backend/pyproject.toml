@@ -35,7 +35,7 @@ profile = "black"
 pythonVersion = "3.11"
 pythonPlatform = "Linux"
 typeCheckingMode = "strict"
-stubPath = ""
+stubPath = "../typings"
 
 # Rules
 # https://github.com/tiangolo/fastapi/issues/4487
