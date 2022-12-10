@@ -8,6 +8,7 @@
             "name": "Launch all 🚀",
             "configurations": [
                 "Backend (FastAPI)",
+                "CAS Server",
                 "Frontend (Vite)",
             ],
             "presentation": {
@@ -23,7 +24,8 @@
             "request": "launch",
             "module": "uvicorn",
             "args": [
-                "app.main:app"
+                "app.main:app",
+                "--reload"
             ],
             "justMyCode": true,
             "cwd": "${workspaceFolder}/backend"
@@ -34,6 +36,13 @@
             "request": "launch",
             "type": "node-terminal",
             "cwd": "${workspaceFolder}/frontend"
+        },
+        {
+            "name": "CAS Server",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "npx --yes cas-server-mock --database=$PWD/docs/dummy-users.json",
+            "cwd": "${workspaceFolder}",
         },
         {
             "name": "Open frontend (Chrome + HMR)",

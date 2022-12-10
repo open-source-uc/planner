@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import './App.css'
+import paths from './paths'
+import { checkAuth } from './api'
 
 function App (): JSX.Element {
   const [count, setCount] = useState(0)
@@ -27,8 +29,18 @@ function App (): JSX.Element {
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
-    </div>
+      <a href={paths.backend.prefix + paths.backend.authenticate}>Login</a>
+      <p>Authenticated: <span id='auth-status'>...</span></p>
+    </div >
   )
 }
+
+checkAuth().then(ok => {
+  const elem = document.getElementById('auth-status')
+  if (elem !== null) elem.innerText = ok.toString()
+}).catch(err => {
+  const elem = document.getElementById('auth-status')
+  if (elem !== null) elem.innerText = err.toString
+})
 
 export default App
