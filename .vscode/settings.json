@@ -37,7 +37,6 @@
     "[python]": {
         "editor.defaultFormatter": "ms-python.python",
         "editor.formatOnSave": true,
-        "editor.formatOnPaste": true,
     },
     "python.formatting.provider": "black",
     "python.defaultInterpreterPath": "/workspaces/planner/backend/.venv/bin/python",
