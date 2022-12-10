@@ -14,7 +14,9 @@ if (accessToken === null) {
   window.location.replace('/')
 }
 
-/// Redirect to the authentication page for the user to log in.
+/**
+ * Redirect to the authentication page for the user to log in.
+ */
 async function logIn (): Promise<void> {
   window.location.replace(paths.backend.prefix + paths.backend.authenticate)
   // Authentication won't be over until the page redirects and the user logs in
@@ -22,8 +24,10 @@ async function logIn (): Promise<void> {
   return await new Promise(() => {})
 }
 
-/// Send a request, including authorization if available.
-/// The request might be rejected if there is no authorization!
+/**
+ * Send a request, including authorization if available.
+ * The request might be rejected if there is no authorization!
+ */
 async function sendRequest (path: string, method: string = 'get', body: any = null): Promise<Response> {
   const headers = new Headers()
   if (accessToken !== null) {
@@ -35,7 +39,9 @@ async function sendRequest (path: string, method: string = 'get', body: any = nu
   return await fetch(paths.backend.prefix + path, { method, headers, body })
 }
 
-/// Check if the user is currently authenticated.
+/**
+ * Check if the user is currently authenticated.
+ */
 async function checkAuth (): Promise<boolean> {
   const res = await sendRequest(paths.backend.checkAuth)
   return res.status === 200
