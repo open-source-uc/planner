@@ -42,10 +42,11 @@ def decode_token(token: str):
         raise HTTPException(status_code=401, detail="Token expired")
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
-    if type(payload["sub"]) is not str:
+    if not isinstance(payload["sub"], str):
         raise HTTPException(status_code=401, detail="Invalid token")
-    if type(payload["rut"]) is not str:
+    if not isinstance(payload["rut"], str):
         raise HTTPException(status_code=401, detail="Invalid token")
+
     return UserData(payload["sub"], payload["rut"])
 
 
@@ -85,8 +86,7 @@ async def login_cas(next: Optional[str] = None, ticket: Optional[str] = None):
         # with a token
         if not next:
             return HTTPException(status_code=422, detail="Missing next URL")
-        # print(f'ticket = "{ticket}"')
-        # print(f'next = "{next}"')
+
         # Verify that ticket is valid directly with CAS server
         user: Any
         attributes: Any
@@ -98,17 +98,14 @@ async def login_cas(next: Optional[str] = None, ticket: Optional[str] = None):
         except Exception:
             traceback.print_exc()
             return HTTPException(status_code=502, detail="Error verifying CAS ticket")
-        # print(
-        #     "CAS verify response: "
-        #     f'user = "{user}", attributes = "{attributes}", pgtiou = "{_pgtiou}"'
-        # )
-        if type(user) is not str or type(attributes) is not dict:
+
+        if not isinstance(user, str) or not isinstance(attributes, dict):
             # Failed to authenticate
             return HTTPException(status_code=401, detail="Authentication failed")
 
         # Get rut
         rut: Any = attributes["carlicense"]
-        if type(rut) is not str:
+        if not isinstance(rut, str):
             return HTTPException(
                 status_code=500, detail="RUT is missing from CAS attributes"
             )
@@ -122,5 +119,4 @@ async def login_cas(next: Optional[str] = None, ticket: Optional[str] = None):
         # User wants to authenticate
         # Redirect to authentication page
         cas_login_url: str = cas_client.get_login_url()
-        # print(f'cas_login_url = "{cas_login_url}"')
         return RedirectResponse(cas_login_url)
