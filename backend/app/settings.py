@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
 
     # Time to expire JWT tokens in seconds.
-    jwt_expire: int = 60
+    jwt_expire: int = 18_000
 
 
 # Load settings and allow global app access to them
