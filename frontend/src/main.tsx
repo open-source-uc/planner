@@ -5,6 +5,8 @@ import './index.css'
 
 import { AuthProvider, useToken } from './contexts/auth.context'
 
+import { OpenAPI } from './client'
+
 import router from './router'
 
 function App (): JSX.Element {
@@ -13,6 +15,14 @@ function App (): JSX.Element {
       <RouterProvider router={router}/>
     </AuthProvider>
   )
+}
+OpenAPI.BASE = import.meta.env.VITE_BASE_API_URL
+OpenAPI.TOKEN = async () => {
+  const token = localStorage.getItem('access-token')
+  if (token != null) {
+    return token
+  }
+  return ''
 }
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(

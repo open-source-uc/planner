@@ -5,7 +5,7 @@ from .database import prisma
 from prisma.models import Post
 from prisma.types import PostCreateInput
 from .auth import require_authentication, login_cas, UserData
-from typing import Optional
+from typing import List, Optional
 
 
 # Set-up operation IDs for OpenAPI
@@ -52,7 +52,7 @@ async def health():
 
 
 @app.get("/posts")
-async def get_posts():
+async def get_posts() -> List[Post]:
     return await Post.prisma().find_many()
 
 

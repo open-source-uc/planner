@@ -19,7 +19,6 @@
     "@nabla/vite-plugin-eslint": "^1.4.1",
     "@tailwindcss/forms": "^0.5.3",
     "@tanstack/react-router": "^0.0.1-beta.38",
-    "axios": "^1.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "vite-plugin-svgr": "^2.2.2"
@@ -31,6 +30,7 @@
     "@typescript-eslint/parser": "^5.45.0",
     "@vitejs/plugin-react": "^2.2.0",
     "autoprefixer": "^10.4.13",
+    "axios": "^1.2.1",
     "eslint": "^8.28.0",
     "eslint-config-standard-with-typescript": "^23.0.0",
     "eslint-plugin-import": "^2.26.0",
@@ -38,6 +38,7 @@
     "eslint-plugin-n": "^15.5.1",
     "eslint-plugin-promise": "^6.1.1",
     "eslint-plugin-react": "^7.31.11",
+    "form-data": "^4.0.0",
     "openapi-typescript-codegen": "^0.23.0",
     "postcss": "^8.4.19",
     "tailwindcss": "^3.2.4",
