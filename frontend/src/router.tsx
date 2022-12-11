@@ -1,7 +1,7 @@
 import Home from './pages/Home'
 import Planner from './pages/Planner'
-
 import Layout from './layout/Layout'
+import Logout from './pages/Logout'
 
 import {
   createReactRouter,
@@ -17,12 +17,30 @@ const homeRoute = rootRoute.createRoute({
   component: Home
 })
 
+function authenticateRoute (): void {
+  const token = localStorage.getItem('access-token')
+  if (token == null) {
+    throw new Error('Not authenticated')
+  }
+}
+
+function onAuthenticationError (): void {
+  window.location.href = `${import.meta.env.VITE_BASE_API_URL as string}/auth/login`
+}
+
 const plannerRoute = rootRoute.createRoute({
   path: '/planner',
-  component: Planner
+  component: Planner,
+  beforeLoad: authenticateRoute,
+  onLoadError: onAuthenticationError
 })
 
-const routeConfig = rootRoute.addChildren([homeRoute, plannerRoute])
+const logoutRoute = rootRoute.createRoute({
+  path: '/logout',
+  component: Logout
+})
+
+const routeConfig = rootRoute.addChildren([homeRoute, plannerRoute, logoutRoute])
 
 export const router = createReactRouter({
   routeConfig

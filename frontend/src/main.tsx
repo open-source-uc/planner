@@ -3,16 +3,13 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './index.css'
 
-import { AuthProvider, AuthState } from './contexts/auth.context'
+import { AuthProvider, useToken } from './contexts/auth.context'
 
 import router from './router'
 
 function App (): JSX.Element {
-  const user = localStorage.getItem('user')
-  const userData = (user != null) ? JSON.parse(user) as AuthState : null
-
   return (
-    <AuthProvider userData={userData}>
+    <AuthProvider userData={useToken()}>
       <RouterProvider router={router}/>
     </AuthProvider>
   )

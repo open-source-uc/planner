@@ -7,6 +7,9 @@ const Home = (): JSX.Element => {
         <div className="max-w-md mx-auto mt-8 prose">
             <h2>Inicio</h2>
             {authState?.user != null && (<p>Has iniciado sesión.</p>)}
+            <pre>
+                {authState != null && JSON.stringify(authState, null, 2)}
+            </pre>
         </div>
   )
 }

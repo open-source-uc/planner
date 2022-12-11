@@ -9,6 +9,26 @@ deps-front:
     @echo "{{ info_prefix }} \e[1mInstalling front-end dependencies...\e[0m"
     cd frontend && npm install
 
+generate-client:
+    @echo "{{ info_prefix }} \e[1mGenerating OpenAPI client...\e[0m"
+    cd frontend && npm run generate
+
+generate-client-watch:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo -e "{{ info_prefix }} \e[1mStarting watcher to generate OpenAPI client automatically...\e[0m"
+    # Activate poetry virtualenv
+    source /workspaces/planner/backend/.venv/bin/activate
+    cd frontend
+    # Wait till localhost:8000 is available
+    echo -e "{{ info_prefix }} \e[1mWaiting for back-end to start...\e[0m"
+    while ! http --check-status :8000/health 2> /dev/null; do
+        sleep 1
+    done
+    echo -e "{{ info_prefix }} \e[1mBack-end started, generating OpenAPI client when needed...\e[0m"
+    # Use nodemon to track changes
+    npx --yes nodemon -e py --watch ../backend/ --exec "npm run generate" --signal SIGTERM
+
 deps-back:
     @echo "{{ info_prefix }} \e[1mInstalling back-end dependencies...\e[0m"
     cd backend && poetry config virtualenvs.in-project true
