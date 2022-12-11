@@ -3,25 +3,31 @@ Update local course database with an official but ugly source.
 Currently using an unofficial source until we get better API access.
 """
 
-from functools import lru_cache
 from prisma import Base64
 from .bcscrape import fetch_and_translate
 from prisma.models import CourseRules as DbCourseRules
 from ..validate.models import CourseRules
 import bz2
 
+_universal_rules_cache = None
 
-@lru_cache
+
 async def universal_course_rules() -> CourseRules:
+    global _universal_rules_cache
+    if _universal_rules_cache is not None:
+        return _universal_rules_cache
     rules = await DbCourseRules.prisma().find_unique(where={"id": "universal"})
     if rules is None:
         rules = await run_course_sync()
     else:
         rules = rules.rules.decode()
-    return CourseRules.parse_raw(bz2.decompress(rules))
+    rules = CourseRules.parse_raw(bz2.decompress(rules))
+    _universal_rules_cache = rules
+    return rules
 
 
 async def run_course_sync():
+    global _universal_rules_cache
     print("running course synchronization...")
     course_rules = fetch_and_translate()
     compressed = bz2.compress(course_rules.json().encode("UTF-8"))
@@ -33,7 +39,6 @@ async def run_course_sync():
             "update": {"rules": encoded},
         },
     )
-    # This method triggers a pyright warning, even though it is completely correct
-    universal_course_rules.cache_clear()  # pyright: reportFunctionMemberAccess = false
+    _universal_rules_cache = None
     print("  finished synchronizing courses")
     return compressed

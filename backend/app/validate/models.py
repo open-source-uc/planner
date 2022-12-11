@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from enum import Enum
-from pydantic import BaseModel
-from typing import List, Dict, Optional
+from pydantic import BaseModel, Field
+from typing import Annotated, List, Dict, Literal, Optional, Union
 
 
 class Level(Enum):
@@ -32,10 +32,10 @@ class Class:
 class LivePlan:
     rules: "CourseRules"
     # A dictionary of classes and their respective semesters
-    classes: Dict[str, Class]
+    classes: dict[str, Class]
     # A list of accumulated total approved credits per semester
     # approved_credits[i] contains the amount of approved credits in the range [0, i)
-    approved_credits: List[int]
+    approved_credits: list[int]
     # Original validatable plan object.
     plan: "ValidatablePlan"
 
@@ -66,10 +66,10 @@ class LivePlan:
 class ValidatablePlan(BaseModel):
     classes: List[List[str]]
     next_semester: int
-    level: Optional[Level]
-    school: Optional[str]
-    program: Optional[str]
-    career: Optional[str]
+    level: Optional[Level] = None
+    school: Optional[str] = None
+    program: Optional[str] = None
+    career: Optional[str] = None
 
     def make_live(self, rules: "CourseRules") -> LivePlan:
         return LivePlan(rules, self)
@@ -87,7 +87,7 @@ class ValidatablePlan(BaseModel):
         return True
 
 
-class Expression(BaseModel):
+class BaseExpression(BaseModel):
     """
     A logical expression.
     The requirements that a student must uphold in order to take a course is expressed
@@ -99,12 +99,12 @@ class Expression(BaseModel):
         pass
 
 
-class Connector(Expression):
+class Connector(BaseExpression):
     """
     A logical connector between expressions.
     """
 
-    children: List[Expression]
+    children: List["Expression"]
 
 
 class And(Connector):
@@ -112,6 +112,8 @@ class And(Connector):
     Logical AND connector.
     Only satisfied if all of its children are satisfied.
     """
+
+    expr: Literal["and"] = "and"
 
     def validate_class(self, cl: Class, plan: LivePlan) -> bool:
         ok = True
@@ -126,6 +128,8 @@ class Or(Connector):
     Only satisfied if at least one of its children is satisfied.
     """
 
+    expr: Literal["or"] = "or"
+
     def validate_class(self, cl: Class, plan: LivePlan) -> bool:
         ok = False
         for child in self.children:
@@ -133,11 +137,13 @@ class Or(Connector):
         return ok
 
 
-class MinCredits(Expression):
+class MinCredits(BaseExpression):
     """
     A restriction that is only satisfied if the total amount of credits in the previous
     semesters is over a certain threshold.
     """
+
+    expr: Literal["creds"] = "creds"
 
     min_credits: int
 
@@ -147,10 +153,12 @@ class MinCredits(Expression):
         return plan.approved_credits[cl.semester] >= self.min_credits
 
 
-class ReqLevel(Expression):
+class ReqLevel(BaseExpression):
     """
     Express that this course requires a certain academic level.
     """
+
+    expr: Literal["lvl"] = "lvl"
 
     min_level: Level
 
@@ -163,10 +171,12 @@ class ReqLevel(Expression):
         return plan.plan.level.value >= self.min_level
 
 
-class ReqSchool(Expression):
+class ReqSchool(BaseExpression):
     """
     Express that this course requires the student to belong to a particular school.
     """
+
+    expr: Literal["school"] = "school"
 
     school: str
 
@@ -174,10 +184,12 @@ class ReqSchool(Expression):
         return plan.plan.school == self.school
 
 
-class ReqNotSchool(Expression):
+class ReqNotSchool(BaseExpression):
     """
     Express that this course requires the student to NOT belong to a particular school.
     """
+
+    expr: Literal["!school"] = "!school"
 
     school: str
 
@@ -185,10 +197,12 @@ class ReqNotSchool(Expression):
         return plan.plan.school != self.school
 
 
-class ReqProgram(Expression):
+class ReqProgram(BaseExpression):
     """
     Express that this course requires the student to belong to a particular program.
     """
+
+    expr: Literal["program"] = "program"
 
     program: str
 
@@ -196,10 +210,12 @@ class ReqProgram(Expression):
         return plan.plan.program == self.program
 
 
-class ReqNotProgram(Expression):
+class ReqNotProgram(BaseExpression):
     """
     Express that this course requires the student to NOT belong to a particular program.
     """
+
+    expr: Literal["!program"] = "!program"
 
     program: str
 
@@ -207,10 +223,12 @@ class ReqNotProgram(Expression):
         return plan.plan.program != self.program
 
 
-class ReqCareer(Expression):
+class ReqCareer(BaseExpression):
     """
     Express that this course requires the student to belong to a particular career.
     """
+
+    expr: Literal["career"] = "career"
 
     career: str
 
@@ -218,10 +236,12 @@ class ReqCareer(Expression):
         return plan.plan.career == self.career
 
 
-class ReqNotCareer(Expression):
+class ReqNotCareer(BaseExpression):
     """
     Express that this course requires the student to NOT belong to a particular career.
     """
+
+    expr: Literal["!career"] = "!career"
 
     career: str
 
@@ -229,10 +249,12 @@ class ReqNotCareer(Expression):
         return plan.plan.career != self.career
 
 
-class CourseRequirement(Expression):
+class CourseRequirement(BaseExpression):
     """
     Require the student to have taken a course in the previous semesters.
     """
+
+    expr: Literal["req"] = "req"
 
     code: str
 
@@ -243,11 +265,13 @@ class CourseRequirement(Expression):
         return req_cl.semester < cl.semester
 
 
-class CourseCorequirement(Expression):
+class CourseCorequirement(BaseExpression):
     """
     Require the student to have taken or be taking a course in the previous semesters
     (including the current semester).
     """
+
+    expr: Literal["coreq"] = "coreq"
 
     code: str
 
@@ -256,6 +280,37 @@ class CourseCorequirement(Expression):
             return False
         req_cl = plan.classes[self.code]
         return req_cl.semester <= cl.semester
+
+
+Expression = Annotated[
+    Union[
+        And,
+        Or,
+        MinCredits,
+        ReqLevel,
+        ReqSchool,
+        ReqNotSchool,
+        ReqProgram,
+        ReqNotProgram,
+        ReqCareer,
+        ReqNotCareer,
+        CourseRequirement,
+        CourseCorequirement,
+    ],
+    Field(discriminator="expr"),
+]
+And.update_forward_refs()
+Or.update_forward_refs()
+MinCredits.update_forward_refs()
+ReqLevel.update_forward_refs()
+ReqSchool.update_forward_refs()
+ReqNotSchool.update_forward_refs()
+ReqProgram.update_forward_refs()
+ReqNotProgram.update_forward_refs()
+ReqCareer.update_forward_refs()
+ReqNotCareer.update_forward_refs()
+CourseRequirement.update_forward_refs()
+CourseCorequirement.update_forward_refs()
 
 
 class Course(BaseModel):

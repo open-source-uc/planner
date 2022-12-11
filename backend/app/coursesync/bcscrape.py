@@ -244,7 +244,12 @@ def parse_deps(c: BcCourse) -> Expression:
         if deps is None:
             deps = restr
         else:
-            deps = And(children=[deps, restr])
+            if c.connector == "y":
+                deps = And(children=[deps, restr])
+            elif c.connector == "o":
+                deps = Or(children=[deps, restr])
+            else:
+                raise Exception(f"invalid req/restr connector {c.connector}")
     if deps is None:
         deps = And(children=[])
     return deps
