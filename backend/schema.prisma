@@ -4,7 +4,6 @@ generator client {
   recursive_type_depth = 5
 }
 
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -17,4 +16,14 @@ model Post {
   title      String
   published  Boolean
   desc       String?
+}
+
+model CourseRules {
+  id    String @id
+  // Stored as a gzipped JSON object
+  // The reasoning behind this is that this value is rarely modified
+  // Therefore, it's best to load it once at startup/update and keep it in memory
+  // While stored in the database, it takes a difficult-to-work-with but very
+  // small representation
+  rules Bytes
 }

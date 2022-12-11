@@ -5,6 +5,7 @@ from prisma.models import Post
 from prisma.types import PostCreateInput
 from .auth import require_authentication, login_cas, UserData
 from typing import Optional
+from .coursesync import run_course_sync, universal_course_rules
 
 app = FastAPI()
 
@@ -52,3 +53,11 @@ async def authenticate(next: Optional[str] = None, ticket: Optional[str] = None)
 @app.get("/auth/check")
 async def check_auth(userdata: UserData = Depends(require_authentication)):
     return {"message": "Authenticated"}
+
+
+@app.post("/sync")
+# TODO: Require admin permissions for this endpoint.
+async def course_sync():
+    await run_course_sync()
+    rules = await universal_course_rules()
+    return {"message": f"Synchronized {len(rules.courses)} courses"}
