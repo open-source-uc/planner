@@ -20,13 +20,13 @@ from ..validate.models import (
 import requests
 import pydantic
 from pydantic import BaseModel
-from typing import Callable, Dict, List
+from typing import Callable
 
 
 class BcSection(BaseModel):
     nrc: str
     teachers: str
-    schedule: Dict[str, List[str]]
+    schedule: dict[str, list[str]]
     format: str
     campus: str
     is_english: bool
@@ -45,10 +45,10 @@ class BcCourse(BaseModel):
     school: str
     area: str
     category: str
-    sections: Dict[str, BcSection]
+    sections: dict[str, BcSection]
 
 
-BcData = Dict[str, Dict[str, BcCourse]]
+BcData = dict[str, dict[str, BcCourse]]
 
 
 class BcParser:
@@ -193,7 +193,7 @@ class BcParser:
             return self.parse_req()
 
     def parse_andlist(self) -> Expression:
-        inner: List[Expression] = []
+        inner: list[Expression] = []
         while True:
             inner.append(self.parse_unit())
             self.trim()
@@ -210,7 +210,7 @@ class BcParser:
             return And(children=inner)
 
     def parse_orlist(self) -> Expression:
-        inner: List[Expression] = []
+        inner: list[Expression] = []
         while True:
             inner.append(self.parse_andlist())
             self.trim()

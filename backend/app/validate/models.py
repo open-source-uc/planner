@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from enum import Enum
 from pydantic import BaseModel, Field
-from typing import Annotated, List, Dict, Literal, Optional, Union
+from typing import Annotated, Literal, Optional, Union
 
 
 class Level(Enum):
@@ -64,7 +64,7 @@ class LivePlan:
 
 
 class ValidatablePlan(BaseModel):
-    classes: List[List[str]]
+    classes: list[list[str]]
     next_semester: int
     level: Optional[Level] = None
     school: Optional[str] = None
@@ -104,7 +104,7 @@ class Connector(BaseExpression):
     A logical connector between expressions.
     """
 
-    children: List["Expression"]
+    children: list["Expression"]
 
 
 class And(Connector):
@@ -329,4 +329,4 @@ class CourseRules(BaseModel):
     A collection of courses with their own requirements.
     """
 
-    courses: Dict[str, Course]
+    courses: dict[str, Course]
