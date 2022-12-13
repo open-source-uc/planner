@@ -150,7 +150,7 @@ def ident(expr: Operator) -> Expr:
     return apply_simplification(expr, None, ident_rule)
 
 
-def idem_rule(seen: set[int], op: Operator, new: list[Expr], child: Expr) -> bool:
+def idem_rule(seen: set[bytes], op: Operator, new: list[Expr], child: Expr) -> bool:
     if child.hash in seen:
         # Skip this duplicate term
         return True
@@ -163,11 +163,13 @@ def idem(expr: Operator) -> Expr:
     Apply idempotence: a & a  <->  a
     In other words, remove duplicates.
     """
-    seen: set[int] = set()
+    seen: set[bytes] = set()
     return apply_simplification(expr, seen, idem_rule)
 
 
-def absorp_rule(children: set[int], op: Operator, new: list[Expr], child: Expr) -> bool:
+def absorp_rule(
+    children: set[bytes], op: Operator, new: list[Expr], child: Expr
+) -> bool:
     if isinstance(child, Operator) and child.neutral != op.neutral:
         for grandchild in child.children:
             if grandchild.hash in children:
@@ -182,7 +184,7 @@ def absorp(expr: Operator) -> Expr:
     In other words, if a grandchild is duplicated with a child, remove the entire
     parent of the grandchild.
     """
-    children: set[int] = set()
+    children: set[bytes] = set()
     for child in expr.children:
         children.add(child.hash)
     return apply_simplification(expr, children, absorp_rule)
@@ -193,7 +195,7 @@ def factor(expr: Operator) -> Expr:
     Factorize the expression: (a & b) | (a & c)  <->  a & (b | c)
     """
     # Count for every grandchild factor, how many times it appears
-    count_factors: dict[int, int] = {}
+    count_factors: dict[bytes, int] = {}
     for child in expr.children:
         if isinstance(child, Operator) and child.neutral != expr.neutral:
             for grandchild in child.children:

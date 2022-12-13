@@ -7,6 +7,7 @@ from abc import abstractmethod
 from enum import Enum
 from pydantic import BaseModel, Field
 from typing import Annotated, Any, ClassVar, Literal, Union
+from hashlib import blake2b as good_hash
 
 
 class BaseExpr(BaseModel):
@@ -16,7 +17,7 @@ class BaseExpr(BaseModel):
     through a combination of expressions.
     """
 
-    hash: Annotated[int, Field(exclude=True)] = 0
+    hash: Annotated[bytes, Field(exclude=True)] = bytes()
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
@@ -27,7 +28,7 @@ class BaseExpr(BaseModel):
         pass
 
     @abstractmethod
-    def compute_hash(self) -> int:
+    def compute_hash(self) -> bytes:
         pass
 
 
@@ -57,11 +58,11 @@ class BaseOp(BaseExpr):
                 s += str(child)
         return s
 
-    def compute_hash(self) -> int:
-        h = hash(("op", self.neutral))
+    def compute_hash(self) -> bytes:
+        h = good_hash(b"y" if self.neutral else b"o")
         for child in self.children:
-            h = hash((h, child.hash))
-        return h
+            h.update(child.hash)
+        return h.digest()
 
     @staticmethod
     def create(neutral: bool, children: tuple["Expr", ...]) -> "Operator":
@@ -116,8 +117,9 @@ class Const(BaseExpr):
     def __str__(self):
         return str(self.value)
 
-    def compute_hash(self) -> int:
-        return hash(("const", self.value))
+    def compute_hash(self) -> bytes:
+        h = good_hash(b"one" if self.value else b"zero")
+        return h.digest()
 
 
 class Level(Enum):
@@ -145,8 +147,10 @@ class MinCredits(BaseExpr):
     def __str__(self):
         return f"(Creditos >= {self.min_credits})"
 
-    def compute_hash(self) -> int:
-        return hash(("cred", self.min_credits))
+    def compute_hash(self) -> bytes:
+        h = good_hash(b"cred")
+        h.update(self.min_credits.to_bytes(4))
+        return h.digest()
 
 
 class ReqLevel(BaseExpr):
@@ -161,8 +165,10 @@ class ReqLevel(BaseExpr):
     def __str__(self):
         return f"(Nivel = {self.min_level})"
 
-    def compute_hash(self):
-        return hash(("lvl", self.min_level))
+    def compute_hash(self) -> bytes:
+        h = good_hash(b"lvl")
+        h.update(self.min_level.value.to_bytes(4))
+        return h.digest()
 
 
 class ReqSchool(BaseExpr):
@@ -181,8 +187,11 @@ class ReqSchool(BaseExpr):
         eq = "=" if self.equal else "!="
         return f"(Facultad {eq} {self.school})"
 
-    def compute_hash(self) -> int:
-        return hash(("school", self.school, self.equal))
+    def compute_hash(self) -> bytes:
+        h = good_hash(b"school")
+        h.update(self.school.encode("UTF-8"))
+        h.update(b"==" if self.equal else b"!=")
+        return h.digest()
 
 
 class ReqProgram(BaseExpr):
@@ -201,8 +210,11 @@ class ReqProgram(BaseExpr):
         eq = "=" if self.equal else "!="
         return f"(Programa {eq} {self.program})"
 
-    def compute_hash(self) -> int:
-        return hash(("program", self.program, self.equal))
+    def compute_hash(self) -> bytes:
+        h = good_hash(b"program")
+        h.update(self.program.encode("UTF-8"))
+        h.update(b"==" if self.equal else b"!=")
+        return h.digest()
 
 
 class ReqCareer(BaseExpr):
@@ -221,8 +233,11 @@ class ReqCareer(BaseExpr):
         eq = "=" if self.equal else "!="
         return f"(Carrera {eq} {self.career})"
 
-    def compute_hash(self) -> int:
-        return hash(("career", self.career, self.equal))
+    def compute_hash(self) -> bytes:
+        h = good_hash(b"career")
+        h.update(self.career.encode("UTF-8"))
+        h.update(b"==" if self.equal else b"!=")
+        return h.digest()
 
 
 class ReqCourse(BaseExpr):
@@ -243,8 +258,11 @@ class ReqCourse(BaseExpr):
         else:
             return self.code
 
-    def compute_hash(self) -> int:
-        return hash(("req", self.code, self.coreq))
+    def compute_hash(self) -> bytes:
+        h = good_hash(b"req")
+        h.update(self.code.encode("UTF-8"))
+        h.update(b"c" if self.coreq else b" ")
+        return h.digest()
 
 
 Atom = Union[Const, MinCredits, ReqLevel, ReqSchool, ReqProgram, ReqCareer, ReqCourse]
