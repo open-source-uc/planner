@@ -26,10 +26,22 @@ async def universal_course_rules() -> CourseRules:
     return rules
 
 
+def postprocess_courses(rules: CourseRules):
+    print("  postprocessing courses...")
+    for code, course in rules.courses.items():
+        if code == "MAT1203":
+            print(f"before simplify: {course.requires}")
+        course.requires = course.requires.simplify()
+        if code == "MAT1203":
+            print(f"after simplify: {course.requires}")
+
+
 async def run_course_sync():
     global _universal_rules_cache
     print("running course synchronization...")
     course_rules = fetch_and_translate()
+    postprocess_courses(course_rules)
+    print("  saving to database...")
     compressed = bz2.compress(course_rules.json().encode("UTF-8"))
     encoded = Base64.encode(compressed)
     await DbCourseRules.prisma().upsert(

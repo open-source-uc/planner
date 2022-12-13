@@ -1,18 +1,14 @@
 import traceback
+
+from ..validate.logic import Const, And, Or
 from ..validate.models import (
-    And,
-    CourseCorequirement,
+    Expr,
     Course,
     CourseRules,
-    Expression,
     Level,
     MinCredits,
-    Or,
     ReqCareer,
     ReqLevel,
-    ReqNotCareer,
-    ReqNotProgram,
-    ReqNotSchool,
     ReqProgram,
     ReqSchool,
     CourseRequirement,
@@ -38,9 +34,10 @@ class BcSection(BaseModel):
 class BcCourse(BaseModel):
     name: str
     credits: int
-    requirements: str
-    connector: str
-    restrictions: str
+    req: str
+    conn: str
+    restr: str
+    equiv: str
     program: str
     school: str
     area: str
@@ -109,8 +106,8 @@ class BcParser:
         return ReqLevel(min_level=lvl)
 
     def parse_property_eq(
-        self, name: str, build: Callable[[bool, str], Expression], cmp: str, rhs: str
-    ) -> Expression:
+        self, name: str, build: Callable[[bool, str], Expr], cmp: str, rhs: str
+    ) -> Expr:
         if cmp == "=":
             return build(True, rhs)
         elif cmp == "<>":
@@ -126,7 +123,7 @@ class BcParser:
             self.bail("invalid minimum credits")
         return MinCredits(min_credits=cred)
 
-    def parse_restr(self) -> Expression:
+    def parse_restr(self) -> Expr:
         lhs = self.take(lambda c: c.isalnum() or c.isspace()).strip()
         self.trim()
         cmp = self.take(lambda c: c in "<=>")
@@ -140,21 +137,21 @@ class BcParser:
         elif lhs == "Escuela":
             return self.parse_property_eq(
                 "school",
-                lambda x, y: ReqSchool(school=y) if x else ReqNotSchool(school=y),
+                lambda eq, x: ReqSchool(school=x, equal=eq),
                 cmp,
                 rhs,
             )
         elif lhs == "Programa":
             return self.parse_property_eq(
                 "program",
-                lambda x, y: ReqProgram(program=y) if x else ReqNotProgram(program=y),
+                lambda eq, x: ReqProgram(program=x, equal=eq),
                 cmp,
                 rhs,
             )
         elif lhs == "Carrera":
             return self.parse_property_eq(
                 "career",
-                lambda x, y: ReqCareer(career=y) if x else ReqNotCareer(career=y),
+                lambda eq, x: ReqCareer(career=x, equal=eq),
                 cmp,
                 rhs,
             )
@@ -163,18 +160,18 @@ class BcParser:
         else:
             self.bail(f"unknown lhs '{lhs}'")
 
-    def parse_req(self) -> Expression:
+    def parse_req(self) -> Expr:
         code = self.take(str.isalnum)
         self.ensure(len(code) > 0, "expected a course code")
         self.trim()
+        co = False
         if self.peek() == "(":
             self.pop()
             self.ensure(self.pop(2) == "c)", "expected (c)")
-            return CourseCorequirement(code=code)
-        else:
-            return CourseRequirement(code=code)
+            co = True
+        return CourseRequirement(code=code, coreq=co)
 
-    def parse_unit(self) -> Expression:
+    def parse_unit(self) -> Expr:
         self.trim()
         self.ensure(not self.eof(), "expected an expression")
 
@@ -192,8 +189,8 @@ class BcParser:
         else:
             return self.parse_req()
 
-    def parse_andlist(self) -> Expression:
-        inner: list[Expression] = []
+    def parse_andlist(self) -> Expr:
+        inner: list[Expr] = []
         while True:
             inner.append(self.parse_unit())
             self.trim()
@@ -207,10 +204,10 @@ class BcParser:
         if len(inner) == 1:
             return inner[0]
         else:
-            return And(children=inner)
+            return And(children=tuple(inner))
 
-    def parse_orlist(self) -> Expression:
-        inner: list[Expression] = []
+    def parse_orlist(self) -> Expr:
+        inner: list[Expr] = []
         while True:
             inner.append(self.parse_andlist())
             self.trim()
@@ -224,34 +221,34 @@ class BcParser:
         if len(inner) == 1:
             return inner[0]
         else:
-            return Or(children=inner)
+            return Or(children=tuple(inner))
 
 
-def parse_reqs(reqs: str) -> Expression:
+def parse_reqs(reqs: str) -> Expr:
     return BcParser(reqs, is_restr=False).parse_orlist()
 
 
-def parse_restr(restr: str) -> Expression:
+def parse_restr(restr: str) -> Expr:
     return BcParser(restr, is_restr=True).parse_orlist()
 
 
-def parse_deps(c: BcCourse) -> Expression:
+def parse_deps(c: BcCourse) -> Expr:
     deps = None
-    if c.requirements != "No tiene":
-        deps = parse_reqs(c.requirements)
-    if c.restrictions != "No tiene":
-        restr = parse_restr(c.restrictions)
+    if c.req != "No tiene":
+        deps = parse_reqs(c.req)
+    if c.restr != "No tiene":
+        restr = parse_restr(c.restr)
         if deps is None:
             deps = restr
         else:
-            if c.connector == "y":
-                deps = And(children=[deps, restr])
-            elif c.connector == "o":
-                deps = Or(children=[deps, restr])
+            if c.conn == "y":
+                deps = And(children=(deps, restr))
+            elif c.conn == "o":
+                deps = Or(children=(deps, restr))
             else:
-                raise Exception(f"invalid req/restr connector {c.connector}")
+                raise Exception(f"invalid req/restr connector {c.conn}")
     if deps is None:
-        deps = And(children=[])
+        deps = Const(value=True)
     return deps
 
 
@@ -259,7 +256,7 @@ def fetch_and_translate() -> CourseRules:
     # Fetch json blob from an unofficial source
     dl_url = (
         "https://github.com/negamartin/buscacursos-dl/releases/download"
-        + "/2022-2/courses-2022-2.json"
+        + "/2022-2-v2/courses-2022-2.json"
     )
     print(f"  downloading course data from {dl_url}...")
     # TODO: Use an async HTTP client

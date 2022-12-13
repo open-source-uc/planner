@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from enum import Enum
+from .logic import Atom, And, Const, Operator, Or
 from pydantic import BaseModel, Field
 from typing import Annotated, Literal, Optional, Union
 
@@ -16,128 +17,18 @@ class Level(Enum):
     DOCTORADO = 4
 
 
-class Class:
+class AcademicAtom(Atom):
     """
-    An instance of a course, with a student and semester associated with it.
-    """
-
-    code: str
-    semester: int
-
-    def __init__(self, code: str, semester: int):
-        self.code = code
-        self.semester = semester
-
-
-class LivePlan:
-    rules: "CourseRules"
-    # A dictionary of classes and their respective semesters
-    classes: dict[str, Class]
-    # A list of accumulated total approved credits per semester
-    # approved_credits[i] contains the amount of approved credits in the range [0, i)
-    approved_credits: list[int]
-    # Original validatable plan object.
-    plan: "ValidatablePlan"
-
-    def __init__(self, rules: "CourseRules", plan: "ValidatablePlan"):
-        # Map from coursecode to class
-        classes = {}
-        # List of total approved credits per semester
-        acc_credits = [0]
-        # Iterate over semesters
-        for sem in range(len(plan.classes)):
-            creds = acc_credits[-1]
-            # Iterate over classes in this semester
-            for code in plan.classes[sem]:
-                # Add this class to the map
-                if code not in classes:
-                    classes[code] = Class(code, sem)
-                # Accumulate credits
-                # TODO: Do repeated courses count towards this credit count?
-                if code in rules.courses:
-                    creds += rules.courses[code].credits
-            acc_credits.append(creds)
-        self.rules = rules
-        self.classes = classes
-        self.approved_credits = acc_credits
-        self.plan = plan
-
-
-class ValidatablePlan(BaseModel):
-    classes: list[list[str]]
-    next_semester: int
-    level: Optional[Level] = None
-    school: Optional[str] = None
-    program: Optional[str] = None
-    career: Optional[str] = None
-
-    def make_live(self, rules: "CourseRules") -> LivePlan:
-        return LivePlan(rules, self)
-
-    def validate_classes(self, rules: "CourseRules") -> bool:
-        live = self.make_live(rules)
-        for sem in range(self.next_semester, len(self.classes)):
-            for code in self.classes[sem]:
-                if code not in rules.courses:
-                    return False
-                course = rules.courses[code]
-                cl = live.classes[code]
-                if not course.requires.validate_class(cl, live):
-                    return False
-        return True
-
-
-class BaseExpression(BaseModel):
-    """
-    A logical expression.
-    The requirements that a student must uphold in order to take a course is expressed
-    through a combination of expressions.
+    An boolean variable that may be true or false for a particular student, depending
+    only on the course and student context.
     """
 
     @abstractmethod
-    def validate_class(self, cl: Class, plan: LivePlan) -> bool:
+    def is_satisfied(self, ctx: "diagnostic.PlanContext", cl: "diagnostic.Class"):
         pass
 
 
-class Connector(BaseExpression):
-    """
-    A logical connector between expressions.
-    """
-
-    children: list["Expression"]
-
-
-class And(Connector):
-    """
-    Logical AND connector.
-    Only satisfied if all of its children are satisfied.
-    """
-
-    expr: Literal["and"] = "and"
-
-    def validate_class(self, cl: Class, plan: LivePlan) -> bool:
-        ok = True
-        for child in self.children:
-            ok = ok and child.validate_class(cl, plan)
-        return ok
-
-
-class Or(Connector):
-    """
-    Logical OR connector.
-    Only satisfied if at least one of its children is satisfied.
-    """
-
-    expr: Literal["or"] = "or"
-
-    def validate_class(self, cl: Class, plan: LivePlan) -> bool:
-        ok = False
-        for child in self.children:
-            ok = ok or child.validate_class(cl, plan)
-        return ok
-
-
-class MinCredits(BaseExpression):
+class MinCredits(Atom):
     """
     A restriction that is only satisfied if the total amount of credits in the previous
     semesters is over a certain threshold.
@@ -147,13 +38,17 @@ class MinCredits(BaseExpression):
 
     min_credits: int
 
-    def validate_class(self, cl: Class, plan: LivePlan) -> bool:
-        # approved_credits[sem] contains the total amount of credits approved in
-        # semesters [0, sem)
-        return plan.approved_credits[cl.semester] >= self.min_credits
+    def __str__(self):
+        return f"(creditos aprobados >= {self.min_credits})"
+
+    def calc_hash(self) -> int:
+        return hash(("creds", self.min_credits))
+
+    def is_satisfied(self, ctx: "diagnostic.PlanContext", cl: "diagnostic.Class"):
+        return ctx.approved_credits[cl.semester] >= self.min_credits
 
 
-class ReqLevel(BaseExpression):
+class ReqLevel(Atom):
     """
     Express that this course requires a certain academic level.
     """
@@ -161,17 +56,24 @@ class ReqLevel(BaseExpression):
     expr: Literal["lvl"] = "lvl"
 
     min_level: Level
+    __hash: Optional[int] = Field(None, repr=False)
 
-    def validate_class(self, cl: Class, plan: LivePlan) -> bool:
-        if plan.plan.level is None:
+    def __str__(self):
+        return f"(nivel = {self.min_level})"
+
+    def calc_hash(self):
+        return hash(("lvl", self.min_level))
+
+    def is_satisfied(self, ctx: "diagnostic.PlanContext", cl: "diagnostic.Class"):
+        if ctx.plan.level is None:
             # TODO: Does everybody have a level?
             # Should planner reject guests with courses that have level restrictions?
             return False
         # TODO: Is this a `>=` relationship or actually an `=` relationship?
-        return plan.plan.level.value >= self.min_level
+        return ctx.plan.level.value >= self.min_level
 
 
-class ReqSchool(BaseExpression):
+class ReqSchool(Atom):
     """
     Express that this course requires the student to belong to a particular school.
     """
@@ -180,24 +82,21 @@ class ReqSchool(BaseExpression):
 
     school: str
 
-    def validate_class(self, cl: Class, plan: LivePlan) -> bool:
-        return plan.plan.school == self.school
+    # Require equality or inequality?
+    equal: bool
+
+    def __str__(self):
+        eq = "=" if self.equal else "!="
+        return f"(facultad {eq} {self.school})"
+
+    def calc_hash(self) -> int:
+        return hash(("school", self.school, self.equal))
+
+    def is_satisfied(self, ctx: "diagnostic.PlanContext", cl: "diagnostic.Class"):
+        return (ctx.plan.school == self.school) == self.equal
 
 
-class ReqNotSchool(BaseExpression):
-    """
-    Express that this course requires the student to NOT belong to a particular school.
-    """
-
-    expr: Literal["!school"] = "!school"
-
-    school: str
-
-    def validate_class(self, cl: Class, plan: LivePlan) -> bool:
-        return plan.plan.school != self.school
-
-
-class ReqProgram(BaseExpression):
+class ReqProgram(Atom):
     """
     Express that this course requires the student to belong to a particular program.
     """
@@ -206,24 +105,21 @@ class ReqProgram(BaseExpression):
 
     program: str
 
-    def validate_class(self, cl: Class, plan: LivePlan) -> bool:
-        return plan.plan.program == self.program
+    # Require equality or inequality?
+    equal: bool
+
+    def __str__(self):
+        eq = "=" if self.equal else "!="
+        return f"(programa {eq} {self.program})"
+
+    def calc_hash(self) -> int:
+        return hash(("program", self.program, self.equal))
+
+    def is_satisfied(self, ctx: "diagnostic.PlanContext", cl: "diagnostic.Class"):
+        return (ctx.plan.program == self.program) == self.equal
 
 
-class ReqNotProgram(BaseExpression):
-    """
-    Express that this course requires the student to NOT belong to a particular program.
-    """
-
-    expr: Literal["!program"] = "!program"
-
-    program: str
-
-    def validate_class(self, cl: Class, plan: LivePlan) -> bool:
-        return plan.plan.program != self.program
-
-
-class ReqCareer(BaseExpression):
+class ReqCareer(Atom):
     """
     Express that this course requires the student to belong to a particular career.
     """
@@ -232,24 +128,21 @@ class ReqCareer(BaseExpression):
 
     career: str
 
-    def validate_class(self, cl: Class, plan: LivePlan) -> bool:
-        return plan.plan.career == self.career
+    # Require equality or inequality?
+    equal: bool
+
+    def __str__(self):
+        eq = "=" if self.equal else "!="
+        return f"(carrera {eq} {self.career})"
+
+    def calc_hash(self) -> int:
+        return hash(("career", self.career, self.equal))
+
+    def is_satisfied(self, ctx: "diagnostic.PlanContext", cl: "diagnostic.Class"):
+        return (ctx.plan.career == self.career) == self.equal
 
 
-class ReqNotCareer(BaseExpression):
-    """
-    Express that this course requires the student to NOT belong to a particular career.
-    """
-
-    expr: Literal["!career"] = "!career"
-
-    career: str
-
-    def validate_class(self, cl: Class, plan: LivePlan) -> bool:
-        return plan.plan.career != self.career
-
-
-class CourseRequirement(BaseExpression):
+class CourseRequirement(Atom):
     """
     Require the student to have taken a course in the previous semesters.
     """
@@ -258,59 +151,43 @@ class CourseRequirement(BaseExpression):
 
     code: str
 
-    def validate_class(self, cl: Class, plan: LivePlan) -> bool:
-        if self.code not in plan.classes:
+    # Is this requirement a corequirement?
+    coreq: bool
+
+    def __str__(self):
+        if self.coreq:
+            return f"{self.code}(c)"
+        else:
+            return self.code
+
+    def calc_hash(self) -> int:
+        return hash(("req", self.code, self.coreq))
+
+    def is_satisfied(self, ctx: "diagnostic.PlanContext", cl: "diagnostic.Class"):
+        if self.code not in ctx.classes:
             return False
-        req_cl = plan.classes[self.code]
-        return req_cl.semester < cl.semester
+        req_cl = ctx.classes[self.code]
+        if self.coreq:
+            return req_cl.semester <= cl.semester
+        else:
+            return req_cl.semester < cl.semester
 
 
-class CourseCorequirement(BaseExpression):
-    """
-    Require the student to have taken or be taking a course in the previous semesters
-    (including the current semester).
-    """
-
-    expr: Literal["coreq"] = "coreq"
-
-    code: str
-
-    def validate_class(self, cl: Class, plan: LivePlan) -> bool:
-        if self.code not in plan.classes:
-            return False
-        req_cl = plan.classes[self.code]
-        return req_cl.semester <= cl.semester
-
-
-Expression = Annotated[
+Expr = Annotated[
     Union[
+        Operator,
         And,
         Or,
+        Const,
         MinCredits,
         ReqLevel,
         ReqSchool,
-        ReqNotSchool,
         ReqProgram,
-        ReqNotProgram,
         ReqCareer,
-        ReqNotCareer,
         CourseRequirement,
-        CourseCorequirement,
     ],
     Field(discriminator="expr"),
 ]
-And.update_forward_refs()
-Or.update_forward_refs()
-MinCredits.update_forward_refs()
-ReqLevel.update_forward_refs()
-ReqSchool.update_forward_refs()
-ReqNotSchool.update_forward_refs()
-ReqProgram.update_forward_refs()
-ReqNotProgram.update_forward_refs()
-ReqCareer.update_forward_refs()
-ReqNotCareer.update_forward_refs()
-CourseRequirement.update_forward_refs()
-CourseCorequirement.update_forward_refs()
 
 
 class Course(BaseModel):
@@ -321,7 +198,7 @@ class Course(BaseModel):
 
     code: str
     credits: int
-    requires: Expression
+    requires: Expr
 
 
 class CourseRules(BaseModel):
@@ -330,3 +207,13 @@ class CourseRules(BaseModel):
     """
 
     courses: dict[str, Course]
+
+
+from . import diagnostic
+
+MinCredits.update_forward_refs()
+ReqLevel.update_forward_refs()
+ReqSchool.update_forward_refs()
+ReqProgram.update_forward_refs()
+ReqCareer.update_forward_refs()
+CourseRequirement.update_forward_refs()
