@@ -12,5 +12,8 @@ RUN if [ "${NODE_VERSION}" != "none" ]; then su vscode -c "umask 0002 && . /usr/
 
 # [Optional] Uncomment this section to install additional OS packages.
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install --no-install-recommends httpie postgresql-client
+    && apt-get -y install --no-install-recommends postgresql-client watchman
 
+# Install HTTPie via pip
+RUN python -m pip install --upgrade pip wheel
+RUN python -m pip install httpie

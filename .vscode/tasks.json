@@ -17,6 +17,29 @@
             }
         },
         {
+            "label": "Generate client",
+            "detail": "generate client using typescript-openapi-generator",
+            "type": "shell",
+            "command": "just generate-client-watch",
+            "isBackground": true,
+            "problemMatcher": [
+                {
+                    "pattern": [{
+                        "regexp": ".",
+                        "file": 1,
+                        "location": 2,
+                        "message": 3
+                    }],
+                    "background": {
+                        "activeOnStart": true,
+                        "beginsPattern": "Back-end started",
+                        "endsPattern": "."
+                    }
+                },
+
+            ],
+        },
+        {
             "label": "Install deps (back)",
             "detail": "install dependencies using poetry",
             "type": "shell",
