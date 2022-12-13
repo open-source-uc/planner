@@ -1,17 +1,21 @@
 import traceback
 
-from ..validate.logic import Const, And, Or
-from ..validate.models import (
+from ..validate.logic import (
+    Const,
+    And,
+    Or,
     Expr,
-    Course,
-    CourseRules,
     Level,
     MinCredits,
     ReqCareer,
     ReqLevel,
     ReqProgram,
     ReqSchool,
-    CourseRequirement,
+)
+from ..validate.validate import (
+    Course,
+    CourseRules,
+    ReqCourse,
 )
 import requests
 import pydantic
@@ -169,7 +173,7 @@ class BcParser:
             self.pop()
             self.ensure(self.pop(2) == "c)", "expected (c)")
             co = True
-        return CourseRequirement(code=code, coreq=co)
+        return ReqCourse(code=code, coreq=co)
 
     def parse_unit(self) -> Expr:
         self.trim()

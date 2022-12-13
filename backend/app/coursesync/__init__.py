@@ -6,7 +6,8 @@ Currently using an unofficial source until we get better API access.
 from prisma import Base64
 from .bcscrape import fetch_and_translate
 from prisma.models import CourseRules as DbCourseRules
-from ..validate.models import CourseRules
+from ..validate.validate import CourseRules
+from ..validate.simplify import simplify
 import bz2
 
 _universal_rules_cache = None
@@ -16,24 +17,22 @@ async def universal_course_rules() -> CourseRules:
     global _universal_rules_cache
     if _universal_rules_cache is not None:
         return _universal_rules_cache
-    rules = await DbCourseRules.prisma().find_unique(where={"id": "universal"})
-    if rules is None:
-        rules = await run_course_sync()
+    print("loading ruledata...")
+    ruledata = await DbCourseRules.prisma().find_unique(where={"id": "universal"})
+    if ruledata is None:
+        ruledata = await run_course_sync()
     else:
-        rules = rules.rules.decode()
-    rules = CourseRules.parse_raw(bz2.decompress(rules))
+        ruledata = ruledata.rules.decode()
+    rules = CourseRules.parse_raw(bz2.decompress(ruledata))
     _universal_rules_cache = rules
+    print(f"  loaded {len(ruledata)} bytes of compressed course rules from database")
     return rules
 
 
 def postprocess_courses(rules: CourseRules):
     print("  postprocessing courses...")
-    for code, course in rules.courses.items():
-        if code == "MAT1203":
-            print(f"before simplify: {course.requires}")
-        course.requires = course.requires.simplify()
-        if code == "MAT1203":
-            print(f"after simplify: {course.requires}")
+    for _code, course in rules.courses.items():
+        course.requires = simplify(course.requires)
 
 
 async def run_course_sync():

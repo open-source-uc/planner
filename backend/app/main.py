@@ -1,4 +1,4 @@
-from .validate.diagnostic import ValidatablePlan
+from .validate.validate import ValidatablePlan
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from .database import prisma
@@ -69,6 +69,5 @@ async def course_sync():
 @app.post("/validate")
 async def validate_plan(plan: ValidatablePlan):
     rules = await universal_course_rules()
-    validation_ctx = plan.make_live(rules)
-    diags = validation_ctx.validate()
-    return {"valid": len(diags) == 0, "diagnostic": diags}
+    diag = plan.diagnose(rules)
+    return {"valid": len(diag) == 0, "diagnostic": diag}
