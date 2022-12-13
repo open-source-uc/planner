@@ -12,5 +12,3 @@ Esto se puede hacer corriendo el siguiente comando *dentro del container* (esto 
 Notar que el servidor mock CAS es *muy básico*.
 Por ejemplo, introducir un usuario inexistente produce una excepción en el servidor de mock CAS,
 cortando la conexión al backend, produciendo un error 502.
-
-TODO: Automatizar el servidor mock de CAS. Requiere instalar `cas-server-mock`, pero ojala hacerlo sin agregarlo a `package.json`.
