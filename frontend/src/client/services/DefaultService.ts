@@ -110,7 +110,49 @@ export class DefaultService {
     public static courseSync(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/sync',
+            url: '/courses/sync',
+        });
+    }
+
+    /**
+     * Search Courses
+     * @param text
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static searchCourses(
+        text: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/courses/search',
+            query: {
+                'text': text,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Get Course Details
+     * @param code
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static getCourseDetails(
+        code: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/courses',
+            query: {
+                'code': code,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
         });
     }
 
