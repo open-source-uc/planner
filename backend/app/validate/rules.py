@@ -18,19 +18,20 @@ def clear_course_rules_cache():
 
 
 async def course_rules() -> CourseRules:
-    if _course_rules_cache is not None:
-        return _course_rules_cache
+    global _course_rules_cache
+    if _course_rules_cache is None:
+        # Derive course rules from courses in database
+        print("building course rules from database...")
+        courses = {}
+        for course in await DbCourse.prisma().find_many():
+            # Parse and validate dep json
+            deps = pydantic.parse_raw_as(Expr, course.deps)
+            deps = simplify(deps)
+            # Create course object
+            courses[course.code] = Course(
+                code=course.code, credits=course.credits, requires=deps
+            )
+        print(f"  processed {len(courses)} courses")
+        _course_rules_cache = CourseRules(courses=courses)
 
-    # Derive course rules from courses in database
-    print("building course rules from database...")
-    courses = {}
-    for course in await DbCourse.prisma().find_many():
-        # Parse and validate dep json
-        deps = pydantic.parse_raw_as(Expr, course.deps)
-        deps = simplify(deps)
-        # Create course object
-        courses[course.code] = Course(
-            code=course.code, credits=course.credits, requires=deps
-        )
-    print(f"  processed {len(courses)} courses")
-    return CourseRules(courses=courses)
+    return _course_rules_cache
