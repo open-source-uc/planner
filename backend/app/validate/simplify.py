@@ -30,7 +30,10 @@ def simplify(expr: Expr) -> Expr:
         for method in simplification_methods:
             if not isinstance(expr, (And, Or)):
                 break
+            prev = expr
             expr = method(expr)
+            if prev is not expr:
+                print(f"simplified from {prev} to {expr}")
         # Finish simplifying if no progress is made
         if expr is previous:
             break
@@ -121,10 +124,12 @@ def assoc(expr: Operator) -> Expr:
 def anihil_rule(
     anihilate: list[bool], op: Operator, new: list[Expr], child: Expr
 ) -> bool:
-    if anihilate[0] or isinstance(child, Const) and child.value != op.neutral:
+    if not anihilate[0] and isinstance(child, Const) and child.value != op.neutral:
         # This constant value destroys the entire operator clause
         new.clear()
+        new.append(Const(value=not op.neutral))
         anihilate[0] = True
+    if anihilate[0]:
         return True
     return False
 
