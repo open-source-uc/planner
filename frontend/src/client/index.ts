@@ -10,6 +10,7 @@ export type { HTTPValidationError } from './models/HTTPValidationError';
 export { Level } from './models/Level';
 export type { PostCreateInput } from './models/PostCreateInput';
 export type { ValidatablePlan } from './models/ValidatablePlan';
+export type { ValidateResponse } from './models/ValidateResponse';
 export type { ValidationError } from './models/ValidationError';
 
 export { DefaultService } from './services/DefaultService';
