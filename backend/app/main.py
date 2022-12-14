@@ -1,3 +1,4 @@
+from .validate.validate import ValidatablePlan
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
@@ -5,6 +6,7 @@ from .database import prisma
 from prisma.models import Post
 from prisma.types import PostCreateInput
 from .auth import require_authentication, login_cas, UserData
+from .coursesync import run_course_sync, universal_course_rules
 from typing import List, Optional
 
 
@@ -69,3 +71,20 @@ async def authenticate(next: Optional[str] = None, ticket: Optional[str] = None)
 @app.get("/auth/check")
 async def check_auth(user_data: UserData = Depends(require_authentication)):
     return {"message": "Authenticated"}
+
+
+@app.post("/validate/sync")
+# TODO: Require admin permissions for this endpoint.
+async def course_sync():
+    await run_course_sync()
+    rules = await universal_course_rules()
+    return {"message": f"Synchronized {len(rules.courses)} courses"}
+
+
+# RESTfully we would use the GET method, but javascript can't send a body in a GET
+# request.
+@app.post("/validate")
+async def validate_plan(plan: ValidatablePlan):
+    rules = await universal_course_rules()
+    diag = plan.diagnose(rules)
+    return {"valid": len(diag) == 0, "diagnostic": diag}
