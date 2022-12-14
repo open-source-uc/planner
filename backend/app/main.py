@@ -6,7 +6,8 @@ from .database import prisma
 from prisma.models import Post
 from prisma.types import PostCreateInput
 from .auth import require_authentication, login_cas, UserData
-from .coursesync import run_course_sync, universal_course_rules
+from .coursesync import run_course_sync
+from .validate.rules import clear_course_rules_cache, course_rules
 from typing import List, Optional
 
 
@@ -33,6 +34,8 @@ app.add_middleware(
 @app.on_event("startup")  # type: ignore
 async def startup():
     await prisma.connect()
+    # Prime course rule cache
+    await course_rules()
 
 
 @app.on_event("shutdown")  # type: ignore
@@ -73,18 +76,26 @@ async def check_auth(user_data: UserData = Depends(require_authentication)):
     return {"message": "Authenticated"}
 
 
-@app.post("/validate/sync")
+@app.post("/sync")
 # TODO: Require admin permissions for this endpoint.
 async def course_sync():
     await run_course_sync()
-    rules = await universal_course_rules()
-    return {"message": f"Synchronized {len(rules.courses)} courses"}
+    return {
+        "message": "Course database updated",
+    }
 
 
-# RESTfully we would use the GET method, but javascript can't send a body in a GET
-# request.
+@app.post("/validate/sync")
+async def validate_sync():
+    clear_course_rules_cache()
+    rules = await course_rules()
+    return {
+        "message": f"Recalculated {len(rules.courses)} course rules",
+    }
+
+
 @app.post("/validate")
 async def validate_plan(plan: ValidatablePlan):
-    rules = await universal_course_rules()
+    rules = await course_rules()
     diag = plan.diagnose(rules)
     return {"valid": len(diag) == 0, "diagnostic": diag}

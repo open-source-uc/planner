@@ -18,12 +18,13 @@ model Post {
   desc       String?
 }
 
-model CourseRules {
-  id    String @id
-  // Stored as a gzipped JSON object
-  // The reasoning behind this is that this value is rarely modified
-  // Therefore, it's best to load it once at startup/update and keep it in memory
-  // While stored in the database, it takes a difficult-to-work-with but very
-  // small representation
-  rules Bytes
+model Course {
+  code     String  @id
+  name     String
+  credits  Int
+  deps     Json
+  program  String
+  school   String
+  area     String?
+  category String?
 }

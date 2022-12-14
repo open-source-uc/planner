@@ -110,6 +110,18 @@ export class DefaultService {
     public static courseSync(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
+            url: '/sync',
+        });
+    }
+
+    /**
+     * Validate Sync
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static validateSync(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
             url: '/validate/sync',
         });
     }

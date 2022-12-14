@@ -1,5 +1,7 @@
 import traceback
 
+
+from ..validate.simplify import simplify
 from ..validate.logic import (
     Const,
     And,
@@ -12,11 +14,10 @@ from ..validate.logic import (
     ReqProgram,
     ReqSchool,
 )
-from ..validate.validate import (
-    Course,
-    CourseRules,
-    ReqCourse,
-)
+from ..validate.validate import ReqCourse
+from prisma.models import Course as DbCourse
+from prisma.types import CourseCreateWithoutRelationsInput
+from prisma import Json
 import requests
 import pydantic
 from pydantic import BaseModel
@@ -256,7 +257,7 @@ def parse_deps(c: BcCourse) -> Expr:
     return deps
 
 
-def fetch_and_translate() -> CourseRules:
+async def fetch_to_database():
     # Fetch json blob from an unofficial source
     dl_url = (
         "https://github.com/negamartin/buscacursos-dl/releases/download"
@@ -273,15 +274,30 @@ def fetch_and_translate() -> CourseRules:
     data = pydantic.parse_raw_as(BcData, resp.text)
     # Extract latest semester
     _semester, data = max(data.items())
-    # Convert to a cleaner format
+    # Process courses to place into database
     print("  processing courses...")
-    courses = {}
+    db_input: list[CourseCreateWithoutRelationsInput] = []
     for code, c in data.items():
         try:
-            req = parse_deps(c)
-            course = Course(code=code, credits=c.credits, requires=req)
-            courses[code] = course
+            deps = simplify(parse_deps(c))
+            db_input.append(
+                {
+                    "code": code,
+                    "name": c.name,
+                    "credits": c.credits,
+                    "deps": Json(deps.json()),
+                    "program": c.program,
+                    "school": c.school,
+                    "area": None if c.area == "" else c.area,
+                    "category": None if c.category == "" else c.category,
+                }
+            )
         except Exception:
             print(f"failed to process course {code}:")
             print(traceback.format_exc())
-    return CourseRules(courses=courses)
+    # Remove previous course data from database
+    print("  clearing previous courses...")
+    await DbCourse.prisma().delete_many()
+    # Put courses in database
+    print("  storing courses in db...")
+    await DbCourse.prisma().create_many(data=db_input)
