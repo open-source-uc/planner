@@ -1,8 +1,8 @@
 import traceback
 
 
-from ..validate.simplify import simplify
-from ..validate.logic import (
+from ..plan.simplify import simplify
+from ..plan.logic import (
     Const,
     And,
     Or,
@@ -14,7 +14,7 @@ from ..validate.logic import (
     ReqProgram,
     ReqSchool,
 )
-from ..validate.validate import ReqCourse
+from ..plan.validate import ReqCourse
 from prisma.models import Course as DbCourse
 from prisma.types import CourseCreateWithoutRelationsInput
 from prisma import Json
