@@ -107,7 +107,7 @@ async def get_course_details(code: str):
     return course
 
 
-@app.post("/validate/rebuild")
+@app.post("/plan/rebuild")
 async def rebuild_validation_rules():
     clear_course_rules_cache()
     rules = await course_rules()
@@ -116,7 +116,7 @@ async def rebuild_validation_rules():
     }
 
 
-@app.post("/validate")
+@app.post("/plan/validate")
 async def validate_plan(plan: ValidatablePlan):
     rules = await course_rules()
     diag = plan.diagnose(rules)
