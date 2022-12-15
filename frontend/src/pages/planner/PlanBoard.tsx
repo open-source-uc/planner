@@ -1,5 +1,11 @@
 
-const PlannerStudio = ({ plan, onPlanChange }: { plan: string[][], onPlanChange: (plan: string[][]) => void }): JSX.Element => {
+/**
+ * The main drag-n-drop planner interface.
+ * Displays several semesters, as well as several courses per semester.
+ *
+ * TODO: Reemplazar este mockup temporal por algo de verdad.
+ */
+const PlanBoard = ({ plan, onPlanChange }: { plan: string[][], onPlanChange: (plan: string[][]) => void }): JSX.Element => {
   function addCourse (semIdx: number): void {
     const courseCode = prompt('Course code?')
     if (courseCode == null) return
@@ -53,4 +59,4 @@ const PlannerStudio = ({ plan, onPlanChange }: { plan: string[][], onPlanChange:
   )
 }
 
-export default PlannerStudio
+export default PlanBoard

@@ -35,6 +35,34 @@ class CourseRules(BaseModel):
     courses: dict[str, Course]
 
 
+class ValidatablePlan(BaseModel):
+    """
+    Raw plan submitted by a user.
+    Also contains context about the user.
+    `ValidatablePlan` should represent any user & plan configuration.
+    """
+
+    # Classes per semester.
+    classes: list[list[str]]
+    # The first semester to validate.
+    # Semester before this semester are considered approved.
+    next_semester: int
+    # Academic level of the student
+    level: Optional[Level] = None
+    # Academic school (facultad) of the student
+    school: Optional[str] = None
+    # Academic program of the student (magisteres, doctorados, etc)
+    program: Optional[str] = None
+    # Career of the student
+    career: Optional[str] = None
+
+    def make_live(self, rules: CourseRules) -> "PlanContext":
+        return PlanContext(rules, self)
+
+    def diagnose(self, rules: CourseRules) -> "ValidationResult":
+        return self.make_live(rules).validate()
+
+
 class Class:
     """
     An instance of a course, with a student and semester associated with it.
@@ -49,6 +77,10 @@ class Class:
 
 
 class Diagnostic(BaseModel):
+    """
+    A diagnostic message, that may be associated to a course that the user is taking.
+    """
+
     course_code: Optional[str]
     is_warning: bool
     message: str
@@ -63,6 +95,10 @@ class Diagnostic(BaseModel):
 
 
 class ValidationResult(BaseModel):
+    """
+    Simply a list of diagnostics, in the same order that is shown to the user.
+    """
+
     diagnostics: list[Diagnostic]
 
     def err(self, msg: str, code: Optional[str] = None):
@@ -73,7 +109,14 @@ class ValidationResult(BaseModel):
 
 
 class PlanContext:
-    rules: "CourseRules"
+    """
+    Basically a `ValidatablePlan` augmented with context that the `CourseRules` provide,
+    and with some additional preprocessing to make validation convenient.
+    For example, `PlanContext` has a dictionary from course code to
+    semester-in-which-the-course-is-taken, a dict that is useful when validating.
+    """
+
+    rules: CourseRules
     # A dictionary of classes and their respective semesters
     classes: dict[str, Class]
     # A list of accumulated total approved credits per semester
@@ -134,28 +177,6 @@ class PlanContext:
             missing = simplify(strip_satisfied(self, cl, expr, fixed_nodes=tuple()))
         # Show this expression
         return f"Requisitos faltantes: {missing}"
-
-
-class ValidatablePlan(BaseModel):
-    # Classes per semester.
-    classes: list[list[str]]
-    # The first semester to validate.
-    # Semester before this semester are considered approved.
-    next_semester: int
-    # Academic level of the student
-    level: Optional[Level] = None
-    # Academic school (facultad) of the student
-    school: Optional[str] = None
-    # Academic program of the student (magisteres, doctorados, etc)
-    program: Optional[str] = None
-    # Career of the student
-    career: Optional[str] = None
-
-    def make_live(self, rules: CourseRules) -> PlanContext:
-        return PlanContext(rules, self)
-
-    def diagnose(self, rules: CourseRules) -> ValidationResult:
-        return self.make_live(rules).validate()
 
 
 def is_satisfied(ctx: PlanContext, cl: Class, expr: Expr) -> bool:

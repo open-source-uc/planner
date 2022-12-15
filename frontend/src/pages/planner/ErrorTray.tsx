@@ -2,8 +2,11 @@
 import errorIcon from '../assets/error.svg'
 import warningIcon from '../assets/warning.svg'
 import okIcon from '../assets/ok.svg'
-import { Diagnostic } from '../client'
+import { Diagnostic } from '../../client'
 
+/**
+ * This is what is displayed when there are no errors or warnings.
+ */
 const NoMessages = (): JSX.Element => {
   return (<div className="flex flex-col items-center">
     <img className="w-10 h-10" src={okIcon} alt="No hay errores" />
@@ -11,6 +14,9 @@ const NoMessages = (): JSX.Element => {
   </div>)
 }
 
+/**
+ * A single error/warning message.
+ */
 const Message = (diag: Diagnostic): JSX.Element => {
   const w = diag.is_warning
   const coursePrefix = diag.course_code === undefined ? '' : `${diag.course_code}: `
@@ -24,6 +30,9 @@ const Message = (diag: Diagnostic): JSX.Element => {
   </div>)
 }
 
+/**
+ * The error tray shows errors and warnings about the current plan that come from the validation backend.
+ */
 const ErrorTray = ({ diagnostics }: { diagnostics: Diagnostic[] }): JSX.Element => {
   const messageList: JSX.Element[] = diagnostics.map(diag => Message(diag))
   return (<div className="w-80 h-full overflow-hidden p-4 flex flex-col gap-4 border border-black border-dashed">

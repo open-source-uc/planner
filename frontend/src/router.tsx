@@ -1,5 +1,5 @@
 import Home from './pages/Home'
-import Planner from './pages/Planner'
+import Planner from './pages/planner/Planner'
 import Layout from './layout/Layout'
 import Logout from './pages/Logout'
 
