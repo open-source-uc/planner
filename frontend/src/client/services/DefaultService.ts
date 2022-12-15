@@ -3,7 +3,7 @@
 /* eslint-disable */
 import type { PostCreateInput } from '../models/PostCreateInput';
 import type { ValidatablePlan } from '../models/ValidatablePlan';
-import type { ValidateResponse } from '../models/ValidateResponse';
+import type { ValidationResult } from '../models/ValidationResult';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -172,12 +172,12 @@ export class DefaultService {
     /**
      * Validate Plan
      * @param requestBody
-     * @returns ValidateResponse Successful Response
+     * @returns ValidationResult Successful Response
      * @throws ApiError
      */
     public static validatePlan(
         requestBody: ValidatablePlan,
-    ): CancelablePromise<ValidateResponse> {
+    ): CancelablePromise<ValidationResult> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/validate',

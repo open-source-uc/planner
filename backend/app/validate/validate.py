@@ -48,6 +48,30 @@ class Class:
         self.semester = semester
 
 
+class Diagnostic(BaseModel):
+    course_code: Optional[str]
+    is_warning: bool
+    message: str
+
+    @staticmethod
+    def err(msg: str, code: Optional[str] = None):
+        return Diagnostic(course_code=code, is_warning=False, message=msg)
+
+    @staticmethod
+    def warn(msg: str, code: Optional[str] = None):
+        return Diagnostic(course_code=code, is_warning=True, message=msg)
+
+
+class ValidationResult(BaseModel):
+    diagnostics: list[Diagnostic]
+
+    def err(self, msg: str, code: Optional[str] = None):
+        self.diagnostics.append(Diagnostic.err(msg, code))
+
+    def warn(self, msg: str, code: Optional[str] = None):
+        self.diagnostics.append(Diagnostic.warn(msg, code))
+
+
 class PlanContext:
     rules: "CourseRules"
     # A dictionary of classes and their respective semesters
@@ -81,19 +105,19 @@ class PlanContext:
         self.approved_credits = acc_credits
         self.plan = plan
 
-    def validate(self) -> dict[str, str]:
-        diags: dict[str, str] = {}
+    def validate(self) -> ValidationResult:
+        result = ValidationResult(diagnostics=[])
         for sem in range(self.plan.next_semester, len(self.plan.classes)):
             for code in self.plan.classes[sem]:
                 if code not in self.rules.courses:
-                    diags[code] = "Curso desconocido"
+                    result.err("Curso desconocido", code)
                     continue
                 course = self.rules.courses[code]
                 cl = self.classes[code]
-                diag = self.diagnose(cl, course.requires)
-                if diag is not None:
-                    diags[code] = diag
-        return diags
+                err = self.diagnose(cl, course.requires)
+                if err is not None:
+                    result.err(err, code)
+        return result
 
     def diagnose(self, cl: Class, expr: "Expr") -> Optional[str]:
         if is_satisfied(self, cl, expr):
@@ -130,11 +154,14 @@ class ValidatablePlan(BaseModel):
     def make_live(self, rules: CourseRules) -> PlanContext:
         return PlanContext(rules, self)
 
-    def diagnose(self, rules: CourseRules) -> dict[str, str]:
+    def diagnose(self, rules: CourseRules) -> ValidationResult:
         return self.make_live(rules).validate()
 
 
 def is_satisfied(ctx: PlanContext, cl: Class, expr: Expr) -> bool:
+    """
+    Core logic to check whether an expression is satisfied by a student and their plan.
+    """
     if isinstance(expr, Operator):
         ok = expr.neutral
         for child in expr.children:

@@ -1,5 +1,4 @@
-from pydantic import BaseModel
-from .validate.validate import ValidatablePlan
+from .validate.validate import ValidatablePlan, ValidationResult
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
@@ -117,13 +116,7 @@ async def rebuild_validation_rules():
     }
 
 
-class ValidateResponse(BaseModel):
-    valid: bool
-    diagnostic: dict[str, str]
-
-
-@app.post("/validate", response_model=ValidateResponse)
-async def validate_plan(plan: ValidatablePlan) -> ValidateResponse:
+@app.post("/validate", response_model=ValidationResult)
+async def validate_plan(plan: ValidatablePlan):
     rules = await course_rules()
-    diag = plan.diagnose(rules)
-    return ValidateResponse(valid=len(diag) == 0, diagnostic=diag)
+    return plan.diagnose(rules)
