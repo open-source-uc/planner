@@ -121,3 +121,11 @@ async def validate_plan(plan: ValidatablePlan):
     rules = await course_rules()
     diag = plan.diagnose(rules)
     return {"valid": len(diag) == 0, "diagnostic": diag}
+
+
+@app.post("/plan/generate")
+async def generate_plan():
+    # plan = await create_default_plan()
+    # TODO: implement create_default_plan() function
+    # TODO: store created plans
+    return {"message": "Created"}
