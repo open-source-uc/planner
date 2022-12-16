@@ -1,4 +1,4 @@
-from .validate.validate import ValidatablePlan, ValidationResult
+from .courses.validate import ValidatablePlan, ValidationResult
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
@@ -7,7 +7,7 @@ from prisma.models import Post, Course as DbCourse
 from prisma.types import PostCreateInput
 from .auth import require_authentication, login_cas, UserData
 from .coursesync import run_course_sync
-from .validate.rules import clear_course_rules_cache, course_rules
+from .courses.rules import clear_course_rules_cache, course_rules
 from typing import List, Optional
 
 
