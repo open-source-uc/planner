@@ -33,7 +33,8 @@ class CurriculumRecommender:
     async def load_curriculum(cls):
         # by default: 'Malla del major Ingeniería de Software'
         # TODO: load curriculums from an outside API (we hardcode it in the meantime)
-        # TODO: implement solution for pseudo-courses (e.g FIS1513/ICE1513. Also 'TEOLOGICO', 'OFG', etc.)
+        # TODO: implement solution for pseudo-courses
+        # (e.g FIS1513/ICE1513. Also 'TEOLOGICO', 'OFG', etc.)
         cls.curriculum = [
             ["MAT1610", "QIM100A", "MAT1203", "ING1004", "FIL2001"],
             ["MAT1620", "FIS1513", "FIS0151", "ICS1513", "IIC1103"],
