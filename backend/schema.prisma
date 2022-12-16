@@ -4,7 +4,6 @@ generator client {
   recursive_type_depth = 5
 }
 
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -17,4 +16,15 @@ model Post {
   title      String
   published  Boolean
   desc       String?
+}
+
+model Course {
+  code     String  @id
+  name     String
+  credits  Int
+  deps     Json
+  program  String
+  school   String
+  area     String?
+  category String?
 }

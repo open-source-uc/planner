@@ -2,6 +2,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { PostCreateInput } from '../models/PostCreateInput';
+import type { ValidatablePlan } from '../models/ValidatablePlan';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -98,6 +99,92 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/auth/check',
+        });
+    }
+
+    /**
+     * Course Sync
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static courseSync(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/courses/sync',
+        });
+    }
+
+    /**
+     * Search Courses
+     * @param text
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static searchCourses(
+        text: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/courses/search',
+            query: {
+                'text': text,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Get Course Details
+     * @param code
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static getCourseDetails(
+        code: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/courses',
+            query: {
+                'code': code,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Validate Sync
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static validateSync(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/validate/sync',
+        });
+    }
+
+    /**
+     * Validate Plan
+     * @param requestBody
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static validatePlan(
+        requestBody: ValidatablePlan,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/validate',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
         });
     }
 
