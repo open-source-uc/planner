@@ -19,36 +19,35 @@ async def validate_plan(plan: ValidatablePlan):
     return {"valid": len(diag) == 0, "diagnostic": diag}
 
 
-# TODO: move to a CurriculumRecommendator class or something similar
-def get_recommended_curriculum():
-    # by default: 'Malla del major Ingeniería de Software'
-    # TODO: implement solution for pseudo-courses (e.g FIS1513/ICE1513. Also 'TEOLOGICO', 'OFG', etc.)
-    # default_curriculum = [
-    #     ["MAT1610", "QIM100A", "MAT1203", "ING1004", "FIL2001"],
-    #     ["MAT1620", "FIS1513", "FIS0151", "ICS1513", "IIC1103", "TEOLOGICO"],
-    #     ["MAT1630", "FIS1523", "FIS0152", "MAT1640", "EXPLORATORIO", "FG-SUSTE"],
-    #     ["EYP1113", "FIS1533", "FIS0153", "IIC2233", "OPT-FUND", "FG-HUMAN"],
-    #     ["IIC2143", "BIOLOGICO", "ING2030", "IIC1253", "FG-BIEN"],
-    #     ["IIC2113", "IIC2173", "IIC2413", "MINOR", "MINOR"],
-    #     ["IIC2133", "IIC2513", "IIC2713", "MINOR", "FG-SOCI"],
-    #     ["IIC2154", "MINOR", "MINOR", "FG-ARTE", "LIBRE"],
-    # ]
-    default_curriculum = [
-        ["MAT1610", "QIM100A", "MAT1203", "ING1004", "FIL2001"],
-        ["MAT1620", "FIS1513", "FIS0151", "ICS1513", "IIC1103"],
-        ["MAT1630", "FIS1523", "FIS0152", "MAT1640"],
-        ["EYP1113", "FIS1533", "FIS0153", "IIC2233"],
-        ["IIC2143", "ING2030", "IIC1253"],
-        ["IIC2113", "IIC2173", "IIC2413"],
-        ["IIC2133", "IIC2513", "IIC2713"],
-        ["IIC2154"],
-    ]
+class CurriculumRecommender:
+    """
+    Encapsulates all the recommendation logic.
+    Scalable and extensible for future curriculum recommendation strategies.
+    """
 
-    return ValidatablePlan(classes=default_curriculum, next_semester=-1)
+    CREDITS_PER_SEMESTER = 50
 
+    curriculum: list[list[str]] = []
 
-# TODO: move to a CurriculumRecommendator class or something similar
-CREDITS_PER_SEMESTER = 50
+    @classmethod
+    async def load_curriculum(cls):
+        # by default: 'Malla del major Ingeniería de Software'
+        # TODO: load curriculums from an outside API (we hardcode it in the meantime)
+        # TODO: implement solution for pseudo-courses (e.g FIS1513/ICE1513. Also 'TEOLOGICO', 'OFG', etc.)
+        cls.curriculum = [
+            ["MAT1610", "QIM100A", "MAT1203", "ING1004", "FIL2001"],
+            ["MAT1620", "FIS1513", "FIS0151", "ICS1513", "IIC1103"],
+            ["MAT1630", "FIS1523", "FIS0152", "MAT1640"],
+            ["EYP1113", "FIS1533", "FIS0153", "IIC2233"],
+            ["IIC2143", "ING2030", "IIC1253"],
+            ["IIC2113", "IIC2173", "IIC2413"],
+            ["IIC2133", "IIC2513", "IIC2713"],
+            ["IIC2154"],
+        ]
+
+    @classmethod
+    def recommend(cls):
+        return ValidatablePlan(classes=cls.curriculum, next_semester=0)
 
 
 def _compute_courses_to_pass(
@@ -74,25 +73,7 @@ def _make_plan(classes: list[list[str]], passed: ValidatablePlan):
 
 
 async def generate_default_plan(passed: ValidatablePlan):
-    # TODO: remove these comments after discussing the best algorithm
-    # ALGORITHM N°1 --> funciona bien pero no es óptimo
-    # Es muy rapido pero no valida ni rellena hasta los 50 creditos
-    # curriculum = get_recommended_curriculum()
-    # semesters = passed.classes
-    # courses_to_pass_por_semestre = []
-    # for i in range(len(curriculum.classes)):
-    #     semestre = []
-    #     for j in range(len(curriculum.classes[i])):
-    #         curso_esta_aprobado = any(
-    #             curriculum.classes[i][j] in sem for sem in passed.classes
-    #         )
-    #         if not curso_esta_aprobado:
-    #             semestre.append(curriculum.classes[i][j])
-    #     courses_to_pass_por_semestre.append(semestre)
-    # semesters.extend(courses_to_pass_por_semestre)
-
-    # ALGORITHM N°2 --> funciona muy bien pero es lento porque valida cada semestre
-    curriculum = get_recommended_curriculum()
+    curriculum = CurriculumRecommender.recommend()
 
     semesters = passed.classes
 
@@ -107,7 +88,7 @@ async def generate_default_plan(passed: ValidatablePlan):
 
         next_course = courses_to_pass.pop()
 
-        if credits < CREDITS_PER_SEMESTER:
+        if credits < CurriculumRecommender.CREDITS_PER_SEMESTER:
             semesters[-1].append(next_course)
         else:
             # TODO: find a more direct way of validating semesters

@@ -9,6 +9,7 @@ from prisma.types import PostCreateInput
 from .auth import require_authentication, login_cas, UserData
 from .coursesync import run_course_sync
 from .plan.rules import clear_course_rules_cache, course_rules
+from .plan.generate import CurriculumRecommender as recommender
 from typing import List, Optional
 
 
@@ -37,6 +38,7 @@ async def startup():
     await prisma.connect()
     # Prime course rule cache
     await course_rules()
+    await recommender.load_curriculum()
 
 
 @app.on_event("shutdown")  # type: ignore
