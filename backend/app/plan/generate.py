@@ -7,12 +7,12 @@ from ..plan.rules import course_rules
 from .logic import Level
 
 
-# TODO: repeated function from main.py!
+# TODO(refactor): repeated function from main.py!
 async def get_course_details(code: str):
     return await DbCourse.prisma().find_unique(where={"code": code})
 
 
-# TODO: repeated function from main.py!
+# TODO(refactor): repeated function from main.py!
 async def validate_plan(plan: ValidatablePlan):
     rules = await course_rules()
     diag = plan.diagnose(rules)
