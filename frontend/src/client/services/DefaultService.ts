@@ -103,11 +103,11 @@ export class DefaultService {
     }
 
     /**
-     * Course Sync
+     * Sync Courses
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static courseSync(): CancelablePromise<any> {
+    public static syncCourses(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/courses/sync',
@@ -157,14 +157,14 @@ export class DefaultService {
     }
 
     /**
-     * Validate Sync
+     * Rebuild Validation Rules
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static validateSync(): CancelablePromise<any> {
+    public static rebuildValidationRules(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/validate/sync',
+            url: '/validate/rebuild',
         });
     }
 

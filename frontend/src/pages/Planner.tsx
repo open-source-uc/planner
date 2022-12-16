@@ -6,7 +6,7 @@ const Planner = (): JSX.Element => {
   return (
               <div>
               <h2>Planificador</h2>
-              <CurriculumTable courses={dummydata as Course[]}/>
+              <CurriculumTable coursesProp={dummydata as Course[]}/>
               </div>
   )
 }

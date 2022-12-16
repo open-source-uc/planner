@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
-import { useDrag } from 'react-dnd'
+import { useDrag, useDrop } from 'react-dnd'
 import type { Course } from '../lib/types'
-const CourseCard = (props: { course: Course }): JSX.Element => {
+const CourseCard = (props: { course: Course, handleMove: Function }): JSX.Element => {
   const [course] = useState(props.course)
   const ref = useRef(null)
 
@@ -19,11 +19,18 @@ const CourseCard = (props: { course: Course }): JSX.Element => {
       }
     })
   )
+  const [, drop] = useDrop(() => ({
+    accept: 'card',
+    drop (course: Course) {
+      props.handleMove(course)
+    }
+  }))
 
-  drag(ref)
+  drag(drop(ref))
   return collected.isDragging
     ? (
-    <div ref={dragPreview} />
+    <div ref={dragPreview}>
+    </div>
       )
     : (
     <div ref={ref} className={'bg-plan-comun card'} >
