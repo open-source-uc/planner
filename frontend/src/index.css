@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .card {
+    background-color: #D8D8D8;
+    border-radius: theme('borderRadius.lg');
+    padding: theme('spacing.1');
+    box-shadow: theme('boxShadow.xl');
+  }
+  /* ... */
+}
