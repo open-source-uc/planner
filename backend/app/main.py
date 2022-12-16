@@ -127,17 +127,8 @@ async def validate_plan(plan: ValidatablePlan):
 
 
 @app.post("/plan/generate")
-async def generate_plan():
-    passed = [
-        ["MAT1610", "QIM100A", "MAT1203", "ING1004"],
-        ["MAT1620", "FIS1513", "FIS0151", "ICS1513", "IIC1103"],
-        ["MAT1630", "MAT1640", "IIC2133"],
-    ]
-    plan_con_ramos_aprobados = ValidatablePlan(
-        classes=passed, next_semester=len(passed)
-    )
-
-    plan = await generate_default_plan(plan_con_ramos_aprobados)
+async def generate_plan(passed: ValidatablePlan):
+    plan = await generate_default_plan(passed)
 
     # for debugging purposes:
     # validation = await validate_plan(plan)
