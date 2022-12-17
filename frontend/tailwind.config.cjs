@@ -7,6 +7,7 @@ module.exports = {
     extend: {
       colors: {
         'plan-comun': '#93F6E8',
+        'place-holder': '#ebeba8',
         titulo: '#9966CC',
         major: '#B3A9E4',
         minor: '#13CDB2',

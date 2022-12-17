@@ -5,7 +5,7 @@ const CourseCard = (props: { course: Course, handleMove: Function }): JSX.Elemen
   const [course] = useState(props.course)
   const ref = useRef(null)
 
-  const [collected, drag, dragPreview] = useDrag(
+  const [collected, drag] = useDrag(
     () => ({
       type: 'card',
 
@@ -19,24 +19,46 @@ const CourseCard = (props: { course: Course, handleMove: Function }): JSX.Elemen
       }
     })
   )
-  const [, drop] = useDrop(() => ({
+  const [dropProps, drop] = useDrop(() => ({
     accept: 'card',
     drop (course: Course) {
       props.handleMove(course)
-    }
+    },
+    collect: monitor => ({
+      isOver: !!monitor.isOver(),
+      canDrop: !!monitor.canDrop(),
+      item: monitor.getItem()
+    })
   }))
-
   drag(drop(ref))
-  return collected.isDragging
-    ? (
-    <div ref={dragPreview}>
+  return (
+    <>
+    <div ref={ref} className={`px-2 ${!collected.isDragging ? 'pb-3' : ''}`}>
+      {dropProps.isOver
+        ? <div className={'bg-place-holder card'} />
+        : <>{!collected.isDragging && <div className={'bg-plan-comun card'}>
+        <div className='text-center'>{course.ramo.sigla}</div>
+      </div>}
+      </>}
     </div>
-      )
-    : (
-    <div ref={ref} className={'bg-plan-comun card'} >
-      <div className='text-center'>{course.ramo.sigla}</div>
+    {
+      dropProps.isOver && <div className={'px-2 pb-3'}>
+      <div className={'bg-plan-comun card'}>
+        <div className='text-center'>{course.ramo.sigla}</div>
+      </div>
     </div>
-      )
+    }
+    </>
+  )
 }
 
 export default CourseCard
+/*
+return (
+      <div ref={ref} className={'px-2 '}>
+        {dropProps.isOver && <div className={'bg-place-holder card mb-3'} />}
+         {!collected.isDragging && <div className={'bg-plan-comun card'}>
+          <div className='text-center'>{course.ramo.sigla}</div>
+          </div>}
+      </div>
+  ) */
