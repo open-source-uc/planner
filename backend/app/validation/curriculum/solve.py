@@ -106,6 +106,7 @@ class CurriculumSolver:
         self.next_id = 0
         self.source = self.add_node()
         self.sink = self.add_node()
+        self.course_nodes = {}
 
     def add_node(self) -> int:
         id = self.next_id

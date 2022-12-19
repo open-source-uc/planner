@@ -14,37 +14,8 @@ const Planner = (): JSX.Element => {
     const validate = async (): Promise<void> => {
       console.log('validating...')
       const response = await DefaultService.validatePlan({
-        plan: {
-          classes: plan,
-          next_semester: 1
-        },
-        curriculum: {
-          blocks: [
-            {
-              name: 'Formacion General',
-              children: [
-                {
-                  name: 'OFG',
-                  cap: 50,
-                  children: [
-                    {
-                      name: 'Deportivos de 5 creditos',
-                      cap: 10,
-                      children: ['!dpt5']
-                    },
-                    'LET0003',
-                    {
-                      name: 'Teologico',
-                      cap: 10,
-                      children: ['!ttf']
-                    },
-                    'FIL188'
-                  ]
-                }
-              ]
-            }
-          ]
-        }
+        classes: plan,
+        next_semester: 1
       })
       setValidationDiagnostics(response.diagnostics)
       console.log('validated')

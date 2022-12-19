@@ -38,7 +38,7 @@ async def course_info() -> dict[str, CourseInfo]:
         courses = {}
         for course in await Course.prisma().find_many():
             # Parse and validate dep json
-            deps = pydantic.parse_raw_as(Expr, course.deps)
+            deps = pydantic.parse_obj_as(Expr, course.deps)
             deps = simplify(deps)
             # Create course object
             courses[course.code] = CourseInfo(

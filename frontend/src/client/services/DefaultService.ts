@@ -1,8 +1,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { Body_validate_plan } from '../models/Body_validate_plan';
 import type { PostCreateInput } from '../models/PostCreateInput';
+import type { ValidatablePlan } from '../models/ValidatablePlan';
 import type { ValidationResult } from '../models/ValidationResult';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -176,7 +176,7 @@ export class DefaultService {
      * @throws ApiError
      */
     public static validatePlan(
-        requestBody: Body_validate_plan,
+        requestBody: ValidatablePlan,
     ): CancelablePromise<ValidationResult> {
         return __request(OpenAPI, {
             method: 'POST',

@@ -122,7 +122,7 @@ class Const(BaseExpr):
         return h.digest()
 
 
-class Level(Enum):
+class Level(int, Enum):
     """
     An academic level.
     """
