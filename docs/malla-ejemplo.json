@@ -1,5 +1,5 @@
 {
-    blocks = [
+    "blocks": [
         {
             "name": "Plan Comun",
             "children": [
@@ -87,17 +87,19 @@
                         },
                         "!ofg"
                     ]
-                }
+                },
                 "LET0003",
                 {
                     "name": "Teologico",
+                    "cap": 10,
                     "children": ["!ttf"]
                 },
                 "FIL188"
             ]
         },
         {
-            "name": "Titulo",
+            "name": "Titulo - Civil computacion",
+            "exclusive": false,
             "children": [
                 {
                     "name": "OPTI",
@@ -134,22 +136,59 @@
                     "cap": 10,
                     "children": ["IIC3242", "IIC3263", "IIC3284", "IIC3632", "IIC3810"]
                 }
-            ],
-            // TODO: Investigar como funciona esto para modelarlo
-            "exclusive": {
-                "required_exclusive": 130,
-                "filler": [
-                    "!opting",
-                    // TODO: Investigar que siglas son IPre
-                    {
-                        "name": "IPRE",
-                        "cap": 20,
-                        "children": ["..."]
-                    },
-                    // TODO: Investigar cuales son los "cursos realizados en intercambio académico oficial de la Universidad"
-                    "INTERCAMBIO..."
-                ]
-            }
+            ]
+        },
+        {
+            "name": "Titulo - Civil computacion (creditos minimos en titulo)",
+            "cap": 130,
+            "exclusive": true,
+            "children": [
+                {
+                    "name": "OPTI",
+                    "cap": 10,
+                    "children": ["ICS1113", "ICS113H"]
+                },
+                "IIC2213",
+                "IIC2223",
+                "IIC2283",
+                "IIC2523",
+                "IIC2513",
+                "IIC2613",
+                "IIC3113",
+                "IIC3253",
+                "IIC3533",
+                "IIC3964",
+                {
+                    "name": "Inteligencia de Maquina",
+                    "cap": 10,
+                    "children": ["IIC3633", "IIC3640", "IIC3692", "IIC3695", "IIC3697", "IIC3724"]
+                },
+                {
+                    "name": "Ingenieria de Software",
+                    "cap": 10,
+                    "children": ["IIC3143", "IIC3380", "IIC3745"]
+                },
+                {
+                    "name": "Manejo de Datos",
+                    "cap": 10,
+                    "children": ["IIC3413", "IIC3423", "IIC3432"]
+                },
+                {
+                    "name": "Teoria de la Computacion",
+                    "cap": 10,
+                    "children": ["IIC3242", "IIC3263", "IIC3284", "IIC3632", "IIC3810"]
+                },
+                // TODO: Investigar reglas concretas para optativos de ingenieria
+                "!opting",
+                // TODO: Investigar que siglas son IPre
+                {
+                    "name": "IPRE",
+                    "cap": 20,
+                    "children": ["..."]
+                },
+                // TODO: Investigar cuales son los "cursos realizados en intercambio académico oficial de la Universidad"
+                "INTERCAMBIO..."
+            ]
         },
         // TODO: No creo que esto vaya o si
         {
@@ -167,5 +206,6 @@
                 "ING2005"
             ]
         }
+        // TODO: Lo de avanzar maximo 40 creditos de titulo en la licenciatura tiene que ir modelado en otra parte
     ]
 }

@@ -1,4 +1,6 @@
-from .courses.validate import ValidatablePlan, ValidationResult
+from .validation.curriculum.tree import Curriculum
+from .validation.plan import ValidatablePlan, ValidationResult
+from .validation.diagnose import diagnose_plan
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
@@ -7,7 +9,7 @@ from prisma.models import Post, Course as DbCourse
 from prisma.types import PostCreateInput
 from .auth import require_authentication, login_cas, UserData
 from .coursesync import run_course_sync
-from .courses.rules import clear_course_rules_cache, course_rules
+from .validation.courseinfo import clear_course_info_cache, course_info
 from typing import List, Optional
 
 
@@ -34,8 +36,8 @@ app.add_middleware(
 @app.on_event("startup")  # type: ignore
 async def startup():
     await prisma.connect()
-    # Prime course rule cache
-    await course_rules()
+    # Prime course info cache
+    await course_info()
 
 
 @app.on_event("shutdown")  # type: ignore
@@ -109,14 +111,13 @@ async def get_course_details(code: str):
 
 @app.post("/validate/rebuild")
 async def rebuild_validation_rules():
-    clear_course_rules_cache()
-    rules = await course_rules()
+    clear_course_info_cache()
+    info = await course_info()
     return {
-        "message": f"Recalculated {len(rules.courses)} course rules",
+        "message": f"Recached {len(info)} courses",
     }
 
 
 @app.post("/validate", response_model=ValidationResult)
-async def validate_plan(plan: ValidatablePlan):
-    rules = await course_rules()
-    return plan.diagnose(rules)
+async def validate_plan(plan: ValidatablePlan, curriculum: Curriculum):
+    return await diagnose_plan(plan, curriculum)

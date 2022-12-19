@@ -6,6 +6,9 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
+export type { Body_validate_plan } from './models/Body_validate_plan';
+export type { Combine } from './models/Combine';
+export type { Curriculum } from './models/Curriculum';
 export type { Diagnostic } from './models/Diagnostic';
 export type { HTTPValidationError } from './models/HTTPValidationError';
 export { Level } from './models/Level';

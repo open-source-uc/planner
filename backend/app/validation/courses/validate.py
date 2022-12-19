@@ -1,9 +1,10 @@
+from ..plan import ValidatablePlan, ValidationResult
+from ..courseinfo import CourseInfo
 from .logic import (
     BaseOp,
     Const,
     ReqCourse,
     Expr,
-    Level,
     MinCredits,
     Operator,
     ReqCareer,
@@ -11,56 +12,8 @@ from .logic import (
     ReqProgram,
     ReqSchool,
 )
-from pydantic import BaseModel
 from typing import Optional, Type
 from .simplify import simplify
-
-
-class Course(BaseModel):
-    """
-    A single course, with an associated code.
-    This course is not "instantiated", it is an abstract course prototype.
-    """
-
-    code: str
-    credits: int
-    requires: Expr
-
-
-class CourseRules(BaseModel):
-    """
-    A collection of courses with their own requirements.
-    """
-
-    courses: dict[str, Course]
-
-
-class ValidatablePlan(BaseModel):
-    """
-    Raw plan submitted by a user.
-    Also contains context about the user.
-    `ValidatablePlan` should represent any user & plan configuration.
-    """
-
-    # Classes per semester.
-    classes: list[list[str]]
-    # The first semester to validate.
-    # Semester before this semester are considered approved.
-    next_semester: int
-    # Academic level of the student
-    level: Optional[Level] = None
-    # Academic school (facultad) of the student
-    school: Optional[str] = None
-    # Academic program of the student (magisteres, doctorados, etc)
-    program: Optional[str] = None
-    # Career of the student
-    career: Optional[str] = None
-
-    def make_live(self, rules: CourseRules) -> "PlanContext":
-        return PlanContext(rules, self)
-
-    def diagnose(self, rules: CourseRules) -> "ValidationResult":
-        return self.make_live(rules).validate()
 
 
 class Class:
@@ -76,38 +29,6 @@ class Class:
         self.semester = semester
 
 
-class Diagnostic(BaseModel):
-    """
-    A diagnostic message, that may be associated to a course that the user is taking.
-    """
-
-    course_code: Optional[str]
-    is_warning: bool
-    message: str
-
-    @staticmethod
-    def err(msg: str, code: Optional[str] = None):
-        return Diagnostic(course_code=code, is_warning=False, message=msg)
-
-    @staticmethod
-    def warn(msg: str, code: Optional[str] = None):
-        return Diagnostic(course_code=code, is_warning=True, message=msg)
-
-
-class ValidationResult(BaseModel):
-    """
-    Simply a list of diagnostics, in the same order that is shown to the user.
-    """
-
-    diagnostics: list[Diagnostic]
-
-    def err(self, msg: str, code: Optional[str] = None):
-        self.diagnostics.append(Diagnostic.err(msg, code))
-
-    def warn(self, msg: str, code: Optional[str] = None):
-        self.diagnostics.append(Diagnostic.warn(msg, code))
-
-
 class PlanContext:
     """
     Basically a `ValidatablePlan` augmented with context that the `CourseRules` provide,
@@ -116,16 +37,16 @@ class PlanContext:
     semester-in-which-the-course-is-taken, a dict that is useful when validating.
     """
 
-    rules: CourseRules
+    courseinfo: dict[str, CourseInfo]
     # A dictionary of classes and their respective semesters
     classes: dict[str, Class]
     # A list of accumulated total approved credits per semester
     # approved_credits[i] contains the amount of approved credits in the range [0, i)
     approved_credits: list[int]
     # Original validatable plan object.
-    plan: "ValidatablePlan"
+    plan: ValidatablePlan
 
-    def __init__(self, rules: "CourseRules", plan: "ValidatablePlan"):
+    def __init__(self, courseinfo: dict[str, CourseInfo], plan: ValidatablePlan):
         # Map from coursecode to class
         classes = {}
         # List of total approved credits per semester
@@ -140,27 +61,25 @@ class PlanContext:
                     classes[code] = Class(code, sem)
                 # Accumulate credits
                 # TODO: Do repeated courses count towards this credit count?
-                if code in rules.courses:
-                    creds += rules.courses[code].credits
+                if code in courseinfo:
+                    creds += courseinfo[code].credits
             acc_credits.append(creds)
-        self.rules = rules
+        self.courseinfo = courseinfo
         self.classes = classes
         self.approved_credits = acc_credits
         self.plan = plan
 
-    def validate(self) -> ValidationResult:
-        result = ValidationResult(diagnostics=[])
+    def validate(self, out: ValidationResult):
         for sem in range(self.plan.next_semester, len(self.plan.classes)):
             for code in self.plan.classes[sem]:
-                if code not in self.rules.courses:
-                    result.err("Curso desconocido", code)
+                if code not in self.courseinfo:
+                    out.err("Curso desconocido", code)
                     continue
-                course = self.rules.courses[code]
+                course = self.courseinfo[code]
                 cl = self.classes[code]
-                err = self.diagnose(cl, course.requires)
+                err = self.diagnose(cl, course.deps)
                 if err is not None:
-                    result.err(err, code)
-        return result
+                    out.err(err, code)
 
     def diagnose(self, cl: Class, expr: "Expr") -> Optional[str]:
         if is_satisfied(self, cl, expr):

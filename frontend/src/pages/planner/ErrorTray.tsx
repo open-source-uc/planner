@@ -1,7 +1,7 @@
 
-import errorIcon from '../assets/error.svg'
-import warningIcon from '../assets/warning.svg'
-import okIcon from '../assets/ok.svg'
+import errorIcon from '../../assets/error.svg'
+import warningIcon from '../../assets/warning.svg'
+import okIcon from '../../assets/ok.svg'
 import { Diagnostic } from '../../client'
 
 /**
@@ -19,14 +19,14 @@ const NoMessages = (): JSX.Element => {
  */
 const Message = (diag: Diagnostic): JSX.Element => {
   const w = diag.is_warning
-  const coursePrefix = diag.course_code === undefined ? '' : `${diag.course_code}: `
+  const coursePrefix = diag.course_code == null ? '' : `${diag.course_code}: `
   return (<div className={'flex flex-row items-center gap-4 ' + (w ? 'font-normal' : 'font-medium')}>
     <img
       className="w-12 h-12"
       src={w ? warningIcon : errorIcon}
       alt={w ? 'Warning' : 'Error'}
     />
-    <p className="text-left">{`${w ? 'Error' : 'Aviso'}: ${coursePrefix}${diag.message}`}</p>
+    <p className="text-left">{`${w ? 'Aviso' : 'Error'}: ${coursePrefix}${diag.message}`}</p>
   </div>)
 }
 

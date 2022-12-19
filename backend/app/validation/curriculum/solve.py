@@ -3,11 +3,12 @@ Fill the slots of a curriculum with courses, making sure that there is no overla
 within a block and respecting exclusivity rules.
 """
 
-from typing import Callable, Union
-from .network import Combine, Curriculum, Node
-from networkx import DiGraph
+from typing import Callable, Optional, Union
+
+from ..courseinfo import CourseInfo
+from .tree import Combine, Curriculum, Node
+from networkx.classes.digraph import DiGraph
 import networkx
-from prisma.models import Course as DbCourse
 from dataclasses import dataclass
 
 
@@ -16,9 +17,9 @@ class SolvedCombine:
     # Name of the block or subblock.
     name: str
     # Capacity of the block or subblock.
-    # By default, nodes (blocks or subblocks) have their capacity set as the sum of the capacities of their
-    # children, but capacity can also be set manually (eg. only 10 credits of
-    # 5-credit-DPT courses)
+    # By default, nodes (blocks or subblocks) have their capacity set as the sum of the
+    # capacities of their children, but capacity can also be set manually (eg. only 10
+    # credits of 5-credit-DPT courses)
     cap: int
     # How much capacity is satisfied.
     # If `flow == cap`, then the node is entirely satisfied.
@@ -36,6 +37,8 @@ class SolvedCourse:
     code: str
     # Source flow of the course (amount of credits).
     cap: int
+    # The one parent node that this course actually feeds.
+    parent: Optional[SolvedCombine]
 
     # Internal graph node id.
     node_id: int
@@ -79,24 +82,26 @@ class SolvedCurriculum:
 class CurriculumSolver:
     curriculum: Curriculum
     taken_courses: set[str]
-    coursedata: dict[str, DbCourse]
+    courseinfo: dict[str, CourseInfo]
     g: DiGraph
     source: int
     sink: int
     next_id: int
+    # Cache dictionary from course code to node.
+    course_nodes: dict[str, SolvedCourse]
 
     def __init__(
         self,
         curriculum: Curriculum,
-        coursedata: dict[str, DbCourse],
+        courseinfo: dict[str, CourseInfo],
         taken_courses: set[str],
     ):
         for code in taken_courses:
-            if code not in coursedata:
+            if code not in courseinfo:
                 raise Exception(f"Course {code} not in course database")
         self.curriculum = curriculum
         self.taken_courses = taken_courses
-        self.coursedata = coursedata
+        self.courseinfo = courseinfo
         self.g = DiGraph()
         self.next_id = 0
         self.source = self.add_node()
@@ -108,18 +113,16 @@ class CurriculumSolver:
         self.g.add_node(id)
         return id
 
-    def build_node(
-        self,
-        block_courses: dict[str, SolvedNode],
-        node: Node,
-    ) -> list[SolvedNode]:
+    def build_node(self, node: Node, exclusive: bool = True) -> list[SolvedNode]:
         if isinstance(node, Combine):
             # This node is a combination node
             id = self.add_node()
             total_cap = 0
+            if node.exclusive is not None:
+                exclusive = node.exclusive
             children: list[SolvedNode] = []
             for child in node.children:
-                subnodes = self.build_node(block_courses, child)
+                subnodes = self.build_node(child, exclusive)
                 for subnode in subnodes:
                     self.g.add_edge(subnode.node_id, id, capacity=subnode.cap)
                     total_cap += subnode.cap
@@ -141,7 +144,7 @@ class CurriculumSolver:
                     raise Exception(f"Unrecognized special function '{node}'")
                 special = special_sources[node]
                 for code in self.taken_courses:
-                    if special(self.coursedata[code]):
+                    if special(self.courseinfo[code]):
                         courses.append(code)
             else:
                 # Standard course
@@ -149,28 +152,29 @@ class CurriculumSolver:
                     courses.append(node)
             course_nodes: list[SolvedNode] = []
             for code in courses:
-                if code in block_courses:
-                    course_nodes.append(block_courses[code])
+                if exclusive and code in self.course_nodes:
+                    course_nodes.append(self.course_nodes[code])
                     continue
                 course = SolvedCourse(
                     node_id=self.add_node(),
                     code=code,
-                    cap=self.coursedata[code].credits,
+                    cap=self.courseinfo[code].credits,
+                    parent=None,
                 )
                 self.g.add_edge(self.source, course.node_id, capacity=course.cap)
-                block_courses[code] = course
+                if exclusive:
+                    self.course_nodes[code] = course
                 course_nodes.append(course)
             return course_nodes
 
     def build(self) -> SolvedCurriculum:
         built_blocks: list[SolvedCombine] = []
         for block in self.curriculum.blocks:
-            block_courses: dict[str, SolvedNode] = {}
-            built_block = self.build_node(block_courses, block)
-            assert isinstance(
-                built_block, SolvedCombine
+            built_block = self.build_node(block)
+            assert len(built_block) == 1 and isinstance(
+                built_block[0], SolvedCombine
             ), "block is of type Combine, so built_block should be SolvedCombine"
-            built_blocks.append(built_block)
+            built_blocks.append(built_block[0])
         return SolvedCurriculum(blocks=built_blocks)
 
     def update_node_flow(self, node: SolvedNode, flows: dict[int, dict[int, int]]):
@@ -179,6 +183,11 @@ class CurriculumSolver:
             for child in node.children:
                 self.update_node_flow(child, flows)
                 flow += flows[child.node_id][node.node_id]
+                if (
+                    isinstance(child, SolvedCourse)
+                    and flows[child.node_id][node.node_id] > 0
+                ):
+                    child.parent = node
             node.flow = flow
 
     def solve(self) -> SolvedCurriculum:
@@ -189,7 +198,7 @@ class CurriculumSolver:
         return built
 
 
-special_sources: dict[str, Callable[[DbCourse], bool]] = {
+special_sources: dict[str, Callable[[CourseInfo], bool]] = {
     "!dpt5": lambda c: c.credits == 5 and c.code.startswith("DPT"),
     "!ttf": lambda c: c.code.startswith("TTF"),
     # TODO: Investigar que define a un OFG
@@ -205,6 +214,6 @@ special_sources: dict[str, Callable[[DbCourse], bool]] = {
 
 
 def solve_curriculum(
-    curriculum: Curriculum, coursedata: dict[str, DbCourse], taken_courses: set[str]
+    courseinfo: dict[str, CourseInfo], curriculum: Curriculum, taken_courses: set[str]
 ) -> SolvedCurriculum:
-    return CurriculumSolver(curriculum, coursedata, taken_courses).solve()
+    return CurriculumSolver(curriculum, courseinfo, taken_courses).solve()

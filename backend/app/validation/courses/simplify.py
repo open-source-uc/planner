@@ -30,10 +30,7 @@ def simplify(expr: Expr) -> Expr:
         for method in simplification_methods:
             if not isinstance(expr, (And, Or)):
                 break
-            prev = expr
             expr = method(expr)
-            if prev is not expr:
-                print(f"simplified from {prev} to {expr}")
         # Finish simplifying if no progress is made
         if expr is previous:
             break
