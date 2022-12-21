@@ -21,6 +21,9 @@ class SolvedCombine:
     # capacities of their children, but capacity can also be set manually (eg. only 10
     # credits of 5-credit-DPT courses)
     cap: int
+    # Cost per unit of flow.
+    # Used as a priority for the order in which to fill the nodes.
+    cost: int
     # How much capacity is satisfied.
     # If `flow == cap`, then the node is entirely satisfied.
     flow: int
@@ -30,6 +33,17 @@ class SolvedCombine:
     # Internal graph node id.
     node_id: int
 
+    def __str__(self):
+        children: list[str] = []
+        for child in self.children:
+            childstr = f"{child}"
+            if isinstance(child, SolvedCourse):
+                if child.parent is not self:
+                    childstr = f"{childstr}[inactive]"
+            children.append(f"({childstr})")
+        childrenstr = f": {', '.join(children)}" if children else ""
+        return f"{self.name}[{self.flow}/{self.cap}]{childrenstr}"
+
 
 @dataclass
 class SolvedCourse:
@@ -37,11 +51,18 @@ class SolvedCourse:
     code: str
     # Source flow of the course (amount of credits).
     cap: int
+    # The full amount of `cap` is the course is taken.
+    # Otherwise, zero.
+    flow: int
     # The one parent node that this course actually feeds.
     parent: Optional[SolvedCombine]
 
     # Internal graph node id.
     node_id: int
+
+    def __str__(self):
+        credits = "" if self.cap == 10 else f"[{self.cap} credits]"
+        return f"{self.code}{credits}"
 
 
 SolvedNode = Union[SolvedCombine, SolvedCourse]
@@ -53,37 +74,40 @@ class SolvedCurriculum:
     blocks: list[SolvedCombine]
 
     def get_course_blocks_visit(
-        self, course2blocks: dict[str, set[int]], block: int, node: SolvedNode
+        self,
+        course2blocks: dict[str, SolvedCombine],
+        block: SolvedCombine,
+        node: SolvedNode,
     ):
         if isinstance(node, SolvedCourse):
-            course2blocks.setdefault(node.code, set()).add(block)
+            course2blocks[node.code] = block
         else:
             for child in node.children:
+                if isinstance(child, SolvedCourse) and child.parent is not node:
+                    continue
                 self.get_course_blocks_visit(course2blocks, block, child)
 
-    def get_course_blocks(self) -> dict[str, list[SolvedCombine]]:
+    def get_course_blocks(self) -> dict[str, SolvedCombine]:
         """
-        Get the curriculum blocks that each course is counting towards.
+        Get the curriculum block that each course is counting towards.
         """
-        course2blockidx: dict[str, set[int]] = {}
-        for idx, block in enumerate(self.blocks):
-            self.get_course_blocks_visit(course2blockidx, idx, block)
-        return dict(
-            map(
-                lambda pair: (
-                    pair[0],
-                    list(map(lambda idx: self.blocks[idx], pair[1])),
-                ),
-                course2blockidx.items(),
-            )
-        )
+        course2block: dict[str, SolvedCombine] = {}
+        for block in self.blocks:
+            self.get_course_blocks_visit(course2block, block, block)
+        return course2block
+
+    def __str__(self):
+        blocks: list[str] = []
+        for block in self.blocks:
+            blocks.append(f"{block}")
+        return "\n".join(blocks)
 
 
 class CurriculumSolver:
     curriculum: Curriculum
     taken_courses: set[str]
     courseinfo: dict[str, CourseInfo]
-    g: DiGraph
+    graph: DiGraph
     source: int
     sink: int
     next_id: int
@@ -102,7 +126,7 @@ class CurriculumSolver:
         self.curriculum = curriculum
         self.taken_courses = taken_courses
         self.courseinfo = courseinfo
-        self.g = DiGraph()
+        self.graph = DiGraph()
         self.next_id = 0
         self.source = self.add_node()
         self.sink = self.add_node()
@@ -111,7 +135,7 @@ class CurriculumSolver:
     def add_node(self) -> int:
         id = self.next_id
         self.next_id += 1
-        self.g.add_node(id)
+        self.graph.add_node(id)
         return id
 
     def build_node(self, node: Node, exclusive: bool = True) -> list[SolvedNode]:
@@ -125,14 +149,19 @@ class CurriculumSolver:
             for child in node.children:
                 subnodes = self.build_node(child, exclusive)
                 for subnode in subnodes:
-                    self.g.add_edge(subnode.node_id, id, capacity=subnode.cap)
+                    self.graph.add_edge(subnode.node_id, id, capacity=subnode.cap)
                     total_cap += subnode.cap
                     children.append(subnode)
             if node.cap is not None:
                 total_cap = node.cap
             return [
                 SolvedCombine(
-                    name=node.name, node_id=id, cap=total_cap, flow=0, children=children
+                    name=node.name,
+                    node_id=id,
+                    cap=total_cap,
+                    flow=0,
+                    children=children,
+                    cost=0,
                 )
             ]
         else:
@@ -160,9 +189,10 @@ class CurriculumSolver:
                     node_id=self.add_node(),
                     code=code,
                     cap=self.courseinfo[code].credits,
+                    flow=self.courseinfo[code].credits,
                     parent=None,
                 )
-                self.g.add_edge(self.source, course.node_id, capacity=course.cap)
+                self.graph.add_edge(self.source, course.node_id, capacity=course.cap)
                 if exclusive:
                     self.course_nodes[code] = course
                 course_nodes.append(course)
@@ -170,12 +200,22 @@ class CurriculumSolver:
 
     def build(self) -> SolvedCurriculum:
         built_blocks: list[SolvedCombine] = []
+        cost = 1
         for block in self.curriculum.blocks:
             built_block = self.build_node(block)
             assert len(built_block) == 1 and isinstance(
                 built_block[0], SolvedCombine
             ), "block is of type Combine, so built_block should be SolvedCombine"
-            built_blocks.append(built_block[0])
+            built_block = built_block[0]
+            built_block.cost = cost
+            cost *= 10
+            self.graph.add_edge(
+                built_block.node_id,
+                self.sink,
+                capacity=built_block.cap,
+                weight=built_block.cost,
+            )
+            built_blocks.append(built_block)
         return SolvedCurriculum(blocks=built_blocks)
 
     def update_node_flow(self, node: SolvedNode, flows: dict[int, dict[int, int]]):
@@ -193,7 +233,12 @@ class CurriculumSolver:
 
     def solve(self) -> SolvedCurriculum:
         built = self.build()
-        _total_flow, flows = networkx.maximum_flow(self.g, self.source, self.sink)
+        flows: dict[int, dict[int, int]]
+        flows = networkx.max_flow_min_cost(
+            self.graph, self.source, self.sink
+        )  # pyright: reportUnknownMemberType = false
+        print(f"graph = {self.graph}")
+        print(f"flows = {flows}")
         for block in built.blocks:
             self.update_node_flow(block, flows)
         return built
