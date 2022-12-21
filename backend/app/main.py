@@ -3,7 +3,7 @@ from .plan.validation.diagnostic import ValidationResult
 from .plan.validation.validate import diagnose_plan
 import pydantic
 from .plan.plan import ValidatablePlan
-from .plan.generate import generate_default_plan
+from .plan.generation import generate_default_plan
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
@@ -13,7 +13,7 @@ from prisma.types import PostCreateInput
 from .auth import require_authentication, login_cas, UserData
 from .sync import run_upstream_sync
 from .plan.courseinfo import clear_course_info_cache, course_info
-from .plan.generate import CurriculumRecommender as recommender
+from .plan.generation import CurriculumRecommender as recommender
 from typing import List, Optional
 
 
