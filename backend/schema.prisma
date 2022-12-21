@@ -28,3 +28,10 @@ model Course {
   area     String?
   category String?
 }
+
+model CurriculumBlock {
+  id   String @id @default(cuid())
+  kind String
+  name String
+  req  Json
+}

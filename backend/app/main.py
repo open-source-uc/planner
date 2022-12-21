@@ -1,13 +1,16 @@
-from .validate.validate import ValidatablePlan
+import pydantic
+from .validation.curriculum.tree import Combine, Curriculum
+from .validation.plan import ValidatablePlan, ValidationResult
+from .validation.diagnose import diagnose_plan
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from .database import prisma
-from prisma.models import Post, Course as DbCourse
+from prisma.models import Post, Course as DbCourse, CurriculumBlock
 from prisma.types import PostCreateInput
 from .auth import require_authentication, login_cas, UserData
-from .coursesync import run_course_sync
-from .validate.rules import clear_course_rules_cache, course_rules
+from .sync import run_upstream_sync
+from .validation.courseinfo import clear_course_info_cache, course_info
 from typing import List, Optional
 
 
@@ -34,8 +37,8 @@ app.add_middleware(
 @app.on_event("startup")  # type: ignore
 async def startup():
     await prisma.connect()
-    # Prime course rule cache
-    await course_rules()
+    # Prime course info cache
+    await course_info()
 
 
 @app.on_event("shutdown")  # type: ignore
@@ -79,7 +82,7 @@ async def check_auth(user_data: UserData = Depends(require_authentication)):
 @app.post("/courses/sync")
 # TODO: Require admin permissions for this endpoint.
 async def sync_courses():
-    await run_course_sync()
+    await run_upstream_sync()
     return {
         "message": "Course database updated",
     }
@@ -109,15 +112,25 @@ async def get_course_details(code: str):
 
 @app.post("/validate/rebuild")
 async def rebuild_validation_rules():
-    clear_course_rules_cache()
-    rules = await course_rules()
+    clear_course_info_cache()
+    info = await course_info()
     return {
-        "message": f"Recalculated {len(rules.courses)} course rules",
+        "message": f"Recached {len(info)} courses",
     }
 
 
-@app.post("/validate")
+@app.post("/validate", response_model=ValidationResult)
 async def validate_plan(plan: ValidatablePlan):
-    rules = await course_rules()
-    diag = plan.diagnose(rules)
-    return {"valid": len(diag) == 0, "diagnostic": diag}
+    # TODO: Implement a proper curriculum selector
+    blocks = ["plancomun", "formaciongeneral", "major", "minor", "titulo"]
+    curr = Curriculum(blocks=[])
+    for block_kind in blocks:
+        block = await CurriculumBlock.prisma().find_first(where={"kind": block_kind})
+        if block is None:
+            raise HTTPException(
+                status_code=500,
+                detail="Database is not initialized"
+                + f" (found no block with kind '{block_kind}')",
+            )
+        curr.blocks.append(pydantic.parse_obj_as(Combine, block.req))
+    return await diagnose_plan(plan, curr)

@@ -3,6 +3,7 @@
 /* eslint-disable */
 import type { PostCreateInput } from '../models/PostCreateInput';
 import type { ValidatablePlan } from '../models/ValidatablePlan';
+import type { ValidationResult } from '../models/ValidationResult';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -103,11 +104,11 @@ export class DefaultService {
     }
 
     /**
-     * Course Sync
+     * Sync Courses
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static courseSync(): CancelablePromise<any> {
+    public static syncCourses(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/courses/sync',
@@ -157,26 +158,26 @@ export class DefaultService {
     }
 
     /**
-     * Validate Sync
+     * Rebuild Validation Rules
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static validateSync(): CancelablePromise<any> {
+    public static rebuildValidationRules(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/validate/sync',
+            url: '/validate/rebuild',
         });
     }
 
     /**
      * Validate Plan
      * @param requestBody
-     * @returns any Successful Response
+     * @returns ValidationResult Successful Response
      * @throws ApiError
      */
     public static validatePlan(
         requestBody: ValidatablePlan,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<ValidationResult> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/validate',
