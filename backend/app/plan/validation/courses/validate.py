@@ -1,5 +1,6 @@
-from ..plan import ValidatablePlan, ValidationResult
-from ..courseinfo import CourseInfo
+from ..diagnostic import ValidationResult
+from ...plan import ValidatablePlan
+from ...courseinfo import CourseInfo
 from .logic import (
     BaseOp,
     Const,

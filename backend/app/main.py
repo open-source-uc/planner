@@ -1,4 +1,8 @@
-from .plan.validate import ValidatablePlan
+from .plan.validation.curriculum.tree import Combine, Curriculum
+from .plan.validation.diagnostic import ValidationResult
+from .plan.validation.validate import diagnose_plan
+import pydantic
+from .plan.plan import ValidatablePlan
 from .plan.generate import generate_default_plan
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,8 +11,8 @@ from .database import prisma
 from prisma.models import Post, Course as DbCourse, CurriculumBlock
 from prisma.types import PostCreateInput
 from .auth import require_authentication, login_cas, UserData
-from .coursesync import run_course_sync
-from .plan.rules import clear_course_rules_cache, course_rules
+from .sync import run_upstream_sync
+from .plan.courseinfo import clear_course_info_cache, course_info
 from .plan.generate import CurriculumRecommender as recommender
 from typing import List, Optional
 
@@ -119,8 +123,7 @@ async def rebuild_validation_rules():
     }
 
 
-@app.post("/plan/validate", response_model=ValidationResult)
-async def validate_plan(plan: ValidatablePlan):
+async def debug_get_curriculum():
     # TODO: Implement a proper curriculum selector
     blocks = ["plancomun", "formaciongeneral", "major", "minor", "titulo"]
     curr = Curriculum(blocks=[])
@@ -133,12 +136,19 @@ async def validate_plan(plan: ValidatablePlan):
                 + f" (found no block with kind '{block_kind}')",
             )
         curr.blocks.append(pydantic.parse_obj_as(Combine, block.req))
+    return curr
+
+
+@app.post("/plan/validate", response_model=ValidationResult)
+async def validate_plan(plan: ValidatablePlan):
+    curr = await debug_get_curriculum()
     return await diagnose_plan(plan, curr)
 
 
 @app.post("/plan/generate")
 async def generate_plan(passed: ValidatablePlan):
-    plan = await generate_default_plan(passed)
+    curr = await debug_get_curriculum()
+    plan = await generate_default_plan(passed, curr)
 
     # for debugging purposes:
     # validation = await validate_plan(plan)

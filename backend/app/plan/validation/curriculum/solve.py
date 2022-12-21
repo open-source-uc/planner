@@ -5,7 +5,7 @@ within a block and respecting exclusivity rules.
 
 from typing import Callable, Optional, Union
 
-from ..courseinfo import CourseInfo
+from ...courseinfo import CourseInfo
 from .tree import Combine, Curriculum, Node
 from networkx.classes.digraph import DiGraph
 import networkx

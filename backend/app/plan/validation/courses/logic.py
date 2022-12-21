@@ -4,7 +4,7 @@ Implements logical expressions in the context of course requirements.
 
 
 from abc import abstractmethod
-from enum import Enum
+from ...plan import Level
 from pydantic import BaseModel, Field
 from typing import Annotated, Any, ClassVar, Literal, Union
 from hashlib import blake2b as good_hash
@@ -120,18 +120,6 @@ class Const(BaseExpr):
     def compute_hash(self) -> bytes:
         h = good_hash(b"one" if self.value else b"zero")
         return h.digest()
-
-
-class Level(int, Enum):
-    """
-    An academic level.
-    """
-
-    # TODO: Confirm this order, is it correct?
-    PREGRADO = 1
-    POSTITULO = 2
-    MAGISTER = 3
-    DOCTORADO = 4
 
 
 class MinCredits(BaseExpr):

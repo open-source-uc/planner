@@ -1,8 +1,9 @@
 from .curriculum.validate import diagnose_curriculum
 from .curriculum.tree import Curriculum
 from .courses.validate import PlanContext
-from .courseinfo import course_info
-from .plan import ValidatablePlan, ValidationResult
+from ..courseinfo import course_info
+from .diagnostic import ValidationResult
+from ..plan import ValidatablePlan
 
 
 async def diagnose_plan(

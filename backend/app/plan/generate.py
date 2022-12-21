@@ -1,22 +1,8 @@
-from asyncio import gather
+from .validation.curriculum.tree import Curriculum
 
-from prisma.models import Course as DbCourse
-
-from .validate import ValidatablePlan
-from ..plan.rules import course_rules
-from .logic import Level
-
-
-# TODO(refactor): repeated function from main.py!
-async def get_course_details(code: str):
-    return await DbCourse.prisma().find_unique(where={"code": code})
-
-
-# TODO(refactor): repeated function from main.py!
-async def validate_plan(plan: ValidatablePlan):
-    rules = await course_rules()
-    diag = plan.diagnose(rules)
-    return {"valid": len(diag) == 0, "diagnostic": diag}
+from .plan import ValidatablePlan, Level
+from .courseinfo import course_info
+from .validation.validate import diagnose_plan
 
 
 class CurriculumRecommender:
@@ -73,30 +59,40 @@ def _make_plan(classes: list[list[str]], passed: ValidatablePlan):
     )
 
 
-async def generate_default_plan(passed: ValidatablePlan):
-    curriculum = CurriculumRecommender.recommend()
+async def generate_default_plan(passed: ValidatablePlan, curriculum: Curriculum):
+    recommended = CurriculumRecommender.recommend()
+    courseinfo = await course_info()
 
     semesters = passed.classes
 
     # flat list of all curriculum courses left to pass
-    courses_to_pass = _compute_courses_to_pass(curriculum.classes, passed.classes)[::-1]
+    courses_to_pass = _compute_courses_to_pass(recommended.classes, passed.classes)[
+        ::-1
+    ]
 
     # initialize next semester
     semesters.append([])
-    while courses_to_pass:
-        details = await gather(*(get_course_details(c) for c in semesters[-1]))
-        credits = sum(c.credits if c else 0 for c in details)
-
+    while True:
         next_course = courses_to_pass.pop()
+        if next_course is None:
+            break
+
+        credits = sum(
+            courseinfo[c].credits if c in courseinfo else 0 for c in semesters[-1]
+        )
 
         if credits < CurriculumRecommender.CREDITS_PER_SEMESTER:
             semesters[-1].append(next_course)
         else:
             # TODO: find a more direct way of validating semesters
-            validate_semester = await validate_plan(_make_plan(semesters, passed))
-            if not validate_semester["valid"]:
+            validate_semester = await diagnose_plan(
+                _make_plan(semesters, passed), curriculum
+            )
+            if len(validate_semester.diagnostics) > 0:
                 # remove invalid courses from the semester
-                invalid = validate_semester["diagnostic"].keys()
+                invalid = list(
+                    map(lambda d: d.course_code, validate_semester.diagnostics)
+                )
                 semesters[-1] = list(filter(lambda a: a not in invalid, semesters[-1]))
 
                 # re-insert the removed courses
