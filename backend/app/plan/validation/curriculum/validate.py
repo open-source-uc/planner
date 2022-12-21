@@ -1,7 +1,8 @@
 from .solve import solve_curriculum
-from ..plan import ValidatablePlan, ValidationResult
+from ...plan import ValidatablePlan
+from ..diagnostic import ValidationResult
 from .tree import Curriculum
-from ..courseinfo import CourseInfo
+from ...courseinfo import CourseInfo
 
 
 def diagnose_curriculum(

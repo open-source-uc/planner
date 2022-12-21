@@ -1,7 +1,9 @@
+from .plan.validation.curriculum.tree import Combine, Curriculum
+from .plan.validation.diagnostic import ValidationResult
+from .plan.validation.validate import diagnose_plan
 import pydantic
-from .validation.curriculum.tree import Combine, Curriculum
-from .validation.plan import ValidatablePlan, ValidationResult
-from .validation.diagnose import diagnose_plan
+from .plan.plan import ValidatablePlan
+from .plan.generation import generate_default_plan
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
@@ -10,7 +12,8 @@ from prisma.models import Post, Course as DbCourse, CurriculumBlock
 from prisma.types import PostCreateInput
 from .auth import require_authentication, login_cas, UserData
 from .sync import run_upstream_sync
-from .validation.courseinfo import clear_course_info_cache, course_info
+from .plan.courseinfo import clear_course_info_cache, course_info
+from .plan.generation import CurriculumRecommender as recommender
 from typing import List, Optional
 
 
@@ -39,6 +42,7 @@ async def startup():
     await prisma.connect()
     # Prime course info cache
     await course_info()
+    await recommender.load_curriculum()
 
 
 @app.on_event("shutdown")  # type: ignore
@@ -110,7 +114,7 @@ async def get_course_details(code: str):
     return course
 
 
-@app.post("/validate/rebuild")
+@app.post("/plan/rebuild")
 async def rebuild_validation_rules():
     clear_course_info_cache()
     info = await course_info()
@@ -119,8 +123,7 @@ async def rebuild_validation_rules():
     }
 
 
-@app.post("/validate", response_model=ValidationResult)
-async def validate_plan(plan: ValidatablePlan):
+async def debug_get_curriculum():
     # TODO: Implement a proper curriculum selector
     blocks = ["plancomun", "formaciongeneral", "major", "minor", "titulo"]
     curr = Curriculum(blocks=[])
@@ -133,4 +136,26 @@ async def validate_plan(plan: ValidatablePlan):
                 + f" (found no block with kind '{block_kind}')",
             )
         curr.blocks.append(pydantic.parse_obj_as(Combine, block.req))
+    return curr
+
+
+@app.post("/plan/validate", response_model=ValidationResult)
+async def validate_plan(plan: ValidatablePlan):
+    curr = await debug_get_curriculum()
     return await diagnose_plan(plan, curr)
+
+
+@app.post("/plan/generate")
+async def generate_plan(passed: ValidatablePlan):
+    curr = await debug_get_curriculum()
+    plan = await generate_default_plan(passed, curr)
+
+    # for debugging purposes:
+    # validation = await validate_plan(plan)
+    # print(validation)
+
+    # TODO: store created plans
+    print("Generated plan:")
+    print(plan)
+
+    return {"message": "Created"}

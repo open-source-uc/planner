@@ -1,5 +1,6 @@
-from ..plan import ValidatablePlan, ValidationResult
-from ..courseinfo import CourseInfo
+from ..diagnostic import ValidationResult
+from ...plan import ValidatablePlan
+from ...courseinfo import CourseInfo
 from .logic import (
     BaseOp,
     Const,
@@ -115,7 +116,7 @@ def is_satisfied(ctx: PlanContext, cl: Class, expr: Expr) -> bool:
             # Should planner reject guests with courses that have level restrictions?
             return False
         # TODO: Is this a `>=` relationship or actually an `=` relationship?
-        return ctx.plan.level.value >= expr.min_level
+        return ctx.plan.level.value >= expr.min_level.value
     if isinstance(expr, ReqSchool):
         return (ctx.plan.school == expr.school) == expr.equal
     if isinstance(expr, ReqProgram):

@@ -5,8 +5,8 @@ Cache course info from the database in memory, for easy access.
 from dataclasses import dataclass
 from typing import Optional
 import pydantic
-from .courses.logic import Expr
-from .courses.simplify import simplify
+from .validation.courses.logic import Expr
+from .validation.courses.simplify import simplify
 from prisma.models import Course
 
 

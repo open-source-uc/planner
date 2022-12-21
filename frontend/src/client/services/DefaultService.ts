@@ -165,7 +165,7 @@ export class DefaultService {
     public static rebuildValidationRules(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/validate/rebuild',
+            url: '/plan/rebuild',
         });
     }
 
@@ -180,7 +180,27 @@ export class DefaultService {
     ): CancelablePromise<ValidationResult> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/validate',
+            url: '/plan/validate',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Generate Plan
+     * @param requestBody
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static generatePlan(
+        requestBody: ValidatablePlan,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/plan/generate',
             body: requestBody,
             mediaType: 'application/json',
             errors: {

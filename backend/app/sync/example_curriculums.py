@@ -1,6 +1,6 @@
 from prisma import Json
 from prisma.models import CurriculumBlock
-from ..validation.curriculum.tree import Combine
+from ..plan.validation.curriculum.tree import Combine
 import os
 
 import pydantic

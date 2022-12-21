@@ -3,7 +3,7 @@ Update local database with an official but ugly source.
 Currently using unofficial sources until we get better API access.
 """
 
-from ..validation.courseinfo import clear_course_info_cache, course_info
+from ..plan.courseinfo import clear_course_info_cache, course_info
 from . import bcscrape, example_curriculums
 
 
