@@ -1,8 +1,6 @@
-from .validation.curriculum.tree import Curriculum
-
 from .plan import ValidatablePlan, Level
 from .courseinfo import course_info
-from .validation.validate import diagnose_plan
+from .validation.validate import diagnose_plan_skip_curriculum
 
 
 class CurriculumRecommender:
@@ -22,7 +20,7 @@ class CurriculumRecommender:
         # TODO: implement solution for pseudo-courses
         # (e.g FIS1513/ICE1513. Also 'TEOLOGICO', 'OFG', etc.)
         cls.curriculum = [
-            ["MAT1610", "QIM100A", "MAT1203", "ING1004", "FIL2001"],
+            ["MAT1610", "QIM100E", "MAT1203", "ING1004", "FIL2001"],
             ["MAT1620", "FIS1513", "FIS0151", "ICS1513", "IIC1103"],
             ["MAT1630", "FIS1523", "FIS0152", "MAT1640"],
             ["EYP1113", "FIS1533", "FIS0153", "IIC2233"],
@@ -56,10 +54,11 @@ def _make_plan(classes: list[list[str]], passed: ValidatablePlan):
         classes=classes,
         next_semester=passed.next_semester,
         level=Level.PREGRADO,
+        career="Ingenieria",
     )
 
 
-async def generate_default_plan(passed: ValidatablePlan, curriculum: Curriculum):
+async def generate_default_plan(passed: ValidatablePlan):
     recommended = CurriculumRecommender.recommend()
     courseinfo = await course_info()
 
@@ -72,10 +71,9 @@ async def generate_default_plan(passed: ValidatablePlan, curriculum: Curriculum)
 
     # initialize next semester
     semesters.append([])
-    while True:
+    while courses_to_pass:
         next_course = courses_to_pass.pop()
-        if next_course is None:
-            break
+        print(f"adding course {next_course} to semesters {semesters}")
 
         credits = sum(
             courseinfo[c].credits if c in courseinfo else 0 for c in semesters[-1]
@@ -85,14 +83,15 @@ async def generate_default_plan(passed: ValidatablePlan, curriculum: Curriculum)
             semesters[-1].append(next_course)
         else:
             # TODO: find a more direct way of validating semesters
-            validate_semester = await diagnose_plan(
-                _make_plan(semesters, passed), curriculum
+            validate_semester = await diagnose_plan_skip_curriculum(
+                _make_plan(semesters, passed)
             )
             if len(validate_semester.diagnostics) > 0:
                 # remove invalid courses from the semester
-                invalid = list(
-                    map(lambda d: d.course_code, validate_semester.diagnostics)
-                )
+                invalid: list[str] = []
+                for diag in validate_semester.diagnostics:
+                    if diag.course_code is not None:
+                        invalid.append(diag.course_code)
                 semesters[-1] = list(filter(lambda a: a not in invalid, semesters[-1]))
 
                 # re-insert the removed courses

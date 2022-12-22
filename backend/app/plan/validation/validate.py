@@ -20,3 +20,13 @@ async def diagnose_plan(
     diagnose_curriculum(courseinfo, curriculum, plan, out)
 
     return out
+
+
+async def diagnose_plan_skip_curriculum(plan: ValidatablePlan) -> ValidationResult:
+    courseinfo = await course_info()
+    out = ValidationResult(diagnostics=[])
+
+    course_ctx = PlanContext(courseinfo, plan)
+    course_ctx.validate(out)
+
+    return out

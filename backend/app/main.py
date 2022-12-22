@@ -147,8 +147,7 @@ async def validate_plan(plan: ValidatablePlan):
 
 @app.post("/plan/generate")
 async def generate_plan(passed: ValidatablePlan):
-    curr = await debug_get_curriculum()
-    plan = await generate_default_plan(passed, curr)
+    plan = await generate_default_plan(passed)
 
     # for debugging purposes:
     # validation = await validate_plan(plan)
