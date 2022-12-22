@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
 import type { Course } from '../lib/types'
 
-const CourseCard = (props: { course: Course, isDragging: Function, handleMove: Function }): JSX.Element => {
+const CourseCard = (props: { course: any, isDragging: Function, handleMove: Function }): JSX.Element => {
   const [course] = useState(props.course)
   const ref = useRef(null)
   const [collected = { isDragging: false }, drag] = useDrag(
@@ -10,12 +10,10 @@ const CourseCard = (props: { course: Course, isDragging: Function, handleMove: F
       type: 'card',
 
       item: () => {
-        console.log('a')
         props.isDragging(true)
         return { course }
       },
       end () {
-        console.log('b')
         props.isDragging(false)
       },
       // call startMove when the drag starts
@@ -44,14 +42,14 @@ const CourseCard = (props: { course: Course, isDragging: Function, handleMove: F
       {dropProps.isOver
         ? <div className={'bg-place-holder card'} />
         : <>{!collected.isDragging && <div className={'bg-plan-comun card'}>
-        <div className='text-center'>{course.ramo.sigla}</div>
+        <div className='text-center'>{course.code}</div>
       </div>}
       </>}
     </div>
     {
       dropProps.isOver && <div className={'px-2 pb-3'}>
       <div className={'bg-plan-comun card'}>
-        <div className='text-center'>{course.ramo.sigla}</div>
+        <div className='text-center'>{course.code}</div>
       </div>
     </div>
     }

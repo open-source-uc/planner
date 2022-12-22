@@ -73,10 +73,9 @@ async def generate_default_plan(passed: ValidatablePlan, curriculum: Curriculum)
     # initialize next semester
     semesters.append([])
     while True:
-        next_course = courses_to_pass.pop()
-        if next_course is None:
+        if len(courses_to_pass) == 0:
             break
-
+        next_course = courses_to_pass.pop()
         credits = sum(
             courseinfo[c].credits if c in courseinfo else 0 for c in semesters[-1]
         )

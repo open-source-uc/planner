@@ -5,7 +5,7 @@ import SemesterColumn from './SemesterColumn'
 import CourseCard from './CourseCard'
 import type { Course } from '../lib/types'
 
-const CurriculumTable = (props: { coursesProp: Course[] }): JSX.Element => {
+const CurriculumTable = (props: { coursesProp: any, remCourse:Function, addCourse: Function }): JSX.Element => {
   const [courses, setCourses] = useState(props.coursesProp)
   // por alguna razon se buggea cuando inicia en estado false, asi que se inicia en true y se cambia a false cuando se termina de renderizar. Que asco
   const [isDragging, setIsDragging] = useState(true)
