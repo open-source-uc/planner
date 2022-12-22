@@ -51,6 +51,8 @@ Segun https://registrosacademicos.uc.cl/wp-content/uploads/2022/07/Inscripcion-d
 
 Propiedades observadas del [catalogo UC](https://catalogo.uc.cl/):
 - La relacion pareciera ser conmutativa, al menos en los 4000+ cursos dictados el 2022-2.
+  **Pero no en los cursos obsoletos!**: La sigla ING1001 (practica I) es equivalente con
+  IPP1000 (practica 1 obsoleta), pero IPP1000 no es equivalente con ING1001.
 - La relacion no es transitiva. Eg: FIS1512 es equivalente a ICE1003, y ICE1003 es equivalente a FIS1513, pero FIS1512 no es equivalente a FIS1513.
 
 No queda claro si es una relacion de equivalencia.

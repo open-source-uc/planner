@@ -3,6 +3,7 @@
 /* eslint-disable */
 import type { PostCreateInput } from '../models/PostCreateInput';
 import type { ValidatablePlan } from '../models/ValidatablePlan';
+import type { ValidationResult } from '../models/ValidationResult';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -164,22 +165,42 @@ export class DefaultService {
     public static rebuildValidationRules(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/validate/rebuild',
+            url: '/plan/rebuild',
         });
     }
 
     /**
      * Validate Plan
      * @param requestBody
-     * @returns any Successful Response
+     * @returns ValidationResult Successful Response
      * @throws ApiError
      */
     public static validatePlan(
         requestBody: ValidatablePlan,
+    ): CancelablePromise<ValidationResult> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/plan/validate',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Generate Plan
+     * @param requestBody
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static generatePlan(
+        requestBody: ValidatablePlan,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/validate',
+            url: '/plan/generate',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
