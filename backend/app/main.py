@@ -155,12 +155,4 @@ async def generate_plan(passed: ValidatablePlan):
     curr = await debug_get_curriculum()
     plan = await generate_default_plan(passed, curr)
 
-    # for debugging purposes:
-    # validation = await validate_plan(plan)
-    # print(validation)
-
-    # TODO: store created plans
-    print("Generated plan:")
-    print(plan)
-
-    return {"message": "Created"}
+    return plan
