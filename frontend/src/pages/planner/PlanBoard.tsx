@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import SemesterColumn from '../../components/SemesterColumn'
@@ -10,30 +10,10 @@ import CourseCard from '../../components/CourseCard'
  *
  * TODO: Reemplazar este mockup temporal por algo de verdad.
  */
-const PlanBoard = (): JSX.Element => {
-  const [plan, setPlan] = useState<string[][]>([['MAT1610', 'QIM100A', 'MAT1203', 'ING1004', 'FIL2001'],
-    ['MAT1620', 'FIS1513', 'FIS0151', 'ICS1513', 'IIC1103'],
-    ['MAT1630', 'FIS1523', 'FIS0152', 'MAT1640'],
-    ['EYP1113', 'FIS1533', 'FIS0153', 'IIC2233'],
-    ['IIC2143', 'ING2030', 'IIC1253'],
-    ['IIC2113', 'IIC2173', 'IIC2413'],
-    ['IIC2133', 'IIC2513', 'IIC2713'],
-    ['IIC2154']])
+const PlanBoard = ({ plan, setPlan }: { plan: string[][], setPlan: Function }): JSX.Element => {
   // por alguna razon se buggea cuando inicia en estado false, asi que se inicia en true y se cambia a false cuando se termina de renderizar. Que asco
   const [isDragging, setIsDragging] = useState(false)
-  useEffect(() => {
-    console.log(plan)
-  }, [plan])
   /*
-
-  function addCourse (semIdx: number): void {
-    const courseCode = prompt('Course code?')
-    if (courseCode == null) return
-    const newPlan = plan.slice()
-    newPlan[semIdx] = plan[semIdx].slice()
-    newPlan[semIdx].push(courseCode)
-    onPlanChange(newPlan)
-  }
   function remCourse (semIdx: number, code: string): void {
     const idx = plan[semIdx].indexOf(code)
     if (idx === -1) return
@@ -43,19 +23,20 @@ const PlanBoard = (): JSX.Element => {
     onPlanChange(newPlan)
   }
  */
-
   function addCourse (semIdx: number): void {
-    setPlan(prev => {
+    const courseCode = prompt('Course code?')
+    if (courseCode == null || courseCode === '' || plan.flat().includes(courseCode.toUpperCase())) return
+    setPlan((prev: string[][]) => {
       const newPlan = [...prev]
       newPlan[semIdx] = [...prev[semIdx]]
-      newPlan[semIdx].push('MAT1610')
+      newPlan[semIdx].push(courseCode.toUpperCase())
       return newPlan
     })
   }
 
   function moveCourse (semester: number, drag: { semester: number, code: string }, code: string): void {
-    setPlan(prev => {
-      const dragIndex = prev[drag.semester].indexOf(drag.code)
+    setPlan((prev: string[][]) => {
+      const dragIndex: number = prev[drag.semester].indexOf(drag.code)
       const newPlan = [...prev]
       if (semester - prev.length >= 0) {
         if (semester - prev.length > 0) newPlan.push([])
@@ -102,14 +83,13 @@ const PlanBoard = (): JSX.Element => {
       </button>
     )
   }) */
-
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="CurriculumTable flex flex-row basis-5/6">
-        {plan.map((courses, semester: number) => (
+        {plan.map((courses: string[], semester: number) => (
             <SemesterColumn key={semester} semester={semester} addEnd={({ course }: any) => moveCourse(semester, course, '')}>
               {courses?.map((code, index: number) => (
-                <CourseCard key={code} course={{ code, semester }} isDragging={(e: boolean) => setIsDragging(e)} handleMove={({ course }: any) => moveCourse(semester, course, code)}/>
+                <CourseCard key={code} course={{ code, semester }} isDragging={(e: boolean) => setIsDragging(e)} handleMove={({ course }: any) => moveCourse(semester, course, code)} />
               ))}
             {!isDragging && <button key="+" className="w-20 h-10 bg-slate-300 text-center" onClick={() => addCourse(semester)}>+</button>}
             </SemesterColumn>
