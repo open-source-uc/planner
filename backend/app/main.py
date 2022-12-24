@@ -4,7 +4,7 @@ from .plan.validation.validate import diagnose_plan
 import pydantic
 from .plan.plan import ValidatablePlan
 from .plan.generation import generate_default_plan
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Query, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from .database import prisma
@@ -25,7 +25,6 @@ def custom_generate_unique_id(route: APIRoute):
 
 
 app = FastAPI(generate_unique_id_function=custom_generate_unique_id)
-
 
 # Allow all CORS
 app.add_middleware(
@@ -107,11 +106,17 @@ async def search_courses(text: str):
 
 
 @app.get("/courses")
-async def get_course_details(code: str):
-    course = await DbCourse.prisma().find_unique(where={"code": code})
-    if course is None:
-        return HTTPException(status_code=404, detail="Course not found")
-    return course
+async def get_course_details(codes: list[str] = Query()):
+    """
+    request example: API/courses?codes=IIC2233&codes=IIC2173
+    """
+    courses: list[DbCourse] = []
+    for code in codes:
+        course = await DbCourse.prisma().find_unique(where={"code": code})
+        if course is None:
+            return HTTPException(status_code=404, detail=f"Course '{code}' not found")
+        courses.append(course)
+    return courses
 
 
 @app.post("/plan/rebuild")
@@ -147,15 +152,6 @@ async def validate_plan(plan: ValidatablePlan):
 
 @app.post("/plan/generate")
 async def generate_plan(passed: ValidatablePlan):
-    curr = await debug_get_curriculum()
-    plan = await generate_default_plan(passed, curr)
+    plan = await generate_default_plan(passed)
 
-    # for debugging purposes:
-    # validation = await validate_plan(plan)
-    # print(validation)
-
-    # TODO: store created plans
-    print("Generated plan:")
-    print(plan)
-
-    return {"message": "Created"}
+    return plan
