@@ -138,18 +138,19 @@ export class DefaultService {
 
     /**
      * Get Course Details
-     * @param code
+     * request example: API/courses?codes=IIC2233&codes=IIC2173
+     * @param codes
      * @returns any Successful Response
      * @throws ApiError
      */
     public static getCourseDetails(
-        code: string,
+        codes: Array<string>,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/courses',
             query: {
-                'code': code,
+                'codes': codes,
             },
             errors: {
                 422: `Validation Error`,

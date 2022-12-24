@@ -3,56 +3,56 @@ import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import SemesterColumn from '../../components/SemesterColumn'
 import CourseCard from '../../components/CourseCard'
-// import { Course } from '../../lib/types'
+import { ValidatablePlan } from '../../client'
 /**
  * The main drag-n-drop planner interface.
- * Displays several semesters, as well as several courses per semester.
+ * Displays several semesters, as well as several classes per semester.
  *
  * TODO: Reemplazar este mockup temporal por algo de verdad.
  */
-const PlanBoard = ({ plan, setPlan }: { plan: string[][], setPlan: Function }): JSX.Element => {
+const PlanBoard = ({ plan, setPlan }: { plan: ValidatablePlan, setPlan: Function }): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false)
   function remCourse (semIdx: number, code: string): void {
-    const idx = plan[semIdx].indexOf(code)
+    const idx = plan.classes[semIdx].indexOf(code)
     if (idx === -1) return
-    setPlan((prev: string[][]) => {
-      const newPlan = [...prev]
-      newPlan[semIdx] = [...prev[semIdx]]
-      newPlan[semIdx].splice(idx, 1)
-      return newPlan
+    setPlan((prev: { classes: string[][] }) => {
+      const newClasses = [...prev.classes]
+      newClasses[semIdx] = [...prev.classes[semIdx]]
+      newClasses[semIdx].splice(idx, 1)
+      return { ...prev, classes: newClasses }
     })
   }
   function addCourse (semIdx: number): void {
     const courseCode = prompt('Course code?')
-    if (courseCode == null || courseCode === '' || plan.flat().includes(courseCode.toUpperCase())) return
+    if (courseCode == null || courseCode === '' || plan.classes.flat().includes(courseCode.toUpperCase())) return
     setPlan((prev: string[][]) => {
-      const newPlan = [...prev]
-      newPlan[semIdx] = [...prev[semIdx]]
-      newPlan[semIdx].push(courseCode.toUpperCase())
-      return newPlan
+      const newClasses = [...plan.classes]
+      newClasses[semIdx] = [...plan.classes[semIdx]]
+      newClasses[semIdx].push(courseCode.toUpperCase())
+      return { ...prev, classes: newClasses }
     })
   }
 
   function moveCourse (semester: number, drag: { semester: number, code: string }, code: string): void {
-    setPlan((prev: string[][]) => {
-      const dragIndex: number = prev[drag.semester].indexOf(drag.code)
-      const newPlan = [...prev]
-      if (semester - prev.length >= 0) {
-        if (semester - prev.length > 0) newPlan.push([])
-        newPlan.push([])
+    setPlan((prev: { classes: string[][] }) => {
+      const dragIndex: number = prev.classes[drag.semester].indexOf(drag.code)
+      const newClasses = [...prev.classes]
+      if (semester - prev.classes.length >= 0) {
+        if (semester - prev.classes.length > 0) newClasses.push([])
+        newClasses.push([])
       }
-      let index = newPlan[semester].indexOf(code)
-      if (index === -1) index = newPlan[semester].length
-      newPlan[semester].splice(index, 0, drag.code)
+      let index = newClasses[semester].indexOf(code)
+      if (index === -1) index = newClasses[semester].length
+      newClasses[semester].splice(index, 0, drag.code)
       if (semester === drag.semester && index < dragIndex) {
-        newPlan[drag.semester].splice(dragIndex + 1, 1)
+        newClasses[drag.semester].splice(dragIndex + 1, 1)
       } else {
-        newPlan[drag.semester].splice(dragIndex, 1)
+        newClasses[drag.semester].splice(dragIndex, 1)
       }
-      while (newPlan[newPlan.length - 1].length === 0) {
-        newPlan.pop()
+      while (newClasses[newClasses.length - 1].length === 0) {
+        newClasses.pop()
       }
-      return newPlan
+      return { ...prev, classes: newClasses }
     })
   }
 
@@ -72,17 +72,17 @@ const PlanBoard = ({ plan, setPlan }: { plan: string[][], setPlan: Function }): 
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="CurriculumTable flex flex-row basis-5/6">
-        {plan.map((courses: string[], semester: number) => (
+        {plan.classes.map((classes: string[], semester: number) => (
             <SemesterColumn key={semester} semester={semester} addEnd={({ course }: any) => moveCourse(semester, course, '')}>
-              {courses?.map((code, index: number) => (
+              {classes?.map((code, index: number) => (
                 <CourseCard key={code} course={{ code, semester }} isDragging={(e: boolean) => setIsDragging(e)} handleMove={({ course }: any) => moveCourse(semester, course, code)} remCourse={() => remCourse(semester, code)}/>
               ))}
             {!isDragging && <button key="+" className="w-20 h-10 bg-slate-300 text-center" onClick={() => addCourse(semester)}>+</button>}
             </SemesterColumn>
         ))}
         {isDragging && <>
-          <SemesterColumn key={plan.length } semester={plan.length } addEnd={({ course }: any) => moveCourse(plan.length, course, '')} />
-          <SemesterColumn key={plan.length + 1} semester={plan.length + 1} addEnd={({ course }: any) => moveCourse(plan.length + 1, course, '')} />
+          <SemesterColumn key={plan.classes.length } semester={plan.classes.length } addEnd={({ course }: any) => moveCourse(plan.classes.length, course, '')} />
+          <SemesterColumn key={plan.classes.length + 1} semester={plan.classes.length + 1} addEnd={({ course }: any) => moveCourse(plan.classes.length + 1, course, '')} />
         </>}
       </div>
     </DndProvider>
