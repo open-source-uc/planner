@@ -1,12 +1,13 @@
 import ErrorTray from './ErrorTray'
 import PlanBoard from './PlanBoard'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { DefaultService, Diagnostic, ValidatablePlan } from '../../client'
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
 const Planner = (): JSX.Element => {
   const [plan, setPlan] = useState<ValidatablePlan | null>(null)
+  const previousClasses = useRef<string[][]>([['']])
   const [loading, setLoading] = useState(true)
   const [validating, setValidanting] = useState(false)
   const [validationDiagnostics, setValidationDiagnostics] = useState<Diagnostic[]>([])
@@ -18,7 +19,6 @@ const Planner = (): JSX.Element => {
         classes: [],
         next_semester: 1
       })
-
       setPlan(response)
       setLoading(false)
       console.log('data loaded')
@@ -30,22 +30,26 @@ const Planner = (): JSX.Element => {
 
   useEffect(() => {
     if (!loading && (plan != null)) {
-      setValidanting(true)
-      const validate = async (): Promise<void> => {
-        console.log('validating...')
-        const response = await DefaultService.validatePlan(plan)
-        setValidationDiagnostics(response.diagnostics)
-        setValidanting(false)
-        console.log('validated')
+      // dont validate if the classes are rearrangein the same semester at prebious validation
+      if (!plan.classes.map((sem, index) => JSON.stringify([...sem].sort()) === JSON.stringify(previousClasses.current[index]?.sort())).every(Boolean)) {
+        setValidanting(true)
+        const validate = async (): Promise<void> => {
+          console.log('validating...')
+          const response = await DefaultService.validatePlan(plan)
+          setValidationDiagnostics(response.diagnostics)
+          setValidanting(false)
+          console.log('validated')
+        }
+        validate().catch(err => {
+          setValidationDiagnostics([{
+            is_warning: false,
+            message: `Internal error: ${String(err)}`
+          }])
+        })
       }
-      validate().catch(err => {
-        setValidationDiagnostics([{
-          is_warning: false,
-          message: `Internal error: ${String(err)}`
-        }])
-      })
+      // make a deep copy of the classes
+      previousClasses.current = JSON.parse(JSON.stringify(plan.classes))
     }
-    // to avoid changes in plan while running validation, we should add plan to the dependency array
   }, [loading, plan])
 
   return (
