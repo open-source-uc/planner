@@ -1,8 +1,7 @@
 import { useRef } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
-import type { Course } from '../lib/types'
 
-const CourseCard = ({ course, isDragging, handleMove, remCourse }: { course: any, isDragging: Function, handleMove: Function, remCourse: Function }): JSX.Element => {
+const CourseCard = ({ course, isDragging, handleMove, remCourse }: { course: { code: string, semester: number }, isDragging: Function, handleMove: Function, remCourse: Function }): JSX.Element => {
   const ref = useRef(null)
   const [collected = { isDragging: false }, drag] = useDrag(
     () => ({
@@ -25,7 +24,7 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse }: { course: any
   )
   const [dropProps, drop] = useDrop(() => ({
     accept: 'card',
-    drop (course: Course) {
+    drop (course: { code: string, semester: number }) {
       handleMove(course)
     },
     collect: monitor => ({

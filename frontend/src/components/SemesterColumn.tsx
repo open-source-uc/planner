@@ -1,10 +1,9 @@
 import { useDrop } from 'react-dnd'
-import type { Course } from '../lib/types'
 
 const SemesterColumn = (props: { semester: number, addEnd: Function, children?: React.ReactNode[] }): JSX.Element => {
   const [dropProps, drop] = useDrop(() => ({
     accept: 'card',
-    drop (course: Course) {
+    drop (course: { code: string, semester: number }) {
       props.addEnd(course)
     },
     collect: monitor => ({
