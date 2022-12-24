@@ -8,6 +8,7 @@ import { DefaultService, Diagnostic, ValidatablePlan } from '../../client'
 const Planner = (): JSX.Element => {
   const [plan, setPlan] = useState<ValidatablePlan | null>(null)
   const [loading, setLoading] = useState(true)
+  const [validating, setValidanting] = useState(false)
   const [validationDiagnostics, setValidationDiagnostics] = useState<Diagnostic[]>([])
 
   useEffect(() => {
@@ -17,8 +18,7 @@ const Planner = (): JSX.Element => {
         classes: [],
         next_semester: 1
       })
-      console.log(response)
-      // TODO save response to local storage
+
       setPlan(response)
       setLoading(false)
       console.log('data loaded')
@@ -30,11 +30,12 @@ const Planner = (): JSX.Element => {
 
   useEffect(() => {
     if (!loading && (plan != null)) {
+      setValidanting(true)
       const validate = async (): Promise<void> => {
         console.log('validating...')
-        console.log(plan)
         const response = await DefaultService.validatePlan(plan)
         setValidationDiagnostics(response.diagnostics)
+        setValidanting(false)
         console.log('validated')
       }
       validate().catch(err => {
@@ -44,11 +45,12 @@ const Planner = (): JSX.Element => {
         }])
       })
     }
+    // to avoid changes in plan while running validation, we should add plan to the dependency array
   }, [loading, plan])
 
   return (
-    <div className="w-full h-full overflow-hidden flex flex-row justify-items-stretch border-red-400 border-2">
-      {(plan != null && !loading) ? <PlanBoard plan={plan} setPlan={setPlan}/> : <div>loading data</div>}
+    <div className={`w-full h-full overflow-hidden flex flex-row justify-items-stretch border-red-400 border-2 ${validating ? 'cursor-wait' : ''}`}>
+      {(!loading && plan != null) ? <PlanBoard plan={plan} setPlan={setPlan} validating={validating}/> : <div>loading</div>}
       <ErrorTray diagnostics={validationDiagnostics} />
     </div>
   )

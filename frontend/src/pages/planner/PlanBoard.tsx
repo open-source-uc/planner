@@ -10,7 +10,7 @@ import { ValidatablePlan } from '../../client'
  *
  * TODO: Reemplazar este mockup temporal por algo de verdad.
  */
-const PlanBoard = ({ plan, setPlan }: { plan: ValidatablePlan, setPlan: Function }): JSX.Element => {
+const PlanBoard = ({ plan, setPlan, validating }: { plan: ValidatablePlan, setPlan: Function, validating: Boolean }): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false)
   function remCourse (semIdx: number, code: string): void {
     const idx = plan.classes[semIdx].indexOf(code)
@@ -69,9 +69,10 @@ const PlanBoard = ({ plan, setPlan }: { plan: ValidatablePlan, setPlan: Function
       </button>
     )
   }) */
+
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="CurriculumTable flex flex-row basis-5/6">
+      <div className= {`CurriculumTable flex flex-row basis-5/6 ${validating === true ? 'pointer-events-none' : ''}`}>
         {plan.classes.map((classes: string[], semester: number) => (
             <SemesterColumn key={semester} semester={semester + 1} addEnd={({ course }: any) => moveCourse(semester, course, '')}>
               {classes?.map((code, index: number) => (
