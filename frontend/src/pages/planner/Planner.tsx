@@ -9,13 +9,13 @@ const Planner = (): JSX.Element => {
   const [plan, setPlan] = useState<ValidatablePlan | null>(null)
   const [loading, setLoading] = useState(true)
   const [validationDiagnostics, setValidationDiagnostics] = useState<Diagnostic[]>([])
-  console.log(plan)
+
   useEffect(() => {
     const getBasicPlan = async (): Promise<void> => {
       console.log('getting Basic Plan...')
       const response = await DefaultService.generatePlan({
-        classes: [[]],
-        next_semester: -1
+        classes: [],
+        next_semester: 1
       })
       console.log(response)
       // TODO save response to local storage

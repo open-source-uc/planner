@@ -73,7 +73,7 @@ const PlanBoard = ({ plan, setPlan }: { plan: ValidatablePlan, setPlan: Function
     <DndProvider backend={HTML5Backend}>
       <div className="CurriculumTable flex flex-row basis-5/6">
         {plan.classes.map((classes: string[], semester: number) => (
-            <SemesterColumn key={semester} semester={semester} addEnd={({ course }: any) => moveCourse(semester, course, '')}>
+            <SemesterColumn key={semester} semester={semester + 1} addEnd={({ course }: any) => moveCourse(semester, course, '')}>
               {classes?.map((code, index: number) => (
                 <CourseCard key={code} course={{ code, semester }} isDragging={(e: boolean) => setIsDragging(e)} handleMove={({ course }: any) => moveCourse(semester, course, code)} remCourse={() => remCourse(semester, code)}/>
               ))}
@@ -81,8 +81,8 @@ const PlanBoard = ({ plan, setPlan }: { plan: ValidatablePlan, setPlan: Function
             </SemesterColumn>
         ))}
         {isDragging && <>
-          <SemesterColumn key={plan.classes.length } semester={plan.classes.length } addEnd={({ course }: any) => moveCourse(plan.classes.length, course, '')} />
-          <SemesterColumn key={plan.classes.length + 1} semester={plan.classes.length + 1} addEnd={({ course }: any) => moveCourse(plan.classes.length + 1, course, '')} />
+          <SemesterColumn key={plan.classes.length } semester={plan.classes.length + 1} addEnd={({ course }: any) => moveCourse(plan.classes.length, course, '')} />
+          <SemesterColumn key={plan.classes.length + 1} semester={plan.classes.length + 2} addEnd={({ course }: any) => moveCourse(plan.classes.length + 1, course, '')} />
         </>}
       </div>
     </DndProvider>
