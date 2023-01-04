@@ -1,17 +1,38 @@
 
-import { Link } from '@tanstack/react-router'
+import { Link, useRouter } from '@tanstack/react-router'
 import { useAuth } from '../contexts/auth.context'
 
 function Navbar (): JSX.Element {
   const authState = useAuth()
+  const router = useRouter()
+  const { pathname } = router.state.currentLocation
 
   return (
-    <nav className="gap-4 font-bold mx-auto max-w-sm mt-5">
-      <ul>
-        <li className="inline mr-4"><Link to="/">Inicio</Link></li>
-        <li className="inline mr-4"><Link to="/planner">Planner</Link></li>
-        {authState?.user == null ? (<li className="inline mr-4"><a href="/api/auth/login">Log in</a></li>) : (<li className="inline mr-4"><Link to="/logout">Cerrar sesión</Link></li>)}
+    <nav className="gap-4 font-bold mx-5 my-3 flex justify-between items-center">
+      <ul className="flex items-center">
+        <li className="inline mr-4"><Link to="/">PanguiPath</Link></li>
+        {pathname?.includes('/planner') &&
+          (<>
+            <li className="inline mr-4 opacity-50 cursor-not-allowed">Exportar Malla</li>
+            <li className="inline mr-4"><Link to="/planner">Resetear Malla</Link></li>
+            {authState?.user != null && (<>
+            <li className="inline mr-4 opacity-50 cursor-not-allowed">Guardar Malla</li>
+            <li className="inline mr-4 opacity-50 cursor-not-allowed">Borrar Malla</li>
+            </>)}
+            <li className="inline mr-4 opacity-50 cursor-not-allowed">Ver Leyenda/ayuda</li>
+            <li className="inline mr-4 opacity-50 cursor-not-allowed">Reportar Errores</li>
+
+           </>)}
       </ul>
+      <ul className="flex items-center">
+        <li className="inline mr-4 justify-end">
+        {!pathname?.includes('/planner') && <li className="inline mr-4 justify-end"><Link to="/planner">Crear Malla</Link></li>}
+        {authState?.user == null
+          ? (<a href="/api/auth/login">Log in</a>)
+          : (<Link to="/logout">Cerrar sesión</Link>)}
+        </li>
+      </ul>
+
     </nav>)
 }
 
