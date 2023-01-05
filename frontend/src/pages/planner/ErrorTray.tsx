@@ -1,4 +1,3 @@
-
 import errorIcon from '../../assets/error.svg'
 import warningIcon from '../../assets/warning.svg'
 import okIcon from '../../assets/ok.svg'
