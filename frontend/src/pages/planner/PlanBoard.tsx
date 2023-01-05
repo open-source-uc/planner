@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import SemesterColumn from '../../components/SemesterColumn'
-import CourseCard from '../../components/CourseCard'
+import SemesterColumn from './SemesterColumn'
+import CourseCard from './CourseCard'
 import { ValidatablePlan } from '../../client'
 /**
  * The main drag-n-drop planner interface.
