@@ -81,7 +81,7 @@ const PlanBoard = ({ plan, setPlan, validating }: { plan: ValidatablePlan, setPl
               {classes?.map((code, index: number) => (
                 <CourseCard key={code} course={{ code, semester }} isDragging={(e: boolean) => setIsDragging(e)} handleMove={({ course }: any) => moveCourse(semester, course, code)} remCourse={() => remCourse(semester, code)}/>
               ))}
-            {!isDragging && <button key="+" className="w-20 h-10 bg-slate-300 text-center" onClick={() => addCourse(semester)}>+</button>}
+            {!isDragging && <div className="h-10 mx-2 bg-slate-300 text-center flex justify-center rounded"> <button key="+" className="w-full" onClick={() => addCourse(semester)}>+</button></div>}
             </SemesterColumn>
         ))}
         {isDragging && <>
