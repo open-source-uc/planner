@@ -19,6 +19,9 @@ const PlanBoard = ({ plan, setPlan, validating }: { plan: ValidatablePlan, setPl
       const newClasses = [...prev.classes]
       newClasses[semIdx] = [...prev.classes[semIdx]]
       newClasses[semIdx].splice(idx, 1)
+      while (newClasses[newClasses.length - 1].length === 0) {
+        newClasses.pop()
+      }
       return { ...prev, classes: newClasses }
     })
   }
