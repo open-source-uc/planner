@@ -7,8 +7,6 @@ import { ValidatablePlan } from '../../client'
 /**
  * The main drag-n-drop planner interface.
  * Displays several semesters, as well as several classes per semester.
- *
- * TODO: Reemplazar este mockup temporal por algo de verdad.
  */
 const PlanBoard = ({ plan, setPlan, validating }: { plan: ValidatablePlan, setPlan: Function, validating: Boolean }): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false)
@@ -59,7 +57,8 @@ const PlanBoard = ({ plan, setPlan, validating }: { plan: ValidatablePlan, setPl
     })
   }
 
-  /* const options: Array<[string, string[][]]> = [
+  /* TODO: add a button to reset the plan to the default one
+  const options: Array<[string, string[][]]> = [
     ['Resetear malla', []],
     ['Plan comun (sin lab de dinamica)', [['MAT1610', 'MAT1203', 'QIM100E', 'ING1004', 'FIL2001'], ['MAT1620', 'ICE1514', 'ICS1513', 'IIC1103', 'TTF058']]],
     ['Plan comun', [['MAT1610', 'MAT1203', 'QIM100E', 'ING1004', 'FIL2001'], ['MAT1620', 'ICE1514', 'ICS1513', 'FIS0154', 'IIC1103', 'TTF058']]]

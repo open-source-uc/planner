@@ -47,7 +47,7 @@ const Planner = (): JSX.Element => {
           }])
         })
       }
-      // make a deep copy of the classes
+      // make a deep copy of the classes to compare with the next validation
       previousClasses.current = JSON.parse(JSON.stringify(plan.classes))
     }
   }, [loading, plan])
