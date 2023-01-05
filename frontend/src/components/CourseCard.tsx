@@ -11,7 +11,7 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse }: { course: { c
         isDragging(true)
         return { course }
       },
-      // i want to freez the card position when the drag is droped, like this:
+      // i want to freeze the card position when the drag is droped, like this:
       end () {
         isDragging(false)
       },

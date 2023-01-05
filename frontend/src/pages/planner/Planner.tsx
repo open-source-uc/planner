@@ -30,7 +30,7 @@ const Planner = (): JSX.Element => {
 
   useEffect(() => {
     if (!loading && (plan != null)) {
-      // dont validate if the classes are rearrangein the same semester at prebious validation
+      // dont validate if the classes are rearranging the same semester at previous validation
       if (!plan.classes.map((sem, index) => JSON.stringify([...sem].sort()) === JSON.stringify(previousClasses.current[index]?.sort())).every(Boolean)) {
         setValidanting(true)
         const validate = async (): Promise<void> => {
