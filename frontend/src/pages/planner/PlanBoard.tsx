@@ -72,7 +72,7 @@ const PlanBoard = ({ plan, setPlan, validating }: { plan: ValidatablePlan, setPl
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className= {`CurriculumTable flex flex-row basis-5/6 ${validating === true ? 'pointer-events-none' : ''}`}>
+      <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap w-5/6 rtl-grid ${validating === true ? 'pointer-events-none' : ''}`}>
         {plan.classes.map((classes: string[], semester: number) => (
             <SemesterColumn key={semester} semester={semester + 1} addEnd={({ course }: any) => moveCourse(semester, course, '')}>
               {classes?.map((code, index: number) => (
@@ -84,7 +84,7 @@ const PlanBoard = ({ plan, setPlan, validating }: { plan: ValidatablePlan, setPl
         {isDragging && <>
           <SemesterColumn key={plan.classes.length } semester={plan.classes.length + 1} addEnd={({ course }: any) => moveCourse(plan.classes.length, course, '')} />
           <SemesterColumn key={plan.classes.length + 1} semester={plan.classes.length + 2} addEnd={({ course }: any) => moveCourse(plan.classes.length + 1, course, '')} />
-        </>}
+          </>}
       </div>
     </DndProvider>
   )

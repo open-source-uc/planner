@@ -53,7 +53,7 @@ const Planner = (): JSX.Element => {
   }, [loading, plan])
 
   return (
-    <div className={`w-full h-full overflow-hidden flex flex-row justify-items-stretch border-red-400 border-2 ${validating ? 'cursor-wait' : ''}`}>
+    <div className={`w-full h-full flex flex-row  border-red-400 border-2 ${validating ? 'cursor-wait' : ''}`}>
       {(!loading && plan != null) ? <PlanBoard plan={plan} setPlan={setPlan} validating={validating}/> : <div>loading</div>}
       <ErrorTray diagnostics={validationDiagnostics} />
     </div>
