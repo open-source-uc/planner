@@ -2,6 +2,7 @@ import ErrorTray from './ErrorTray'
 import PlanBoard from './PlanBoard'
 import { useState, useEffect, useRef } from 'react'
 import { DefaultService, Diagnostic, ValidatablePlan } from '../../client'
+import ControlTopBar from './ControlTopBar'
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
@@ -12,18 +13,20 @@ const Planner = (): JSX.Element => {
   const [validating, setValidanting] = useState(false)
   const [validationDiagnostics, setValidationDiagnostics] = useState<Diagnostic[]>([])
 
+  async function getDefaultPlan (): Promise<void> {
+    console.log('getting Basic Plan...')
+    setLoading(true)
+    const response = await DefaultService.generatePlan({
+      classes: [],
+      next_semester: 1
+    })
+    setPlan(response)
+    setLoading(false)
+    console.log('data loaded')
+  }
+
   useEffect(() => {
-    const getBasicPlan = async (): Promise<void> => {
-      console.log('getting Basic Plan...')
-      const response = await DefaultService.generatePlan({
-        classes: [],
-        next_semester: 1
-      })
-      setPlan(response)
-      setLoading(false)
-      console.log('data loaded')
-    }
-    getBasicPlan().catch(err => {
+    getDefaultPlan().catch(err => {
       console.log(err)
     })
   }, [])
@@ -54,7 +57,10 @@ const Planner = (): JSX.Element => {
 
   return (
     <div className={`w-full h-full flex flex-row  border-red-400 border-2 ${validating ? 'cursor-wait' : ''}`}>
-      {(!loading && plan != null) ? <PlanBoard plan={plan} setPlan={setPlan} validating={validating}/> : <div>loading</div>}
+      <div className={'flex flex-col w-5/6'}>
+        <ControlTopBar reset={getDefaultPlan}/>
+        {(!loading && plan != null) ? <PlanBoard plan={plan} setPlan={setPlan} validating={validating}/> : <div className=' w-5/6'>loading</div>}
+        </div>
       <ErrorTray diagnostics={validationDiagnostics} />
     </div>
   )

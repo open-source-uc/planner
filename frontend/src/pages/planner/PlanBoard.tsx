@@ -57,24 +57,9 @@ const PlanBoard = ({ plan, setPlan, validating }: { plan: ValidatablePlan, setPl
     })
   }
 
-  /* TODO: add a button to reset the plan to the default one
-  const options: Array<[string, string[][]]> = [
-    ['Resetear malla', []],
-    ['Plan comun (sin lab de dinamica)', [['MAT1610', 'MAT1203', 'QIM100E', 'ING1004', 'FIL2001'], ['MAT1620', 'ICE1514', 'ICS1513', 'IIC1103', 'TTF058']]],
-    ['Plan comun', [['MAT1610', 'MAT1203', 'QIM100E', 'ING1004', 'FIL2001'], ['MAT1620', 'ICE1514', 'ICS1513', 'FIS0154', 'IIC1103', 'TTF058']]]
-  ]
-  const buttons = options.map(btndata => {
-    const [name, plan] = btndata
-    return (
-      <button className="w-40 h-10 rounded-md bg-slate-700 text-white" onClick={() => onPlanChange(plan)} key={name}>
-        {name}
-      </button>
-    )
-  }) */
-
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap w-5/6 rtl-grid ${validating === true ? 'pointer-events-none' : ''}`}>
+      <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap rtl-grid ${validating === true ? 'pointer-events-none' : ''}`}>
         {plan.classes.map((classes: string[], semester: number) => (
             <SemesterColumn key={semester} semester={semester + 1} addEnd={({ course }: any) => moveCourse(semester, course, '')}>
               {classes?.map((code, index: number) => (

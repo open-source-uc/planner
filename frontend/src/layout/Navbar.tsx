@@ -11,18 +11,6 @@ function Navbar (): JSX.Element {
     <nav className="gap-4 font-bold mx-5 my-3 flex justify-between items-center">
       <ul className="flex items-center">
         <li className="inline mr-4"><Link to="/">PanguiPath</Link></li>
-        {pathname?.includes('/planner') &&
-          (<>
-            <li className="inline mr-4 opacity-50 cursor-not-allowed">Exportar Malla</li>
-            <li className="inline mr-4"><Link to="/planner">Resetear Malla</Link></li>
-            {authState?.user != null && (<>
-            <li className="inline mr-4 opacity-50 cursor-not-allowed">Guardar Malla</li>
-            <li className="inline mr-4 opacity-50 cursor-not-allowed">Borrar Malla</li>
-            </>)}
-            <li className="inline mr-4 opacity-50 cursor-not-allowed">Ver Leyenda/ayuda</li>
-            <li className="inline mr-4 opacity-50 cursor-not-allowed">Reportar Errores</li>
-
-           </>)}
       </ul>
       <ul className="flex items-center">
         <li className="inline mr-4 justify-end">
