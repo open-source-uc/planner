@@ -6,32 +6,23 @@ from pydantic import BaseModel
 from typing import Optional, Union
 
 
-class BaseNode(BaseModel):
+class Block(BaseModel):
     name: Optional[str] = None
     exclusive: Optional[bool] = None
-
-
-class InternalNode(BaseNode):
+    cap: Optional[int] = None
     children: list["Node"]
 
 
-class Block(InternalNode):
-    name: str
+class CourseList(BaseModel):
+    name: Optional[str] = None
+    cap: int
+    codes: list[str]
 
 
-class RequireSome(InternalNode):
-    capacity: int
-
-
-class CourseList(BaseNode):
-    courses: list[str]
-
-
-Node = Union[Block, RequireSome, CourseList, str]
+Node = Union[Block, CourseList, str]
 
 
 Block.update_forward_refs()
-RequireSome.update_forward_refs()
 
 
 class Curriculum(BaseModel):

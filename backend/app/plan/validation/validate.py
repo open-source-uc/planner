@@ -1,4 +1,4 @@
-from .curriculum.validate import diagnose_curriculum
+from .curriculum.diagnose import diagnose_curriculum
 from .curriculum.tree import Curriculum
 from .courses.validate import PlanContext
 from ..courseinfo import course_info

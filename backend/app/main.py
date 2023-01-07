@@ -1,4 +1,4 @@
-from .plan.validation.curriculum.tree import Combine, Curriculum
+from .plan.validation.curriculum.tree import Block, Curriculum
 from .plan.validation.diagnostic import ValidationResult
 from .plan.validation.validate import diagnose_plan
 import pydantic
@@ -135,7 +135,7 @@ async def debug_get_curriculum():
                 detail="Database is not initialized"
                 + f" (found no block with kind '{block_kind}')",
             )
-        curr.blocks.append(pydantic.parse_obj_as(Combine, block.req))
+        curr.blocks.append(pydantic.parse_obj_as(Block, block.req))
     return curr
 
 

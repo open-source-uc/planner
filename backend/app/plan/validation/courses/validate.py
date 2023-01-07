@@ -61,7 +61,7 @@ class PlanContext:
                 if code not in classes:
                     classes[code] = Class(code, sem)
                 # Accumulate credits
-                # TODO: Do repeated courses count towards this credit count?
+                # TODO: Credits only accumulate if they count towards the curriculum!!
                 if code in courseinfo:
                     creds += courseinfo[code].credits
             acc_credits.append(creds)

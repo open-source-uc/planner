@@ -12,37 +12,37 @@
                 "ICS1513",
                 "IIC1103",
                 {
-                    "name": "TERMO",
+                    "name": "Termodinamica",
                     "cap": 10,
-                    "children": ["FIS1523", "IIQ1003", "ICM1003", "IIQ103H"]
+                    "codes": ["FIS1523", "IIQ1003", "ICM1003", "IIQ103H"]
                 },
                 "FIS0152",
                 "EYP1113",
                 {
-                    "name": "ELECTRO",
+                    "name": "Electromagnetismo",
                     "cap": 10,
-                    "children": ["IEE1533", "FIS1533"]
+                    "codes": ["IEE1533", "FIS1533"]
                 },
                 "FIS0153",
                 "ING2030",
-                {
-                    "name": "BIO",
-                    "cap": 10,
-                    "children": ["BIO100P", "BIO116M", "ING0009", "ING0010", "MEB174", "AGC220", "AGE313", "AGL101", "ASP5022", "BIO110C", "BIO135C", "BIO135F", "BIO141C", "BIO143M", "BIO145C", "BIO145G", "ENF1118", "FIZ1409", "IBM2992", "MED837", "BIO136C"]
-                },
-                {
-                    "name": "FUND",
-                    "cap": 10,
-                    "children": ["ICC1102", "ICC1202", "ICC2222", "ICC2232", "ICC2302", "ICC2312", "ICC2912", "ICC2972", "ICC2981", "ICC2985", "ICC2986", "ICC2987", "ICE1003", "ICE1013", "ICE1302", "ICE1402", "ICE1603", "ICE2113", "ICE2412", "ICE2532", "ICE2702", "ICE2812", "ICE2972", "ICE2981", "ICE2985", "ICE2986", "ICE2987", "ICH1102", "ICH2102", "ICH2112", "ICH2512", "ICH2572", "ICH2972", "ICH2981", "ICH2985", "ICH2986", "ICH2987", "ICM1022", "ICM1113", "ICM1122", "ICM1202", "ICM2102", "ICM2202", "ICM2312", "ICM2322", "ICM2512", "ICM2582", "ICM2612", "ICM2972", "ICM2981", "ICM2982", "ICM2985", "ICM2986", "ICM2987", "ICS1102", "ICS1502", "ICS2212", "ICS2372", "ICS2512", "ICS2522", "ICS2552", "ICS2702", "ICS2712", "ICS2802", "ICS2981", "ICS2985", "ICS2986", "ICS2987", "ICT2222", "ICT2232", "ICT2302", "ICT2902", "ICT2972", "ICT2981", "ICT2985", "ICT2986", "ICT2987", "IEE1122", "IEE2102", "IEE2112", "IEE2172", "IEE2173", "IEE2212", "IEE2272", "IEE2312", "IEE2362", "IEE2412", "IEE2442", "IEE2482", "IEE2512", "IEE2562", "IEE2572", "IEE2612", "IEE2682", "IEE2712", "IEE2782", "IEE2972", "IEE2981", "IEE2985", "IEE2986", "IEE2987", "IIC1062", "IIC1102", "IIC1222", "IIC2132", "IIC2142", "IIC2152", "IIC2212", "IIC2222", "IIC2252", "IIC2322", "IIC2332", "IIC2342", "IIC2412", "IIC2512", "IIC2612", "IIC2722", "IIC2912", "IIC2972", "IIC2981", "IIC2985", "IIC2986", "IIC2987", "IIC2993", "IIQ1002", "IIQ1012", "IIQ1112", "IIQ1210", "IIQ1220", "IIQ1270", "IIQ2002", "IIQ2012", "IIQ2022", "IIQ2032", "IIQ2112", "IIQ2272", "IIQ2302", "IIQ2312", "IIQ2422", "IIQ2612", "IIQ2622", "IIQ2632", "IIQ2642", "IIQ2772", "IIQ2972", "IIQ2981", "IIQ2985", "IIQ2986", "IIQ2987", "IMM2000", "IMM2012", "IMM2015", "IMM2022", "IMM2025", "IMM2032", "IMM2972", "IMM2985", "IMM2986", "IMM2987", "IIC2144", "ICE2422", "IED1100", "IED1000", "IED1200", "IED2100", "IED2200", "IED2600", "IIC2552", "IMM2500", "ICM2630", "ICM2002", "ICC2422", "IIC2562", "IMM2600", "IIQ2122", "IIC2422", "ICC2352", "IIC2742", "IIC2810", "ICM2600", "ING1003", "ICS2803", "ICS2804", "ICH1303", "ICC2413", "ICE2613", "ICC2913", "IIC2732", "IIC2522", "ING2013", "IEE2900", "ICM2500", "ICT2903", "IEE2901", "IIC2122", "IIC2622", "IIC2752", "ICM1312", "ICS2805", "QIM200", "IEE2372", "IEE2492", "ICT2950", "IMM1000", "IIQ2652", "ICC2982", "ICS2806", "ICS2532", "ICE2820", "IMM2650", "ICS2562", "IEE2462", "ICC2242", "ICC2432", "ICH2610", "ICE2680", "IMM2660", "ICS2807", "IIQ2322", "IIQ2142", "IIC2344", "ICS2720", "ICS2820", "ICS2730", "ICM2620", "ICC2282", "ICS1800", "IIQ2372", "IIC2632", "IIC2162", "IIC2153", "IIC2432", "IIC2100", "ICM2640", "ICE2302", "ICM2650", "ICM2993", "IIC2642", "ICM2660", "IIC2734", "ING2985", "ING2986", "ICC2290", "IIC2521", "ICC0020", "ICE0020", "ICH0020", "ICM0020", "ICS0020", "ICT0020", "IEE0020", "IIC0020", "IIQ0020", "IMM0020", "IIC2572", "ICS2721", "IIC2772", "IIC1103", "ING1004", "ICS1513", "ING1001", "ICS1113", "ICH1104", "IEE1133", "IIC1253", "ICC2104", "ICC2204", "ICC2304", "ICE2004", "ICE2313", "ICE2114", "ICE2403", "ICE2604", "ICH2304", "ICH2114", "ICT2904", "ICC2514", "ICC2414", "ICE2623", "ICE2134", "ICH2314", "ICH2134", "ICH2514", "ICC2424", "ICE2614", "ICE2413", "ICE2533", "ICE2703", "ICC2944", "ICE2823", "ICE2833", "ICC2354", "ICE2153", "ICE2683", "IMM2013", "IMM2043", "IMM2503", "ICH2204", "ICH2574", "ICH2124", "IMM2003", "IMM2023", "IMM2033", "IMM2053", "ICS2613", "ICS2523", "ICT2233", "ICT2223", "ICS2123", "ICS2813", "ICS2023", "IIQ2003", "IIQ2343", "IIQ2363", "IIQ2043", "IIQ2133", "IIQ2013", "IIQ2023", "IIQ2113", "IIQ2313", "IIQ2603", "IIC2233", "IIC2133", "IIC2143", "IIC2343", "IIC2333", "IIC2413", "IIC2713", "IIC2173", "IIC2113", "IIC2154", "IEE2123", "IEE2103", "IEE2113", "IEE2183", "IEE2713", "IEE2213", "IEE2313", "IEE2413", "IEE2513", "IEE2613", "IEE2683", "IEE2483", "IEE2273", "IEE2783", "IEE2573", "ICM2503", "ICM2313", "ICM2303", "ICM2403", "ICM2003", "ICM2803", "ICM2323", "ICM2203", "ICM2223", "ICM2333", "ICM2213", "ICM2343", "ICE2013", "IMM2063", "IMM2103", "IMM2213", "IIQ2423", "IIC2733", "IIC2763", "ICT2413", "ICT2303", "ICT2213", "ICT2953", "IIQ2663", "ICS1213", "IIC2223", "IIC2613", "IIC2213", "IIC2283", "IIC2523", "IIC2513", "IIC2345", "IIC2323", "IIC2433", "IEE2664", "IEE2674", "IEE2643", "IEE2923", "IEE2936", "IEE2943", "IEE2693", "IEE2743", "IEE2243", "IEE2233", "IEE2253", "IEE2343", "IEE2353", "IEE2383", "IEE2303", "IEE2373", "IEE2323", "IEE2333", "IEE2514", "IEE2533", "IEE2543", "IEE2584", "IEE2593", "IEE2554", "IEE2774", "IEE2714", "IEE2784", "IEE2764", "IEE2724", "IEE2734", "IEE2864", "ICM2413", "ICM2813", "ICM2423", "ICM2433", "ICM2113", "ICM2253", "ICM2243", "ICM2233", "IIQ2903", "IMM2700", "ICS2025", "IIQ102E", "IIQ1003", "IIC1072", "ICC2954", "ICE2843", "ICM2122", "ICS2020", "ICS2015", "ICS2225", "IMM2973", "ICS2704", "IIQ2143", "IIC2072", "IIQ2913", "ING1024", "ICE1513", "ICS2010", "IIQ2914", "IMC1202", "ICC2234", "IIQ2503", "ICC2454", "ICE2630", "ICE2640", "IIC2515", "ICS2703", "IIC2914", "IMM2370", "ICS2012", "ICE2633", "ICM2132", "ICE2643", "IIQ213Q", "IIQ223Q", "ICS2014", "IEE2423", "ICM2215", "ICM2225", "ICM2235", "IIC2815", "IMA2504", "ING2994", "IIQ1603", "IIC2121", "IIC2714", "IMM2803", "ICS2533", "IIC2253", "ICH2214", "IIC2533", "IIQ2673", "IIQ2683", "IIC2115", "IMT2100", "IIQ2102", "IIQ2243", "IBM2121", "IBM2122", "IBM2123", "ICM2028", "ICM2022", "ICE2005", "IMT1001", "IMT2116", "IMT2112", "IMT2113", "ICS2121", "IMT2111", "IMT2115", "IIE2001", "ICH2394", "ICH2374", "ICH2384", "ICH2103", "ICC2904", "IEE1100", "IEE2244", "IEE2913", "ICE1001", "ICS2122", "ICM1001", "ICM2026", "IMM1003", "IMM2403", "ICT2154", "ICE2028", "ICE2025", "ICE2022", "ICE2024", "ICE2029", "ICE2023", "ICH2104", "ICH2101", "IRB1001", "IRB2001", "IRB2002", "ICT1001", "ICT2253", "IIQ1001", "IEE2634", "IEE2224", "IEE2363", "IEE2493", "ICM2010", "ICM2029", "ICM2025", "IMM2521", "IIQ2303", "ICE2135", "ICM2142", "ICE2020", "ICE2021", "ICM2027", "IEE2101", "IEE2012", "IEE2014", "ING2004", "ICT2443", "IIC2764", "IIQ2693", "ICM1003", "ICS2016", "ING2010", "ICH1005", "IIC1005", "ING1015", "ICS2022", "IBM2025", "ICE2840", "ING2005", "ING2015", "ING2025", "ICH2224", "ICS2011", "ICS2018", "IMM2200", "IBM1005", "IBM2012", "IBM2014", "IBM2101", "IIQ2623", "ICS2564", "IIQ2703", "IEE2324", "IMM2075", "ING2030", "IDI2995", "ING2045", "ING2055", "ICS2009", "IIQ2930", "ICM2240", "IMT2565", "IMM2895", "IIC2685", "IDI1015", "IDI2015", "IDI2004", "IDI2025", "IBM2029", "ING2040", "IEE2473", "IEE2393", "IEE2463", "IEE2753", "ICS113H", "IBM2992", "ING2050", "IMM2583", "ICE2880", "ICH2611", "ICS2870", "IIQ2633", "IEE2433", "ICS2972", "IIQ2723", "IBM2020", "ICM2316", "IEE1533", "IIC2026", "ICS2133", "ING2983", "ICS2125", "IFI1001", "ICC2105", "IFI2122", "IBM2222", "IDI2031", "ICS2031", "ICS2032", "ING2031", "ICH2613", "SUS1000", "ICE1514", "IIQ103H", "IMT2117", "ICC1001", "ICE2006", "ICH2604", "IMM2073", "IMM2083", "IIC2553", "ING2020", "ICE2026", "ICE2027", "IMT2118", "IIC2440", "IIC100G", "IMT2310", "ICS2563", "ING102G", "ING101G", "IRB1010", "IIC1001", "IIC2001", "IIC2002", "IIC2164", "IIC2182", "IIC2214", "IIC2224", "IIC2293", "IIC2531", "IIC2560", "IIQ2643"]
-                },
                 "MAT1203",
                 "ING1004",
                 "MAT1630",
                 "MAT1640",
                 {
-                    "name": "EXPL",
+                    "name": "Biologico",
                     "cap": 10,
-                    "children": ["AQH0000", "IBM1005", "ICC1001", "ICC2304", "ICE2005", "ICE2006", "ICE2623", "ICH1005", "ICH1104", "ICH2304", "ICM1001", "ICM2313", "ICS1113", "ICS113H", "ICT2904", "IDI1015", "IEE1100", "IEE2103", "IEE2123", "IFI1001", "IIC1005", "IIQ1001", "IIQ2663", "IIQ2930", "IMM1003", "IMM2003", "IMT1001", "ING1015", "ING1024", "IRB1001", "IRB2001"]
+                    "codes": ["BIO100P", "BIO116M", "ING0009", "ING0010", "MEB174", "AGC220", "AGE313", "AGL101", "ASP5022", "BIO110C", "BIO135C", "BIO135F", "BIO141C", "BIO143M", "BIO145C", "BIO145G", "ENF1118", "FIZ1409", "IBM2992", "MED837", "BIO136C"]
+                },
+                {
+                    "name": "Exploratorio",
+                    "cap": 10,
+                    "codes": ["AQH0000", "IBM1005", "ICC1001", "ICC2304", "ICE2005", "ICE2006", "ICE2623", "ICH1005", "ICH1104", "ICH2304", "ICM1001", "ICM2313", "ICS1113", "ICS113H", "ICT2904", "IDI1015", "IEE1100", "IEE2103", "IEE2123", "IFI1001", "IIC1005", "IIQ1001", "IIQ2663", "IIQ2930", "IMM1003", "IMM2003", "IMT1001", "ING1015", "ING1024", "IRB1001", "IRB2001"]
+                },
+                {
+                    "name": "Fundamentos",
+                    "cap": 10,
+                    "codes": ["ICC1102", "ICC1202", "ICC2222", "ICC2232", "ICC2302", "ICC2312", "ICC2912", "ICC2972", "ICC2981", "ICC2985", "ICC2986", "ICC2987", "ICE1003", "ICE1013", "ICE1302", "ICE1402", "ICE1603", "ICE2113", "ICE2412", "ICE2532", "ICE2702", "ICE2812", "ICE2972", "ICE2981", "ICE2985", "ICE2986", "ICE2987", "ICH1102", "ICH2102", "ICH2112", "ICH2512", "ICH2572", "ICH2972", "ICH2981", "ICH2985", "ICH2986", "ICH2987", "ICM1022", "ICM1113", "ICM1122", "ICM1202", "ICM2102", "ICM2202", "ICM2312", "ICM2322", "ICM2512", "ICM2582", "ICM2612", "ICM2972", "ICM2981", "ICM2982", "ICM2985", "ICM2986", "ICM2987", "ICS1102", "ICS1502", "ICS2212", "ICS2372", "ICS2512", "ICS2522", "ICS2552", "ICS2702", "ICS2712", "ICS2802", "ICS2981", "ICS2985", "ICS2986", "ICS2987", "ICT2222", "ICT2232", "ICT2302", "ICT2902", "ICT2972", "ICT2981", "ICT2985", "ICT2986", "ICT2987", "IEE1122", "IEE2102", "IEE2112", "IEE2172", "IEE2173", "IEE2212", "IEE2272", "IEE2312", "IEE2362", "IEE2412", "IEE2442", "IEE2482", "IEE2512", "IEE2562", "IEE2572", "IEE2612", "IEE2682", "IEE2712", "IEE2782", "IEE2972", "IEE2981", "IEE2985", "IEE2986", "IEE2987", "IIC1062", "IIC1102", "IIC1222", "IIC2132", "IIC2142", "IIC2152", "IIC2212", "IIC2222", "IIC2252", "IIC2322", "IIC2332", "IIC2342", "IIC2412", "IIC2512", "IIC2612", "IIC2722", "IIC2912", "IIC2972", "IIC2981", "IIC2985", "IIC2986", "IIC2987", "IIC2993", "IIQ1002", "IIQ1012", "IIQ1112", "IIQ1210", "IIQ1220", "IIQ1270", "IIQ2002", "IIQ2012", "IIQ2022", "IIQ2032", "IIQ2112", "IIQ2272", "IIQ2302", "IIQ2312", "IIQ2422", "IIQ2612", "IIQ2622", "IIQ2632", "IIQ2642", "IIQ2772", "IIQ2972", "IIQ2981", "IIQ2985", "IIQ2986", "IIQ2987", "IMM2000", "IMM2012", "IMM2015", "IMM2022", "IMM2025", "IMM2032", "IMM2972", "IMM2985", "IMM2986", "IMM2987", "IIC2144", "ICE2422", "IED1100", "IED1000", "IED1200", "IED2100", "IED2200", "IED2600", "IIC2552", "IMM2500", "ICM2630", "ICM2002", "ICC2422", "IIC2562", "IMM2600", "IIQ2122", "IIC2422", "ICC2352", "IIC2742", "IIC2810", "ICM2600", "ING1003", "ICS2803", "ICS2804", "ICH1303", "ICC2413", "ICE2613", "ICC2913", "IIC2732", "IIC2522", "ING2013", "IEE2900", "ICM2500", "ICT2903", "IEE2901", "IIC2122", "IIC2622", "IIC2752", "ICM1312", "ICS2805", "QIM200", "IEE2372", "IEE2492", "ICT2950", "IMM1000", "IIQ2652", "ICC2982", "ICS2806", "ICS2532", "ICE2820", "IMM2650", "ICS2562", "IEE2462", "ICC2242", "ICC2432", "ICH2610", "ICE2680", "IMM2660", "ICS2807", "IIQ2322", "IIQ2142", "IIC2344", "ICS2720", "ICS2820", "ICS2730", "ICM2620", "ICC2282", "ICS1800", "IIQ2372", "IIC2632", "IIC2162", "IIC2153", "IIC2432", "IIC2100", "ICM2640", "ICE2302", "ICM2650", "ICM2993", "IIC2642", "ICM2660", "IIC2734", "ING2985", "ING2986", "ICC2290", "IIC2521", "ICC0020", "ICE0020", "ICH0020", "ICM0020", "ICS0020", "ICT0020", "IEE0020", "IIC0020", "IIQ0020", "IMM0020", "IIC2572", "ICS2721", "IIC2772", "IIC1103", "ING1004", "ICS1513", "ING1001", "ICS1113", "ICH1104", "IEE1133", "IIC1253", "ICC2104", "ICC2204", "ICC2304", "ICE2004", "ICE2313", "ICE2114", "ICE2403", "ICE2604", "ICH2304", "ICH2114", "ICT2904", "ICC2514", "ICC2414", "ICE2623", "ICE2134", "ICH2314", "ICH2134", "ICH2514", "ICC2424", "ICE2614", "ICE2413", "ICE2533", "ICE2703", "ICC2944", "ICE2823", "ICE2833", "ICC2354", "ICE2153", "ICE2683", "IMM2013", "IMM2043", "IMM2503", "ICH2204", "ICH2574", "ICH2124", "IMM2003", "IMM2023", "IMM2033", "IMM2053", "ICS2613", "ICS2523", "ICT2233", "ICT2223", "ICS2123", "ICS2813", "ICS2023", "IIQ2003", "IIQ2343", "IIQ2363", "IIQ2043", "IIQ2133", "IIQ2013", "IIQ2023", "IIQ2113", "IIQ2313", "IIQ2603", "IIC2233", "IIC2133", "IIC2143", "IIC2343", "IIC2333", "IIC2413", "IIC2713", "IIC2173", "IIC2113", "IIC2154", "IEE2123", "IEE2103", "IEE2113", "IEE2183", "IEE2713", "IEE2213", "IEE2313", "IEE2413", "IEE2513", "IEE2613", "IEE2683", "IEE2483", "IEE2273", "IEE2783", "IEE2573", "ICM2503", "ICM2313", "ICM2303", "ICM2403", "ICM2003", "ICM2803", "ICM2323", "ICM2203", "ICM2223", "ICM2333", "ICM2213", "ICM2343", "ICE2013", "IMM2063", "IMM2103", "IMM2213", "IIQ2423", "IIC2733", "IIC2763", "ICT2413", "ICT2303", "ICT2213", "ICT2953", "IIQ2663", "ICS1213", "IIC2223", "IIC2613", "IIC2213", "IIC2283", "IIC2523", "IIC2513", "IIC2345", "IIC2323", "IIC2433", "IEE2664", "IEE2674", "IEE2643", "IEE2923", "IEE2936", "IEE2943", "IEE2693", "IEE2743", "IEE2243", "IEE2233", "IEE2253", "IEE2343", "IEE2353", "IEE2383", "IEE2303", "IEE2373", "IEE2323", "IEE2333", "IEE2514", "IEE2533", "IEE2543", "IEE2584", "IEE2593", "IEE2554", "IEE2774", "IEE2714", "IEE2784", "IEE2764", "IEE2724", "IEE2734", "IEE2864", "ICM2413", "ICM2813", "ICM2423", "ICM2433", "ICM2113", "ICM2253", "ICM2243", "ICM2233", "IIQ2903", "IMM2700", "ICS2025", "IIQ102E", "IIQ1003", "IIC1072", "ICC2954", "ICE2843", "ICM2122", "ICS2020", "ICS2015", "ICS2225", "IMM2973", "ICS2704", "IIQ2143", "IIC2072", "IIQ2913", "ING1024", "ICE1513", "ICS2010", "IIQ2914", "IMC1202", "ICC2234", "IIQ2503", "ICC2454", "ICE2630", "ICE2640", "IIC2515", "ICS2703", "IIC2914", "IMM2370", "ICS2012", "ICE2633", "ICM2132", "ICE2643", "IIQ213Q", "IIQ223Q", "ICS2014", "IEE2423", "ICM2215", "ICM2225", "ICM2235", "IIC2815", "IMA2504", "ING2994", "IIQ1603", "IIC2121", "IIC2714", "IMM2803", "ICS2533", "IIC2253", "ICH2214", "IIC2533", "IIQ2673", "IIQ2683", "IIC2115", "IMT2100", "IIQ2102", "IIQ2243", "IBM2121", "IBM2122", "IBM2123", "ICM2028", "ICM2022", "ICE2005", "IMT1001", "IMT2116", "IMT2112", "IMT2113", "ICS2121", "IMT2111", "IMT2115", "IIE2001", "ICH2394", "ICH2374", "ICH2384", "ICH2103", "ICC2904", "IEE1100", "IEE2244", "IEE2913", "ICE1001", "ICS2122", "ICM1001", "ICM2026", "IMM1003", "IMM2403", "ICT2154", "ICE2028", "ICE2025", "ICE2022", "ICE2024", "ICE2029", "ICE2023", "ICH2104", "ICH2101", "IRB1001", "IRB2001", "IRB2002", "ICT1001", "ICT2253", "IIQ1001", "IEE2634", "IEE2224", "IEE2363", "IEE2493", "ICM2010", "ICM2029", "ICM2025", "IMM2521", "IIQ2303", "ICE2135", "ICM2142", "ICE2020", "ICE2021", "ICM2027", "IEE2101", "IEE2012", "IEE2014", "ING2004", "ICT2443", "IIC2764", "IIQ2693", "ICM1003", "ICS2016", "ING2010", "ICH1005", "IIC1005", "ING1015", "ICS2022", "IBM2025", "ICE2840", "ING2005", "ING2015", "ING2025", "ICH2224", "ICS2011", "ICS2018", "IMM2200", "IBM1005", "IBM2012", "IBM2014", "IBM2101", "IIQ2623", "ICS2564", "IIQ2703", "IEE2324", "IMM2075", "ING2030", "IDI2995", "ING2045", "ING2055", "ICS2009", "IIQ2930", "ICM2240", "IMT2565", "IMM2895", "IIC2685", "IDI1015", "IDI2015", "IDI2004", "IDI2025", "IBM2029", "ING2040", "IEE2473", "IEE2393", "IEE2463", "IEE2753", "ICS113H", "IBM2992", "ING2050", "IMM2583", "ICE2880", "ICH2611", "ICS2870", "IIQ2633", "IEE2433", "ICS2972", "IIQ2723", "IBM2020", "ICM2316", "IEE1533", "IIC2026", "ICS2133", "ING2983", "ICS2125", "IFI1001", "ICC2105", "IFI2122", "IBM2222", "IDI2031", "ICS2031", "ICS2032", "ING2031", "ICH2613", "SUS1000", "ICE1514", "IIQ103H", "IMT2117", "ICC1001", "ICE2006", "ICH2604", "IMM2073", "IMM2083", "IIC2553", "ING2020", "ICE2026", "ICE2027", "IMT2118", "IIC2440", "IIC100G", "IMT2310", "ICS2563", "ING102G", "ING101G", "IRB1010", "IIC1001", "IIC2001", "IIC2002", "IIC2164", "IIC2182", "IIC2214", "IIC2224", "IIC2293", "IIC2531", "IIC2560", "IIQ2643"]
                 }
             ]
         }
@@ -52,6 +52,13 @@
         {
             "name": "Formacion General",
             "children": [
+                "LET0003",
+                "FIL188",
+                {
+                    "name": "Teologico",
+                    "cap": 10,
+                    "codes": ["!ttf"]
+                },
                 {
                     "name": "OFG",
                     "cap": 50,
@@ -59,18 +66,14 @@
                         {
                             "name": "Deportivos de 5 creditos",
                             "cap": 10,
-                            "children": ["!dpt5"]
+                            "codes": ["!dpt5"]
                         },
-                        "!ofg"
+                        {
+                            "cap": 50,
+                            "codes": ["!ofg"]
+                        }
                     ]
-                },
-                "LET0003",
-                {
-                    "name": "Teologico",
-                    "cap": 10,
-                    "children": ["!ttf"]
-                },
-                "FIL188"
+                }
             ]
         }
     ],
@@ -103,7 +106,8 @@
                 "IEE2613",
                 {
                     "name": "Curso nivel 2000",
-                    "children": ["IEE2010", "IEE2012", "IEE2014", "IEE201L", "IEE2020", "IEE203L", "IEE204L", "IEE2101", "IEE2102", "IEE2112", "IEE2113", "IEE2120", "IEE2123", "IEE2170", "IEE2172", "IEE2173", "IEE2183", "IEE2210", "IEE2212", "IEE2213", "IEE2224", "IEE2233", "IEE2243", "IEE2244", "IEE2253", "IEE2270", "IEE2272", "IEE2273", "IEE2303", "IEE2310", "IEE2312", "IEE2313", "IEE2323", "IEE2324", "IEE2330", "IEE2333", "IEE2340", "IEE2343", "IEE2353", "IEE2360", "IEE2362", "IEE2363", "IEE2372", "IEE2373", "IEE2380", "IEE2383", "IEE2390", "IEE2393", "IEE2410", "IEE2412", "IEE2413", "IEE2423", "IEE2433", "IEE2440", "IEE2442", "IEE2462", "IEE2463", "IEE2470", "IEE2472", "IEE2473", "IEE2482", "IEE2483", "IEE2492", "IEE2493", "IEE2510", "IEE2511", "IEE2512", "IEE2513", "IEE2514", "IEE251A", "IEE2520", "IEE2530", "IEE2533", "IEE2540", "IEE2543", "IEE2554", "IEE2560", "IEE2562", "IEE2570", "IEE2572", "IEE2573", "IEE2584", "IEE2590", "IEE2593", "IEE2610", "IEE2612", "IEE2613", "IEE2634", "IEE2640", "IEE2642", "IEE2643", "IEE2660", "IEE2664", "IEE2670", "IEE2674", "IEE2682", "IEE2683", "IEE2693", "IEE2710", "IEE2712", "IEE2713", "IEE2714", "IEE2718", "IEE2722", "IEE2724", "IEE2730", "IEE2734", "IEE2740", "IEE2743", "IEE2753", "IEE2764", "IEE2770", "IEE2772", "IEE2774", "IEE2780", "IEE2782", "IEE2783", "IEE2784", "IEE2800", "IEE2801", "IEE2864", "IEE2900", "IEE2901", "IEE2910", "IEE2913", "IEE2923", "IEE2936", "IEE2943", "IEE2972", "IEE2981", "IEE2985", "IEE2986", "IEE2987", "IEE2991", "IEE2992", "IEE2995", "IEE2996", "IEE2997", "IEE2998", "IEE2999", "IEE299A", "IEE299B", "IEE299C", "IEE299D", "IEE299E"]
+                    "cap": 10,
+                    "codes": ["IEE2010", "IEE2012", "IEE2014", "IEE201L", "IEE2020", "IEE203L", "IEE204L", "IEE2101", "IEE2102", "IEE2112", "IEE2113", "IEE2120", "IEE2123", "IEE2170", "IEE2172", "IEE2173", "IEE2183", "IEE2210", "IEE2212", "IEE2213", "IEE2224", "IEE2233", "IEE2243", "IEE2244", "IEE2253", "IEE2270", "IEE2272", "IEE2273", "IEE2303", "IEE2310", "IEE2312", "IEE2313", "IEE2323", "IEE2324", "IEE2330", "IEE2333", "IEE2340", "IEE2343", "IEE2353", "IEE2360", "IEE2362", "IEE2363", "IEE2372", "IEE2373", "IEE2380", "IEE2383", "IEE2390", "IEE2393", "IEE2410", "IEE2412", "IEE2413", "IEE2423", "IEE2433", "IEE2440", "IEE2442", "IEE2462", "IEE2463", "IEE2470", "IEE2472", "IEE2473", "IEE2482", "IEE2483", "IEE2492", "IEE2493", "IEE2510", "IEE2511", "IEE2512", "IEE2513", "IEE2514", "IEE251A", "IEE2520", "IEE2530", "IEE2533", "IEE2540", "IEE2543", "IEE2554", "IEE2560", "IEE2562", "IEE2570", "IEE2572", "IEE2573", "IEE2584", "IEE2590", "IEE2593", "IEE2610", "IEE2612", "IEE2613", "IEE2634", "IEE2640", "IEE2642", "IEE2643", "IEE2660", "IEE2664", "IEE2670", "IEE2674", "IEE2682", "IEE2683", "IEE2693", "IEE2710", "IEE2712", "IEE2713", "IEE2714", "IEE2718", "IEE2722", "IEE2724", "IEE2730", "IEE2734", "IEE2740", "IEE2743", "IEE2753", "IEE2764", "IEE2770", "IEE2772", "IEE2774", "IEE2780", "IEE2782", "IEE2783", "IEE2784", "IEE2800", "IEE2801", "IEE2864", "IEE2900", "IEE2901", "IEE2910", "IEE2913", "IEE2923", "IEE2936", "IEE2943", "IEE2972", "IEE2981", "IEE2985", "IEE2986", "IEE2987", "IEE2991", "IEE2992", "IEE2995", "IEE2996", "IEE2997", "IEE2998", "IEE2999", "IEE299A", "IEE299B", "IEE299C", "IEE299D", "IEE299E"]
                 }
             ]
         }
@@ -118,39 +122,39 @@
                     "exclusive": false,
                     "children": [
                         {
-                            "name": "OPTI",
+                            "name": "Optimizacion",
                             "cap": 10,
-                            "children": ["ICS1113", "ICS113H"]
+                            "codes": ["ICS1113", "ICS113H"]
                         },
-                        "IIC2213",
+                        // "IIC2213", // Solo se da los primeros semestres
                         "IIC2223",
                         "IIC2283",
                         "IIC2523",
                         "IIC2513",
                         "IIC2613",
                         "IIC3113",
-                        "IIC3253",
-                        "IIC3533",
-                        "IIC3964",
+                        // "IIC3253", // Solo se da los primeros semestres
+                        // "IIC3533", // wtf no existe o que onda?
+                        // "IIC3964", // wtf tampoco existe?
                         {
                             "name": "Inteligencia de Maquina",
                             "cap": 10,
-                            "children": ["IIC3633", "IIC3640", "IIC3692", "IIC3695", "IIC3697", "IIC3724"]
+                            "codes": ["IIC3633", "IIC3640", "IIC3692", "IIC3695", "IIC3697", "IIC3724"]
                         },
                         {
                             "name": "Ingenieria de Software",
                             "cap": 10,
-                            "children": ["IIC3143", "IIC3380", "IIC3745"]
+                            "codes": ["IIC3143", "IIC3380", "IIC3745"]
                         },
                         {
                             "name": "Manejo de Datos",
                             "cap": 10,
-                            "children": ["IIC3413", "IIC3423", "IIC3432"]
+                            "codes": ["IIC3413", "IIC3423", "IIC3432"]
                         },
                         {
                             "name": "Teoria de la Computacion",
                             "cap": 10,
-                            "children": ["IIC3242", "IIC3263", "IIC3284", "IIC3632", "IIC3810"]
+                            "codes": ["IIC3242", "IIC3263", "IIC3284", "IIC3632", "IIC3810"]
                         }
                     ]
                 },
@@ -161,48 +165,56 @@
                         {
                             "name": "OPTI",
                             "cap": 10,
-                            "children": ["ICS1113", "ICS113H"]
+                            "codes": ["ICS1113", "ICS113H"]
                         },
-                        "IIC2213",
+                        //"IIC2213",
                         "IIC2223",
                         "IIC2283",
                         "IIC2523",
                         "IIC2513",
                         "IIC2613",
                         "IIC3113",
-                        "IIC3253",
-                        "IIC3533",
-                        "IIC3964",
+                        //"IIC3253",
+                        //"IIC3533",
+                        //"IIC3964",
                         {
                             "name": "Inteligencia de Maquina",
                             "cap": 10,
-                            "children": ["IIC3633", "IIC3640", "IIC3692", "IIC3695", "IIC3697", "IIC3724"]
+                            "codes": ["IIC3633", "IIC3640", "IIC3692", "IIC3695", "IIC3697", "IIC3724"]
                         },
                         {
                             "name": "Ingenieria de Software",
                             "cap": 10,
-                            "children": ["IIC3143", "IIC3380", "IIC3745"]
+                            "codes": ["IIC3143", "IIC3380", "IIC3745"]
                         },
                         {
                             "name": "Manejo de Datos",
                             "cap": 10,
-                            "children": ["IIC3413", "IIC3423", "IIC3432"]
+                            "codes": ["IIC3413", "IIC3423", "IIC3432"]
                         },
                         {
                             "name": "Teoria de la Computacion",
                             "cap": 10,
-                            "children": ["IIC3242", "IIC3263", "IIC3284", "IIC3632", "IIC3810"]
+                            "codes": ["IIC3242", "IIC3263", "IIC3284", "IIC3632", "IIC3810"]
                         },
                         // TODO: Investigar reglas concretas para optativos de ingenieria
-                        "!opting",
+                        {
+                            "name": "Optativo de Ingenieria",
+                            "cap": 500,
+                            "codes": ["!opting"]
+                        },
                         // TODO: Investigar que siglas son IPre
                         {
                             "name": "IPRE",
                             "cap": 20,
-                            "children": ["..."]
+                            "codes": ["..."]
                         },
                         // TODO: Investigar cuales son los "cursos realizados en intercambio académico oficial de la Universidad"
-                        "INTERCAMBIO..."
+                        {
+                            "name": "Intercambio",
+                            "cap": 500,
+                            "codes": ["..."]
+                        }
                     ]
                 }
             ]
