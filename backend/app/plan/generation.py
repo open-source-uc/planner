@@ -19,9 +19,11 @@ class CurriculumRecommender:
         # TODO: load curriculums from an outside API (we hardcode it in the meantime)
         # TODO: implement solution for pseudo-courses
         # (e.g FIS1513/ICE1513. Also 'TEOLOGICO', 'OFG', etc.)
+        # TODO: 'FIS1513' is not in database so i replaced it with 'FIS1514'
+        # TODO: 'FIS0151' is not in database so i replaced it with 'FIS0154'
         cls.curriculum = [
             ["MAT1610", "QIM100E", "MAT1203", "ING1004", "FIL2001"],
-            ["MAT1620", "FIS1513", "FIS0151", "ICS1513", "IIC1103"],
+            ["MAT1620", "FIS1514", "FIS0154", "ICS1513", "IIC1103"],
             ["MAT1630", "FIS1523", "FIS0152", "MAT1640"],
             ["EYP1113", "FIS1533", "FIS0153", "IIC2233"],
             ["IIC2143", "ING2030", "IIC1253"],
@@ -54,6 +56,7 @@ def _make_plan(classes: list[list[str]], passed: ValidatablePlan):
         classes=classes,
         next_semester=passed.next_semester,
         level=Level.PREGRADO,
+        school="Ingenieria",
         career="Ingenieria",
     )
 
@@ -73,7 +76,6 @@ async def generate_default_plan(passed: ValidatablePlan):
     semesters.append([])
     while courses_to_pass:
         next_course = courses_to_pass.pop()
-        print(f"adding course {next_course} to semesters {semesters}")
 
         credits = sum(
             courseinfo[c].credits if c in courseinfo else 0 for c in semesters[-1]
@@ -95,7 +97,7 @@ async def generate_default_plan(passed: ValidatablePlan):
                 semesters[-1] = list(filter(lambda a: a not in invalid, semesters[-1]))
 
                 # re-insert the removed courses
-                courses_to_pass = list(invalid) + courses_to_pass
+                courses_to_pass = courses_to_pass + list(invalid)
 
             # initialize next semester
             semesters.append([next_course])

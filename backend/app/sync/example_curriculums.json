@@ -7,7 +7,11 @@
                 "MAT1610",
                 "MAT1620",
                 "QIM100E",
-                "ICE1514",
+                {
+                    "name": "Dinamica",
+                    "cap": 10,
+                    "codes": ["FIS1514", "ICE1514"]
+                },
                 "FIS0154",
                 "ICS1513",
                 "IIC1103",
