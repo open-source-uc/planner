@@ -13,8 +13,8 @@ function Navbar (): JSX.Element {
         <li className="inline mr-4"><Link to="/">PanguiPath</Link></li>
       </ul>
       <ul className="flex items-center">
-        <li className="inline mr-4 justify-end">
         {!pathname?.includes('/planner') && <li className="inline mr-4 justify-end"><Link to="/planner">Crear Malla</Link></li>}
+        <li className="inline mr-4 justify-end">
         {authState?.user == null
           ? (<a href="/api/auth/login">Log in</a>)
           : (<Link to="/logout">Cerrar sesión</Link>)}
