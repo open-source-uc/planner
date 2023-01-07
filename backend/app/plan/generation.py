@@ -22,14 +22,15 @@ class CurriculumRecommender:
         # TODO: 'FIS1513' is not in database so i replaced it with 'FIS1514'
         # TODO: 'FIS0151' is not in database so i replaced it with 'FIS0154'
         cls.curriculum = [
-            ["MAT1610", "QIM100E", "MAT1203", "ING1004", "FIL2001"],
-            ["MAT1620", "FIS1514", "FIS0154", "ICS1513", "IIC1103"],
+            ["MAT1610", "QIM100E", "MAT1203", "ING1004", "FIL188"],
+            ["MAT1620", "FIS1514", "FIS0154", "ICS1513", "IIC1103", "LET0003"],
             ["MAT1630", "FIS1523", "FIS0152", "MAT1640"],
-            ["EYP1113", "FIS1533", "FIS0153", "IIC2233"],
-            ["IIC2143", "ING2030", "IIC1253"],
-            ["IIC2113", "IIC2173", "IIC2413"],
-            ["IIC2133", "IIC2513", "IIC2713"],
-            ["IIC2154"],
+            ["EYP1113", "FIS1533", "FIS0153", "IIC1253", "IIC2233"],
+            ["ING2030", "IIC2133", "IEE2103"],
+            ["IIC2143", "IIC2613", "IIC2343", "IEE2123", "IEE2713"],
+            ["IIC2333", "IIC2513", "IIC2413", "IEE2613"],
+            ["IIC2154", "IIC2223", "IIC2283", "IIC2523", "IIC2513"],
+            ["IIC2613", "IIC3113"],
         ]
 
     @classmethod
