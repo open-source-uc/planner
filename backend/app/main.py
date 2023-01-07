@@ -9,7 +9,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from .database import prisma
 from prisma.models import Post, Course as DbCourse, CurriculumBlock
-from prisma.types import PostCreateInput
+from prisma.types import (
+    PostCreateInput,
+    PlanCreateInput,
+    PlanSemesterCreateInput,
+    PlanClassCreateInput,
+)
 from .auth import require_authentication, login_cas, UserData
 from .sync import run_upstream_sync
 from .plan.courseinfo import clear_course_info_cache, course_info
@@ -155,3 +160,50 @@ async def generate_plan(passed: ValidatablePlan):
     plan = await generate_default_plan(passed)
 
     return plan
+
+
+@app.post("/plan/stored")
+async def save_plan(
+    name: str,
+    plan: ValidatablePlan,
+    user_data: UserData = Depends(require_authentication),
+):
+    # TODO: move logic to external method
+
+    stored_plan = await prisma.plan.create(
+        PlanCreateInput(
+            name=name,
+            user_rut=user_data.rut,
+            next_semester=plan.next_semester,
+            level=plan.level,
+            school=plan.school,
+            program=plan.program,
+            career=plan.career,
+        )
+    )
+
+    for i, sem in enumerate(plan.classes):
+        stored_semester = await prisma.plansemester.create(
+            PlanSemesterCreateInput(plan_id=stored_plan.id, number=i + 1)
+        )
+        for cls in sem:
+            await prisma.planclass.create(
+                PlanClassCreateInput(semester_id=stored_semester.id, class_code=cls)
+            )
+
+    return stored_plan
+
+
+@app.get("/plan/stored")
+async def read_plans():
+    pass
+
+
+@app.put("/plan/stored")
+async def update_plan():
+    pass
+
+
+@app.delete("/plan/stored")
+async def delete_plan():
+    pass
