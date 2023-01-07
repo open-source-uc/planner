@@ -2,6 +2,7 @@ from ..diagnostic import ValidationResult
 from ...plan import ValidatablePlan
 from ...courseinfo import CourseInfo
 from .logic import (
+    Atom,
     BaseOp,
     Const,
     ReqCourse,
@@ -13,7 +14,7 @@ from .logic import (
     ReqProgram,
     ReqSchool,
 )
-from typing import Optional, Type
+from typing import Callable, Optional, Type
 from .simplify import simplify
 
 
@@ -88,13 +89,33 @@ class PlanContext:
         # Some requirement is not satisfied
         # Fill in satisfied requirements, and then simplify resulting expression to get
         # an indication of "what do I have to do in order to satisfy requirements"
+        # Stage 1: ignore courses not in database and fix school/program/career
         missing = simplify(
-            strip_satisfied(
-                self, cl, expr, fixed_nodes=(ReqSchool, ReqProgram, ReqCareer)
+            fold_atoms(
+                self,
+                cl,
+                expr,
+                lambda atom, sat: sat
+                or isinstance(atom, (ReqSchool, ReqProgram, ReqCareer))
+                or (isinstance(atom, ReqCourse) and atom.code not in self.courseinfo),
             )
         )
+        # Stage 2: allow courses that are not in database
         if isinstance(missing, Const):
-            missing = simplify(strip_satisfied(self, cl, expr, fixed_nodes=tuple()))
+            missing = simplify(
+                fold_atoms(
+                    self,
+                    cl,
+                    expr,
+                    lambda atom, sat: sat
+                    or (
+                        isinstance(atom, ReqCourse) and atom.code not in self.courseinfo
+                    ),
+                )
+            )
+        # Stage 3: allow changing everything
+        if isinstance(missing, Const):
+            missing = simplify(fold_atoms(self, cl, expr, lambda atom, sat: sat))
         # Show this expression
         return f"Requisitos faltantes: {missing}"
 
@@ -133,6 +154,29 @@ def is_satisfied(ctx: PlanContext, cl: Class, expr: Expr) -> bool:
             return req_cl.semester < cl.semester
     # assert isinstance(expr, Const)
     return expr.value
+
+
+def fold_atoms(
+    ctx: PlanContext, cl: Class, expr: Expr, do_replace: Callable[[Atom, bool], bool]
+) -> Expr:
+    if isinstance(expr, Operator):
+        # Recursively replace atoms
+        changed = False
+        new_children: list[Expr] = []
+        for child in expr.children:
+            new_child = fold_atoms(ctx, cl, child, do_replace)
+            new_children.append(new_child)
+            if new_child is not child:
+                changed = True
+        if changed:
+            return BaseOp.create(expr.neutral, tuple(new_children))
+    else:
+        # Maybe replace this atom by its truth value
+        truth = is_satisfied(ctx, cl, expr)
+        if do_replace(expr, truth):
+            # Fold this atom into its constant truth value
+            return Const(value=truth)
+    return expr
 
 
 def strip_satisfied(
