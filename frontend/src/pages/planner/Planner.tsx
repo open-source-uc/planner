@@ -2,7 +2,6 @@ import ErrorTray from './ErrorTray'
 import PlanBoard from './PlanBoard'
 import { useState, useEffect, useRef } from 'react'
 import { DefaultService, Diagnostic, ValidatablePlan } from '../../client'
-import ControlTopBar from './ControlTopBar'
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
@@ -20,7 +19,7 @@ const Planner = (): JSX.Element => {
       classes: [],
       next_semester: 1
     })
-    setPlan(response)
+    if (plan !== response) setPlan(response)
     setLoading(false)
     console.log('data loaded')
   }
@@ -57,11 +56,14 @@ const Planner = (): JSX.Element => {
 
   return (
     <div className={`w-full h-full flex flex-row  border-red-400 border-2 ${validating ? 'cursor-wait' : ''}`}>
-      <div className={'flex flex-col w-5/6'}>
-        <ControlTopBar reset={getDefaultPlan}/>
-        {(!loading && plan != null) ? <PlanBoard plan={plan} setPlan={setPlan} validating={validating}/> : <div className=' w-5/6'>loading</div>}
+      {(plan != null)
+        ? <>
+        <div className={'flex flex-col w-5/6'}>
+          <PlanBoard plan={plan} setPlan={setPlan} reset={getDefaultPlan} validating={validating || loading}/>
         </div>
-      <ErrorTray diagnostics={validationDiagnostics} />
+        <ErrorTray diagnostics={validationDiagnostics} validating={validating}/>
+        </>
+        : <div>Loading</div>}
     </div>
   )
 }

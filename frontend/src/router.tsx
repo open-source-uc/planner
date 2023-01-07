@@ -28,11 +28,9 @@ function onAuthenticationError (): void {
   window.location.href = `${import.meta.env.VITE_BASE_API_URL as string}/auth/login`
 }
 
-const plannerRoute = rootRoute.createRoute({
+const defaultPlannerRoute = rootRoute.createRoute({
   path: '/planner',
-  component: Planner,
-  beforeLoad: authenticateRoute,
-  onLoadError: onAuthenticationError
+  component: Planner
 })
 
 const logoutRoute = rootRoute.createRoute({
@@ -40,7 +38,7 @@ const logoutRoute = rootRoute.createRoute({
   component: Logout
 })
 
-const routeConfig = rootRoute.addChildren([homeRoute, plannerRoute, logoutRoute])
+const routeConfig = rootRoute.addChildren([homeRoute, defaultPlannerRoute, logoutRoute])
 
 export const router = createReactRouter({
   routeConfig

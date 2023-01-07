@@ -4,11 +4,12 @@ import { HTML5Backend } from 'react-dnd-html5-backend'
 import SemesterColumn from './SemesterColumn'
 import CourseCard from './CourseCard'
 import { ValidatablePlan } from '../../client'
+import ControlTopBar from './ControlTopBar'
 /**
  * The main drag-n-drop planner interface.
  * Displays several semesters, as well as several classes per semester.
  */
-const PlanBoard = ({ plan, setPlan, validating }: { plan: ValidatablePlan, setPlan: Function, validating: Boolean }): JSX.Element => {
+const PlanBoard = ({ plan, setPlan, reset, validating }: { plan: ValidatablePlan, setPlan: Function, reset: Function, validating: boolean }): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false)
   function remCourse (semIdx: number, code: string): void {
     const idx = plan.classes[semIdx].indexOf(code)
@@ -59,7 +60,8 @@ const PlanBoard = ({ plan, setPlan, validating }: { plan: ValidatablePlan, setPl
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap rtl-grid ${validating === true ? 'pointer-events-none' : ''}`}>
+      <ControlTopBar reset={reset} validating={validating}/>
+      <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap rtl-grid ${validating ? 'pointer-events-none' : ''}`}>
         {plan.classes.map((classes: string[], semester: number) => (
             <SemesterColumn key={semester} semester={semester + 1} addEnd={({ course }: any) => moveCourse(semester, course, '')}>
               {classes?.map((code, index: number) => (
