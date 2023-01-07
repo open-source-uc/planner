@@ -15,7 +15,10 @@ class CurriculumRecommender:
 
     @classmethod
     async def load_curriculum(cls):
-        # by default: 'Malla del major Ingeniería de Software'
+        # Malla by default:
+        # Major: 'Computacion - Track Computacion'
+        # Minor: 'Amplitud de Electrica'
+        # Titulo: 'Civil Computacion'
         # TODO: load curriculums from an outside API (we hardcode it in the meantime)
         # TODO: implement solution for pseudo-courses
         # (e.g FIS1513/ICE1513. Also 'TEOLOGICO', 'OFG', etc.)
