@@ -231,6 +231,7 @@ async def read_plans(user_data: UserData = Depends(require_authentication)):
             plan_classes.append(plan_class_stripped)
 
         return {
+            "id": results[i]["id"],
             "created_at": results[i]["created_at"],
             "updated_at": results[i]["updated_at"],
             "name": results[i]["name"],
@@ -248,8 +249,55 @@ async def read_plans(user_data: UserData = Depends(require_authentication)):
 
 
 @app.put("/plan/stored")
-async def update_plan():
-    pass
+async def update_plan(
+    plan_id: str,
+    new_plan: ValidatablePlan,
+    user_data: UserData = Depends(require_authentication),
+):
+    # TODO: move logic to external method
+    user_plans = await prisma.plan.find_many(where={"user_rut": user_data.rut})
+    if plan_id not in [p.id for p in user_plans]:
+        raise HTTPException(status_code=404, detail="Plan not found in user storage")
+
+    # TODO: use PlanSemesterUpdateManyWithoutRelationsInput for nested relations update
+    updated_plan = await prisma.plan.update(
+        where={
+            "id": plan_id,
+        },
+        data={
+            # TODO --> "semesters": [["..."], ...],
+            "next_semester": new_plan.next_semester,
+            "level": new_plan.level,
+            "school": new_plan.school,
+            "program": new_plan.program,
+            "career": new_plan.career,
+        },
+    )
+
+    return updated_plan
+
+
+@app.put("/plan/stored/name")
+async def rename_plan(
+    plan_id: str,
+    new_name: str,
+    user_data: UserData = Depends(require_authentication),
+):
+    # TODO: move logic to external method
+    user_plans = await prisma.plan.find_many(where={"user_rut": user_data.rut})
+    if plan_id not in [p.id for p in user_plans]:
+        raise HTTPException(status_code=404, detail="Plan not found in user storage")
+
+    updated_plan = await prisma.plan.update(
+        where={
+            "id": plan_id,
+        },
+        data={
+            "name": new_name,
+        },
+    )
+
+    return updated_plan
 
 
 @app.delete("/plan/stored")
