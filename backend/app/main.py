@@ -301,5 +301,19 @@ async def rename_plan(
 
 
 @app.delete("/plan/stored")
-async def delete_plan():
-    pass
+async def delete_plan(
+    plan_id: str,
+    user_data: UserData = Depends(require_authentication),
+):
+    # TODO: move logic to external method
+    user_plans = await prisma.plan.find_many(where={"user_rut": user_data.rut})
+    if plan_id not in [p.id for p in user_plans]:
+        raise HTTPException(status_code=404, detail="Plan not found in user storage")
+
+    deleted_plan = await prisma.plan.delete(
+        where={
+            "id": plan_id,
+        }
+    )
+
+    return deleted_plan

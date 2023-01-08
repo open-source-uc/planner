@@ -52,7 +52,7 @@ model Plan {
 
 model PlanSemester {
   id      String @id @default(cuid())
-  plan    Plan @relation(fields: [plan_id], references: [id])
+  plan    Plan @relation(fields: [plan_id], references: [id], onDelete: Cascade)
   plan_id String
   number  Int
   classes PlanClass[]
@@ -61,7 +61,7 @@ model PlanSemester {
 // TODO: cache class_codes? there could be too much avoidable repetition
 model PlanClass {
   id          String @id @default(cuid())
-  semester    PlanSemester @relation(fields: [semester_id], references: [id])
+  semester    PlanSemester @relation(fields: [semester_id], references: [id], onDelete: Cascade)
   semester_id String
   class_code  String
 }

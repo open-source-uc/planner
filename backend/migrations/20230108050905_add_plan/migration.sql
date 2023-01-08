@@ -33,7 +33,7 @@ CREATE TABLE "PlanClass" (
 );
 
 -- AddForeignKey
-ALTER TABLE "PlanSemester" ADD CONSTRAINT "PlanSemester_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "Plan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PlanSemester" ADD CONSTRAINT "PlanSemester_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "Plan"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PlanClass" ADD CONSTRAINT "PlanClass_semester_id_fkey" FOREIGN KEY ("semester_id") REFERENCES "PlanSemester"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PlanClass" ADD CONSTRAINT "PlanClass_semester_id_fkey" FOREIGN KEY ("semester_id") REFERENCES "PlanSemester"("id") ON DELETE CASCADE ON UPDATE CASCADE;
