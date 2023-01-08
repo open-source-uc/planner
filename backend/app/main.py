@@ -2,7 +2,7 @@ from .plan.validation.curriculum.tree import Combine, Curriculum
 from .plan.validation.diagnostic import ValidationResult
 from .plan.validation.validate import diagnose_plan
 import pydantic
-from .plan.plan import ValidatablePlan
+from .plan.plan import ValidatablePlan, Level
 from .plan.generation import generate_default_plan
 from fastapi import FastAPI, Query, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -169,6 +169,7 @@ async def save_plan(
     user_data: UserData = Depends(require_authentication),
 ):
     # TODO: move logic to external method
+    # TODO: set max 50 plans per user
 
     stored_plan = await prisma.plan.create(
         PlanCreateInput(
@@ -195,8 +196,55 @@ async def save_plan(
 
 
 @app.get("/plan/stored")
-async def read_plans():
-    pass
+async def read_plans(user_data: UserData = Depends(require_authentication)):
+    # TODO: move logic to external method
+
+    results = await prisma.query_raw(
+        """
+        SELECT * FROM "Plan"
+        WHERE user_rut = $1
+        LIMIT 50
+        """,
+        user_data.rut,
+    )
+
+    async def translate_plan_model(i: int):
+        semesters = await prisma.query_raw(
+            """
+            SELECT * FROM "PlanSemester"
+            WHERE plan_id = $1
+            """,
+            results[i]["id"],
+        )
+
+        plan_classes: list[list[str]] = []
+        for s in semesters:
+            plan_class = await prisma.query_raw(
+                """
+                SELECT class_code FROM "PlanClass"
+                WHERE semester_id = $1
+                """,
+                s["id"],
+            )
+            plan_class_stripped = [p["class_code"] for p in plan_class]
+
+            plan_classes.append(plan_class_stripped)
+
+        return {
+            "created_at": results[i]["created_at"],
+            "updated_at": results[i]["updated_at"],
+            "name": results[i]["name"],
+            "plan": ValidatablePlan(
+                classes=plan_classes,
+                next_semester=results[i]["next_semester"],
+                level=Level(results[i]["level"]),
+                school=results[i]["school"],
+                program=results[i]["program"],
+                career=results[i]["career"],
+            ),
+        }
+
+    return [await translate_plan_model(i) for i in range(len(results))]
 
 
 @app.put("/plan/stored")
