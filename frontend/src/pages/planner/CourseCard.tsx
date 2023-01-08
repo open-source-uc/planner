@@ -35,7 +35,6 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse }: { course: { c
     })
   }))
   drag(drop(ref))
-  if (course.name === undefined) console.log(course)
   return (
     <>
     <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3' : ''}`}>
@@ -48,7 +47,7 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse }: { course: { c
             <div className='text-xs'>{course.name !== undefined ? course.name : '???'}</div>
             <div className='text-[0.6rem] text-gray-600'>{course.code}</div>
           </div>
-          <div className='absolute bottom-2 left-2 text-[0.5rem] text-gray-600'>{course.credits} creditos</div>
+          <div className='absolute bottom-2 left-2 text-[0.5rem] text-gray-600'>{course.credits !== undefined ? course.credits : '??'} creditos</div>
       </div>}
       </>}
     </div>
@@ -59,7 +58,7 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse }: { course: { c
             <div className='text-xs'>{course.name !== undefined ? course.name : '???'}</div>
             <div className='text-[0.6rem] text-gray-600'>{course.code}</div>
           </div>
-        <div className='absolute bottom-2 left-2 text-[0.5rem] text-gray-600'>{course.credits} creditos</div>
+        <div className='absolute bottom-2 left-2 text-[0.5rem] text-gray-600'>{course.credits !== undefined ? course.credits : '??'} creditos</div>
       </div>
     </div>
     }

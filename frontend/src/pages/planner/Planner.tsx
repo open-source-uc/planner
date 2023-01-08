@@ -10,26 +10,26 @@ const Planner = (): JSX.Element => {
   const [courseDetails, setCourseDetails] = useState<any>([])
   const previousClasses = useRef<string[][]>([['']])
   const [loading, setLoading] = useState(true)
-  const [validating, setValidanting] = useState(false)
+  const [validating, setValidanting] = useState(true)
   const [validationDiagnostics, setValidationDiagnostics] = useState<Diagnostic[]>([])
 
   async function getCourseDetails (codes: string[]): Promise<void> {
+    setValidanting(true)
     console.log('getting Courses Details...')
     const response = await DefaultService.getCourseDetails(codes)
     if (response?.status_code === 404) return
     setCourseDetails((prev) => { return [...prev, ...response] })
     console.log('Details loaded')
+    setValidanting(false)
   }
 
   async function validate (plan: ValidatablePlan): Promise<void> {
-    console.log('validating...')
     setValidanting(true)
+    console.log('validating...')
     const response = await DefaultService.validatePlan(plan)
     setValidationDiagnostics(response.diagnostics)
-    setValidanting(false)
     console.log('validated')
-    // make a deep copy of the classes to compare with the next validation
-    previousClasses.current = JSON.parse(JSON.stringify(plan.classes))
+    setValidanting(false)
   }
 
   useEffect(() => {
@@ -40,12 +40,6 @@ const Planner = (): JSX.Element => {
         next_semester: 1
       })
       setPlan(response)
-      await getCourseDetails(response.classes.flat() ?? ['']).catch(err => {
-        setValidationDiagnostics([{
-          is_warning: false,
-          message: `Internal error: ${String(err)}`
-        }])
-      })
       await validate(response).catch(err => {
         setValidationDiagnostics([{
           is_warning: false,
@@ -61,9 +55,9 @@ const Planner = (): JSX.Element => {
   }, [])
 
   useEffect(() => {
+    console.log(plan)
     if (!loading && (plan != null)) {
-      // get all classes that differ from the previous validation
-      const addedClasses = plan.classes.map((sem, index) => [...sem].filter(code => !previousClasses.current[index]?.includes(code))).flat()
+      const addedClasses = plan.classes.flat().filter(code => !previousClasses.current.flat().includes(code))
       if (addedClasses.length > 0) {
         getCourseDetails(addedClasses).catch(err => {
           setValidationDiagnostics([{
@@ -72,8 +66,10 @@ const Planner = (): JSX.Element => {
           }])
         })
       }
-      const removedClasses = previousClasses.current.map((sem, index) => [...sem].filter(code => !plan.classes[index]?.includes(code))).flat()
-      console.log(addedClasses, removedClasses)
+      const removedClasses = previousClasses.current.flat().filter(code => !plan.classes.flat().includes(code))
+      if (removedClasses.length > 0) {
+        setCourseDetails((prev) => prev.filter((course: any) => !removedClasses.includes(course.code)))
+      }
       // dont validate if the classes are rearranging the same semester at previous validation
       if (!plan.classes.map((sem, index) => JSON.stringify([...sem].sort()) === JSON.stringify(previousClasses.current[index]?.sort())).every(Boolean)) {
         validate(plan).catch(err => {
@@ -83,6 +79,9 @@ const Planner = (): JSX.Element => {
           }])
         })
       }
+
+      // make a deep copy of the classes to compare with the next validation
+      previousClasses.current = JSON.parse(JSON.stringify(plan.classes))
     }
   }, [loading, plan])
 
