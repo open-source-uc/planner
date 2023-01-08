@@ -7,11 +7,30 @@ import { DefaultService, Diagnostic, ValidatablePlan } from '../../client'
  */
 const Planner = (): JSX.Element => {
   const [plan, setPlan] = useState<ValidatablePlan | null>(null)
-  const [courseDetails, setCourseDetails] = useState<any>(null)
+  const [courseDetails, setCourseDetails] = useState<any>([])
   const previousClasses = useRef<string[][]>([['']])
   const [loading, setLoading] = useState(true)
   const [validating, setValidanting] = useState(false)
   const [validationDiagnostics, setValidationDiagnostics] = useState<Diagnostic[]>([])
+
+  async function getCourseDetails (codes: string[]): Promise<void> {
+    console.log('getting Courses Details...')
+    const response = await DefaultService.getCourseDetails(codes)
+    if (response?.status_code === 404) return
+    setCourseDetails((prev) => { return [...prev, ...response] })
+    console.log('Details loaded')
+  }
+
+  async function validate (plan: ValidatablePlan): Promise<void> {
+    console.log('validating...')
+    setValidanting(true)
+    const response = await DefaultService.validatePlan(plan)
+    setValidationDiagnostics(response.diagnostics)
+    setValidanting(false)
+    console.log('validated')
+    // make a deep copy of the classes to compare with the next validation
+    previousClasses.current = JSON.parse(JSON.stringify(plan.classes))
+  }
 
   useEffect(() => {
     const getBasicPlan = async (): Promise<void> => {
@@ -21,10 +40,18 @@ const Planner = (): JSX.Element => {
         next_semester: 1
       })
       setPlan(response)
-      if (response != null) {
-        const response2 = await DefaultService.getCourseDetails(response?.classes.flat() ?? [''])
-        setCourseDetails(response2)
-      }
+      await getCourseDetails(response.classes.flat() ?? ['']).catch(err => {
+        setValidationDiagnostics([{
+          is_warning: false,
+          message: `Internal error: ${String(err)}`
+        }])
+      })
+      await validate(response).catch(err => {
+        setValidationDiagnostics([{
+          is_warning: false,
+          message: `Internal error: ${String(err)}`
+        }])
+      })
       setLoading(false)
       console.log('data loaded')
     }
@@ -35,25 +62,27 @@ const Planner = (): JSX.Element => {
 
   useEffect(() => {
     if (!loading && (plan != null)) {
-      // dont validate if the classes are rearranging the same semester at previous validation
-      if (!plan.classes.map((sem, index) => JSON.stringify([...sem].sort()) === JSON.stringify(previousClasses.current[index]?.sort())).every(Boolean)) {
-        setValidanting(true)
-        const validate = async (): Promise<void> => {
-          console.log('validating...')
-          const response = await DefaultService.validatePlan(plan)
-          setValidationDiagnostics(response.diagnostics)
-          setValidanting(false)
-          console.log('validated')
-        }
-        validate().catch(err => {
+      // get all classes that differ from the previous validation
+      const addedClasses = plan.classes.map((sem, index) => [...sem].filter(code => !previousClasses.current[index]?.includes(code))).flat()
+      if (addedClasses.length > 0) {
+        getCourseDetails(addedClasses).catch(err => {
           setValidationDiagnostics([{
             is_warning: false,
             message: `Internal error: ${String(err)}`
           }])
         })
       }
-      // make a deep copy of the classes to compare with the next validation
-      previousClasses.current = JSON.parse(JSON.stringify(plan.classes))
+      const removedClasses = previousClasses.current.map((sem, index) => [...sem].filter(code => !plan.classes[index]?.includes(code))).flat()
+      console.log(addedClasses, removedClasses)
+      // dont validate if the classes are rearranging the same semester at previous validation
+      if (!plan.classes.map((sem, index) => JSON.stringify([...sem].sort()) === JSON.stringify(previousClasses.current[index]?.sort())).every(Boolean)) {
+        validate(plan).catch(err => {
+          setValidationDiagnostics([{
+            is_warning: false,
+            message: `Internal error: ${String(err)}`
+          }])
+        })
+      }
     }
   }, [loading, plan])
 

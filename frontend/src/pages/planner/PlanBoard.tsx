@@ -8,7 +8,7 @@ import { ValidatablePlan } from '../../client'
  * The main drag-n-drop planner interface.
  * Displays several semesters, as well as several classes per semester.
  */
-const PlanBoard = ({ plan, courseDetails, setPlan, validating }: { plan: ValidatablePlan, courseDetails: any, setPlan: Function, validating: Boolean }): JSX.Element => {
+const PlanBoard = ({ plan, courseDetails, setPlan, validating }: { plan: ValidatablePlan, courseDetails?: any, setPlan: Function, validating: Boolean }): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false)
   function remCourse (semIdx: number, code: string): void {
     const idx = plan.classes[semIdx].indexOf(code)
@@ -71,14 +71,13 @@ const PlanBoard = ({ plan, courseDetails, setPlan, validating }: { plan: Validat
       </button>
     )
   }) */
-
   return (
     <DndProvider backend={HTML5Backend}>
       <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap w-5/6 rtl-grid ${validating === true ? 'pointer-events-none' : ''}`}>
         {plan.classes.map((classes: string[], semester: number) => (
             <SemesterColumn key={semester} semester={semester + 1} addEnd={({ course }: any) => moveCourse(semester, course, '')}>
               {classes?.map((code, index: number) => (
-                <CourseCard key={code} course={{ ...courseDetails.find(course => course.code === code), semester }} isDragging={(e: boolean) => setIsDragging(e)} handleMove={({ course }: any) => moveCourse(semester, course, code)} remCourse={() => remCourse(semester, code)}/>
+                <CourseCard key={code} course={{ ...courseDetails?.find(course => course.code === code), semester, code }} isDragging={(e: boolean) => setIsDragging(e)} handleMove={({ course }: any) => moveCourse(semester, course, code)} remCourse={() => remCourse(semester, code)}/>
               ))}
             {!isDragging && <div className="h-10 mx-2 bg-slate-300 text-center flex justify-center rounded"> <button key="+" className="w-full" onClick={() => addCourse(semester)}>+</button></div>}
             </SemesterColumn>

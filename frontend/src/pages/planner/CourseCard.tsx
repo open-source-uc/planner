@@ -1,9 +1,8 @@
 import { useRef } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
 
-const CourseCard = ({ course, isDragging, handleMove, remCourse }: { course: { credits: number, name: string, code: string, semester: number }, isDragging: Function, handleMove: Function, remCourse: Function }): JSX.Element => {
+const CourseCard = ({ course, isDragging, handleMove, remCourse }: { course: { credits: number, name?: string, code: string, semester: number }, isDragging: Function, handleMove: Function, remCourse: Function }): JSX.Element => {
   const ref = useRef(null)
-  console.log(course)
   const [collected = { isDragging: false }, drag] = useDrag(
     () => ({
       type: 'card',
@@ -36,6 +35,7 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse }: { course: { c
     })
   }))
   drag(drop(ref))
+  if (course.name === undefined) console.log(course)
   return (
     <>
     <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3' : ''}`}>
@@ -45,7 +45,7 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse }: { course: { c
           <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x
           </button>
           <div className='flex items-center justify-center text-center flex-col'>
-            <div className='text-xs'>{course.name}</div>
+            <div className='text-xs'>{course.name !== undefined ? course.name : '???'}</div>
             <div className='text-[0.6rem] text-gray-600'>{course.code}</div>
           </div>
           <div className='absolute bottom-2 left-2 text-[0.5rem] text-gray-600'>{course.credits} creditos</div>
@@ -56,7 +56,7 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse }: { course: { c
       dropProps.isOver && <div className={'px-2 pb-3'}>
       <div className={'bg-plan-comun card relative group flex justify-center'}>
           <div className='flex items-center justify-center text-center flex-col'>
-            <div className='text-xs'>{course.name}</div>
+            <div className='text-xs'>{course.name !== undefined ? course.name : '???'}</div>
             <div className='text-[0.6rem] text-gray-600'>{course.code}</div>
           </div>
         <div className='absolute bottom-2 left-2 text-[0.5rem] text-gray-600'>{course.credits} creditos</div>
