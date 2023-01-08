@@ -7,6 +7,7 @@ import { DefaultService, Diagnostic, ValidatablePlan } from '../../client'
  */
 const Planner = (): JSX.Element => {
   const [plan, setPlan] = useState<ValidatablePlan | null>(null)
+  const [courseDetails, setCourseDetails] = useState<any>(null)
   const previousClasses = useRef<string[][]>([['']])
   const [loading, setLoading] = useState(true)
   const [validating, setValidanting] = useState(false)
@@ -20,6 +21,10 @@ const Planner = (): JSX.Element => {
         next_semester: 1
       })
       setPlan(response)
+      if (response != null) {
+        const response2 = await DefaultService.getCourseDetails(response?.classes.flat() ?? [''])
+        setCourseDetails(response2)
+      }
       setLoading(false)
       console.log('data loaded')
     }
@@ -54,7 +59,7 @@ const Planner = (): JSX.Element => {
 
   return (
     <div className={`w-full h-full flex flex-row  border-red-400 border-2 ${validating ? 'cursor-wait' : ''}`}>
-      {(!loading && plan != null) ? <PlanBoard plan={plan} setPlan={setPlan} validating={validating}/> : <div>loading</div>}
+      {(!loading && plan != null) ? <PlanBoard plan={plan} courseDetails={courseDetails} setPlan={setPlan} validating={validating}/> : <div>loading</div>}
       <ErrorTray diagnostics={validationDiagnostics} />
     </div>
   )
