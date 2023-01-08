@@ -8,9 +8,8 @@ from fastapi import FastAPI, Query, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from .database import prisma
-from prisma.models import Post, Course as DbCourse, CurriculumBlock
+from prisma.models import Course as DbCourse, CurriculumBlock
 from prisma.types import (
-    PostCreateInput,
     PlanCreateInput,
     PlanSemesterCreateInput,
     PlanClassCreateInput,
@@ -65,16 +64,6 @@ async def health():
     await prisma.query_raw("SELECT 1")
 
     return {"message": "OK"}
-
-
-@app.get("/posts")
-async def get_posts() -> List[Post]:
-    return await Post.prisma().find_many()
-
-
-@app.put("/posts")
-async def create_post(post: PostCreateInput):
-    return await prisma.post.create(post)
 
 
 @app.get("/auth/login")
