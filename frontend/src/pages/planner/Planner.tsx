@@ -112,15 +112,24 @@ const Planner = (): JSX.Element => {
   return (
     <div className={`w-full h-full pb-10 flex flex-row border-red-400 border-2 ${validating ? 'cursor-wait' : ''}`}>
       {(!loading)
-        ? <PlanBoard
-      plan={plan}
-      courseDetails={courseDetails}
-      setPlan={setPlan}
-      addCourse={addCourse}
-      validating={validating}
-      />
-        : <div>loading</div>}
-      <ErrorTray diagnostics={validationDiagnostics} />
+        ? <>
+        <div className={'flex flex-col w-5/6'}>
+          <ul className={'w-full mb-1 mt-2'}>
+            <li className={'inline text-xl ml-3 mr-10'}>Titulo: Civil Computacion</li>
+            <li className={'inline text-xl mr-10'}>Major: Computacion - Track Computacion</li>
+            <li className={'inline text-xl mr-10'}>Minor: Electrica</li>
+          </ul>
+          <PlanBoard
+            plan={plan}
+            courseDetails={courseDetails}
+            setPlan={setPlan}
+            addCourse={addCourse}
+            validating={validating}
+          />
+        </div>
+        <ErrorTray diagnostics={validationDiagnostics} />
+        </>
+        : <div>Loading</div>}
     </div>
   )
 }
