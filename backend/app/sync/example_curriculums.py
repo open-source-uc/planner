@@ -1,6 +1,6 @@
 from prisma import Json
 from prisma.models import CurriculumBlock
-from ..plan.validation.curriculum.tree import Combine
+from ..plan.validation.curriculum.tree import Block
 import os
 
 import pydantic
@@ -19,13 +19,15 @@ async def load_to_database():
                 line = line[:comment_idx]
             raw += line + "\n"
     # Convert to a list of (kind, block) tuples
-    blocks = pydantic.parse_raw_as(list[tuple[str, Combine]], raw)
+    blocks = pydantic.parse_raw_as(list[tuple[str, Block]], raw)
     print(f"  loaded {len(blocks)} curriculum blocks")
     # Clear previous blocks
     await CurriculumBlock.prisma().delete_many()
     # Put blocks into database
     print("  loading blocks into db...")
     for kind, block in blocks:
+        if block.name is None:
+            raise Exception("curriculum block name cannot be None")
         await CurriculumBlock.prisma().create(
             {"kind": kind, "name": block.name, "req": Json(block.dict())}
         )
