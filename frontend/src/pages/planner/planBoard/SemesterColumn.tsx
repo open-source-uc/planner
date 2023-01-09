@@ -20,7 +20,7 @@ const SemesterColumn = ({ semester, addEnd, children }: SemesterColumnProps): JS
   }))
   return (
         <div className={'drop-shadow-xl w-[165px] shrink-0 bg-base-200 rounded-lg'}>
-          <h2 className="mt-1 text-xl text-center">{`Semestre ${semester}`}</h2>
+          <h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester}`}</h2>
           <div className="my-2 divider"></div>
           <div className={'max-h-full '}>
             {children}

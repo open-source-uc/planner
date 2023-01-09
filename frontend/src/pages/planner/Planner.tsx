@@ -114,10 +114,11 @@ const Planner = (): JSX.Element => {
       {(!loading)
         ? <>
         <div className={'flex flex-col w-5/6'}>
-          <ul className={'w-full mb-1 mt-2'}>
-            <li className={'inline text-xl ml-3 mr-10'}>Titulo: Civil Computacion</li>
-            <li className={'inline text-xl mr-10'}>Major: Computacion - Track Computacion</li>
-            <li className={'inline text-xl mr-10'}>Minor: Electrica</li>
+
+        <ul className={'w-full mb-1 mt-2'}>
+            <li className={'inline text-xl ml-3 mr-10'}><div className={'text-sm inline mr-1'}>Titulo:</div> Civil Computacion</li>
+            <li className={'inline text-xl mr-10'}><div className={'text-sm inline mr-1'}>Major:</div>  Computacion - Track Computacion</li>
+            <li className={'inline text-xl mr-10'}><div className={'text-sm inline mr-1'}>Minor:</div> Electrica</li>
           </ul>
           <PlanBoard
             plan={plan}
