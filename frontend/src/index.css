@@ -9,9 +9,16 @@
     border-radius: theme('borderRadius.lg');
     padding: theme('spacing.1');
     box-shadow: theme('boxShadow.xl');
+    position: relative;
+    display: flex; 
+    justify-content: center;
   }
   .CurriculumTable{
     overflow-y: overlay;
+    overflow-x: auto; 
+    display: flex; 
+    flex-direction: row; 
+    flex-wrap: nowrap;
+    width: 83.333333%;
   }
-  /* ... */
 }
