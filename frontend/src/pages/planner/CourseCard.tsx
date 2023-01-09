@@ -1,7 +1,8 @@
 import { useRef } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
+import { Course } from './Planner'
 
-const CourseCard = ({ course, isDragging, handleMove, remCourse }: { course: { credits: number, name?: string, code: string, semester: number }, isDragging: Function, handleMove: Function, remCourse: Function }): JSX.Element => {
+const CourseCard = ({ course, isDragging, handleMove, remCourse }: { course: Course, isDragging: Function, handleMove: Function, remCourse: Function }): JSX.Element => {
   const ref = useRef(null)
   const [collected = { isDragging: false }, drag] = useDrag(
     () => ({
@@ -25,7 +26,7 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse }: { course: { c
   )
   const [dropProps, drop] = useDrop(() => ({
     accept: 'card',
-    drop (course: { code: string, semester: number }) {
+    drop (course: Course) {
       handleMove(course)
     },
     collect: monitor => ({
@@ -41,24 +42,22 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse }: { course: { c
       {dropProps.isOver
         ? <div className={'bg-place-holder card'} />
         : <>{!collected.isDragging && <div className={'bg-plan-comun card relative group flex justify-center'}>
-          <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x
-          </button>
+          <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>
           <div className='flex items-center justify-center text-center flex-col'>
-            <div className='text-xs'>{course.name !== undefined ? course.name : '???'}</div>
+            <div className='text-xs'>{ course.name }</div>
             <div className='text-[0.6rem] text-gray-600'>{course.code}</div>
           </div>
-          <div className='absolute bottom-2 left-2 text-[0.5rem] text-gray-600'>{course.credits !== undefined ? course.credits : '??'} creditos</div>
+          <div className='absolute bottom-2 left-2 text-[0.5rem] text-gray-600'>{course.credits} creditos</div>
       </div>}
       </>}
     </div>
-    {
-      dropProps.isOver && <div className={'px-2 pb-3'}>
+    { dropProps.isOver && <div className={'px-2 pb-3'}>
       <div className={'bg-plan-comun card relative group flex justify-center'}>
-          <div className='flex items-center justify-center text-center flex-col'>
-            <div className='text-xs'>{course.name !== undefined ? course.name : '???'}</div>
-            <div className='text-[0.6rem] text-gray-600'>{course.code}</div>
-          </div>
-        <div className='absolute bottom-2 left-2 text-[0.5rem] text-gray-600'>{course.credits !== undefined ? course.credits : '??'} creditos</div>
+        <div className='flex items-center justify-center text-center flex-col'>
+          <div className='text-xs'>{course.name}</div>
+          <div className='text-[0.6rem] text-gray-600'>{course.code}</div>
+        </div>
+        <div className='absolute bottom-2 left-2 text-[0.5rem] text-gray-600'>{course.credits} creditos</div>
       </div>
     </div>
     }

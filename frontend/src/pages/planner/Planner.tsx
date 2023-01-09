@@ -5,9 +5,22 @@ import { DefaultService, Diagnostic, ValidatablePlan } from '../../client'
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
+
+export interface Course {
+  code: string
+  name: string
+  credits: number
+  deps: JSON
+  program: string
+  school: string
+  area?: string
+  category?: string
+  semester?: number
+}
+
 const Planner = (): JSX.Element => {
   const [plan, setPlan] = useState<ValidatablePlan | null>(null)
-  const [courseDetails, setCourseDetails] = useState<any>([])
+  const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course }>({})
   const previousClasses = useRef<string[][]>([['']])
   const [loading, setLoading] = useState(true)
   const [validating, setValidanting] = useState(true)
@@ -18,7 +31,12 @@ const Planner = (): JSX.Element => {
     console.log('getting Courses Details...')
     const response = await DefaultService.getCourseDetails(codes)
     if (response?.status_code === 404) return
-    setCourseDetails((prev) => { return [...prev, ...response] })
+    // transform response to dict with key code:
+    const dict = response.reduce((acc: { [code: string]: Course }, curr: Course) => {
+      acc[curr.code] = curr
+      return acc
+    }, {})
+    setCourseDetails((prev) => { return { ...prev, ...dict } })
     console.log('Details loaded')
     setValidanting(false)
   }
@@ -32,6 +50,20 @@ const Planner = (): JSX.Element => {
     setValidanting(false)
   }
 
+  async function addCourse (semIdx: number): Promise<void> {
+    const courseCode = prompt('Course code?')
+    if (courseCode == null || courseCode === '' || plan?.classes.flat().includes(courseCode.toUpperCase()) === true) return
+    const response = await DefaultService.getCourseDetails([courseCode.toUpperCase()])
+    if (response?.status_code === 404) return
+    setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
+    setPlan((prev) => {
+      const newClasses = [...prev.classes]
+      newClasses[semIdx] = [...prev.classes[semIdx]]
+      newClasses[semIdx].push(response[0].code)
+      return { ...prev, classes: newClasses }
+    })
+  }
+
   useEffect(() => {
     const getBasicPlan = async (): Promise<void> => {
       console.log('getting Basic Plan...')
@@ -40,6 +72,12 @@ const Planner = (): JSX.Element => {
         next_semester: 1
       })
       setPlan(response)
+      await getCourseDetails(response.classes).catch(err => {
+        setValidationDiagnostics([{
+          is_warning: false,
+          message: `Internal error: ${String(err)}`
+        }])
+      })
       await validate(response).catch(err => {
         setValidationDiagnostics([{
           is_warning: false,
@@ -55,21 +93,7 @@ const Planner = (): JSX.Element => {
   }, [])
 
   useEffect(() => {
-    console.log(plan)
     if (!loading && (plan != null)) {
-      const addedClasses = plan.classes.flat().filter(code => !previousClasses.current.flat().includes(code))
-      if (addedClasses.length > 0) {
-        getCourseDetails(addedClasses).catch(err => {
-          setValidationDiagnostics([{
-            is_warning: false,
-            message: `Internal error: ${String(err)}`
-          }])
-        })
-      }
-      const removedClasses = previousClasses.current.flat().filter(code => !plan.classes.flat().includes(code))
-      if (removedClasses.length > 0) {
-        setCourseDetails((prev) => prev.filter((course: any) => !removedClasses.includes(course.code)))
-      }
       // dont validate if the classes are rearranging the same semester at previous validation
       if (!plan.classes.map((sem, index) => JSON.stringify([...sem].sort()) === JSON.stringify(previousClasses.current[index]?.sort())).every(Boolean)) {
         validate(plan).catch(err => {
@@ -78,6 +102,10 @@ const Planner = (): JSX.Element => {
             message: `Internal error: ${String(err)}`
           }])
         })
+        // const removedClasses = previousClasses.current.flat().filter(code => !plan.classes.flat().includes(code))
+        // if (removedClasses.length > 0) {
+        // setCourseDetails((prev) => prev.filter((course: any) => !removedClasses.includes(course.code)))
+        // }
       }
 
       // make a deep copy of the classes to compare with the next validation
@@ -87,7 +115,7 @@ const Planner = (): JSX.Element => {
 
   return (
     <div className={`w-full h-full pb-10 flex flex-row border-red-400 border-2 ${validating ? 'cursor-wait' : ''}`}>
-      {(!loading && plan != null) ? <PlanBoard plan={plan} courseDetails={courseDetails} setPlan={setPlan} validating={validating}/> : <div>loading</div>}
+      {(!loading && plan != null) ? <PlanBoard plan={plan} courseDetails={courseDetails} setPlan={setPlan} addCourse={addCourse} validating={validating}/> : <div>loading</div>}
       <ErrorTray diagnostics={validationDiagnostics} />
     </div>
   )

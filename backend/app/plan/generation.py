@@ -32,8 +32,8 @@ class CurriculumRecommender:
             ["ING2030", "IIC2133", "IEE2103"],
             ["IIC2143", "IIC2613", "IIC2343", "IEE2123", "IEE2713"],
             ["IIC2333", "IIC2513", "IIC2413", "IEE2613"],
-            ["IIC2154", "IIC2223", "IIC2283", "IIC2523", "IIC2513"],
-            ["IIC2613", "IIC3113"],
+            ["IIC2154", "IIC2223", "IIC2283", "IIC2523"],
+            ["IIC3113"],
         ]
 
     @classmethod
