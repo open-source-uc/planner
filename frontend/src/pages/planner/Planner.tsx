@@ -116,9 +116,9 @@ const Planner = (): JSX.Element => {
         <div className={'flex flex-col w-5/6'}>
 
         <ul className={'w-full mb-1 mt-2'}>
-            <li className={'inline text-xl ml-3 mr-10'}><div className={'text-sm inline mr-1'}>Titulo:</div> Civil Computacion</li>
-            <li className={'inline text-xl mr-10'}><div className={'text-sm inline mr-1'}>Major:</div>  Computacion - Track Computacion</li>
-            <li className={'inline text-xl mr-10'}><div className={'text-sm inline mr-1'}>Minor:</div> Electrica</li>
+            <li className={'inline text-xl ml-3 mr-10 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> Civil Computación</li>
+            <li className={'inline text-xl mr-10 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div>  Computación - Track Computación</li>
+            <li className={'inline text-xl mr-10 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Eléctrica</li>
           </ul>
           <PlanBoard
             plan={plan}
