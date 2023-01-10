@@ -6,23 +6,24 @@ from pydantic import BaseModel
 from typing import Optional, Union
 
 
-class Combine(BaseModel):
-    name: str
-    # Maximum flow that the node can receive before becoming saturated.
-    # Defaults to the sum of its children.
-    cap: Optional[int] = None
-    # Defines whether course dependencies should be exclusive or not.
-    # If `None`, the node inherits its exclusiveness from its parent.
+class Block(BaseModel):
+    name: Optional[str] = None
     exclusive: Optional[bool] = None
-    # List of children nodes that can supply flow to this node.
+    cap: Optional[int] = None
     children: list["Node"]
 
 
-Node = Union[Combine, str]
+class CourseList(BaseModel):
+    name: Optional[str] = None
+    cap: int
+    codes: list[str]
 
 
-Combine.update_forward_refs()
+Node = Union[Block, CourseList, str]
+
+
+Block.update_forward_refs()
 
 
 class Curriculum(BaseModel):
-    blocks: list[Combine]
+    blocks: list[Block]
