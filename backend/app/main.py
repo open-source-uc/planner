@@ -248,17 +248,17 @@ async def update_plan(
     user_data: UserData = Depends(require_authentication),
 ):
     # TODO: move logic to external method
+    # TODO: use PlanSemesterUpdateManyWithoutRelationsInput for nested relations update
+
     user_plans = await prisma.plan.find_many(where={"user_rut": user_data.rut})
     if plan_id not in [p.id for p in user_plans]:
         raise HTTPException(status_code=404, detail="Plan not found in user storage")
 
-    # TODO: use PlanSemesterUpdateManyWithoutRelationsInput for nested relations update
     updated_plan = await prisma.plan.update(
         where={
             "id": plan_id,
         },
         data={
-            # TODO --> "semesters": [["..."], ...],
             "next_semester": new_plan.next_semester,
             "level": new_plan.level,
             "school": new_plan.school,
@@ -266,6 +266,27 @@ async def update_plan(
             "career": new_plan.career,
         },
     )
+
+    # big refactor needed ahead..
+
+    old_semesters = await prisma.plansemester.find_many(where={"plan_id": plan_id})
+
+    # remove old classes
+    for sem in old_semesters:
+        CLASES = await prisma.planclass.find_many(where={"semester_id": sem.id})
+        for CLASE in CLASES:
+            await prisma.planclass.delete(where={"id": CLASE.id})
+        await prisma.plansemester.delete(where={"id": sem.id})
+
+    # create new classes
+    for i, sem in enumerate(new_plan.classes):
+        stored_semester = await prisma.plansemester.create(
+            PlanSemesterCreateInput(plan_id=plan_id, number=i + 1)
+        )
+        for cls in sem:
+            await prisma.planclass.create(
+                PlanClassCreateInput(semester_id=stored_semester.id, class_code=cls)
+            )
 
     return updated_plan
 
