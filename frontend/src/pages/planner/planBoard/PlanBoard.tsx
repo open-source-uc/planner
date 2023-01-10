@@ -4,7 +4,6 @@ import { HTML5Backend } from 'react-dnd-html5-backend'
 import { Course } from '../Planner'
 import SemesterColumn from './SemesterColumn'
 import CourseCard from './CourseCard'
-import ControlTopBar from '../ControlTopBar'
 import { ValidatablePlan } from '../../../client'
 /**
  * The main drag-n-drop planner interface.
@@ -16,11 +15,10 @@ interface PlanBoardProps {
   courseDetails: { [code: string]: Course }
   setPlan: Function
   addCourse: Function
-  reset: Function
   validating: boolean
 }
 
-const PlanBoard = ({ plan, courseDetails, setPlan, reset, addCourse, validating }: PlanBoardProps): JSX.Element => {
+const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating }: PlanBoardProps): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false)
   function remCourse (semIdx: number, code: string): void {
     const idx = plan.classes[semIdx].indexOf(code)
@@ -61,7 +59,6 @@ const PlanBoard = ({ plan, courseDetails, setPlan, reset, addCourse, validating 
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <ControlTopBar reset={reset} validating={validating}/>
       <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap rtl-grid ${validating ? 'pointer-events-none' : ''}`}>
         {plan.classes.map((classes: string[], semester: number) => (
             <SemesterColumn

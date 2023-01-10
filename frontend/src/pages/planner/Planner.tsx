@@ -1,5 +1,6 @@
 import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
+import ControlTopBar from './ControlTopBar'
 import { useState, useEffect, useRef } from 'react'
 import { DefaultService, Diagnostic, ValidatablePlan } from '../../client'
 /**
@@ -117,17 +118,16 @@ const Planner = (): JSX.Element => {
       {(!loading)
         ? <>
         <div className={'flex flex-col w-5/6'}>
-
-        <ul className={'w-full mb-1 mt-2'}>
+          <ul className={'w-full mb-1 mt-2'}>
             <li className={'inline text-xl ml-3 mr-10 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> Civil Computación</li>
             <li className={'inline text-xl mr-10 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div>  Computación - Track Computación</li>
             <li className={'inline text-xl mr-10 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Eléctrica</li>
           </ul>
+          <ControlTopBar reset={getDefaultPlan} validating={validating}/>
           <PlanBoard
             plan={plan}
             courseDetails={courseDetails}
             setPlan={setPlan}
-            reset={getDefaultPlan}
             addCourse={addCourse}
             validating={validating}
           />

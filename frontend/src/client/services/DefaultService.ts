@@ -1,7 +1,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { PostCreateInput } from '../models/PostCreateInput';
 import type { ValidatablePlan } from '../models/ValidatablePlan';
 import type { ValidationResult } from '../models/ValidationResult';
 
@@ -32,38 +31,6 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/health',
-        });
-    }
-
-    /**
-     * Get Posts
-     * @returns any Successful Response
-     * @throws ApiError
-     */
-    public static getPosts(): CancelablePromise<any> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/posts',
-        });
-    }
-
-    /**
-     * Create Post
-     * @param requestBody
-     * @returns any Successful Response
-     * @throws ApiError
-     */
-    public static createPost(
-        requestBody: PostCreateInput,
-    ): CancelablePromise<any> {
-        return __request(OpenAPI, {
-            method: 'PUT',
-            url: '/posts',
-            body: requestBody,
-            mediaType: 'application/json',
-            errors: {
-                422: `Validation Error`,
-            },
         });
     }
 
@@ -204,6 +171,113 @@ export class DefaultService {
             url: '/plan/generate',
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Read Plans
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static readPlans(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/plan/stored',
+        });
+    }
+
+    /**
+     * Update Plan
+     * @param planId
+     * @param requestBody
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static updatePlan(
+        planId: string,
+        requestBody: ValidatablePlan,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/plan/stored',
+            query: {
+                'plan_id': planId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Save Plan
+     * @param name
+     * @param requestBody
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static savePlan(
+        name: string,
+        requestBody: ValidatablePlan,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/plan/stored',
+            query: {
+                'name': name,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Delete Plan
+     * @param planId
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static deletePlan(
+        planId: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/plan/stored',
+            query: {
+                'plan_id': planId,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Rename Plan
+     * @param planId
+     * @param newName
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static renamePlan(
+        planId: string,
+        newName: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/plan/stored/name',
+            query: {
+                'plan_id': planId,
+                'new_name': newName,
+            },
             errors: {
                 422: `Validation Error`,
             },

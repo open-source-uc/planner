@@ -5,7 +5,7 @@ function ControlTopBar ({ reset, validating }: { reset: Function, validating: bo
   const authState = useAuth()
 
   return (
-        <ul className="flex items-center">
+        <ul className="flex items-center  ml-3">
           <li className="inline mr-4 opacity-50 cursor-not-allowed">Exportar Malla</li>
           <li className={`inline mr-4 ${validating ? 'pointer-events-none' : ''}`}><button onClick={() => reset()}>Resetear Malla</button></li>
           {authState?.user != null && (<>
