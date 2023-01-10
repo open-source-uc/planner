@@ -76,6 +76,19 @@ const Planner = (): JSX.Element => {
     setValidanting(false)
   }
 
+  async function savePlan (): Promise<void> {
+    const planName = prompt('Nombre de la malla?')
+    if (planName == null || planName === '') return
+    setValidanting(true)
+    try {
+      await DefaultService.savePlan(planName, plan)
+      alert('Plan saved successfully')
+    } catch (err) {
+      alert(err)
+    }
+    setValidanting(false)
+  }
+
   async function addCourse (semIdx: number): Promise<void> {
     const courseCode = prompt('Course code?')
     if (courseCode == null || courseCode === '') return
@@ -122,7 +135,11 @@ const Planner = (): JSX.Element => {
             <li className={'inline text-xl mr-10 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div>  Computación - Track Computación</li>
             <li className={'inline text-xl mr-10 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Eléctrica</li>
           </ul>
-          <ControlTopBar reset={getDefaultPlan} validating={validating}/>
+          <ControlTopBar
+            reset={getDefaultPlan}
+            save={savePlan}
+            validating={validating}
+          />
           <PlanBoard
             plan={plan}
             courseDetails={courseDetails}

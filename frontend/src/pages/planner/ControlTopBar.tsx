@@ -1,7 +1,13 @@
 
 import { useAuth } from '../../contexts/auth.context'
 
-function ControlTopBar ({ reset, validating }: { reset: Function, validating: boolean }): JSX.Element {
+interface ControlTopBarProps {
+  reset: Function
+  save: Function
+  validating: boolean
+}
+
+function ControlTopBar ({ reset, save, validating }: ControlTopBarProps): JSX.Element {
   const authState = useAuth()
 
   return (
@@ -9,7 +15,7 @@ function ControlTopBar ({ reset, validating }: { reset: Function, validating: bo
           <li className="inline mr-4 opacity-50 cursor-not-allowed">Exportar Malla</li>
           <li className={`inline mr-4 ${validating ? 'pointer-events-none' : ''}`}><button onClick={() => reset()}>Resetear Malla</button></li>
           {authState?.user != null && (<>
-          <li className="inline mr-4 opacity-50 cursor-not-allowed">Guardar Malla</li>
+          <li className={`inline mr-4 ${validating ? 'pointer-events-none' : ''}`}><button onClick={() => save()}>Guardar Malla</button></li>
           <li className="inline mr-4 opacity-50 cursor-not-allowed">Borrar Malla</li>
           </>)}
           <li className="inline mr-4 opacity-50 cursor-not-allowed">Ver Leyenda/ayuda</li>
