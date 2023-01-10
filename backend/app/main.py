@@ -18,7 +18,7 @@ from .auth import require_authentication, login_cas, UserData
 from .sync import run_upstream_sync
 from .plan.courseinfo import clear_course_info_cache, course_info
 from .plan.generation import CurriculumRecommender as recommender
-from typing import List, Optional
+from typing import Optional
 
 
 # Set-up operation IDs for OpenAPI
