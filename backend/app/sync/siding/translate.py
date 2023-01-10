@@ -16,8 +16,15 @@ from prisma.models import (
     Title as DbTitle,
     MajorMinor as DbMajorMinor,
 )
-from ...plan.validation.curriculum.tree import Curriculum, Block, CourseList, Node
+from ...plan.validation.curriculum.tree import (
+    Curriculum,
+    Block,
+    CourseList,
+    CurriculumSpec,
+    Node,
+)
 import json
+import random
 
 _predefined_list_cache: dict[str, list[CursoSiding]] = {}
 
@@ -30,14 +37,18 @@ async def predefined_list(list_code: str) -> list[CursoSiding]:
     return rawlist
 
 
-async def fetch_curriculum_from_siding(
-    cyear: str, major: str, minor: str, title: str
-) -> Curriculum:
+async def fetch_curriculum_from_siding(spec: CurriculumSpec) -> Curriculum:
     # Fetch raw curriculum blocks for the given cyear-major-minor-title combination
-    planspec = PlanEstudios(
-        CodCurriculum=cyear, CodMajor=major, CodMinor=minor, CodTitulo=title
+    if spec.major is None or spec.minor is None or spec.title is None:
+        raise Exception("blank major/minor/titles are not supported yet")
+    raw_blocks = await client.get_curriculum_for_spec(
+        PlanEstudios(
+            CodCurriculum=spec.cyear,
+            CodMajor=spec.major,
+            CodMinor=spec.minor,
+            CodTitulo=spec.title,
+        )
     )
-    raw_blocks = await client.get_curriculum_for_spec(planspec)
 
     # Group by academic block name
     blocks_by_name: dict[str, list[Node]] = {}
@@ -63,21 +74,21 @@ async def fetch_curriculum_from_siding(
     minor_data = await DbMinor.prisma().find_unique(
         where={
             "cyear_code": {
-                "cyear": cyear,
-                "code": minor,
+                "cyear": spec.cyear,
+                "code": spec.minor,
             }
         }
     )
     if not minor_data:
         raise Exception(
-            f"minor '{minor}' not found in local database (maybe sync minors?)"
+            f"minor '{spec.minor}' not found in local database (maybe sync minors?)"
         )
     title_data = await DbTitle.prisma().find_unique(
-        where={"cyear_code": {"cyear": cyear, "code": title}}
+        where={"cyear_code": {"cyear": spec.cyear, "code": spec.title}}
     )
     if not title_data:
         raise Exception(
-            f"title '{title}' not found in local database (maybe sync titles?)"
+            f"title '{spec.title}' not found in local database (maybe sync titles?)"
         )
 
     # Match against expected academic blocks
@@ -97,7 +108,7 @@ async def fetch_curriculum_from_siding(
             raise Exception(
                 "siding returned a curriculum with an unexpected block "
                 f"({block_name}) "
-                f"for planspec {cyear}-{major}-{minor}-{title}. "
+                f"for planspec {spec.cyear}-{spec.major}-{spec.minor}-{spec.title}. "
                 f"expected {expected_block_names}"
             )
 
@@ -150,19 +161,28 @@ async def fetch_curriculum_from_siding(
 
 
 async def fetch_recommended_courses_from_siding(
-    cyear: str, major: str, minor: str, title: str
+    spec: CurriculumSpec,
 ) -> list[list[str]]:
-    planspec = PlanEstudios(
-        CodCurriculum=cyear, CodMajor=major, CodMinor=minor, CodTitulo=title
+    # Fetch raw curriculum blocks for the given cyear-major-minor-title combination
+    if spec.major is None or spec.minor is None or spec.title is None:
+        raise Exception("blank major/minor/titles are not supported yet")
+    raw_blocks = await client.get_curriculum_for_spec(
+        PlanEstudios(
+            CodCurriculum=spec.cyear,
+            CodMajor=spec.major,
+            CodMinor=spec.minor,
+            CodTitulo=spec.title,
+        )
     )
-    raw_blocks = await client.get_curriculum_for_spec(planspec)
 
     # Transform into a list of lists of course codes
     semesters: list[list[str]] = []
     for raw_block in raw_blocks:
         if raw_block.CodLista is not None:
             # TODO: Replace by an ambiguous course
-            representative_course = (await predefined_list(raw_block.CodLista))[0].Sigla
+            representative_course = random.choice(
+                await predefined_list(raw_block.CodLista)
+            ).Sigla
         elif raw_block.CodSigla is not None:
             # TODO: Consider using an ambiguous course for some equivalencies
             representative_course = raw_block.CodSigla

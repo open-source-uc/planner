@@ -1,6 +1,8 @@
+from .validation.curriculum.tree import CurriculumSpec
 from .plan import ValidatablePlan, Level
 from .courseinfo import course_info
 from .validation.validate import diagnose_plan_skip_curriculum
+from ..sync.siding.translate import fetch_recommended_courses_from_siding
 
 
 class CurriculumRecommender:
@@ -11,30 +13,10 @@ class CurriculumRecommender:
 
     CREDITS_PER_SEMESTER = 50
 
-    curriculum: list[list[str]] = []
-
     @classmethod
-    async def load_curriculum(cls):
-        # by default: 'Malla del major Ingeniería de Software'
-        # TODO: load curriculums from an outside API (we hardcode it in the meantime)
-        # TODO: implement solution for pseudo-courses
-        # (e.g FIS1513/ICE1513. Also 'TEOLOGICO', 'OFG', etc.)
-        # TODO: 'FIS1513' is not in database so i replaced it with 'FIS1514'
-        # TODO: 'FIS0151' is not in database so i replaced it with 'FIS0154'
-        cls.curriculum = [
-            ["MAT1610", "QIM100E", "MAT1203", "ING1004", "FIL2001"],
-            ["MAT1620", "FIS1514", "FIS0154", "ICS1513", "IIC1103"],
-            ["MAT1630", "FIS1523", "FIS0152", "MAT1640"],
-            ["EYP1113", "FIS1533", "FIS0153", "IIC2233"],
-            ["IIC2143", "ING2030", "IIC1253"],
-            ["IIC2113", "IIC2173", "IIC2413"],
-            ["IIC2133", "IIC2513", "IIC2713"],
-            ["IIC2154"],
-        ]
-
-    @classmethod
-    def recommend(cls):
-        return ValidatablePlan(classes=cls.curriculum, next_semester=0)
+    async def recommend(cls, curr: CurriculumSpec) -> ValidatablePlan:
+        courses = await fetch_recommended_courses_from_siding(curr)
+        return ValidatablePlan(classes=courses, next_semester=0)
 
 
 def _compute_courses_to_pass(
@@ -61,8 +43,8 @@ def _make_plan(classes: list[list[str]], passed: ValidatablePlan):
     )
 
 
-async def generate_default_plan(passed: ValidatablePlan):
-    recommended = CurriculumRecommender.recommend()
+async def generate_default_plan(passed: ValidatablePlan, curriculum: CurriculumSpec):
+    recommended = await CurriculumRecommender.recommend(curriculum)
     courseinfo = await course_info()
 
     semesters = passed.classes

@@ -1,4 +1,4 @@
-from .plan.validation.curriculum.tree import Curriculum
+from .plan.validation.curriculum.tree import CurriculumSpec
 from .plan.validation.diagnostic import ValidationResult
 from .plan.validation.validate import diagnose_plan
 from .plan.plan import ValidatablePlan
@@ -11,9 +11,7 @@ from prisma.models import Post, Course as DbCourse
 from prisma.types import PostCreateInput
 from .auth import require_authentication, login_cas, UserData
 from .sync import run_upstream_sync
-from .sync.siding.translate import fetch_curriculum_from_siding
 from .plan.courseinfo import clear_course_info_cache, course_info
-from .plan.generation import CurriculumRecommender as recommender
 from typing import List, Optional
 
 
@@ -41,7 +39,6 @@ async def startup():
     await prisma.connect()
     # Prime course info cache
     courseinfo = await course_info()
-    await recommender.load_curriculum()
     # Sync courses if database is empty
     if not courseinfo:
         await run_upstream_sync()
@@ -133,9 +130,9 @@ async def rebuild_validation_rules():
     }
 
 
-async def debug_get_curriculum() -> Curriculum:
+async def debug_get_curriculum() -> CurriculumSpec:
     # TODO: Implement a proper curriculum selector
-    return await fetch_curriculum_from_siding("C2020", "M170", "N776", "40082")
+    return CurriculumSpec(cyear="C2020", major="M170", minor="N776", title="40082")
 
 
 @app.post("/plan/validate", response_model=ValidationResult)
@@ -146,7 +143,8 @@ async def validate_plan(plan: ValidatablePlan):
 
 @app.post("/plan/generate")
 async def generate_plan(passed: ValidatablePlan):
-    plan = await generate_default_plan(passed)
+    curr = await debug_get_curriculum()
+    plan = await generate_default_plan(passed, curr)
 
     return plan
 

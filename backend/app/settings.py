@@ -1,5 +1,9 @@
 from pydantic import BaseSettings, Field, SecretStr
 
+# HACK: When prisma is loaded it loads the correct `.env` file.
+# Therefore, prisma must be loaded before `Settings` is instantiated.
+from .database import prisma  # pyright: reportUnusedImport = false, # noqa: F401
+
 
 class Settings(BaseSettings):
     # URL to the CAS server endpoint.

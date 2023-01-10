@@ -1,15 +1,17 @@
 from .curriculum.diagnose import diagnose_curriculum
-from .curriculum.tree import Curriculum
+from .curriculum.tree import CurriculumSpec
 from .courses.validate import PlanContext
 from ..courseinfo import course_info
+from ...sync.siding.translate import fetch_curriculum_from_siding
 from .diagnostic import ValidationResult
 from ..plan import ValidatablePlan
 
 
 async def diagnose_plan(
-    plan: ValidatablePlan, curriculum: Curriculum
+    plan: ValidatablePlan, curriculum_spec: CurriculumSpec
 ) -> ValidationResult:
     courseinfo = await course_info()
+    curriculum = await fetch_curriculum_from_siding(curriculum_spec)
     out = ValidationResult(diagnostics=[])
 
     # Ensure course requirements are met
