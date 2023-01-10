@@ -12,7 +12,7 @@ const UserPage = (): JSX.Element => {
   return (
 
   <div className="flex mb-4 h-full">
-    <div className="w-2/3 bg-gray-500"> <CurriculumList /></div>
+    <div className="w-2/3 bg-gray-200"> <CurriculumList /></div>
     <div className="w-1/3 bg-teal-100"><UserInfo /></div>
   </div>
 
