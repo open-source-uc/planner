@@ -57,7 +57,7 @@ const Planner = (): JSX.Element => {
     if (courseCode == null || courseCode === '' || plan?.classes.flat().includes(courseCode.toUpperCase())) return
     setValidanting(true)
     const response = await DefaultService.getCourseDetails([courseCode.toUpperCase()])
-    if (response?.status_code === 404) { setValidanting(false); return }
+    if (response?.status_code === 404) { setValidanting(false); alert(response?.detail); return }
     setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
     setPlan((prev) => {
       const newClasses = [...prev.classes]
