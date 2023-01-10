@@ -1,17 +1,17 @@
-from .plan.validation.curriculum.tree import Block, Curriculum
+from .plan.validation.curriculum.tree import Curriculum
 from .plan.validation.diagnostic import ValidationResult
 from .plan.validation.validate import diagnose_plan
-import pydantic
 from .plan.plan import ValidatablePlan
 from .plan.generation import generate_default_plan
 from fastapi import FastAPI, Query, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from .database import prisma
-from prisma.models import Post, Course as DbCourse, CurriculumBlock
+from prisma.models import Post, Course as DbCourse
 from prisma.types import PostCreateInput
 from .auth import require_authentication, login_cas, UserData
 from .sync import run_upstream_sync
+from .sync.siding.translate import fetch_curriculum_from_siding
 from .plan.courseinfo import clear_course_info_cache, course_info
 from .plan.generation import CurriculumRecommender as recommender
 from typing import List, Optional
@@ -86,7 +86,7 @@ async def check_auth(user_data: UserData = Depends(require_authentication)):
     return {"message": "Authenticated"}
 
 
-@app.get("/courses/sync")
+@app.get("/sync")
 # TODO: Require admin permissions for this endpoint.
 async def sync_courses():
     await run_upstream_sync()
@@ -97,6 +97,7 @@ async def sync_courses():
 
 @app.get("/courses/search")
 async def search_courses(text: str):
+    results: list[DbCourse]
     results = await prisma.query_raw(
         """
         SELECT code, name FROM "Course"
@@ -132,20 +133,9 @@ async def rebuild_validation_rules():
     }
 
 
-async def debug_get_curriculum():
+async def debug_get_curriculum() -> Curriculum:
     # TODO: Implement a proper curriculum selector
-    blocks = ["plancomun", "formaciongeneral", "major", "minor", "titulo"]
-    curr = Curriculum(blocks=[])
-    for block_kind in blocks:
-        block = await CurriculumBlock.prisma().find_first(where={"kind": block_kind})
-        if block is None:
-            raise HTTPException(
-                status_code=500,
-                detail="Database is not initialized"
-                + f" (found no block with kind '{block_kind}')",
-            )
-        curr.blocks.append(pydantic.parse_obj_as(Block, block.req))
-    return curr
+    return await fetch_curriculum_from_siding("C2020", "M170", "N776", "40082")
 
 
 @app.post("/plan/validate", response_model=ValidationResult)
@@ -159,3 +149,12 @@ async def generate_plan(passed: ValidatablePlan):
     plan = await generate_default_plan(passed)
 
     return plan
+
+
+# TODO: Remove before merging
+# DEBUG
+@app.get("/test_siding")
+async def test_siding():
+    from .sync.siding import translate
+
+    await translate.test_translate()

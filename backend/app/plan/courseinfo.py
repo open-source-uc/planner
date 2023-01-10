@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Optional
 import pydantic
 from .validation.courses.logic import Expr
-from .validation.courses.simplify import simplify
 from prisma.models import Course
 
 
@@ -39,7 +38,7 @@ async def course_info() -> dict[str, CourseInfo]:
         for course in await Course.prisma().find_many():
             # Parse and validate dep json
             deps = pydantic.parse_obj_as(Expr, course.deps)
-            deps = simplify(deps)
+            # deps = simplify(deps)
             # Create course object
             courses[course.code] = CourseInfo(
                 code=course.code,

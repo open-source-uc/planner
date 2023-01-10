@@ -29,9 +29,47 @@ model Course {
   category String?
 }
 
-model CurriculumBlock {
-  id   String @id @default(cuid())
-  kind String
-  name String
-  req  Json
+model Major {
+  // C2013, C2020, C2022, etc...
+  cyear   String
+  code    String
+  name    String
+  // Vs.01, Vs.02, etc...
+  version String
+
+  @@unique([cyear, code])
+}
+
+model Minor {
+  // C2013, C2020, C2022, etc...
+  cyear      String
+  code       String
+  name       String
+  // Vs.01, Vs.02, etc...
+  version    String
+  // "Amplitud", "Profundidad"
+  minor_type String
+
+  @@unique([cyear, code])
+}
+
+model MajorMinor {
+  cyear String
+  major String
+  minor String
+
+  @@unique([cyear, major, minor])
+}
+
+model Title {
+  // C2013, C2020, C2022, etc...
+  cyear      String
+  code       String
+  name       String
+  // Vs.01, Vs.02, etc...
+  version    String
+  // "CIVIL", "INDUSTRIAL"
+  title_type String
+
+  @@unique([cyear, code])
 }

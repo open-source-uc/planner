@@ -1,4 +1,4 @@
-from pydantic import BaseSettings, Field
+from pydantic import BaseSettings, Field, SecretStr
 
 
 class Settings(BaseSettings):
@@ -19,13 +19,19 @@ class Settings(BaseSettings):
 
     # JWT secret hex string. If this secret is leaked, anyone can forge JWT tokens for
     # any user.
-    jwt_secret: str = Field(...)
+    jwt_secret: SecretStr = Field(...)
 
     # Algorithm used for JWT secrecy.
     jwt_algorithm: str = "HS256"
 
     # Time to expire JWT tokens in seconds.
     jwt_expire: int = 18_000
+
+    # Siding SOAP WebService access username.
+    siding_username: str = Field(...)
+
+    # Siding SOAP WebService access password.
+    siding_password: SecretStr = Field(...)
 
 
 # Load settings and allow global app access to them

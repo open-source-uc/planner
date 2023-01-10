@@ -110,8 +110,8 @@ export class DefaultService {
      */
     public static syncCourses(): CancelablePromise<any> {
         return __request(OpenAPI, {
-            method: 'POST',
-            url: '/courses/sync',
+            method: 'GET',
+            url: '/sync',
         });
     }
 
@@ -207,6 +207,18 @@ export class DefaultService {
             errors: {
                 422: `Validation Error`,
             },
+        });
+    }
+
+    /**
+     * Test Siding
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static testSiding(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/test_siding',
         });
     }
 

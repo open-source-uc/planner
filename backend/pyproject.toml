@@ -15,6 +15,7 @@ fastapi = {extras = ["all"], version = "^0.88.0"}
 prisma = {git = "https://github.com/RobertCraigie/prisma-client-py.git", rev = "refactor/remove-pkg-cli"}
 python-cas = "^1.6.0"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+zeep = {extras = ["async"], version = "^4.2.1"}
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^6.0.0"

@@ -107,14 +107,6 @@ class CurriculumSolver:
         self.course_blocks = {}
 
     def walk(self, node: Node, exclusive: bool) -> SolvedNode:
-        if isinstance(node, str):
-            if node not in self.courseinfo:
-                # TODO: Make sure all courses in a curriculum have associated info
-                print(f"WARNING: course {node} in curriculum was not found in database")
-                creds = 10
-            else:
-                creds = self.courseinfo[node].credits
-            node = CourseList(name=node, codes=[node], cap=creds)
         if isinstance(node, CourseList):
             return SolvedCourse(
                 name=node.name,
