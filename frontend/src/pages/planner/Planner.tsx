@@ -54,7 +54,8 @@ const Planner = (): JSX.Element => {
 
   async function addCourse (semIdx: number): Promise<void> {
     const courseCode = prompt('Course code?')
-    if (courseCode == null || courseCode === '' || plan?.classes.flat().includes(courseCode.toUpperCase())) return
+    if (courseCode == null || courseCode === '') return
+    if (plan?.classes.flat().includes(courseCode.toUpperCase())) { alert(`${courseCode} already on plan`); return }
     setValidanting(true)
     const response = await DefaultService.getCourseDetails([courseCode.toUpperCase()])
     if (response?.status_code === 404) { setValidanting(false); alert(response?.detail); return }
