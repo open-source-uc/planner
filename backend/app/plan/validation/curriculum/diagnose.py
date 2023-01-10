@@ -5,7 +5,7 @@ from .tree import Curriculum
 from ...courseinfo import CourseInfo
 
 
-def _diagnose_block(out: ValidationResult, block: SolvedBlock, node: SolvedNode):
+def _diagnose_block(out: ValidationResult, node: SolvedNode):
     if node.flow >= node.cap:
         return
     if isinstance(node, SolvedBlock) and node.is_and:
@@ -16,9 +16,9 @@ def _diagnose_block(out: ValidationResult, block: SolvedBlock, node: SolvedNode)
                 break
         if report_children:
             for child in node.children:
-                _diagnose_block(out, block, child)
+                _diagnose_block(out, child)
             return
-    out.err(f"Faltan ramos para el bloque '{block.name}': Falta {node.name}")
+    out.err(f"Faltan ramos para el bloque '{node.superblock}': Falta {node.name}")
 
 
 def diagnose_curriculum(
@@ -39,4 +39,4 @@ def diagnose_curriculum(
 
     # Generate diagnostics
     for block in solved.blocks:
-        _diagnose_block(out, block, block)
+        _diagnose_block(out, block)

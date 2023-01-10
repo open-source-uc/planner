@@ -26,6 +26,8 @@ class SolvedBlock:
     # This happens when the capacity is exactly the sum of the capacities of the nodes'
     # children.
     is_and: bool
+    # The name of the superblock (bloque academico) that this block is a member of.
+    superblock: str
     # The child nodes connected to this node.
     children: list["SolvedNode"]
 
@@ -47,6 +49,8 @@ class SolvedCourse:
     cap: int
     # How many credits are actually taken.
     flow: int
+    # The name of the superblock (bloque academico) that this course is a member of.
+    superblock: str
     # Whether this course is exclusive or not.
     # Each taken course can only count towards 1 exclusive requirement.
     # However, it can also count toward any amount of non-exclusive requirements.
@@ -71,8 +75,7 @@ SolvedNode = Union[SolvedBlock, SolvedCourse]
 
 @dataclass
 class SolvedCurriculum:
-    blocks: list[SolvedBlock]
-    course_blocks: dict[str, SolvedBlock]
+    blocks: list[SolvedNode]
 
 
 def _calc_taken_courses(
@@ -92,7 +95,6 @@ class CurriculumSolver:
     courseinfo: dict[str, CourseInfo]
 
     course_assignments: dict[str, SolvedCourse]
-    course_blocks: dict[str, SolvedBlock]
 
     def __init__(
         self,
@@ -104,7 +106,6 @@ class CurriculumSolver:
         self.curriculum = curriculum
         self.courseinfo = courseinfo
         self.course_assignments = {}
-        self.course_blocks = {}
 
     def walk(self, node: Node, exclusive: bool) -> SolvedNode:
         if isinstance(node, CourseList):
@@ -114,6 +115,7 @@ class CurriculumSolver:
                 cap=node.cap,
                 flow=0,
                 exclusive=exclusive,
+                superblock=node.superblock,
             )
         else:
             if node.exclusive is not None:
@@ -130,15 +132,20 @@ class CurriculumSolver:
                     is_and = False
                 cap = node.cap
             return SolvedBlock(
-                name=node.name, cap=cap, flow=0, children=solved_children, is_and=is_and
+                name=node.name,
+                cap=cap,
+                flow=0,
+                children=solved_children,
+                is_and=is_and,
+                superblock=node.superblock,
             )
 
-    def assign(self, block: SolvedBlock, node: SolvedNode, flow_cap: Optional[int]):
+    def assign(self, node: SolvedNode, flow_cap: Optional[int]):
         if flow_cap is None or node.cap < flow_cap:
             flow_cap = node.cap
         if isinstance(node, SolvedBlock):
             for child in node.children:
-                self.assign(block, child, flow_cap)
+                self.assign(child, flow_cap)
                 node.flow += child.flow
                 flow_cap -= child.flow
         else:
@@ -163,19 +170,16 @@ class CurriculumSolver:
                 node.flow += subflow
                 if node.exclusive:
                     self.course_assignments[course_code] = node
-                    self.course_blocks[course_code] = block
+                    # TODO: Mark this course with its corresponding block
 
     def solve(self) -> SolvedCurriculum:
-        solved: list[SolvedBlock] = []
-        for block in self.curriculum.blocks:
+        solved: list[SolvedNode] = []
+        for block in self.curriculum.nodes:
             solved_block = self.walk(block, True)
-            # `block` is of type `Block`, so `solved_block` should be of type
-            # `SolvedBlock`
-            assert isinstance(solved_block, SolvedBlock)
             solved.append(solved_block)
         for block in solved:
-            self.assign(block, block, None)
-        return SolvedCurriculum(blocks=solved, course_blocks=self.course_blocks)
+            self.assign(block, None)
+        return SolvedCurriculum(blocks=solved)
 
 
 special_sources: dict[str, Callable[[CourseInfo], bool]] = {

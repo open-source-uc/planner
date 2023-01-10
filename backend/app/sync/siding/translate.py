@@ -18,7 +18,6 @@ from prisma.models import (
 )
 from ...plan.validation.curriculum.tree import (
     Curriculum,
-    Block,
     CourseList,
     CurriculumSpec,
     Node,
@@ -50,8 +49,8 @@ async def fetch_curriculum_from_siding(spec: CurriculumSpec) -> Curriculum:
         )
     )
 
-    # Group by academic block name
-    blocks_by_name: dict[str, list[Node]] = {}
+    # Transform into standard blocks
+    blocks: list[Node] = []
     for i, raw_block in enumerate(raw_blocks):
         if raw_block.CodLista is not None:
             # Predefined list
@@ -66,57 +65,13 @@ async def fetch_curriculum_from_siding(spec: CurriculumSpec) -> Curriculum:
         else:
             raise Exception("siding api returned invalid curriculum block")
         course = CourseList(
-            name=raw_block.Nombre, cap=raw_block.Creditos, codes=codes, priority=i
+            name=raw_block.Nombre,
+            cap=raw_block.Creditos,
+            codes=codes,
+            priority=i,
+            superblock=raw_block.BloqueAcademico,
         )
-        blocks_by_name.setdefault(raw_block.BloqueAcademico, []).append(course)
-
-    # Fetch minor and title names
-    minor_data = await DbMinor.prisma().find_unique(
-        where={
-            "cyear_code": {
-                "cyear": spec.cyear,
-                "code": spec.minor,
-            }
-        }
-    )
-    if not minor_data:
-        raise Exception(
-            f"minor '{spec.minor}' not found in local database (maybe sync minors?)"
-        )
-    title_data = await DbTitle.prisma().find_unique(
-        where={"cyear_code": {"cyear": spec.cyear, "code": spec.title}}
-    )
-    if not title_data:
-        raise Exception(
-            f"title '{spec.title}' not found in local database (maybe sync titles?)"
-        )
-
-    # Match against expected academic blocks
-    expected_block_names = [
-        "Ciencias Básicas (mínimos)",
-        "Base General para Major",
-        "Major",
-        minor_data.name,
-        "Formación General",
-        "Requisitos adicionales para obtener el grado de Licenciado "
-        "en Ciencias de la Ingeniería",
-        title_data.name,
-        "Requisitos adicionales para obtener el Título Profesional",
-    ]
-    for block_name in blocks_by_name.keys():
-        if block_name not in expected_block_names:
-            raise Exception(
-                "siding returned a curriculum with an unexpected block "
-                f"({block_name}) "
-                f"for planspec {spec.cyear}-{spec.major}-{spec.minor}-{spec.title}. "
-                f"expected {expected_block_names}"
-            )
-
-    # Transform into standard blocks
-    blocks: list[Block] = []
-    for block_name in expected_block_names:
-        block = blocks_by_name.get(block_name, [])
-        blocks.append(Block(name=block_name, children=block))
+        blocks.append(course)
 
     # TODO: Apply OFG transformation (merge all OFGs into a single 50-credit block, and
     # only allow up to 10 credits of 5-credit sports courses)
@@ -157,7 +112,7 @@ async def fetch_curriculum_from_siding(spec: CurriculumSpec) -> Curriculum:
     # TODO: Apply title transformation (130 credits must be exclusive to the title, the
     # rest can be shared)
 
-    return Curriculum(blocks=blocks)
+    return Curriculum(nodes=blocks)
 
 
 async def fetch_recommended_courses_from_siding(
