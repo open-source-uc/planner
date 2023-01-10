@@ -1,9 +1,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { FlatValidationResult } from '../models/FlatValidationResult';
 import type { PostCreateInput } from '../models/PostCreateInput';
 import type { ValidatablePlan } from '../models/ValidatablePlan';
-import type { ValidationResult } from '../models/ValidationResult';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -173,12 +173,12 @@ export class DefaultService {
     /**
      * Validate Plan
      * @param requestBody
-     * @returns ValidationResult Successful Response
+     * @returns FlatValidationResult Successful Response
      * @throws ApiError
      */
     public static validatePlan(
         requestBody: ValidatablePlan,
-    ): CancelablePromise<ValidationResult> {
+    ): CancelablePromise<FlatValidationResult> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/plan/validate',

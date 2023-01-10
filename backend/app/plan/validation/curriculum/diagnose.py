@@ -1,8 +1,16 @@
 from .solve import SolvedBlock, SolvedNode, solve_curriculum
 from ...plan import ValidatablePlan
-from ..diagnostic import ValidationResult
+from ..diagnostic import DiagnosticErr, ValidationResult
 from .tree import Curriculum
 from ...courseinfo import CourseInfo
+
+
+class CurriculumErr(DiagnosticErr):
+    superblock: str
+    missing: str
+
+    def message(self) -> str:
+        return f"Faltan ramos para el bloque '{self.superblock}': Falta {self.missing}"
 
 
 def _diagnose_block(out: ValidationResult, node: SolvedNode):
@@ -18,7 +26,7 @@ def _diagnose_block(out: ValidationResult, node: SolvedNode):
             for child in node.children:
                 _diagnose_block(out, child)
             return
-    out.err(f"Faltan ramos para el bloque '{node.superblock}': Falta {node.name}")
+    out.add(CurriculumErr(superblock=node.superblock, missing=node.name or "?"))
 
 
 def diagnose_curriculum(

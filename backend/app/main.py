@@ -1,5 +1,5 @@
 from .plan.validation.curriculum.tree import CurriculumSpec
-from .plan.validation.diagnostic import ValidationResult
+from .plan.validation.diagnostic import FlatValidationResult
 from .plan.validation.validate import diagnose_plan
 from .plan.plan import ValidatablePlan
 from .plan.generation import generate_default_plan
@@ -135,10 +135,10 @@ async def debug_get_curriculum() -> CurriculumSpec:
     return CurriculumSpec(cyear="C2020", major="M170", minor="N776", title="40082")
 
 
-@app.post("/plan/validate", response_model=ValidationResult)
+@app.post("/plan/validate", response_model=FlatValidationResult)
 async def validate_plan(plan: ValidatablePlan):
     curr = await debug_get_curriculum()
-    return await diagnose_plan(plan, curr)
+    return (await diagnose_plan(plan, curr)).flatten()
 
 
 @app.post("/plan/generate")

@@ -2,6 +2,8 @@
 Transform the Siding format into something usable.
 """
 
+from ...plan.validation.courses.logic import Expr, Operator
+from ...plan.courseinfo import course_info
 from . import client
 from .client import (
     Major,
@@ -115,6 +117,31 @@ async def fetch_curriculum_from_siding(spec: CurriculumSpec) -> Curriculum:
     return Curriculum(nodes=blocks)
 
 
+async def _debug_pick_good_course(courselist: list[CursoSiding]) -> CursoSiding:
+    def count_nodes(expr: Expr) -> int:
+        cnt = 1
+        if isinstance(expr, Operator):
+            for child in expr.children:
+                cnt += count_nodes(child)
+        return cnt
+
+    courseinfo = await course_info()
+    best = None
+    best_cnt = 99999999
+    for _ in range(100):
+        c = random.choice(courselist)
+        if best is None:
+            best = c
+        if c.Sigla not in courseinfo:
+            continue
+        cnt = count_nodes(courseinfo[c.Sigla].deps)
+        if cnt < best_cnt:
+            best = c
+            best_cnt = cnt
+    assert best is not None
+    return best
+
+
 async def fetch_recommended_courses_from_siding(
     spec: CurriculumSpec,
 ) -> list[list[str]]:
@@ -135,8 +162,8 @@ async def fetch_recommended_courses_from_siding(
     for raw_block in raw_blocks:
         if raw_block.CodLista is not None:
             # TODO: Replace by an ambiguous course
-            representative_course = random.choice(
-                await predefined_list(raw_block.CodLista)
+            representative_course = (
+                await _debug_pick_good_course(await predefined_list(raw_block.CodLista))
             ).Sigla
         elif raw_block.CodSigla is not None:
             # TODO: Consider using an ambiguous course for some equivalencies
