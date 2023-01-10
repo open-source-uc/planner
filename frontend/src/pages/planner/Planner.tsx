@@ -28,7 +28,6 @@ const Planner = (): JSX.Element => {
   const [validationDiagnostics, setValidationDiagnostics] = useState<Diagnostic[]>([])
 
   async function getDefaultPlan (): Promise<void> {
-    setLoading(true)
     console.log('getting Basic Plan...')
     const response = await DefaultService.generatePlan({
       classes: [],
