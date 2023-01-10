@@ -1,4 +1,4 @@
-from .plan.validation.curriculum.tree import Combine, Curriculum
+from .plan.validation.curriculum.tree import Block, Curriculum
 from .plan.validation.diagnostic import ValidationResult
 from .plan.validation.validate import diagnose_plan
 import pydantic
@@ -44,8 +44,12 @@ app.add_middleware(
 async def startup():
     await prisma.connect()
     # Prime course info cache
-    await course_info()
+    courseinfo = await course_info()
     await recommender.load_curriculum()
+    # Sync courses if database is empty
+    if not courseinfo:
+        await run_upstream_sync()
+        await course_info()
 
 
 @app.on_event("shutdown")  # type: ignore
@@ -76,7 +80,7 @@ async def check_auth(user_data: UserData = Depends(require_authentication)):
     return {"message": "Authenticated"}
 
 
-@app.post("/courses/sync")
+@app.get("/courses/sync")
 # TODO: Require admin permissions for this endpoint.
 async def sync_courses():
     await run_upstream_sync()
@@ -134,7 +138,7 @@ async def debug_get_curriculum():
                 detail="Database is not initialized"
                 + f" (found no block with kind '{block_kind}')",
             )
-        curr.blocks.append(pydantic.parse_obj_as(Combine, block.req))
+        curr.blocks.append(pydantic.parse_obj_as(Block, block.req))
     return curr
 
 
