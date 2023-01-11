@@ -209,4 +209,3 @@ async def delete_plan(
     deleted_plan = await remove_plan(user_rut=user_data.rut, plan_id=plan_id)
 
     return deleted_plan
-    
