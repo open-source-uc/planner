@@ -110,6 +110,20 @@ async def modify_plan_name(user_rut: str, plan_id: str, new_name: str):
     return updated_plan
 
 
+async def remove_plan(user_rut: str, plan_id: str):
+    user_plans = await prisma.plan.find_many(where={"user_rut": user_rut})
+    if plan_id not in [p.id for p in user_plans]:
+        raise HTTPException(status_code=404, detail="Plan not found in user storage")
+
+    deleted_plan = await prisma.plan.delete(
+        where={
+            "id": plan_id,
+        }
+    )
+
+    return deleted_plan
+
+
 async def translate_plan_model(plan: dict[str, str | int]):
 
     semesters = await prisma.query_raw(
