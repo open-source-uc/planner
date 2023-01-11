@@ -6,7 +6,8 @@ from .plan.plan import ValidatablePlan
 from .plan.generation import generate_default_plan
 from .plan.storage import (
     store_plan,
-    get_plans,
+    get_user_plans,
+    get_plan_details,
     modify_validatable_plan,
     modify_plan_name,
     remove_plan,
@@ -170,9 +171,18 @@ async def save_plan(
 
 @app.get("/plan/stored")
 async def read_plans(user_data: UserData = Depends(require_authentication)):
-    plans = await get_plans(user_rut=user_data.rut)
+    plans = await get_user_plans(user_rut=user_data.rut)
 
     return plans
+
+
+@app.get("/plan/stored/details")
+async def read_plan(
+    plan_id: str, user_data: UserData = Depends(require_authentication)
+):
+    details = await get_plan_details(user_rut=user_data.rut, plan_id=plan_id)
+
+    return details
 
 
 @app.put("/plan/stored")

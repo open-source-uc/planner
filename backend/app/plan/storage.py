@@ -35,7 +35,25 @@ async def store_plan(plan_name: str, user_rut: str, plan: ValidatablePlan):
     return stored_plan
 
 
-async def get_plans(user_rut: str):
+async def get_plan_details(user_rut: str, plan_id: str):
+    plan = (
+        await prisma.query_raw(
+            """
+        SELECT * FROM "Plan"
+        WHERE id = $1
+        LIMIT 1
+        """,
+            plan_id,
+        )
+    )[0]
+
+    if user_rut != plan["user_rut"]:
+        raise HTTPException(status_code=404, detail="Plan not found in user storage")
+
+    return await translate_plan_model(plan)
+
+
+async def get_user_plans(user_rut: str):
     results = await prisma.query_raw(
         """
         SELECT * FROM "Plan"
@@ -45,7 +63,7 @@ async def get_plans(user_rut: str):
         user_rut,
     )
 
-    return [await translate_plan_model(results[i]) for i in range(len(results))]
+    return [results[i] for i in range(len(results))]
 
 
 async def modify_validatable_plan(
