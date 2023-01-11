@@ -51,7 +51,6 @@ async def get_plans(user_rut: str):
 async def modify_validatable_plan(
     user_rut: str, plan_id: str, new_plan: ValidatablePlan
 ):
-    # TODO: use PlanSemesterUpdateManyWithoutRelationsInput for nested relations update
     user_plans = await prisma.plan.find_many(where={"user_rut": user_rut})
     if plan_id not in [p.id for p in user_plans]:
         raise HTTPException(status_code=404, detail="Plan not found in user storage")
@@ -69,23 +68,24 @@ async def modify_validatable_plan(
         },
     )
 
-    # big refactor needed ahead..
+    # TODO: use PlanSemesterUpdateManyWithoutRelationsInput for nested relations update
+    # instead of the following inefficient algorithm
 
+    # 1. remove old classes
     old_semesters = await prisma.plansemester.find_many(where={"plan_id": plan_id})
 
-    # remove old classes
-    for sem in old_semesters:
-        CLASES = await prisma.planclass.find_many(where={"semester_id": sem.id})
-        for CLASE in CLASES:
-            await prisma.planclass.delete(where={"id": CLASE.id})
-        await prisma.plansemester.delete(where={"id": sem.id})
+    for old_sem in old_semesters:
+        classes = await prisma.planclass.find_many(where={"semester_id": old_sem.id})
+        for cls in classes:
+            await prisma.planclass.delete(where={"id": cls.id})
+        await prisma.plansemester.delete(where={"id": old_sem.id})
 
-    # create new classes
-    for i, sem in enumerate(new_plan.classes):
+    # 2. create new classes
+    for i, new_sem in enumerate(new_plan.classes):
         stored_semester = await prisma.plansemester.create(
             PlanSemesterCreateInput(plan_id=plan_id, number=i + 1)
         )
-        for cls in sem:
+        for cls in new_sem:
             await prisma.planclass.create(
                 PlanClassCreateInput(semester_id=stored_semester.id, class_code=cls)
             )
