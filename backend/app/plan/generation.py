@@ -1,11 +1,8 @@
-from typing import Optional
-from .validation.diagnostic import ValidationResult
-from .validation.courses.logic import Expr, Operator, ReqCourse
-from .validation.courses.validate import RequirementErr
+from .validation.courses.logic import And, Expr, Or, ReqCourse
 from .validation.curriculum.tree import CurriculumSpec
 from .plan import ValidatablePlan
-from .courseinfo import course_info
-from .validation.validate import diagnose_plan
+from .courseinfo import CourseInfo, course_info
+from .validation.validate import quick_validate_dependencies
 from ..sync.siding.translate import fetch_recommended_courses_from_siding
 
 
@@ -53,18 +50,64 @@ def _clone_plan(plan: ValidatablePlan):
 def _find_corequirements(out: list[str], expr: Expr):
     if isinstance(expr, ReqCourse) and expr.coreq:
         out.append(expr.code)
-    elif isinstance(expr, Operator):
+    elif isinstance(expr, (And, Or)):
         for child in expr.children:
             _find_corequirements(out, child)
 
 
-def _find_requirement_error(
-    courses: list[str], result: ValidationResult
-) -> Optional[RequirementErr]:
-    for diag in result.diagnostics:
-        if isinstance(diag, RequirementErr) and diag.code in courses:
-            return diag
-    return None
+def _try_add_course(
+    courseinfo: dict[str, CourseInfo],
+    plan: ValidatablePlan,
+    go_together: dict[str, list[str]],
+    courses_to_pass: list[str],
+    credits: int,
+    try_course: str,
+):
+    # Treat unknown courses specially
+    if try_course not in courseinfo:
+        if credits + 10 <= CurriculumRecommender.CREDITS_PER_SEMESTER:
+            print(
+                f"WARNING: unknown course {try_course} found while generating "
+                "plan. assuming 10 credits and adding as-is."
+            )
+            plan.classes[-1].append(try_course)
+            courses_to_pass.remove(try_course)
+            return "added"
+        else:
+            print(
+                f"WARNING: unknown course {try_course} found while generating "
+                "plan. skipping because there is no space for 10 credits."
+            )
+            return "credits"
+
+    # Do not add if we would take too many credits
+    if (
+        credits + courseinfo[try_course].credits
+        > CurriculumRecommender.CREDITS_PER_SEMESTER
+    ):
+        return "credits"
+
+    # Do not add if it would break some requirement
+    original_length = len(plan.classes[-1])
+    for subcourse in go_together[try_course]:
+        if subcourse in courses_to_pass:
+            plan.classes[-1].append(subcourse)
+    for i in range(original_length, len(plan.classes[-1])):
+        if not quick_validate_dependencies(
+            courseinfo, plan, len(plan.classes) - 1, plan.classes[-1][i]
+        ):
+            # Found a requirement error
+            # Undo changes and cancel
+            while len(plan.classes[-1]) > original_length:
+                plan.classes[-1].pop()
+            return "cant"
+
+    # Added course successfully
+    # Remove added courses from `courses_to_pass`
+    for i in range(original_length, len(plan.classes[-1])):
+        courses_to_pass.remove(plan.classes[-1][i])
+
+    return "added"
 
 
 async def generate_default_plan(passed: ValidatablePlan, curriculum: CurriculumSpec):
@@ -87,49 +130,28 @@ async def generate_default_plan(passed: ValidatablePlan, curriculum: CurriculumS
         go_together[course] = coreqs
 
     while courses_to_pass:
+        # Attempt to add a single course at the end of the last semester
+
+        # Precompute the amount of credits in this semester
         credits = sum(
             courseinfo[c].credits if c in courseinfo else 0 for c in plan.classes[-1]
         )
 
+        # Go in order, attempting to add each course to the semester
         added_course = False
         could_use_more_credits = False
         for try_course in courses_to_pass:
-            # Do not add if we would take too many credits
-            if try_course not in courseinfo:
-                print(
-                    f"WARNING: unknown course {try_course} found while generating plan."
-                    " assuming 10 credits"
-                )
-                creds = 10
-            else:
-                creds = courseinfo[try_course].credits
-            if credits + creds > CurriculumRecommender.CREDITS_PER_SEMESTER:
+            status = _try_add_course(
+                courseinfo, plan, go_together, courses_to_pass, credits, try_course
+            )
+            if status == "added":
+                # Successfully added a course, finish
+                added_course = True
+                break
+            elif status == "credits":
+                # Keep track of the case when there are some courses that need more
+                # credit-space
                 could_use_more_credits = True
-                continue
-
-            # Do not add if it would break some requirement
-            original_length = len(plan.classes[-1])
-            to_add: list[str] = []
-            for subcourse in go_together[try_course]:
-                if subcourse in courses_to_pass:
-                    to_add.append(subcourse)
-            for subcourse in to_add:
-                plan.classes[-1].append(subcourse)
-            err = _find_requirement_error(to_add, await diagnose_plan(plan, curriculum))
-            if err is not None:
-                # Found a requirement error
-                print(f"cant add course {try_course}: {err.missing}")
-                while len(plan.classes[-1]) > original_length:
-                    plan.classes[-1].pop()
-                continue
-
-            # Added course successfully
-            # Remove added courses from `courses_to_pass`
-            for i in range(original_length, len(plan.classes[-1])):
-                courses_to_pass.remove(plan.classes[-1][i])
-
-            added_course = True
-            break
 
         if added_course:
             # Made some progress!

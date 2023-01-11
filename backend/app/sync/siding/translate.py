@@ -157,9 +157,18 @@ async def fetch_recommended_courses_from_siding(
         )
     )
 
+    # Courses belonging to these superblocks will be skipped
+    skip_superblocks = [
+        "Requisitos adicionales para obtener el grado de "
+        "Licenciado en Ciencias de la Ingeniería",
+        "Requisitos adicionales para obtener el Título Profesional",
+    ]
+
     # Transform into a list of lists of course codes
     semesters: list[list[str]] = []
     for raw_block in raw_blocks:
+        if raw_block.BloqueAcademico in skip_superblocks:
+            continue
         if raw_block.CodLista is not None:
             # TODO: Replace by an ambiguous course
             representative_course = (
