@@ -35,6 +35,10 @@ async def get_plan_details(user_rut: str, plan_id: str):
 async def get_user_plans(user_rut: str):
     plans = await Plan.prisma().find_many(where={"user_rut": user_rut})
 
+    # Remove details for lighter output
+    for p in plans:
+        p.validatable_plan = Json({})
+
     return plans
 
 
