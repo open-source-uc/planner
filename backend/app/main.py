@@ -9,7 +9,7 @@ from .plan.storage import (
     get_user_plans,
     get_plan_details,
     modify_validatable_plan,
-    modify_plan_name,
+    modify_plan_metadata,
     remove_plan,
 )
 from fastapi import FastAPI, Query, Depends, HTTPException
@@ -204,7 +204,7 @@ async def rename_plan(
     new_name: str,
     user_data: UserData = Depends(require_authentication),
 ):
-    updated_plan = await modify_plan_name(
+    updated_plan = await modify_plan_metadata(
         user_rut=user_data.rut, plan_id=plan_id, new_name=new_name
     )
 
