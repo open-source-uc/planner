@@ -110,6 +110,20 @@ const Planner = (): JSX.Element => {
     } catch (err) {
       alert(err)
     }
+
+    setValidanting(false)
+  }
+  async function erasePlan (): Promise<void> {
+    setValidanting(true)
+    if (params?.plannerId != null) {
+      try {
+        await DefaultService.deletePlan(params?.plannerId)
+        alert('Plan erased successfully')
+        window.location.href = '/'
+      } catch (err) {
+        alert(err)
+      }
+    }
     setValidanting(false)
   }
 
@@ -169,6 +183,7 @@ const Planner = (): JSX.Element => {
           <ControlTopBar
             reset={getDefaultPlan}
             save={savePlan}
+            erase={erasePlan}
             validating={validating}
           />
           <PlanBoard
