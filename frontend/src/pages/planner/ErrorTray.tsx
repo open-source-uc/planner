@@ -1,4 +1,3 @@
-
 import errorIcon from '../../assets/error.svg'
 import warningIcon from '../../assets/warning.svg'
 import okIcon from '../../assets/ok.svg'
@@ -35,7 +34,7 @@ const Message = (diag: Diagnostic, key: number): JSX.Element => {
  */
 const ErrorTray = ({ diagnostics }: { diagnostics: Diagnostic[] }): JSX.Element => {
   const messageList: JSX.Element[] = diagnostics.map((diag, index) => Message(diag, index))
-  return (<div className="w-80 h-full overflow-hidden p-4 flex flex-col gap-4 border border-black border-dashed">
+  return (<div className="w-80 h-full overflow-x-hidden overflow-y-auto p-4 flex flex-col gap-4 border border-black border-dashed">
     {messageList.length > 0 ? messageList : <NoMessages/>}
   </div>)
 }

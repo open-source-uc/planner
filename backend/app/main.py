@@ -1,20 +1,27 @@
-from .plan.validation.curriculum.tree import Combine, Curriculum
+from .plan.validation.curriculum.tree import Block, Curriculum
 from .plan.validation.diagnostic import ValidationResult
 from .plan.validation.validate import diagnose_plan
 import pydantic
 from .plan.plan import ValidatablePlan
 from .plan.generation import generate_default_plan
+from .plan.storage import (
+    store_plan,
+    get_user_plans,
+    get_plan_details,
+    modify_validatable_plan,
+    modify_plan_metadata,
+    remove_plan,
+)
 from fastapi import FastAPI, Query, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from .database import prisma
-from prisma.models import Post, Course as DbCourse, CurriculumBlock
-from prisma.types import PostCreateInput
+from prisma.models import Course as DbCourse, CurriculumBlock
 from .auth import require_authentication, login_cas, UserData
 from .sync import run_upstream_sync
 from .plan.courseinfo import clear_course_info_cache, course_info
 from .plan.generation import CurriculumRecommender as recommender
-from typing import List, Optional
+from typing import Optional
 
 
 # Set-up operation IDs for OpenAPI
@@ -40,8 +47,12 @@ app.add_middleware(
 async def startup():
     await prisma.connect()
     # Prime course info cache
-    await course_info()
+    courseinfo = await course_info()
     await recommender.load_curriculum()
+    # Sync courses if database is empty
+    if not courseinfo:
+        await run_upstream_sync()
+        await course_info()
 
 
 @app.on_event("shutdown")  # type: ignore
@@ -62,16 +73,6 @@ async def health():
     return {"message": "OK"}
 
 
-@app.get("/posts")
-async def get_posts() -> List[Post]:
-    return await Post.prisma().find_many()
-
-
-@app.put("/posts")
-async def create_post(post: PostCreateInput):
-    return await prisma.post.create(post)
-
-
 @app.get("/auth/login")
 async def authenticate(next: Optional[str] = None, ticket: Optional[str] = None):
     return await login_cas(next, ticket)
@@ -82,7 +83,7 @@ async def check_auth(user_data: UserData = Depends(require_authentication)):
     return {"message": "Authenticated"}
 
 
-@app.post("/courses/sync")
+@app.get("/courses/sync")
 # TODO: Require admin permissions for this endpoint.
 async def sync_courses():
     await run_upstream_sync()
@@ -140,7 +141,7 @@ async def debug_get_curriculum():
                 detail="Database is not initialized"
                 + f" (found no block with kind '{block_kind}')",
             )
-        curr.blocks.append(pydantic.parse_obj_as(Combine, block.req))
+        curr.blocks.append(pydantic.parse_obj_as(Block, block.req))
     return curr
 
 
@@ -155,3 +156,66 @@ async def generate_plan(passed: ValidatablePlan):
     plan = await generate_default_plan(passed)
 
     return plan
+
+
+@app.post("/plan/storage")
+async def save_plan(
+    name: str,
+    plan: ValidatablePlan,
+    user_data: UserData = Depends(require_authentication),
+):
+    stored = await store_plan(plan_name=name, user_rut=user_data.rut, plan=plan)
+
+    return stored
+
+
+@app.get("/plan/storage")
+async def read_plans(user_data: UserData = Depends(require_authentication)):
+    plans = await get_user_plans(user_rut=user_data.rut)
+
+    return plans
+
+
+@app.get("/plan/storage/details")
+async def read_plan(
+    plan_id: str, user_data: UserData = Depends(require_authentication)
+):
+    details = await get_plan_details(user_rut=user_data.rut, plan_id=plan_id)
+
+    return details
+
+
+@app.put("/plan/storage")
+async def update_plan(
+    plan_id: str,
+    new_plan: ValidatablePlan,
+    user_data: UserData = Depends(require_authentication),
+):
+    updated_plan = await modify_validatable_plan(
+        user_rut=user_data.rut, plan_id=plan_id, new_plan=new_plan
+    )
+
+    return updated_plan
+
+
+@app.put("/plan/storage/name")
+async def rename_plan(
+    plan_id: str,
+    new_name: str,
+    user_data: UserData = Depends(require_authentication),
+):
+    updated_plan = await modify_plan_metadata(
+        user_rut=user_data.rut, plan_id=plan_id, new_name=new_name
+    )
+
+    return updated_plan
+
+
+@app.delete("/plan/storage")
+async def delete_plan(
+    plan_id: str,
+    user_data: UserData = Depends(require_authentication),
+):
+    deleted_plan = await remove_plan(user_rut=user_data.rut, plan_id=plan_id)
+
+    return deleted_plan

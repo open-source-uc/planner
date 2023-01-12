@@ -110,7 +110,7 @@ export class DefaultService {
      */
     public static syncCourses(): CancelablePromise<any> {
         return __request(OpenAPI, {
-            method: 'POST',
+            method: 'GET',
             url: '/courses/sync',
         });
     }

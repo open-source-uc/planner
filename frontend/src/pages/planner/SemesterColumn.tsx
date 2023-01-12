@@ -1,3 +1,4 @@
+
 import { useDrop } from 'react-dnd'
 
 const SemesterColumn = ({ semester, addEnd, children }: { semester: number, addEnd: Function, children?: React.ReactNode[] }): JSX.Element => {
@@ -11,10 +12,10 @@ const SemesterColumn = ({ semester, addEnd, children }: { semester: number, addE
     })
   }))
   return (
-        <div className={'basis-1/12 drop-shadow-xl bg-base-200 rounded-lg overflow-hidden flex flex-col'}>
+        <div className={'drop-shadow-xl basis-[8.69565%] shrink-0 bg-base-200 rounded-lg'}>
           <h2 className="mt-1 text-xl text-center">{`Semestre ${semester}`}</h2>
           <div className="my-2 divider"></div>
-          <div className={'max-h-full overflow-auto'}>
+          <div className={'max-h-full overflow-y-auto'}>
             {children}
           </div>
           <div ref={drop} className={'px-2 flex flex-grow min-h-[60px]'}>
