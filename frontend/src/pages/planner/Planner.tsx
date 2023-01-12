@@ -20,15 +20,23 @@ export interface Course {
   semester: number
 }
 
+export interface PlanDetails {
+  id: string
+  created_at: Date
+  updated_at: Date
+  name: string
+  user_rut: string
+  validatable_plan: ValidatablePlan
+}
+
 const Planner = (): JSX.Element => {
-  const [plan, setPlan] = useState<ValidatablePlan >({ classes: [], next_semester: 0 })
+  const [plan, setPlan] = useState<PlanDetails | { validatable_plan: ValidatablePlan }>({ validatable_plan: { classes: [], next_semester: 1 } })
   const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course }>({})
   const previousClasses = useRef<string[][]>([['']])
   const [loading, setLoading] = useState(true)
   const [validating, setValidanting] = useState(true)
   const [validationDiagnostics, setValidationDiagnostics] = useState<Diagnostic[]>([])
   const params = useParams()
-  console.log(params)
 
   async function getDefaultPlan (): Promise<void> {
     console.log('getting Basic Plan...')
@@ -36,7 +44,7 @@ const Planner = (): JSX.Element => {
       classes: [],
       next_semester: 1
     })
-    setPlan(response)
+    setPlan({ validatable_plan: response })
     await getCourseDetails(response.classes).catch(err => {
       setValidationDiagnostics([{
         is_warning: false,
@@ -56,7 +64,7 @@ const Planner = (): JSX.Element => {
   async function getPlanById (id: string): Promise<void> {
     console.log('getting Plan by Id...')
     const response = await DefaultService.readPlan(id)
-    setPlan(response.validatable_plan)
+    setPlan(response)
     await getCourseDetails(response.validatable_plan.classes).catch(err => {
       setValidationDiagnostics([{
         is_warning: false,
@@ -100,18 +108,28 @@ const Planner = (): JSX.Element => {
   }
 
   async function savePlan (): Promise<void> {
-    const planName = prompt('Nombre de la malla?')
-    if (planName == null || planName === '') return
-    setValidanting(true)
-    try {
-      const res = await DefaultService.savePlan(planName, plan)
-      alert('Plan saved successfully')
-      window.location.href = `/planner/${res.id}`
-    } catch (err) {
-      alert(err)
+    if (params?.plannerId != null) {
+      setValidanting(true)
+      try {
+        await DefaultService.updatePlan(params.plannerId, plan?.validatable_plan)
+        alert('Plan updated successfully')
+      } catch (err) {
+        alert(err)
+      }
+      setValidanting(false)
+    } else {
+      const planName = prompt('Nombre de la malla?')
+      if (planName == null || planName === '') return
+      setValidanting(true)
+      try {
+        const res = await DefaultService.savePlan(planName, plan?.validatable_plan)
+        alert('Plan saved successfully')
+        window.location.href = `/planner/${res.id}`
+      } catch (err) {
+        alert(err)
+      }
+      setValidanting(false)
     }
-
-    setValidanting(false)
   }
   async function erasePlan (): Promise<void> {
     setValidanting(true)
@@ -130,16 +148,16 @@ const Planner = (): JSX.Element => {
   async function addCourse (semIdx: number): Promise<void> {
     const courseCode = prompt('Course code?')
     if (courseCode == null || courseCode === '') return
-    if (plan?.classes.flat().includes(courseCode.toUpperCase())) { alert(`${courseCode} already on plan`); return }
+    if (plan.validatable_plan.classes.flat().includes(courseCode.toUpperCase())) { alert(`${courseCode} already on plan`); return }
     setValidanting(true)
     const response = await DefaultService.getCourseDetails([courseCode.toUpperCase()])
     if (response?.status_code === 404) { setValidanting(false); alert(response?.detail); return }
     setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
     setPlan((prev) => {
-      const newClasses = [...prev.classes]
-      newClasses[semIdx] = [...prev.classes[semIdx]]
+      const newClasses = [...prev.validatable_plan.classes]
+      newClasses[semIdx] = [...prev.validatable_plan.classes[semIdx]]
       newClasses[semIdx].push(response[0].code)
-      return { ...prev, classes: newClasses }
+      return { ...prev, validatable_plan: { next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
     })
   }
 
@@ -158,8 +176,8 @@ const Planner = (): JSX.Element => {
   useEffect(() => {
     if (!loading) {
       // dont validate if the classes are rearranging the same semester at previous validation
-      if (!plan.classes.map((sem, index) => JSON.stringify([...sem].sort()) === JSON.stringify(previousClasses.current[index]?.sort())).every(Boolean)) {
-        validate(plan).catch(err => {
+      if (!plan.validatable_plan.classes.map((sem, index) => JSON.stringify([...sem].sort()) === JSON.stringify(previousClasses.current[index]?.sort())).every(Boolean)) {
+        validate(plan.validatable_plan).catch(err => {
           setValidationDiagnostics([{
             is_warning: false,
             message: `Internal error: ${String(err)}`
@@ -174,11 +192,11 @@ const Planner = (): JSX.Element => {
       {(!loading)
         ? <>
         <div className={'flex flex-col w-5/6'}>
-          <ul className={'w-full mb-1 mt-2'}>
+          <ul className={'w-full mb-1 mt-2 relative '}>
             <li className={'inline text-xl ml-3 mr-10 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> Civil Computación</li>
             <li className={'inline text-xl mr-10 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div>  Computación - Track Computación</li>
             <li className={'inline text-xl mr-10 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Eléctrica</li>
-            <li className={'inline text-xl mr-10 font-semibold'}>{params?.plannerId}</li>
+            <li className={'inline text-2xl ml-40 font-bold absolute'}>{plan?.name}</li>
           </ul>
           <ControlTopBar
             reset={getDefaultPlan}
@@ -187,7 +205,7 @@ const Planner = (): JSX.Element => {
             validating={validating}
           />
           <PlanBoard
-            plan={plan}
+            plan={plan?.validatable_plan}
             courseDetails={courseDetails}
             setPlan={setPlan}
             addCourse={addCourse}

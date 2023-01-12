@@ -23,23 +23,23 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating }: Plan
   function remCourse (semIdx: number, code: string): void {
     const idx = plan.classes[semIdx].indexOf(code)
     if (idx === -1) return
-    setPlan((prev: { classes: string[][] }) => {
-      const newClasses = [...prev.classes]
-      newClasses[semIdx] = [...prev.classes[semIdx]]
+    setPlan((prev: { validatable_plan: ValidatablePlan }) => {
+      const newClasses = [...prev.validatable_plan.classes]
+      newClasses[semIdx] = [...prev.validatable_plan.classes[semIdx]]
       newClasses[semIdx].splice(idx, 1)
       while (newClasses[newClasses.length - 1].length === 0) {
         newClasses.pop()
       }
-      return { ...prev, classes: newClasses }
+      return { ...prev, validatable_plan: { next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
     })
   }
 
   function moveCourse (semester: number, drag: Course, code: string): void {
-    setPlan((prev: { classes: string[][] }) => {
-      const dragIndex: number = prev.classes[drag.semester].indexOf(drag.code)
-      const newClasses = [...prev.classes]
-      if (semester - prev.classes.length >= 0) {
-        if (semester - prev.classes.length > 0) newClasses.push([])
+    setPlan((prev: { validatable_plan: ValidatablePlan }) => {
+      const dragIndex: number = prev.validatable_plan.classes[drag.semester].indexOf(drag.code)
+      const newClasses = [...prev.validatable_plan.classes]
+      if (semester - prev.validatable_plan.classes.length >= 0) {
+        if (semester - prev.validatable_plan.classes.length > 0) newClasses.push([])
         newClasses.push([])
       }
       let index = newClasses[semester].indexOf(code)

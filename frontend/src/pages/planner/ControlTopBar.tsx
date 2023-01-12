@@ -17,7 +17,6 @@ function ControlTopBar ({ reset, save, erase, validating }: ControlTopBarProps):
           <li className={`inline mr-4 ${validating ? 'pointer-events-none' : ''}`}><button onClick={() => reset()}>Resetear Malla</button></li>
           {authState?.user != null && (<>
           <li className={`inline mr-4 ${validating ? 'pointer-events-none' : ''}`}><button onClick={() => save()}>Guardar Malla</button></li>
-          <li className={`inline mr-4 ${validating ? 'pointer-events-none' : ''}`}><button onClick={() => erase()}>Borrar Malla</button></li>
           </>)}
           <li className="inline mr-4 opacity-50 cursor-not-allowed">Ver Leyenda/ayuda</li>
           <li className="inline mr-4 opacity-50 cursor-not-allowed">Reportar Errores</li>

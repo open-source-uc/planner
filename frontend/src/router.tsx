@@ -33,16 +33,16 @@ const newPlannerRoute = rootRoute.createRoute({
   component: Planner,
   loader: () => ({
     plannerId: null
-  }),
-  beforeLoad: authenticateRoute,
-  onLoadError: onAuthenticationError
+  })
 })
 
 const getPlannerRoute = newPlannerRoute.createRoute({
   path: '/$plannerId',
   loader: async ({ params }) => ({
     plannerId: params.plannerId
-  })
+  }),
+  beforeLoad: authenticateRoute,
+  onLoadError: onAuthenticationError
 })
 
 const logoutRoute = rootRoute.createRoute({
