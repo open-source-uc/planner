@@ -44,7 +44,7 @@ const Planner = (): JSX.Element => {
       classes: [],
       next_semester: 1
     })
-    setPlan({ validatable_plan: response })
+    setPlan({ ...plan, validatable_plan: response })
     await getCourseDetails(response.classes).catch(err => {
       setValidationDiagnostics([{
         is_warning: false,
