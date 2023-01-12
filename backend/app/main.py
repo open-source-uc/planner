@@ -158,7 +158,7 @@ async def generate_plan(passed: ValidatablePlan):
     return plan
 
 
-@app.post("/plan/stored")
+@app.post("/plan/storage")
 async def save_plan(
     name: str,
     plan: ValidatablePlan,
@@ -169,14 +169,14 @@ async def save_plan(
     return stored
 
 
-@app.get("/plan/stored")
+@app.get("/plan/storage")
 async def read_plans(user_data: UserData = Depends(require_authentication)):
     plans = await get_user_plans(user_rut=user_data.rut)
 
     return plans
 
 
-@app.get("/plan/stored/details")
+@app.get("/plan/storage/details")
 async def read_plan(
     plan_id: str, user_data: UserData = Depends(require_authentication)
 ):
@@ -185,7 +185,7 @@ async def read_plan(
     return details
 
 
-@app.put("/plan/stored")
+@app.put("/plan/storage")
 async def update_plan(
     plan_id: str,
     new_plan: ValidatablePlan,
@@ -198,7 +198,7 @@ async def update_plan(
     return updated_plan
 
 
-@app.put("/plan/stored/name")
+@app.put("/plan/storage/name")
 async def rename_plan(
     plan_id: str,
     new_name: str,
@@ -211,7 +211,7 @@ async def rename_plan(
     return updated_plan
 
 
-@app.delete("/plan/stored")
+@app.delete("/plan/storage")
 async def delete_plan(
     plan_id: str,
     user_data: UserData = Depends(require_authentication),
