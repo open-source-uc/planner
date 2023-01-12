@@ -55,57 +55,77 @@ def _find_corequirements(out: list[str], expr: Expr):
             _find_corequirements(out, child)
 
 
-def _try_add_course(
+def _determine_coreq_components(
+    courseinfo: dict[str, CourseInfo], courses_to_pass: list[str]
+) -> dict[str, list[str]]:
+    """
+    Determine which courses have to be taken together because they are
+    mutual corequirements.
+    """
+    coreq_components: dict[str, list[str]] = {}
+    for course in courses_to_pass:
+        # Find corequirements of this course
+        coreqs: list[str] = []
+        if course in courseinfo:
+            _find_corequirements(coreqs, courseinfo[course].deps)
+        # Filter corequirements only to mutual corequirements
+        mutual_coreqs = [course]
+        for coreq in coreqs:
+            coreqs_of_coreq: list[str] = []
+            if coreq in courseinfo and coreq in courses_to_pass:
+                _find_corequirements(coreqs_of_coreq, courseinfo[coreq].deps)
+            if course in coreqs_of_coreq:
+                mutual_coreqs.append(coreq)
+        # Associate this course to its mutual courses
+        coreq_components[course] = mutual_coreqs
+    return coreq_components
+
+
+def _try_add_course_group(
     courseinfo: dict[str, CourseInfo],
     plan: ValidatablePlan,
-    go_together: dict[str, list[str]],
     courses_to_pass: list[str],
-    credits: int,
-    try_course: str,
+    current_credits: int,
+    course_group: list[str],
 ):
-    # Treat unknown courses specially
-    if try_course not in courseinfo:
-        if credits + 10 <= CurriculumRecommender.CREDITS_PER_SEMESTER:
-            print(
-                f"WARNING: unknown course {try_course} found while generating "
-                "plan. assuming 10 credits and adding as-is."
-            )
-            plan.classes[-1].append(try_course)
-            courses_to_pass.remove(try_course)
-            return "added"
-        else:
-            print(
-                f"WARNING: unknown course {try_course} found while generating "
-                "plan. skipping because there is no space for 10 credits."
-            )
-            return "credits"
+    """
+    Attempt to add a group of courses to the last semester of the given plan.
+    Fails if they cannot be added.
+    Assumes all courses in the group are not present in the given plan.
+    """
 
-    # Do not add if we would take too many credits
-    if (
-        credits + courseinfo[try_course].credits
-        > CurriculumRecommender.CREDITS_PER_SEMESTER
-    ):
+    # Determine total credits of this group
+    group_credits = sum(
+        map(lambda c: courseinfo[c].credits if c in courseinfo else 10, course_group)
+    )
+
+    # Bail if there is not enough space in this semester
+    if current_credits + group_credits > CurriculumRecommender.CREDITS_PER_SEMESTER:
         return "credits"
 
-    # Do not add if it would break some requirement
-    original_length = len(plan.classes[-1])
-    for subcourse in go_together[try_course]:
-        if subcourse in courses_to_pass:
-            plan.classes[-1].append(subcourse)
-    for i in range(original_length, len(plan.classes[-1])):
+    # Temporarily add to plan
+    semester = plan.classes[-1]
+    original_length = len(semester)
+    for course in course_group:
+        semester.append(course)
+
+    # Check the dependencies for each course
+    for course in course_group:
+        if course not in courseinfo:
+            continue
         if not quick_validate_dependencies(
-            courseinfo, plan, len(plan.classes) - 1, plan.classes[-1][i]
+            courseinfo, plan, len(plan.classes) - 1, course
         ):
-            # Found a requirement error
+            # Requirements are not met
             # Undo changes and cancel
-            while len(plan.classes[-1]) > original_length:
-                plan.classes[-1].pop()
+            while len(semester) > original_length:
+                semester.pop()
             return "cant"
 
     # Added course successfully
     # Remove added courses from `courses_to_pass`
-    for i in range(original_length, len(plan.classes[-1])):
-        courses_to_pass.remove(plan.classes[-1][i])
+    for course in course_group:
+        courses_to_pass.remove(course)
 
     return "added"
 
@@ -117,32 +137,37 @@ async def generate_default_plan(passed: ValidatablePlan, curriculum: CurriculumS
     # flat list of all curriculum courses left to pass
     courses_to_pass = _compute_courses_to_pass(recommended.classes, passed.classes)
 
+    for course in courses_to_pass:
+        if course not in courseinfo:
+            print(
+                f"WARNING: course {course} not found in database. "
+                "assuming 10 credits and no requirements."
+            )
+
     plan = _clone_plan(passed)
     plan.classes.append([])
 
     # Precompute corequirements for courses
-    go_together: dict[str, list[str]] = {}
-    for course in courses_to_pass:
-        coreqs = [course]
-        if course in courseinfo:
-            _find_corequirements(coreqs, courseinfo[course].deps)
-        coreqs = list(filter(lambda c: c in courses_to_pass, coreqs))
-        go_together[course] = coreqs
+    coreq_components = _determine_coreq_components(courseinfo, courses_to_pass)
 
     while courses_to_pass:
         # Attempt to add a single course at the end of the last semester
 
         # Precompute the amount of credits in this semester
         credits = sum(
-            courseinfo[c].credits if c in courseinfo else 0 for c in plan.classes[-1]
+            courseinfo[c].credits if c in courseinfo else 10 for c in plan.classes[-1]
         )
 
         # Go in order, attempting to add each course to the semester
         added_course = False
         could_use_more_credits = False
         for try_course in courses_to_pass:
-            status = _try_add_course(
-                courseinfo, plan, go_together, courses_to_pass, credits, try_course
+            course_group = list(
+                filter(lambda c: c in courses_to_pass, coreq_components[try_course])
+            )
+
+            status = _try_add_course_group(
+                courseinfo, plan, courses_to_pass, credits, course_group
             )
             if status == "added":
                 # Successfully added a course, finish
@@ -165,7 +190,10 @@ async def generate_default_plan(passed: ValidatablePlan, curriculum: CurriculumS
             continue
 
         # Stuck! :(
-        print(f"WARNING: could not add courses {courses_to_pass}")
         break
+
+    if courses_to_pass:
+        print(f"WARNING: could not add courses {courses_to_pass}")
+        plan.classes.append(courses_to_pass)
 
     return plan
