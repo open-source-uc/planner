@@ -43,7 +43,6 @@ def diagnose_curriculum(
 
     # Solve plan
     solved = solve_curriculum(courseinfo, curriculum, taken_courses)
-    # print(f"solved plan: {solved}")
 
     # Generate diagnostics
     for block in solved.blocks:

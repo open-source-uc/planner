@@ -2,6 +2,7 @@
 Transform the Siding format into something usable.
 """
 
+from ...plan.validation.curriculum.solve import DEBUG_SOLVE
 from ...plan.validation.courses.logic import Expr, Operator
 from ...plan.courseinfo import course_info
 from . import client
@@ -114,10 +115,16 @@ async def fetch_curriculum_from_siding(spec: CurriculumSpec) -> Curriculum:
     # TODO: Apply title transformation (130 credits must be exclusive to the title, the
     # rest can be shared)
 
+    # Sort by number of satisfying courses
+    # TODO: Figure out proper validation order, or if flow has to be used.
+    blocks.sort(key=lambda b: len(b.codes) if isinstance(b, CourseList) else 1e6)
+
     return Curriculum(nodes=blocks)
 
 
-async def _debug_pick_good_course(courselist: list[CursoSiding]) -> CursoSiding:
+async def _debug_pick_good_course(
+    taken: list[list[str]], courselist: list[CursoSiding]
+) -> CursoSiding:
     def count_nodes(expr: Expr) -> int:
         cnt = 1
         if isinstance(expr, Operator):
@@ -133,6 +140,14 @@ async def _debug_pick_good_course(courselist: list[CursoSiding]) -> CursoSiding:
         if best is None:
             best = c
         if c.Sigla not in courseinfo:
+            continue
+        if courseinfo[c.Sigla].credits < 10:
+            continue
+        skip = False
+        for semester in taken:
+            if c.Sigla in semester:
+                skip = True
+        if skip:
             continue
         cnt = count_nodes(courseinfo[c.Sigla].deps)
         if cnt < best_cnt:
@@ -172,7 +187,9 @@ async def fetch_recommended_courses_from_siding(
         if raw_block.CodLista is not None:
             # TODO: Replace by an ambiguous course
             representative_course = (
-                await _debug_pick_good_course(await predefined_list(raw_block.CodLista))
+                await _debug_pick_good_course(
+                    semesters, await predefined_list(raw_block.CodLista)
+                )
             ).Sigla
         elif raw_block.CodSigla is not None:
             # TODO: Consider using an ambiguous course for some equivalencies
@@ -184,6 +201,10 @@ async def fetch_recommended_courses_from_siding(
         while len(semesters) <= semester_idx:
             semesters.append([])
         semesters[semester_idx].append(representative_course)
+        if DEBUG_SOLVE:
+            print(
+                f"selected course {representative_course} for block {raw_block.Nombre}"
+            )
 
     return semesters
 

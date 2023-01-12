@@ -10,6 +10,10 @@ from .tree import CourseList, Curriculum, Node
 from dataclasses import dataclass
 
 
+# Print debug messages when solving a curriculum.
+DEBUG_SOLVE = True
+
+
 @dataclass
 class SolvedBlock:
     # Name of the block or subblock.
@@ -84,8 +88,11 @@ def _calc_taken_courses(
     taken_courses: dict[str, int] = {}
     for code in done_courses:
         if code not in courseinfo:
-            continue
-        taken_courses[code] = taken_courses.get(code, 0) + courseinfo[code].credits
+            print(f"course {code} not found in database. assuming 10 credits")
+            creds = 10
+        else:
+            creds = courseinfo[code].credits
+        taken_courses[code] = taken_courses.get(code, 0) + creds
     return taken_courses
 
 
@@ -160,7 +167,14 @@ class CurriculumSolver:
                     # Course already assigned to another block
                     continue
                 # Assign this course to the current block
-                creds = self.courseinfo[course_code].credits
+                if course_code not in self.courseinfo:
+                    print(
+                        f"course {course_code} not found in database. "
+                        "assuming 10 credits"
+                    )
+                    creds = 10
+                else:
+                    creds = self.courseinfo[course_code].credits
                 subflow = self.taken_courses[course_code]
                 if subflow > creds:
                     # TODO: Cursos de seleccion deportiva se pueden tomar 2 veces y
@@ -170,7 +184,16 @@ class CurriculumSolver:
                 node.flow += subflow
                 if node.exclusive:
                     self.course_assignments[course_code] = node
+                    if DEBUG_SOLVE:
+                        print(f"course {course_code} assigned to {node.name}")
                     # TODO: Mark this course with its corresponding block
+            if DEBUG_SOLVE and flow_cap > 0:
+                codes = (
+                    f"{len(node.codes)} courses"
+                    if len(node.codes) > 10
+                    else " ".join(node.codes)
+                )
+                print(f"node {node.name} with courses {codes} left unsatisfied")
 
     def solve(self) -> SolvedCurriculum:
         solved: list[SolvedNode] = []
@@ -179,6 +202,12 @@ class CurriculumSolver:
             solved.append(solved_block)
         for block in solved:
             self.assign(block, None)
+
+        if DEBUG_SOLVE:
+            for course in self.taken_courses.keys():
+                if course not in self.course_assignments:
+                    print(f"course {course} left unassigned")
+
         return SolvedCurriculum(blocks=solved)
 
 
