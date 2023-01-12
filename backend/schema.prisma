@@ -33,26 +33,5 @@ model Plan {
   updated_at    DateTime @updatedAt
   name          String
   user_rut      String
-  semesters     PlanSemester[]
-  next_semester Int
-  level         Int?
-  school        String?
-  program       String?
-  career        String?
-}
-
-model PlanSemester {
-  id      String @id @default(cuid())
-  plan    Plan @relation(fields: [plan_id], references: [id], onDelete: Cascade)
-  plan_id String
-  number  Int
-  classes PlanClass[]
-}
-
-// TODO: cache class_codes? there could be too much avoidable repetition
-model PlanClass {
-  id          String @id @default(cuid())
-  semester    PlanSemester @relation(fields: [semester_id], references: [id], onDelete: Cascade)
-  semester_id String
-  class_code  String
+  validatable_plan Json
 }

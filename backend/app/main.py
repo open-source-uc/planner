@@ -2,23 +2,26 @@ from .plan.validation.curriculum.tree import Block, Curriculum
 from .plan.validation.diagnostic import ValidationResult
 from .plan.validation.validate import diagnose_plan
 import pydantic
-from .plan.plan import ValidatablePlan, Level
+from .plan.plan import ValidatablePlan
 from .plan.generation import generate_default_plan
+from .plan.storage import (
+    store_plan,
+    get_user_plans,
+    get_plan_details,
+    modify_validatable_plan,
+    modify_plan_metadata,
+    remove_plan,
+)
 from fastapi import FastAPI, Query, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from .database import prisma
 from prisma.models import Course as DbCourse, CurriculumBlock
-from prisma.types import (
-    PlanCreateInput,
-    PlanSemesterCreateInput,
-    PlanClassCreateInput,
-)
 from .auth import require_authentication, login_cas, UserData
 from .sync import run_upstream_sync
 from .plan.courseinfo import clear_course_info_cache, course_info
 from .plan.generation import CurriculumRecommender as recommender
-from typing import List, Optional
+from typing import Optional
 
 
 # Set-up operation IDs for OpenAPI
@@ -155,158 +158,64 @@ async def generate_plan(passed: ValidatablePlan):
     return plan
 
 
-@app.post("/plan/stored")
+@app.post("/plan/storage")
 async def save_plan(
     name: str,
     plan: ValidatablePlan,
     user_data: UserData = Depends(require_authentication),
 ):
-    # TODO: move logic to external method
-    # TODO: set max 50 plans per user
+    stored = await store_plan(plan_name=name, user_rut=user_data.rut, plan=plan)
 
-    stored_plan = await prisma.plan.create(
-        PlanCreateInput(
-            name=name,
-            user_rut=user_data.rut,
-            next_semester=plan.next_semester,
-            level=plan.level,
-            school=plan.school,
-            program=plan.program,
-            career=plan.career,
-        )
-    )
-
-    for i, sem in enumerate(plan.classes):
-        stored_semester = await prisma.plansemester.create(
-            PlanSemesterCreateInput(plan_id=stored_plan.id, number=i + 1)
-        )
-        for cls in sem:
-            await prisma.planclass.create(
-                PlanClassCreateInput(semester_id=stored_semester.id, class_code=cls)
-            )
-
-    return stored_plan
+    return stored
 
 
-@app.get("/plan/stored")
+@app.get("/plan/storage")
 async def read_plans(user_data: UserData = Depends(require_authentication)):
-    # TODO: move logic to external method
+    plans = await get_user_plans(user_rut=user_data.rut)
 
-    results = await prisma.query_raw(
-        """
-        SELECT * FROM "Plan"
-        WHERE user_rut = $1
-        LIMIT 50
-        """,
-        user_data.rut,
-    )
-
-    async def translate_plan_model(i: int):
-        semesters = await prisma.query_raw(
-            """
-            SELECT * FROM "PlanSemester"
-            WHERE plan_id = $1
-            """,
-            results[i]["id"],
-        )
-
-        plan_classes: list[list[str]] = []
-        for s in semesters:
-            plan_class = await prisma.query_raw(
-                """
-                SELECT class_code FROM "PlanClass"
-                WHERE semester_id = $1
-                """,
-                s["id"],
-            )
-            plan_class_stripped = [p["class_code"] for p in plan_class]
-
-            plan_classes.append(plan_class_stripped)
-
-        return {
-            "id": results[i]["id"],
-            "created_at": results[i]["created_at"],
-            "updated_at": results[i]["updated_at"],
-            "name": results[i]["name"],
-            "plan": ValidatablePlan(
-                classes=plan_classes,
-                next_semester=results[i]["next_semester"],
-                level=Level(results[i]["level"]),
-                school=results[i]["school"],
-                program=results[i]["program"],
-                career=results[i]["career"],
-            ),
-        }
-
-    return [await translate_plan_model(i) for i in range(len(results))]
+    return plans
 
 
-@app.put("/plan/stored")
+@app.get("/plan/storage/details")
+async def read_plan(
+    plan_id: str, user_data: UserData = Depends(require_authentication)
+):
+    details = await get_plan_details(user_rut=user_data.rut, plan_id=plan_id)
+
+    return details
+
+
+@app.put("/plan/storage")
 async def update_plan(
     plan_id: str,
     new_plan: ValidatablePlan,
     user_data: UserData = Depends(require_authentication),
 ):
-    # TODO: move logic to external method
-    user_plans = await prisma.plan.find_many(where={"user_rut": user_data.rut})
-    if plan_id not in [p.id for p in user_plans]:
-        raise HTTPException(status_code=404, detail="Plan not found in user storage")
-
-    # TODO: use PlanSemesterUpdateManyWithoutRelationsInput for nested relations update
-    updated_plan = await prisma.plan.update(
-        where={
-            "id": plan_id,
-        },
-        data={
-            # TODO --> "semesters": [["..."], ...],
-            "next_semester": new_plan.next_semester,
-            "level": new_plan.level,
-            "school": new_plan.school,
-            "program": new_plan.program,
-            "career": new_plan.career,
-        },
+    updated_plan = await modify_validatable_plan(
+        user_rut=user_data.rut, plan_id=plan_id, new_plan=new_plan
     )
 
     return updated_plan
 
 
-@app.put("/plan/stored/name")
+@app.put("/plan/storage/name")
 async def rename_plan(
     plan_id: str,
     new_name: str,
     user_data: UserData = Depends(require_authentication),
 ):
-    # TODO: move logic to external method
-    user_plans = await prisma.plan.find_many(where={"user_rut": user_data.rut})
-    if plan_id not in [p.id for p in user_plans]:
-        raise HTTPException(status_code=404, detail="Plan not found in user storage")
-
-    updated_plan = await prisma.plan.update(
-        where={
-            "id": plan_id,
-        },
-        data={
-            "name": new_name,
-        },
+    updated_plan = await modify_plan_metadata(
+        user_rut=user_data.rut, plan_id=plan_id, new_name=new_name
     )
 
     return updated_plan
 
 
-@app.delete("/plan/stored")
+@app.delete("/plan/storage")
 async def delete_plan(
     plan_id: str,
     user_data: UserData = Depends(require_authentication),
 ):
-    # TODO: move logic to external method
-    user_plans = await prisma.plan.find_many(where={"user_rut": user_data.rut})
-    if plan_id not in [p.id for p in user_plans]:
-        raise HTTPException(status_code=404, detail="Plan not found in user storage")
-
-    deleted_plan = await prisma.plan.delete(
-        where={
-            "id": plan_id,
-        }
-    )
+    deleted_plan = await remove_plan(user_rut=user_data.rut, plan_id=plan_id)
 
     return deleted_plan
