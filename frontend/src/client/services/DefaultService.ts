@@ -185,7 +185,7 @@ export class DefaultService {
     public static readPlans(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/plan/stored',
+            url: '/plan/storage',
         });
     }
 
@@ -202,7 +202,7 @@ export class DefaultService {
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'PUT',
-            url: '/plan/stored',
+            url: '/plan/storage',
             query: {
                 'plan_id': planId,
             },
@@ -227,7 +227,7 @@ export class DefaultService {
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/plan/stored',
+            url: '/plan/storage',
             query: {
                 'name': name,
             },
@@ -250,7 +250,28 @@ export class DefaultService {
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/plan/stored',
+            url: '/plan/storage',
+            query: {
+                'plan_id': planId,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Read Plan
+     * @param planId
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static readPlan(
+        planId: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/plan/storage/details',
             query: {
                 'plan_id': planId,
             },
@@ -273,7 +294,7 @@ export class DefaultService {
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'PUT',
-            url: '/plan/stored/name',
+            url: '/plan/storage/name',
             query: {
                 'plan_id': planId,
                 'new_name': newName,

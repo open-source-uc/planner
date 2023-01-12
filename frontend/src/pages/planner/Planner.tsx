@@ -1,6 +1,7 @@
 import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
+import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
 import { DefaultService, Diagnostic, ValidatablePlan } from '../../client'
 /**
@@ -26,6 +27,8 @@ const Planner = (): JSX.Element => {
   const [loading, setLoading] = useState(true)
   const [validating, setValidanting] = useState(true)
   const [validationDiagnostics, setValidationDiagnostics] = useState<Diagnostic[]>([])
+  const params = useParams()
+  console.log(params)
 
   async function getDefaultPlan (): Promise<void> {
     console.log('getting Basic Plan...')
@@ -41,6 +44,26 @@ const Planner = (): JSX.Element => {
       }])
     })
     await validate(response).catch(err => {
+      setValidationDiagnostics([{
+        is_warning: false,
+        message: `Internal error: ${String(err)}`
+      }])
+    })
+    setLoading(false)
+    console.log('data loaded')
+  }
+
+  async function getPlanById (id: string): Promise<void> {
+    console.log('getting Plan by Id...')
+    const response = await DefaultService.readPlan(id)
+    setPlan(response.validatable_plan)
+    await getCourseDetails(response.validatable_plan.classes).catch(err => {
+      setValidationDiagnostics([{
+        is_warning: false,
+        message: `Internal error: ${String(err)}`
+      }])
+    })
+    await validate(response.validatable_plan).catch(err => {
       setValidationDiagnostics([{
         is_warning: false,
         message: `Internal error: ${String(err)}`
@@ -81,8 +104,9 @@ const Planner = (): JSX.Element => {
     if (planName == null || planName === '') return
     setValidanting(true)
     try {
-      await DefaultService.savePlan(planName, plan)
+      const res = await DefaultService.savePlan(planName, plan)
       alert('Plan saved successfully')
+      window.location.href = `/planner/${res.id}`
     } catch (err) {
       alert(err)
     }
@@ -106,9 +130,15 @@ const Planner = (): JSX.Element => {
   }
 
   useEffect(() => {
-    getDefaultPlan().catch(err => {
-      console.log(err)
-    })
+    if (params?.plannerId != null) {
+      getPlanById(params.plannerId).catch(err => {
+        console.log(err)
+      })
+    } else {
+      getDefaultPlan().catch(err => {
+        console.log(err)
+      })
+    }
   }, [])
 
   useEffect(() => {
@@ -134,6 +164,7 @@ const Planner = (): JSX.Element => {
             <li className={'inline text-xl ml-3 mr-10 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> Civil Computación</li>
             <li className={'inline text-xl mr-10 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div>  Computación - Track Computación</li>
             <li className={'inline text-xl mr-10 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Eléctrica</li>
+            <li className={'inline text-xl mr-10 font-semibold'}>{params?.plannerId}</li>
           </ul>
           <ControlTopBar
             reset={getDefaultPlan}
