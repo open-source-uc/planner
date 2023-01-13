@@ -22,6 +22,8 @@ class ValidatablePlan(BaseModel):
     `ValidatablePlan` should represent any user & plan configuration.
     """
 
+    # NOTE: remember to migrate JSON in DB when modifying this class
+
     # Classes per semester.
     classes: list[list[str]]
     # The first semester to validate.
