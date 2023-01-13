@@ -285,7 +285,7 @@ async def fetch_to_database():
                     "code": code,
                     "name": c.name,
                     "credits": c.credits,
-                    "deps": Json(deps.dict()),
+                    "deps": Json(deps.json()),
                     "program": c.program,
                     "school": c.school,
                     "area": None if c.area == "" else c.area,
