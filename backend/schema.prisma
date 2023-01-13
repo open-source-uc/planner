@@ -10,14 +10,25 @@ datasource db {
 }
 
 model Course {
-  code     String  @id
-  name     String
-  credits  Int
-  deps     Json
-  program  String
-  school   String
-  area     String?
-  category String?
+  code                String  @id
+  name                String
+  credits             Int
+  deps                Json
+  program             String
+  school              String
+  area                String?
+  category            String?
+  // Whether this course is classified as "Vigente" by catalogo UC
+  is_relevant         Boolean
+  // An heuristic indicating if this course is available to take
+  // Derivated from historic availability for now
+  is_available        Boolean
+  // An heuristic indicating if this course is avilable to take in
+  // these specific semesters
+  // Derivated from historic availability for now
+  semestrality_first  Boolean
+  semestrality_second Boolean
+  semestrality_tav    Boolean
 }
 
 model Major {
@@ -66,10 +77,10 @@ model Title {
 }
 
 model Plan {
-  id            String   @id @default(cuid())
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-  name          String
-  user_rut      String
+  id               String   @id @default(cuid())
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  name             String
+  user_rut         String
   validatable_plan Json
 }

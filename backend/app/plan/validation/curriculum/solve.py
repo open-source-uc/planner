@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 
 # Print debug messages when solving a curriculum.
-DEBUG_SOLVE = True
+DEBUG_SOLVE = False
 
 
 @dataclass
