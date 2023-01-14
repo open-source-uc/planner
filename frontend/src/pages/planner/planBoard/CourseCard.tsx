@@ -1,9 +1,9 @@
 import { useRef } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
-import { Course } from '../Planner'
+import { Course } from '../../../client'
 
 interface CourseCardProps {
-  course: Course
+  course: Course & { semester: number }
   isDragging: Function
   handleMove: Function
   remCourse: Function

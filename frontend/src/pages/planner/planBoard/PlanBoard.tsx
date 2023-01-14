@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { Course } from '../Planner'
 import SemesterColumn from './SemesterColumn'
 import CourseCard from './CourseCard'
-import { ValidatablePlan } from '../../../client'
+import { ValidatablePlan, Course } from '../../../client'
 /**
  * The main drag-n-drop planner interface.
  * Displays several semesters, as well as several classes per semester.
@@ -12,7 +11,7 @@ import { ValidatablePlan } from '../../../client'
 
 interface PlanBoardProps {
   plan: ValidatablePlan
-  courseDetails: { [code: string]: Course }
+  courseDetails: { [code: string]: Course & { semester: number } }
   setPlan: Function
   addCourse: Function
   validating: Boolean
@@ -34,7 +33,7 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating }: Plan
     })
   }
 
-  function moveCourse (semester: number, drag: Course, code: string): void {
+  function moveCourse (semester: number, drag: Course & { semester: number }, code: string): void {
     setPlan((prev: { classes: string[][] }) => {
       const dragIndex: number = prev.classes[drag.semester].indexOf(drag.code)
       const newClasses = [...prev.classes]

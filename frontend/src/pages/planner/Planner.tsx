@@ -1,22 +1,10 @@
 import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import { useState, useEffect, useRef } from 'react'
-import { DefaultService, FlatDiagnostic, ValidatablePlan } from '../../client'
+import { DefaultService, FlatDiagnostic, ValidatablePlan, Course } from '../../client'
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
-
-export interface Course {
-  code: string
-  name: string
-  credits: number
-  deps: JSON
-  program: string
-  school: string
-  area?: string
-  category?: string
-  semester: number
-}
 
 const Planner = (): JSX.Element => {
   const [plan, setPlan] = useState<ValidatablePlan >({ classes: [], next_semester: 0 })
@@ -30,7 +18,6 @@ const Planner = (): JSX.Element => {
     setValidanting(true)
     console.log('getting Courses Details...')
     const response = await DefaultService.getCourseDetails(codes)
-    if (response?.status_code === 404) return
     // transform response to dict with key code:
     const dict = response.reduce((acc: { [code: string]: Course }, curr: Course) => {
       acc[curr.code] = curr
@@ -57,15 +44,19 @@ const Planner = (): JSX.Element => {
     if (courseCode == null || courseCode === '') return
     if (plan?.classes.flat().includes(courseCode.toUpperCase())) { alert(`${courseCode} already on plan`); return }
     setValidanting(true)
-    const response = await DefaultService.getCourseDetails([courseCode.toUpperCase()])
-    if (response?.status_code === 404) { setValidanting(false); alert(response?.detail); return }
-    setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
-    setPlan((prev) => {
-      const newClasses = [...prev.classes]
-      newClasses[semIdx] = [...prev.classes[semIdx]]
-      newClasses[semIdx].push(response[0].code)
-      return { ...prev, classes: newClasses }
-    })
+    try {
+      const response = await DefaultService.getCourseDetails([courseCode.toUpperCase()])
+      setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
+      setPlan((prev) => {
+        const newClasses = [...prev.classes]
+        newClasses[semIdx] = [...prev.classes[semIdx]]
+        newClasses[semIdx].push(response[0].code)
+        return { ...prev, classes: newClasses }
+      })
+    } catch (err) {
+      alert(err)
+    }
+    setValidanting(false)
   }
 
   useEffect(() => {
@@ -120,9 +111,9 @@ const Planner = (): JSX.Element => {
         <div className={'flex flex-col w-5/6'}>
 
         <ul className={'w-full mb-1 mt-2'}>
-            <li className={'inline text-xl ml-3 mr-10 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> Civil Computación</li>
-            <li className={'inline text-xl mr-10 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div>  Computación - Track Computación</li>
-            <li className={'inline text-xl mr-10 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Eléctrica</li>
+            <li className={'inline text-md ml-3 mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> Civil de Industrias, Diploma en Ingeniería de Computación</li>
+            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div> Ingeniería y Ciencias Ambientales</li>
+            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Amplitud en Programación</li>
           </ul>
           <PlanBoard
             plan={plan}
