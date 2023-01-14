@@ -10,7 +10,10 @@ function Navbar (): JSX.Element {
       <ul>
         <li className="inline mr-4"><Link to="/">Inicio</Link></li>
         <li className="inline mr-4"><Link to="/planner">Planner</Link></li>
-        {authState?.user == null ? (<li className="inline mr-4"><a href="/api/auth/login">Log in</a></li>) : (<li className="inline mr-4"><Link to="/logout">Cerrar sesión</Link></li>)}
+        {authState?.user == null
+          ? <li className="inline mr-4"><a href="/api/auth/login">Log in</a></li>
+          : <li className="inline mr-4"><Link to="/logout">Cerrar sesión</Link></li>
+        }
       </ul>
     </nav>)
 }
