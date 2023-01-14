@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Optional
 import pydantic
 from .validation.courses.logic import Expr
-from .validation.courses.simplify import simplify
 from prisma.models import Course
 
 
@@ -20,6 +19,9 @@ class CourseInfo:
     school: str
     area: Optional[str]
     category: Optional[str]
+    is_available: bool
+    # First semester, second semester, TAV
+    semestrality: tuple[bool, bool, bool]
 
 
 _course_info_cache: Optional[dict[str, CourseInfo]] = None
@@ -35,11 +37,14 @@ async def course_info() -> dict[str, CourseInfo]:
     if _course_info_cache is None:
         # Derive course rules from courses in database
         print("caching course data from database...")
+        print("  fetching from database...")
+        all_courses = await Course.prisma().find_many()
+        print("  loading to memory...")
         courses = {}
-        for course in await Course.prisma().find_many():
+        for course in all_courses:
             # Parse and validate dep json
             deps = pydantic.parse_raw_as(Expr, course.deps)
-            deps = simplify(deps)
+            # deps = simplify(deps)
             # Create course object
             courses[course.code] = CourseInfo(
                 code=course.code,
@@ -50,6 +55,12 @@ async def course_info() -> dict[str, CourseInfo]:
                 school=course.school,
                 area=course.area,
                 category=course.category,
+                is_available=course.is_available,
+                semestrality=(
+                    course.semestrality_first,
+                    course.semestrality_second,
+                    course.semestrality_tav,
+                ),
             )
         print(f"  processed {len(courses)} courses")
         _course_info_cache = courses

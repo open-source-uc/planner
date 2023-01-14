@@ -1,11 +1,11 @@
-from .plan.validation.curriculum.tree import Block, Curriculum
-from .plan.validation.diagnostic import ValidationResult
+from .plan.validation.curriculum.tree import CurriculumSpec
+from .plan.validation.diagnostic import FlatValidationResult
 from .plan.validation.validate import diagnose_plan
-import pydantic
 from .plan.plan import ValidatablePlan
 from .plan.generation import generate_default_plan
 from .plan.storage import (
     PlanView,
+    LowDetailPlanView,
     store_plan,
     get_user_plans,
     get_plan_details,
@@ -17,12 +17,12 @@ from fastapi import FastAPI, Query, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from .database import prisma
-from prisma.models import Course as DbCourse, CurriculumBlock, Plan as DbPlan
+from prisma.models import Course as DbCourse
 from .auth import require_authentication, login_cas, UserData
 from .sync import run_upstream_sync
 from .plan.courseinfo import clear_course_info_cache, course_info
-from .plan.generation import CurriculumRecommender as recommender
 from typing import Optional
+from pydantic import BaseModel
 
 
 # Set-up operation IDs for OpenAPI
@@ -58,7 +58,6 @@ async def startup():
         # TODO: Remove this hack once everybody updates the code
         await DbCourse.prisma().delete_many()
         courseinfo = await course_info()
-    await recommender.load_curriculum()
     # Sync courses if database is empty
     if not courseinfo:
         await run_upstream_sync()
@@ -100,7 +99,7 @@ async def check_auth(user_data: UserData = Depends(require_authentication)):
     return {"message": "Authenticated"}
 
 
-@app.get("/courses/sync")
+@app.get("/sync")
 # TODO: Require admin permissions for this endpoint.
 async def sync_courses():
     """
@@ -112,7 +111,7 @@ async def sync_courses():
     }
 
 
-class CourseOverview(pydantic.BaseModel):
+class CourseOverview(BaseModel):
     code: str
     name: str
     credits: int
@@ -123,6 +122,7 @@ async def search_courses(text: str):
     """
     Fetches a list of courses that match a given search query string.
     """
+    results: list[DbCourse]
     results = await prisma.query_raw(
         """
         SELECT code, name, credits FROM "Course"
@@ -148,9 +148,6 @@ async def get_course_details(codes: list[str] = Query()) -> list[DbCourse]:
         if course is None:
             raise HTTPException(status_code=404, detail=f"Course '{code}' not found")
         courses.append(course)
-    print(f"results: {courses}")
-    print(f"results type: {type(courses)}")
-    print(f"results[0] type: {type(courses[0])}")
     return courses
 
 
@@ -166,38 +163,28 @@ async def rebuild_validation_rules():
     }
 
 
-async def debug_get_curriculum():
+async def debug_get_curriculum() -> CurriculumSpec:
     # TODO: Implement a proper curriculum selector
-    blocks = ["plancomun", "formaciongeneral", "major", "minor", "titulo"]
-    curr = Curriculum(blocks=[])
-    for block_kind in blocks:
-        block = await CurriculumBlock.prisma().find_first(where={"kind": block_kind})
-        if block is None:
-            raise HTTPException(
-                status_code=500,
-                detail="Database is not initialized"
-                + f" (found no block with kind '{block_kind}')",
-            )
-        curr.blocks.append(pydantic.parse_obj_as(Block, block.req))
-    return curr
+    return CurriculumSpec(cyear="C2020", major="M170", minor="N776", title="40082")
 
 
-@app.post("/plan/validate", response_model=ValidationResult)
-async def validate_plan(plan: ValidatablePlan) -> ValidationResult:
+@app.post("/plan/validate", response_model=FlatValidationResult)
+async def validate_plan(plan: ValidatablePlan):
     """
     Validate a plan, generating diagnostics.
     """
     curr = await debug_get_curriculum()
-    return await diagnose_plan(plan, curr)
+    return (await diagnose_plan(plan, curr)).flatten()
 
 
-@app.post("/plan/generate", response_model=ValidatablePlan)
-async def generate_plan(passed: ValidatablePlan) -> ValidatablePlan:
+@app.post("/plan/generate")
+async def generate_plan(passed: ValidatablePlan):
     """
     Generate a hopefully error-free plan from an initial plan.
     """
-
-    return await generate_default_plan(passed)
+    curr = await debug_get_curriculum()
+    plan = await generate_default_plan(passed, curr)
+    return plan
 
 
 @app.post("/plan/storage", response_model=PlanView)
@@ -213,15 +200,15 @@ async def save_plan(
     return await store_plan(plan_name=name, user_rut=user_data.rut, plan=plan)
 
 
-@app.get("/plan/storage", response_model=list[DbPlan])
+@app.get("/plan/storage", response_model=list[LowDetailPlanView])
 async def read_plans(
     user_data: UserData = Depends(require_authentication),
-) -> list[DbPlan]:
+) -> list[LowDetailPlanView]:
     """
     Fetches an overview of all the plans in the storage of the current user.
     Fails if the user is not logged in.
-    Does not return the courses in each plan, only the plan metadata.
-    (in particular, the `validatable_plan` field is null)
+    Does not return the courses in each plan, only the plan metadata required
+    to show the users their list of plans (e.g. the plan id).
     """
     return await get_user_plans(user_rut=user_data.rut)
 

@@ -3,14 +3,13 @@
 /* eslint-disable */
 
 /**
- * Represents a Plan record
+ * Lighter version of the PlanView model.
+ * This should only contain the required attributes to show the user their plans list
  */
-export type Plan = {
+export type LowDetailPlanView = {
     id: string;
     created_at: string;
     updated_at: string;
     name: string;
-    user_rut: string;
-    validatable_plan?: string;
 };
 

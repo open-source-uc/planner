@@ -14,5 +14,10 @@ export type Course = {
     school: string;
     area?: string;
     category?: string;
+    is_relevant: boolean;
+    is_available: boolean;
+    semestrality_first: boolean;
+    semestrality_second: boolean;
+    semestrality_tav: boolean;
 };
 

@@ -1,15 +1,17 @@
 from .curriculum.diagnose import diagnose_curriculum
-from .curriculum.tree import Curriculum
-from .courses.validate import PlanContext
-from ..courseinfo import course_info
+from .curriculum.tree import CurriculumSpec
+from .courses.validate import Class, PlanContext, is_satisfied
+from ..courseinfo import CourseInfo, course_info
+from ...sync.siding.translate import fetch_curriculum_from_siding
 from .diagnostic import ValidationResult
 from ..plan import ValidatablePlan
 
 
 async def diagnose_plan(
-    plan: ValidatablePlan, curriculum: Curriculum
+    plan: ValidatablePlan, curriculum_spec: CurriculumSpec
 ) -> ValidationResult:
     courseinfo = await course_info()
+    curriculum = await fetch_curriculum_from_siding(curriculum_spec)
     out = ValidationResult(diagnostics=[])
 
     # Ensure course requirements are met
@@ -30,3 +32,16 @@ async def diagnose_plan_skip_curriculum(plan: ValidatablePlan) -> ValidationResu
     course_ctx.validate(out)
 
     return out
+
+
+def quick_validate_dependencies(
+    courseinfo: dict[str, CourseInfo],
+    plan: ValidatablePlan,
+    semester: int,
+    course_code: str,
+) -> bool:
+    assert course_code in courseinfo
+    course_ctx = PlanContext(courseinfo, plan)
+    return is_satisfied(
+        course_ctx, Class(course_code, semester), courseinfo[course_code].deps
+    )

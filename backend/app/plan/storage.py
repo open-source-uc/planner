@@ -36,6 +36,27 @@ class PlanView(BaseModel):
         )
 
 
+class LowDetailPlanView(BaseModel):
+    """
+    Lighter version of the PlanView model.
+    This should only contain the required attributes to show the user their plans list
+    """
+
+    id: str
+    created_at: datetime
+    updated_at: datetime
+    name: str
+
+    @staticmethod
+    def from_db(db: DbPlan) -> "LowDetailPlanView":
+        return LowDetailPlanView(
+            id=db.id,
+            created_at=db.created_at,
+            updated_at=db.updated_at,
+            name=db.name,
+        )
+
+
 async def authorize_plan_access(user_rut: str, plan_id: str) -> DbPlan:
     plan = await DbPlan.prisma().find_unique(where={"id": plan_id})
     if not plan or plan.user_rut != user_rut:
@@ -62,21 +83,17 @@ async def get_plan_details(user_rut: str, plan_id: str) -> PlanView:
     return PlanView.from_db(plan)
 
 
-async def get_user_plans(user_rut: str) -> list[DbPlan]:
-    plans = await DbPlan.prisma().find_many(where={"user_rut": user_rut})
+async def get_user_plans(user_rut: str) -> list[LowDetailPlanView]:
+    plans = await DbPlan.prisma().query_raw(
+        """
+        SELECT id, created_at, updated_at, name, user_rut
+        FROM "Plan"
+        WHERE user_rut = $1
+        """,
+        user_rut,
+    )
 
-    # Remove details for lighter output
-    for p in plans:
-        # Prisma is weird
-        # Json fields are expected to be of `Json` type, but they really are strings.
-        # When updating or fetching from the database, prisma does the conversion
-        # automatically, but when updating the values in memory, they must be treated
-        # as strings (even though the types indicate otherwise)
-        p.validatable_plan = "null"  # pyright: reportGeneralTypeIssues = false
-
-    print(f"returning plans {plans}")
-
-    return plans
+    return list(map(lambda plan: LowDetailPlanView.from_db(plan), plans))
 
 
 async def modify_validatable_plan(

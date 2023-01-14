@@ -3,10 +3,10 @@
 /* eslint-disable */
 import type { Course } from '../models/Course';
 import type { CourseOverview } from '../models/CourseOverview';
-import type { Plan } from '../models/Plan';
+import type { FlatValidationResult } from '../models/FlatValidationResult';
+import type { LowDetailPlanView } from '../models/LowDetailPlanView';
 import type { PlanView } from '../models/PlanView';
 import type { ValidatablePlan } from '../models/ValidatablePlan';
-import type { ValidationResult } from '../models/ValidationResult';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -86,7 +86,7 @@ export class DefaultService {
     public static syncCourses(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/courses/sync',
+            url: '/sync',
         });
     }
 
@@ -153,12 +153,12 @@ export class DefaultService {
      * Validate Plan
      * Validate a plan, generating diagnostics.
      * @param requestBody
-     * @returns ValidationResult Successful Response
+     * @returns FlatValidationResult Successful Response
      * @throws ApiError
      */
     public static validatePlan(
         requestBody: ValidatablePlan,
-    ): CancelablePromise<ValidationResult> {
+    ): CancelablePromise<FlatValidationResult> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/plan/validate',
@@ -174,12 +174,12 @@ export class DefaultService {
      * Generate Plan
      * Generate a hopefully error-free plan from an initial plan.
      * @param requestBody
-     * @returns ValidatablePlan Successful Response
+     * @returns any Successful Response
      * @throws ApiError
      */
     public static generatePlan(
         requestBody: ValidatablePlan,
-    ): CancelablePromise<ValidatablePlan> {
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/plan/generate',
@@ -195,12 +195,12 @@ export class DefaultService {
      * Read Plans
      * Fetches an overview of all the plans in the storage of the current user.
      * Fails if the user is not logged in.
-     * Does not return the courses in each plan, only the plan metadata.
-     * (in particular, the `validatable_plan` field is null)
-     * @returns Plan Successful Response
+     * Does not return the courses in each plan, only the plan metadata required
+     * to show the users their list of plans (e.g. the plan id).
+     * @returns LowDetailPlanView Successful Response
      * @throws ApiError
      */
-    public static readPlans(): CancelablePromise<Array<Plan>> {
+    public static readPlans(): CancelablePromise<Array<LowDetailPlanView>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/plan/storage',
