@@ -93,7 +93,9 @@ const Planner = (): JSX.Element => {
   useEffect(() => {
     if (!loading) {
       // dont validate if the classes are rearranging the same semester at previous validation
-      if (!plan.classes.map((sem, index) => JSON.stringify([...sem].sort()) === JSON.stringify(previousClasses.current[index]?.sort())).every(Boolean)) {
+      if (!plan.classes.map((sem, index) =>
+        JSON.stringify([...sem].sort()) === JSON.stringify(previousClasses.current[index]?.sort())).every(Boolean) ||
+         plan.classes.length !== previousClasses.current.length) {
         validate(plan).catch(err => {
           setValidationDiagnostics([{
             is_warning: false,

@@ -11,7 +11,7 @@ import { ValidatablePlan, Course } from '../../../client'
 
 interface PlanBoardProps {
   plan: ValidatablePlan
-  courseDetails: { [code: string]: Course & { semester: number } }
+  courseDetails: { [code: string]: Course }
   setPlan: Function
   addCourse: Function
   validating: Boolean
@@ -84,7 +84,7 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating }: Plan
                   key={code}
                   course={{ ...courseDetails[code], semester }}
                   isDragging={(e: boolean) => setIsDragging(e)}
-                  handleMove={({ course }: { course: Course }) => moveCourse(semester, course, code)}
+                  handleMove={({ course }: { course: Course & { semester: number } }) => moveCourse(semester, course, code)}
                   remCourse={() => remCourse(semester, code)}
                 />
               ))}
@@ -97,12 +97,12 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating }: Plan
           <SemesterColumn
             key={plan.classes.length }
             semester={plan.classes.length + 1}
-            addEnd={({ course }: { course: Course }) => moveCourse(plan.classes.length, course, '')}
+            addEnd={({ course }: { course: Course & { semester: number } }) => moveCourse(plan.classes.length, course, '')}
           />
           <SemesterColumn
             key={plan.classes.length + 1}
             semester={plan.classes.length + 2}
-            addEnd={({ course }: { course: Course }) => moveCourse(plan.classes.length + 1, course, '')}
+            addEnd={({ course }: { course: Course & { semester: number } }) => moveCourse(plan.classes.length + 1, course, '')}
           />
         </>}
       </div>
