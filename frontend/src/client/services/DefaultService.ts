@@ -4,7 +4,7 @@
 import type { Course } from '../models/Course';
 import type { CourseOverview } from '../models/CourseOverview';
 import type { FlatValidationResult } from '../models/FlatValidationResult';
-import type { Plan } from '../models/Plan';
+import type { LowDetailPlanView } from '../models/LowDetailPlanView';
 import type { PlanView } from '../models/PlanView';
 import type { ValidatablePlan } from '../models/ValidatablePlan';
 
@@ -195,12 +195,12 @@ export class DefaultService {
      * Read Plans
      * Fetches an overview of all the plans in the storage of the current user.
      * Fails if the user is not logged in.
-     * Does not return the courses in each plan, only the plan metadata.
-     * (in particular, the `validatable_plan` field is null)
-     * @returns Plan Successful Response
+     * Does not return the courses in each plan, only the plan metadata required
+     * to show the users their list of plans (e.g. the plan id).
+     * @returns LowDetailPlanView Successful Response
      * @throws ApiError
      */
-    public static readPlans(): CancelablePromise<Array<Plan>> {
+    public static readPlans(): CancelablePromise<Array<LowDetailPlanView>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/plan/storage',

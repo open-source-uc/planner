@@ -5,6 +5,7 @@ from .plan.plan import ValidatablePlan
 from .plan.generation import generate_default_plan
 from .plan.storage import (
     PlanView,
+    LowDetailPlanView,
     store_plan,
     get_user_plans,
     get_plan_details,
@@ -16,7 +17,7 @@ from fastapi import FastAPI, Query, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from .database import prisma
-from prisma.models import Course as DbCourse, Plan as DbPlan
+from prisma.models import Course as DbCourse
 from .auth import require_authentication, login_cas, UserData
 from .sync import run_upstream_sync
 from .plan.courseinfo import clear_course_info_cache, course_info
@@ -199,15 +200,15 @@ async def save_plan(
     return await store_plan(plan_name=name, user_rut=user_data.rut, plan=plan)
 
 
-@app.get("/plan/storage", response_model=list[DbPlan])
+@app.get("/plan/storage", response_model=list[LowDetailPlanView])
 async def read_plans(
     user_data: UserData = Depends(require_authentication),
-) -> list[DbPlan]:
+) -> list[LowDetailPlanView]:
     """
     Fetches an overview of all the plans in the storage of the current user.
     Fails if the user is not logged in.
-    Does not return the courses in each plan, only the plan metadata.
-    (in particular, the `validatable_plan` field is null)
+    Does not return the courses in each plan, only the plan metadata required
+    to show the users their list of plans (e.g. the plan id).
     """
     return await get_user_plans(user_rut=user_data.rut)
 
