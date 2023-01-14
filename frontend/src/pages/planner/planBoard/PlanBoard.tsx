@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { Course } from '../Planner'
 import SemesterColumn from './SemesterColumn'
 import CourseCard from './CourseCard'
-import { ValidatablePlan } from '../../../client'
+import { ValidatablePlan, Course } from '../../../client'
 /**
  * The main drag-n-drop planner interface.
  * Displays several semesters, as well as several classes per semester.
@@ -34,7 +33,7 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating }: Plan
     })
   }
 
-  function moveCourse (semester: number, drag: Course, code: string): void {
+  function moveCourse (semester: number, drag: Course & { semester: number }, code: string): void {
     setPlan((prev: { validatable_plan: ValidatablePlan }) => {
       const dragIndex: number = prev.validatable_plan.classes[drag.semester].indexOf(drag.code)
       const newClasses = [...prev.validatable_plan.classes]
@@ -71,7 +70,7 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating }: Plan
                   key={code}
                   course={{ ...courseDetails[code], semester }}
                   isDragging={(e: boolean) => setIsDragging(e)}
-                  handleMove={({ course }: { course: Course }) => moveCourse(semester, course, code)}
+                  handleMove={({ course }: { course: Course & { semester: number } }) => moveCourse(semester, course, code)}
                   remCourse={() => remCourse(semester, code)}
                 />
               ))}
@@ -84,12 +83,12 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating }: Plan
           <SemesterColumn
             key={plan.classes.length }
             semester={plan.classes.length + 1}
-            addEnd={({ course }: { course: Course }) => moveCourse(plan.classes.length, course, '')}
+            addEnd={({ course }: { course: Course & { semester: number } }) => moveCourse(plan.classes.length, course, '')}
           />
           <SemesterColumn
             key={plan.classes.length + 1}
             semester={plan.classes.length + 2}
-            addEnd={({ course }: { course: Course }) => moveCourse(plan.classes.length + 1, course, '')}
+            addEnd={({ course }: { course: Course & { semester: number } }) => moveCourse(plan.classes.length + 1, course, '')}
           />
         </>}
       </div>

@@ -10,28 +10,79 @@ datasource db {
 }
 
 model Course {
-  code     String  @id
-  name     String
-  credits  Int
-  deps     Json
-  program  String
-  school   String
-  area     String?
-  category String?
+  code                String  @id
+  name                String
+  credits             Int
+  deps                Json
+  program             String
+  school              String
+  area                String?
+  category            String?
+  // Whether this course is classified as "Vigente" by catalogo UC
+  is_relevant         Boolean
+  // An heuristic indicating if this course is available to take
+  // Derivated from historic availability for now
+  // WARNING: This availability is not guaranteed!
+  is_available        Boolean
+  // An heuristic indicating if this course is avilable to take in
+  // these specific semesters
+  // Derivated from historic availability for now
+  // WARNING: The availability in these semesters is not guaranteed!
+  semestrality_first  Boolean
+  semestrality_second Boolean
+  semestrality_tav    Boolean
 }
 
-model CurriculumBlock {
-  id   String @id @default(cuid())
-  kind String
-  name String
-  req  Json
+model Major {
+  // C2013, C2020, C2022, etc...
+  cyear   String
+  code    String
+  name    String
+  // Vs.01, Vs.02, etc...
+  version String
+
+  @@unique([cyear, code])
+}
+
+model Minor {
+  // C2013, C2020, C2022, etc...
+  cyear      String
+  code       String
+  name       String
+  // Vs.01, Vs.02, etc...
+  version    String
+  // "Amplitud", "Profundidad"
+  minor_type String
+
+  @@unique([cyear, code])
+}
+
+model MajorMinor {
+  cyear String
+  major String
+  minor String
+
+  @@unique([cyear, major, minor])
+}
+
+model Title {
+  // C2013, C2020, C2022, etc...
+  cyear      String
+  code       String
+  name       String
+  // Vs.01, Vs.02, etc...
+  version    String
+  // "CIVIL", "INDUSTRIAL"
+  title_type String
+
+  @@unique([cyear, code])
 }
 
 model Plan {
-  id            String   @id @default(cuid())
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-  name          String
-  user_rut      String
+  id               String   @id @default(cuid())
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  name             String
+  user_rut         String
   validatable_plan Json
 }

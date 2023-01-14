@@ -1,4 +1,5 @@
-from ..diagnostic import ValidationResult
+from abc import ABC
+from ..diagnostic import DiagnosticErr, ValidationResult
 from ...plan import ValidatablePlan
 from ...courseinfo import CourseInfo
 from .logic import (
@@ -75,15 +76,13 @@ class PlanContext:
         for sem in range(self.plan.next_semester, len(self.plan.classes)):
             for code in self.plan.classes[sem]:
                 if code not in self.courseinfo:
-                    out.err("Curso desconocido", code)
+                    out.add(UnknownCourseErr(code=code))
                     continue
                 course = self.courseinfo[code]
                 cl = self.classes[code]
-                err = self.diagnose(cl, course.deps)
-                if err is not None:
-                    out.err(err, code)
+                self.diagnose(out, cl, course.deps)
 
-    def diagnose(self, cl: Class, expr: "Expr") -> Optional[str]:
+    def diagnose(self, out: ValidationResult, cl: Class, expr: "Expr"):
         if is_satisfied(self, cl, expr):
             return None
         # Some requirement is not satisfied
@@ -117,7 +116,7 @@ class PlanContext:
         if isinstance(missing, Const):
             missing = simplify(fold_atoms(self, cl, expr, lambda atom, sat: sat))
         # Show this expression
-        return f"Requisitos faltantes: {missing}"
+        out.add(RequirementErr(code=cl.code, missing=missing))
 
 
 def is_satisfied(ctx: PlanContext, cl: Class, expr: Expr) -> bool:
@@ -212,3 +211,22 @@ def strip_satisfied(
         return Const(value=True)
     else:
         return expr
+
+
+class CourseErr(DiagnosticErr, ABC):
+    code: str
+
+    def course_code(self) -> Optional[str]:
+        return self.code
+
+
+class UnknownCourseErr(CourseErr):
+    def message(self) -> str:
+        return "Curso desconocido"
+
+
+class RequirementErr(CourseErr):
+    missing: Expr
+
+    def message(self) -> str:
+        return f"Requisitos faltantes: {self.missing}"

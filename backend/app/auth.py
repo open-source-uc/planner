@@ -28,7 +28,9 @@ def generate_token(user: str, rut: str, expire_delta: Optional[int] = None):
     expire_time = datetime.utcnow() + timedelta(seconds=expire_delta)
     # Pack user, rut and expire date into a signed token
     payload = {"exp": expire_time, "sub": user, "rut": rut}
-    token = jwt.encode(payload, settings.jwt_secret, settings.jwt_algorithm)
+    token = jwt.encode(
+        payload, settings.jwt_secret.get_secret_value(), settings.jwt_algorithm
+    )
     return token
 
 
@@ -37,7 +39,9 @@ def decode_token(token: str):
     Verify a token and extract the user data within it.
     """
     try:
-        payload = jwt.decode(token, settings.jwt_secret, [settings.jwt_algorithm])
+        payload = jwt.decode(
+            token, settings.jwt_secret.get_secret_value(), [settings.jwt_algorithm]
+        )
     except ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except JWTError:

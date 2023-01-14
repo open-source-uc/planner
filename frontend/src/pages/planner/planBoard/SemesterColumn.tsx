@@ -1,6 +1,6 @@
 
 import { useDrop } from 'react-dnd'
-import { Course } from '../Planner'
+import { Course } from '../../../client'
 
 interface SemesterColumnProps {
   semester: number

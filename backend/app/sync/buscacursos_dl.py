@@ -1,3 +1,4 @@
+import lzma
 import traceback
 
 
@@ -21,7 +22,7 @@ from prisma import Json
 import requests
 import pydantic
 from pydantic import BaseModel
-from typing import Callable
+from typing import Callable, Optional
 
 
 class BcSection(BaseModel):
@@ -36,6 +37,12 @@ class BcSection(BaseModel):
     total_quota: int
 
 
+class BcCourseInstance(BaseModel):
+    name: str
+    school: str
+    sections: dict[str, BcSection]
+
+
 class BcCourse(BaseModel):
     name: str
     credits: int
@@ -45,12 +52,13 @@ class BcCourse(BaseModel):
     equiv: str
     program: str
     school: str
-    area: str
-    category: str
-    sections: dict[str, BcSection]
+    relevance: str
+    area: Optional[str]
+    category: Optional[str]
+    instances: dict[str, BcCourseInstance]
 
 
-BcData = dict[str, dict[str, BcCourse]]
+BcData = dict[str, BcCourse]
 
 
 class BcParser:
@@ -261,43 +269,69 @@ async def fetch_to_database():
     # Fetch json blob from an unofficial source
     dl_url = (
         "https://github.com/negamartin/buscacursos-dl/releases/download"
-        + "/2022-2-v2/courses-2022-2.json"
+        + "/universal-1/courses-universal-noprogram.json.xz"
     )
     print(f"  downloading course data from {dl_url}...")
     # TODO: Use an async HTTP client
     resp = requests.request("GET", dl_url)
     resp.raise_for_status()
-    if resp.encoding is None:
-        resp.encoding = "UTF-8"
+
+    # Decompress
+    print("  decompressing data...")
+    resptext = lzma.decompress(resp.content).decode("UTF-8")
+
     # Parse JSON
     print("  parsing JSON...")
-    data = pydantic.parse_raw_as(BcData, resp.text)
-    # Extract latest semester
-    _semester, data = max(data.items())
+    data = pydantic.parse_raw_as(BcData, resptext)
+
+    # Determine which semesters are scanned
+    print("  collecting course periods...")
+    period_set: set[str] = set()
+    for c in data.values():
+        period_set.update(c.instances.keys())
+    periods: dict[str, tuple[int, int]] = {}
+    for period in sorted(period_set):
+        year, semester = map(int, period.split("-"))
+        periods[period] = (year, semester)
+
     # Process courses to place into database
     print("  processing courses...")
     db_input: list[CourseCreateWithoutRelationsInput] = []
     for code, c in data.items():
         try:
+            # Parse and simplify dependencies
             deps = simplify(parse_deps(c))
+            # Figure out semestrality
+            available_in_semester = [False, False, False]
+            for period in c.instances.keys():
+                sem = periods[period][1] - 1
+                available_in_semester[sem] = True
+            # Queue for adding to database
             db_input.append(
                 {
                     "code": code,
                     "name": c.name,
                     "credits": c.credits,
-                    "deps": Json(deps.dict()),
+                    "deps": Json(deps.json()),
                     "program": c.program,
                     "school": c.school,
                     "area": None if c.area == "" else c.area,
                     "category": None if c.category == "" else c.category,
+                    "is_relevant": c.relevance == "Vigente",
+                    "is_available": any(available_in_semester),
+                    "semestrality_first": available_in_semester[0],
+                    "semestrality_second": available_in_semester[1],
+                    "semestrality_tav": available_in_semester[2],
                 }
             )
         except Exception:
             print(f"failed to process course {code}:")
             print(traceback.format_exc())
+
     # Remove previous course data from database
     print("  clearing previous courses...")
     await DbCourse.prisma().delete_many()
+
     # Put courses in database
     print("  storing courses in db...")
     await DbCourse.prisma().create_many(data=db_input)

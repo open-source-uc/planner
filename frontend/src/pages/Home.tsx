@@ -1,4 +1,3 @@
-
 import { useAuth } from '../contexts/auth.context'
 
 const Home = (): JSX.Element => {

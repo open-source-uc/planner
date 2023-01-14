@@ -1,8 +1,12 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { Course } from '../models/Course';
+import type { CourseOverview } from '../models/CourseOverview';
+import type { FlatValidationResult } from '../models/FlatValidationResult';
+import type { LowDetailPlanView } from '../models/LowDetailPlanView';
+import type { PlanView } from '../models/PlanView';
 import type { ValidatablePlan } from '../models/ValidatablePlan';
-import type { ValidationResult } from '../models/ValidationResult';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -36,6 +40,7 @@ export class DefaultService {
 
     /**
      * Authenticate
+     * Redirect the browser to this page to initiate authentication.
      * @param next
      * @param ticket
      * @returns any Successful Response
@@ -60,6 +65,8 @@ export class DefaultService {
 
     /**
      * Check Auth
+     * Request succeeds if authentication was successful.
+     * Otherwise, the request fails with 401 Unauthorized.
      * @returns any Successful Response
      * @throws ApiError
      */
@@ -72,25 +79,27 @@ export class DefaultService {
 
     /**
      * Sync Courses
+     * Initiate a synchronization of the internal database from external sources.
      * @returns any Successful Response
      * @throws ApiError
      */
     public static syncCourses(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/courses/sync',
+            url: '/sync',
         });
     }
 
     /**
      * Search Courses
+     * Fetches a list of courses that match a given search query string.
      * @param text
-     * @returns any Successful Response
+     * @returns CourseOverview Successful Response
      * @throws ApiError
      */
     public static searchCourses(
         text: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<Array<CourseOverview>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/courses/search',
@@ -105,14 +114,16 @@ export class DefaultService {
 
     /**
      * Get Course Details
-     * request example: API/courses?codes=IIC2233&codes=IIC2173
+     * For a list of course codes, fetch a corresponding list of course details.
+     *
+     * Request example: `/api/courses?codes=IIC2233&codes=IIC2173`
      * @param codes
-     * @returns any Successful Response
+     * @returns Course Successful Response
      * @throws ApiError
      */
     public static getCourseDetails(
         codes: Array<string>,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<Array<Course>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/courses',
@@ -127,6 +138,7 @@ export class DefaultService {
 
     /**
      * Rebuild Validation Rules
+     * Recache course information from internal database.
      * @returns any Successful Response
      * @throws ApiError
      */
@@ -139,13 +151,14 @@ export class DefaultService {
 
     /**
      * Validate Plan
+     * Validate a plan, generating diagnostics.
      * @param requestBody
-     * @returns ValidationResult Successful Response
+     * @returns FlatValidationResult Successful Response
      * @throws ApiError
      */
     public static validatePlan(
         requestBody: ValidatablePlan,
-    ): CancelablePromise<ValidationResult> {
+    ): CancelablePromise<FlatValidationResult> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/plan/validate',
@@ -159,6 +172,7 @@ export class DefaultService {
 
     /**
      * Generate Plan
+     * Generate a hopefully error-free plan from an initial plan.
      * @param requestBody
      * @returns any Successful Response
      * @throws ApiError
@@ -179,10 +193,14 @@ export class DefaultService {
 
     /**
      * Read Plans
-     * @returns any Successful Response
+     * Fetches an overview of all the plans in the storage of the current user.
+     * Fails if the user is not logged in.
+     * Does not return the courses in each plan, only the plan metadata required
+     * to show the users their list of plans (e.g. the plan id).
+     * @returns LowDetailPlanView Successful Response
      * @throws ApiError
      */
-    public static readPlans(): CancelablePromise<any> {
+    public static readPlans(): CancelablePromise<Array<LowDetailPlanView>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/plan/storage',
@@ -191,15 +209,18 @@ export class DefaultService {
 
     /**
      * Update Plan
+     * Modifies the courses of a plan by id.
+     * Requires the current user to be the owner of this plan.
+     * Returns the updated plan.
      * @param planId
      * @param requestBody
-     * @returns any Successful Response
+     * @returns PlanView Successful Response
      * @throws ApiError
      */
     public static updatePlan(
         planId: string,
         requestBody: ValidatablePlan,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<PlanView> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/plan/storage',
@@ -216,15 +237,17 @@ export class DefaultService {
 
     /**
      * Save Plan
+     * Save a plan with the given name in the storage of the current user.
+     * Fails if the user is not logged  in.
      * @param name
      * @param requestBody
-     * @returns any Successful Response
+     * @returns PlanView Successful Response
      * @throws ApiError
      */
     public static savePlan(
         name: string,
         requestBody: ValidatablePlan,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<PlanView> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/plan/storage',
@@ -241,13 +264,16 @@ export class DefaultService {
 
     /**
      * Delete Plan
+     * Deletes a plan by ID.
+     * Requires the current user to be the owner of this plan.
+     * Returns the removed plan.
      * @param planId
-     * @returns any Successful Response
+     * @returns PlanView Successful Response
      * @throws ApiError
      */
     public static deletePlan(
         planId: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<PlanView> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/plan/storage',
@@ -262,13 +288,15 @@ export class DefaultService {
 
     /**
      * Read Plan
+     * Fetch the plan details for a given plan id.
+     * Requires the current user to be the plan owner.
      * @param planId
-     * @returns any Successful Response
+     * @returns PlanView Successful Response
      * @throws ApiError
      */
     public static readPlan(
         planId: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<PlanView> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/plan/storage/details',
@@ -283,15 +311,18 @@ export class DefaultService {
 
     /**
      * Rename Plan
+     * Modifies the metadata of a plan (currently only the name).
+     * Requires the current user to be the owner of this plan.
+     * Returns the updated plan.
      * @param planId
      * @param newName
-     * @returns any Successful Response
+     * @returns PlanView Successful Response
      * @throws ApiError
      */
     public static renamePlan(
         planId: string,
         newName: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<PlanView> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/plan/storage/name',

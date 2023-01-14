@@ -1,4 +1,14 @@
-from pydantic import BaseSettings, Field
+from pydantic import BaseSettings, Field, SecretStr
+
+# HACK: When prisma is loaded it loads the correct `.env` file.
+# Therefore, prisma must be loaded before `Settings` is instantiated.
+# TODO: Decide how to fix this.
+# - One solution is using the proper `.env` support that `BaseSettings` implements.
+#   However, Prisma loads the `.env` file separately (to read the `DATABASE_URL`
+#   environment variable), so then we would have to make sure that the 2 ways of
+#   loading the `.env` never diverge.
+# - Another solution is this hack, but it is ugly.
+from .database import prisma  # pyright: reportUnusedImport = false, # noqa: F401
 
 
 class Settings(BaseSettings):
@@ -19,13 +29,19 @@ class Settings(BaseSettings):
 
     # JWT secret hex string. If this secret is leaked, anyone can forge JWT tokens for
     # any user.
-    jwt_secret: str = Field(...)
+    jwt_secret: SecretStr = Field(...)
 
     # Algorithm used for JWT secrecy.
     jwt_algorithm: str = "HS256"
 
     # Time to expire JWT tokens in seconds.
     jwt_expire: int = 18_000
+
+    # Siding SOAP WebService access username.
+    siding_username: str = Field(...)
+
+    # Siding SOAP WebService access password.
+    siding_password: SecretStr = Field(...)
 
 
 # Load settings and allow global app access to them
