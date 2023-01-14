@@ -1,7 +1,7 @@
 import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import { useState, useEffect, useRef } from 'react'
-import { DefaultService, Diagnostic, ValidatablePlan } from '../../client'
+import { DefaultService, FlatDiagnostic, ValidatablePlan } from '../../client'
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
@@ -23,8 +23,8 @@ const Planner = (): JSX.Element => {
   const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course }>({})
   const previousClasses = useRef<string[][]>([['']])
   const [loading, setLoading] = useState(true)
-  const [validating, setValidanting] = useState(true)
-  const [validationDiagnostics, setValidationDiagnostics] = useState<Diagnostic[]>([])
+  const [validating, setValidanting] = useState(false)
+  const [validationDiagnostics, setValidationDiagnostics] = useState<FlatDiagnostic[]>([])
 
   async function getCourseDetails (codes: string[]): Promise<void> {
     setValidanting(true)
@@ -73,7 +73,10 @@ const Planner = (): JSX.Element => {
       console.log('getting Basic Plan...')
       const response = await DefaultService.generatePlan({
         classes: [],
-        next_semester: 1
+        next_semester: 0,
+        level: 1,
+        school: 'Ingenieria',
+        career: 'Ingenieria'
       })
       setPlan(response)
       await getCourseDetails(response.classes).catch(err => {

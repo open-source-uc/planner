@@ -1,10 +1,11 @@
-from .plan.validation.curriculum.tree import Block, Curriculum
-from .plan.validation.diagnostic import ValidationResult
+from .plan.validation.curriculum.tree import CurriculumSpec
+from .plan.validation.diagnostic import FlatValidationResult
 from .plan.validation.validate import diagnose_plan
-import pydantic
 from .plan.plan import ValidatablePlan
 from .plan.generation import generate_default_plan
 from .plan.storage import (
+    PlanView,
+    LowDetailPlanView,
     store_plan,
     get_user_plans,
     get_plan_details,
@@ -16,12 +17,12 @@ from fastapi import FastAPI, Query, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from .database import prisma
-from prisma.models import Course as DbCourse, CurriculumBlock
+from prisma.models import Course as DbCourse
 from .auth import require_authentication, login_cas, UserData
 from .sync import run_upstream_sync
 from .plan.courseinfo import clear_course_info_cache, course_info
-from .plan.generation import CurriculumRecommender as recommender
 from typing import Optional
+from pydantic import BaseModel
 
 
 # Set-up operation IDs for OpenAPI
@@ -47,8 +48,16 @@ app.add_middleware(
 async def startup():
     await prisma.connect()
     # Prime course info cache
-    courseinfo = await course_info()
-    await recommender.load_curriculum()
+    try:
+        courseinfo = await course_info()
+    except Exception:
+        # HACK: Previously, JSON was stored incorrectly in the database.
+        # This JSON cannot be loaded correctly with the proper way of handling JSON.
+        # Therefore, this hack attempts to rebuild courses from scratch if the data is
+        # invalid.
+        # TODO: Remove this hack once everybody updates the code
+        await DbCourse.prisma().delete_many()
+        courseinfo = await course_info()
     # Sync courses if database is empty
     if not courseinfo:
         await run_upstream_sync()
@@ -75,28 +84,48 @@ async def health():
 
 @app.get("/auth/login")
 async def authenticate(next: Optional[str] = None, ticket: Optional[str] = None):
+    """
+    Redirect the browser to this page to initiate authentication.
+    """
     return await login_cas(next, ticket)
 
 
 @app.get("/auth/check")
 async def check_auth(user_data: UserData = Depends(require_authentication)):
+    """
+    Request succeeds if authentication was successful.
+    Otherwise, the request fails with 401 Unauthorized.
+    """
     return {"message": "Authenticated"}
 
 
-@app.get("/courses/sync")
+@app.get("/sync")
 # TODO: Require admin permissions for this endpoint.
 async def sync_courses():
+    """
+    Initiate a synchronization of the internal database from external sources.
+    """
     await run_upstream_sync()
     return {
         "message": "Course database updated",
     }
 
 
-@app.get("/courses/search")
+class CourseOverview(BaseModel):
+    code: str
+    name: str
+    credits: int
+
+
+@app.get("/courses/search", response_model=list[CourseOverview])
 async def search_courses(text: str):
+    """
+    Fetches a list of courses that match a given search query string.
+    """
+    results: list[DbCourse]
     results = await prisma.query_raw(
         """
-        SELECT code, name FROM "Course"
+        SELECT code, name, credits FROM "Course"
         WHERE code LIKE '%' || $1 || '%'
             OR name LIKE '%' || $1 || '%'
         LIMIT 50
@@ -106,22 +135,27 @@ async def search_courses(text: str):
     return results
 
 
-@app.get("/courses")
-async def get_course_details(codes: list[str] = Query()):
+@app.get("/courses", response_model=list[DbCourse])
+async def get_course_details(codes: list[str] = Query()) -> list[DbCourse]:
     """
-    request example: API/courses?codes=IIC2233&codes=IIC2173
+    For a list of course codes, fetch a corresponding list of course details.
+
+    Request example: `/api/courses?codes=IIC2233&codes=IIC2173`
     """
     courses: list[DbCourse] = []
     for code in codes:
         course = await DbCourse.prisma().find_unique(where={"code": code})
         if course is None:
-            return HTTPException(status_code=404, detail=f"Course '{code}' not found")
+            raise HTTPException(status_code=404, detail=f"Course '{code}' not found")
         courses.append(course)
     return courses
 
 
 @app.post("/plan/rebuild")
 async def rebuild_validation_rules():
+    """
+    Recache course information from internal database.
+    """
     clear_course_info_cache()
     info = await course_info()
     return {
@@ -129,93 +163,108 @@ async def rebuild_validation_rules():
     }
 
 
-async def debug_get_curriculum():
+async def debug_get_curriculum() -> CurriculumSpec:
     # TODO: Implement a proper curriculum selector
-    blocks = ["plancomun", "formaciongeneral", "major", "minor", "titulo"]
-    curr = Curriculum(blocks=[])
-    for block_kind in blocks:
-        block = await CurriculumBlock.prisma().find_first(where={"kind": block_kind})
-        if block is None:
-            raise HTTPException(
-                status_code=500,
-                detail="Database is not initialized"
-                + f" (found no block with kind '{block_kind}')",
-            )
-        curr.blocks.append(pydantic.parse_obj_as(Block, block.req))
-    return curr
+    return CurriculumSpec(cyear="C2020", major="M170", minor="N776", title="40082")
 
 
-@app.post("/plan/validate", response_model=ValidationResult)
+@app.post("/plan/validate", response_model=FlatValidationResult)
 async def validate_plan(plan: ValidatablePlan):
+    """
+    Validate a plan, generating diagnostics.
+    """
     curr = await debug_get_curriculum()
-    return await diagnose_plan(plan, curr)
+    return (await diagnose_plan(plan, curr)).flatten()
 
 
 @app.post("/plan/generate")
 async def generate_plan(passed: ValidatablePlan):
-    plan = await generate_default_plan(passed)
-
+    """
+    Generate a hopefully error-free plan from an initial plan.
+    """
+    curr = await debug_get_curriculum()
+    plan = await generate_default_plan(passed, curr)
     return plan
 
 
-@app.post("/plan/storage")
+@app.post("/plan/storage", response_model=PlanView)
 async def save_plan(
     name: str,
     plan: ValidatablePlan,
     user_data: UserData = Depends(require_authentication),
-):
-    stored = await store_plan(plan_name=name, user_rut=user_data.rut, plan=plan)
-
-    return stored
-
-
-@app.get("/plan/storage")
-async def read_plans(user_data: UserData = Depends(require_authentication)):
-    plans = await get_user_plans(user_rut=user_data.rut)
-
-    return plans
+) -> PlanView:
+    """
+    Save a plan with the given name in the storage of the current user.
+    Fails if the user is not logged  in.
+    """
+    return await store_plan(plan_name=name, user_rut=user_data.rut, plan=plan)
 
 
-@app.get("/plan/storage/details")
+@app.get("/plan/storage", response_model=list[LowDetailPlanView])
+async def read_plans(
+    user_data: UserData = Depends(require_authentication),
+) -> list[LowDetailPlanView]:
+    """
+    Fetches an overview of all the plans in the storage of the current user.
+    Fails if the user is not logged in.
+    Does not return the courses in each plan, only the plan metadata required
+    to show the users their list of plans (e.g. the plan id).
+    """
+    return await get_user_plans(user_rut=user_data.rut)
+
+
+@app.get("/plan/storage/details", response_model=PlanView)
 async def read_plan(
     plan_id: str, user_data: UserData = Depends(require_authentication)
-):
-    details = await get_plan_details(user_rut=user_data.rut, plan_id=plan_id)
+) -> PlanView:
+    """
+    Fetch the plan details for a given plan id.
+    Requires the current user to be the plan owner.
+    """
+    return await get_plan_details(user_rut=user_data.rut, plan_id=plan_id)
 
-    return details
 
-
-@app.put("/plan/storage")
+@app.put("/plan/storage", response_model=PlanView)
 async def update_plan(
     plan_id: str,
     new_plan: ValidatablePlan,
     user_data: UserData = Depends(require_authentication),
-):
-    updated_plan = await modify_validatable_plan(
+) -> PlanView:
+    """
+    Modifies the courses of a plan by id.
+    Requires the current user to be the owner of this plan.
+    Returns the updated plan.
+    """
+    return await modify_validatable_plan(
         user_rut=user_data.rut, plan_id=plan_id, new_plan=new_plan
     )
 
-    return updated_plan
 
-
-@app.put("/plan/storage/name")
+@app.put("/plan/storage/name", response_model=PlanView)
 async def rename_plan(
     plan_id: str,
     new_name: str,
     user_data: UserData = Depends(require_authentication),
-):
-    updated_plan = await modify_plan_metadata(
+) -> PlanView:
+    """
+    Modifies the metadata of a plan (currently only the name).
+    Requires the current user to be the owner of this plan.
+    Returns the updated plan.
+    """
+
+    return await modify_plan_metadata(
         user_rut=user_data.rut, plan_id=plan_id, new_name=new_name
     )
 
-    return updated_plan
 
-
-@app.delete("/plan/storage")
+@app.delete("/plan/storage", response_model=PlanView)
 async def delete_plan(
     plan_id: str,
     user_data: UserData = Depends(require_authentication),
-):
-    deleted_plan = await remove_plan(user_rut=user_data.rut, plan_id=plan_id)
-
-    return deleted_plan
+) -> PlanView:
+    """
+    Deletes a plan by ID.
+    Requires the current user to be the owner of this plan.
+    Returns the removed plan.
+    """
+    return await remove_plan(user_rut=user_data.rut, plan_id=plan_id)

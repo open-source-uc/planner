@@ -1,23 +1,37 @@
+from abc import ABC, abstractmethod
 from typing import Optional
 from pydantic import BaseModel
 
 
-class Diagnostic(BaseModel):
-    """
-    A diagnostic message, that may be associated to a course that the user is taking.
-    """
-
+class FlatDiagnostic(BaseModel):
     course_code: Optional[str]
     is_warning: bool
     message: str
 
-    @staticmethod
-    def err(msg: str, code: Optional[str] = None):
-        return Diagnostic(course_code=code, is_warning=False, message=msg)
 
-    @staticmethod
-    def warn(msg: str, code: Optional[str] = None):
-        return Diagnostic(course_code=code, is_warning=True, message=msg)
+class FlatValidationResult(BaseModel):
+    diagnostics: list[FlatDiagnostic]
+
+
+class Diagnostic(BaseModel, ABC):
+    """
+    A diagnostic message, that may be associated to a course that the user is taking.
+    """
+
+    def course_code(self) -> Optional[str]:
+        return None
+
+    @abstractmethod
+    def message(self) -> str:
+        pass
+
+
+class DiagnosticErr(Diagnostic):
+    pass
+
+
+class DiagnosticWarn(Diagnostic):
+    pass
 
 
 class ValidationResult(BaseModel):
@@ -27,8 +41,16 @@ class ValidationResult(BaseModel):
 
     diagnostics: list[Diagnostic]
 
-    def err(self, msg: str, code: Optional[str] = None):
-        self.diagnostics.append(Diagnostic.err(msg, code))
+    def add(self, diag: Diagnostic):
+        self.diagnostics.append(diag)
 
-    def warn(self, msg: str, code: Optional[str] = None):
-        self.diagnostics.append(Diagnostic.warn(msg, code))
+    def flatten(self) -> FlatValidationResult:
+        flat_diags: list[FlatDiagnostic] = []
+        for diag in self.diagnostics:
+            flat = FlatDiagnostic(
+                course_code=diag.course_code(),
+                is_warning=isinstance(diag, DiagnosticWarn),
+                message=diag.message(),
+            )
+            flat_diags.append(flat)
+        return FlatValidationResult(diagnostics=flat_diags)

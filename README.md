@@ -20,16 +20,15 @@
 
 ## Descripción
 
-Descipción mas detallada del proyecto.
+Proyecto Planner Ingenieria UC.
+
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
 
 ## Uso
 
-Para utilizar en el proyecto tienen que ejecutar el archivo 'main':
-```shell
-# comandos necesarios
-```
-<p align="right">(<a href="#readme-top">volver arriba</a>)</p>
+Para correr el proyecto se puede usar el devcontainer directo en VSCode, con acciones para correr el backend, frontend y servidor CAS mock.
+
+IMPORTANTE: Es necesario agregar manualmente la contrasena de Siding (no disponible en este repo) al `.env` para que se carguen las mallas.
 
 ## Contribuir
 
@@ -42,10 +41,10 @@ La información detallada sobre cómo contribuir se puede encontrar en [contribu
 
 ### Bug Reports & Feature Requests
 
-Puedes utilizar las **issues** para informar cualquier bug o solicitud.
+
 
 ### Mantenedores
 
-- [USERNAME](https://www.github.com/USERNAME)
+
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
