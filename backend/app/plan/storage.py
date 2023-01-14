@@ -47,6 +47,15 @@ class LowDetailPlanView(BaseModel):
     updated_at: datetime
     name: str
 
+    @staticmethod
+    def from_db(db: DbPlan) -> "LowDetailPlanView":
+        return LowDetailPlanView(
+            id=db.id,
+            created_at=db.created_at,
+            updated_at=db.updated_at,
+            name=db.name,
+        )
+
 
 async def authorize_plan_access(user_rut: str, plan_id: str) -> DbPlan:
     plan = await DbPlan.prisma().find_unique(where={"id": plan_id})
@@ -84,9 +93,7 @@ async def get_user_plans(user_rut: str) -> list[LowDetailPlanView]:
         user_rut,
     )
 
-    print(f"returning plans {plans}")
-
-    return plans  # type: ignore
+    return list(map(lambda plan: LowDetailPlanView.from_db(plan), plans))
 
 
 async def modify_validatable_plan(
