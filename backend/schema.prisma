@@ -22,10 +22,12 @@ model Course {
   is_relevant         Boolean
   // An heuristic indicating if this course is available to take
   // Derivated from historic availability for now
+  // WARNING: This availability is not guaranteed!
   is_available        Boolean
   // An heuristic indicating if this course is avilable to take in
   // these specific semesters
   // Derivated from historic availability for now
+  // WARNING: The availability in these semesters is not guaranteed!
   semestrality_first  Boolean
   semestrality_second Boolean
   semestrality_tav    Boolean

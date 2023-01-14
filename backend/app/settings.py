@@ -2,6 +2,12 @@ from pydantic import BaseSettings, Field, SecretStr
 
 # HACK: When prisma is loaded it loads the correct `.env` file.
 # Therefore, prisma must be loaded before `Settings` is instantiated.
+# TODO: Decide how to fix this.
+# - One solution is using the proper `.env` support that `BaseSettings` implements.
+#   However, Prisma loads the `.env` file separately (to read the `DATABASE_URL`
+#   environment variable), so then we would have to make sure that the 2 ways of
+#   loading the `.env` never diverge.
+# - Another solution is this hack, but it is ugly.
 from .database import prisma  # pyright: reportUnusedImport = false, # noqa: F401
 
 

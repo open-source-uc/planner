@@ -45,5 +45,5 @@ Arreglado:
 ## Observaciones de la API
 
 - El endpoint `getConcentracionCursos` lanza un XML invalido para combinaciones invalidas de major-minor-titulo (pero arroja status 200 OK). Tambien lo lanza para algunas combinaciones validas (eg. `C2020-M073-N206-40006`).
-- Las combinaciones invalidas entregan una lista vacia en `getMallaSugerida`.
+- Todas las combinaciones excepto `C2020-M170-N776-40082` entregan una lista vacia en `getMallaSugerida`.
 - Hay majors sin minors asociados? `M186 - Major en Ingenieria Civil - Track en Diseno y Construccion de Obras`. Es version `Vs.02` y ademas sirve para curriculum `C2013`, `C2020` y `C2022`.
