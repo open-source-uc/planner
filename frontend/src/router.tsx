@@ -1,6 +1,7 @@
 import Home from './pages/Home'
 import Planner from './pages/planner/Planner'
 import Layout from './layout/Layout'
+import UserPage from './pages/UserPage'
 import Logout from './pages/Logout'
 
 import {
@@ -28,6 +29,13 @@ function onAuthenticationError (): void {
   window.location.href = `${import.meta.env.VITE_BASE_API_URL as string}/auth/login`
 }
 
+const userPageRoute = rootRoute.createRoute({
+  path: '/user',
+  component: UserPage,
+  beforeLoad: authenticateRoute,
+  onLoadError: onAuthenticationError
+})
+
 const newPlannerRoute = rootRoute.createRoute({
   path: '/planner',
   component: Planner,
@@ -50,7 +58,7 @@ const logoutRoute = rootRoute.createRoute({
   component: Logout
 })
 
-const routeConfig = rootRoute.addChildren([homeRoute, newPlannerRoute.addChildren([getPlannerRoute]), logoutRoute])
+const routeConfig = rootRoute.addChildren([homeRoute, userPageRoute, newPlannerRoute.addChildren([getPlannerRoute]), logoutRoute])
 
 export const router = createReactRouter({
   routeConfig
