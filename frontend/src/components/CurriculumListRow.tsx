@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
+import { LowDetailPlanView } from '../client'
 
-const CurriculumListRow = ({ handleDelete, curriculum }: { handleDelete: Function, curriculum: { id: string, name: string, created_at: string, updated_at: string } }): JSX.Element => {
+const CurriculumListRow = ({ handleDelete, curriculum }: { handleDelete: Function, curriculum: LowDetailPlanView }): JSX.Element => {
   function getDateString (date: string): string {
     const mydate = date.split('T')[0].split('-').reverse().join('-')
     return mydate
