@@ -1,14 +1,10 @@
-// import { useAuth } from '../contexts/auth.context'
 import UserInfo from '../components/UserInfo'
 import CurriculumList from '../components/CurriculumList'
 
 /**
- * The user page. Contains the list of curriculums and some puser information.
+ * The user page. Contains the list of curriculums and some user information.
  */
 const UserPage = (): JSX.Element => {
-  // const authState = useAuth()
-  // const [loading, setLoading] = useState(false)
-
   return (
 
   <div className="flex mb-4 h-full">
