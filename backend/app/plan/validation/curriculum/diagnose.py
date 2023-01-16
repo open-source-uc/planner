@@ -1,11 +1,19 @@
 from .solve import SolvedBlock, SolvedNode, solve_curriculum
 from ...plan import ValidatablePlan
-from ..diagnostic import ValidationResult
+from ..diagnostic import DiagnosticErr, ValidationResult
 from .tree import Curriculum
 from ...courseinfo import CourseInfo
 
 
-def _diagnose_block(out: ValidationResult, block: SolvedBlock, node: SolvedNode):
+class CurriculumErr(DiagnosticErr):
+    superblock: str
+    missing: str
+
+    def message(self) -> str:
+        return f"Faltan ramos para el bloque '{self.superblock}': Falta {self.missing}"
+
+
+def _diagnose_block(out: ValidationResult, node: SolvedNode):
     if node.flow >= node.cap:
         return
     if isinstance(node, SolvedBlock) and node.is_and:
@@ -16,9 +24,9 @@ def _diagnose_block(out: ValidationResult, block: SolvedBlock, node: SolvedNode)
                 break
         if report_children:
             for child in node.children:
-                _diagnose_block(out, block, child)
+                _diagnose_block(out, child)
             return
-    out.err(f"Faltan ramos para el bloque '{block.name}': Falta {node.name}")
+    out.add(CurriculumErr(superblock=node.superblock, missing=node.name or "?"))
 
 
 def diagnose_curriculum(
@@ -35,8 +43,7 @@ def diagnose_curriculum(
 
     # Solve plan
     solved = solve_curriculum(courseinfo, curriculum, taken_courses)
-    # print(f"solved plan: {solved}")
 
     # Generate diagnostics
     for block in solved.blocks:
-        _diagnose_block(out, block, block)
+        _diagnose_block(out, block)
