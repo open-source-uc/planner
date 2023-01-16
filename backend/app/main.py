@@ -59,7 +59,7 @@ async def startup():
         await DbCourse.prisma().delete_many()
         courseinfo = await course_info()
     # Sync courses if database is empty
-    if not courseinfo:
+    if len(courseinfo.courses) == 0:
         await run_upstream_sync()
         await course_info()
 
@@ -159,7 +159,8 @@ async def rebuild_validation_rules():
     clear_course_info_cache()
     info = await course_info()
     return {
-        "message": f"Recached {len(info)} courses",
+        "message": f"Recached {len(info.courses)} courses and "
+        f"{len(info.equivs)} equivalences",
     }
 
 
@@ -177,7 +178,7 @@ async def validate_plan(plan: ValidatablePlan):
     return (await diagnose_plan(plan, curr)).flatten()
 
 
-@app.post("/plan/generate")
+@app.post("/plan/generate", response_model=ValidatablePlan)
 async def generate_plan(passed: ValidatablePlan):
     """
     Generate a hopefully error-free plan from an initial plan.

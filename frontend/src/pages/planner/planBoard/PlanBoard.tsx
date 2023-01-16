@@ -3,11 +3,13 @@ import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import SemesterColumn from './SemesterColumn'
 import CourseCard from './CourseCard'
-import { ValidatablePlan, Course } from '../../../client'
+import { ValidatablePlan, Course, ConcreteId, EquivalenceId } from '../../../client'
 /**
  * The main drag-n-drop planner interface.
  * Displays several semesters, as well as several classes per semester.
  */
+
+type PseudoCourse = ConcreteId | EquivalenceId
 
 interface PlanBoardProps {
   plan: ValidatablePlan
@@ -20,7 +22,13 @@ interface PlanBoardProps {
 const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating }: PlanBoardProps): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false)
   function remCourse (semIdx: number, code: string): void {
-    const idx = plan.classes[semIdx].indexOf(code)
+    let idx = -1
+    for (let i = 0; i < plan.classes[semIdx].length; i++) {
+      if (plan.classes[semIdx][i].code === code) {
+        idx = i
+        break
+      }
+    }
     if (idx === -1) return
     setPlan((prev: { classes: string[][] }) => {
       const newClasses = [...prev.classes]
@@ -73,19 +81,19 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating }: Plan
   return (
     <DndProvider backend={HTML5Backend}>
       <div className= {`CurriculumTable ${validating === true ? 'pointer-events-none' : ''}`}>
-        {plan.classes.map((classes: string[], semester: number) => (
+        {plan.classes.map((classes: PseudoCourse[], semester: number) => (
             <SemesterColumn
               key={semester}
               semester={semester + 1}
               addEnd={({ course }: any) => moveCourse(semester, course, '')}
             >
-              {classes?.map((code: string, index: number) => ((courseDetails?.[code]) != null) && (
+              {classes?.map((courseid: PseudoCourse, index: number) => ((courseDetails?.[courseid.code]) != null) && (
                 <CourseCard
-                  key={code}
-                  course={{ ...courseDetails[code], semester }}
+                  key={courseid.code}
+                  course={{ ...courseDetails[courseid.code], semester }}
                   isDragging={(e: boolean) => setIsDragging(e)}
-                  handleMove={({ course }: { course: Course & { semester: number } }) => moveCourse(semester, course, code)}
-                  remCourse={() => remCourse(semester, code)}
+                  handleMove={({ course }: { course: Course & { semester: number } }) => moveCourse(semester, course, courseid.code)}
+                  remCourse={() => remCourse(semester, courseid.code)}
                 />
               ))}
               {!isDragging && <div className="h-10 mx-2 bg-slate-300 card">

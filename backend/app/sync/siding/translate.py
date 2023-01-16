@@ -2,19 +2,20 @@
 Transform the Siding format into something usable.
 """
 
+from ...plan.courseinfo import CourseInfo, add_equivalence
+from ...plan.plan import ConcreteId, EquivalenceId, PseudoCourse
 from ...plan.validation.curriculum.solve import DEBUG_SOLVE
-from ...plan.validation.courses.logic import Expr, Operator
-from ...plan.courseinfo import course_info
 from . import client
 from .client import (
+    BloqueMalla,
     PlanEstudios,
-    Curso as CursoSiding,
 )
 from prisma.models import (
     Major as DbMajor,
     Minor as DbMinor,
     Title as DbTitle,
     MajorMinor as DbMajorMinor,
+    Equivalence as DbEquivalence,
 )
 from ...plan.validation.curriculum.tree import (
     Curriculum,
@@ -22,20 +23,11 @@ from ...plan.validation.curriculum.tree import (
     CurriculumSpec,
     Node,
 )
-import random
-
-_predefined_list_cache: dict[str, list[CursoSiding]] = {}
 
 
-async def predefined_list(list_code: str) -> list[CursoSiding]:
-    if list_code in _predefined_list_cache:
-        return _predefined_list_cache[list_code]
-    rawlist = await client.get_predefined_list(list_code)
-    _predefined_list_cache[list_code] = rawlist
-    return rawlist
-
-
-async def fetch_curriculum_from_siding(spec: CurriculumSpec) -> Curriculum:
+async def _fetch_raw_blocks(
+    courseinfo: CourseInfo, spec: CurriculumSpec
+) -> list[BloqueMalla]:
     # Fetch raw curriculum blocks for the given cyear-major-minor-title combination
     if spec.major is None or spec.minor is None or spec.title is None:
         raise Exception("blank major/minor/titles are not supported yet")
@@ -48,19 +40,58 @@ async def fetch_curriculum_from_siding(spec: CurriculumSpec) -> Curriculum:
         )
     )
 
+    # Fetch data for unseen equivalences
+    for raw_block in raw_blocks:
+        if raw_block.CodLista is not None:
+            code = f"!{raw_block.CodLista}"
+            if courseinfo.try_equiv(code) is not None:
+                continue
+            raw_courses = await client.get_predefined_list(raw_block.CodLista)
+            codes = list(map(lambda c: c.Sigla, raw_courses))
+            await add_equivalence(
+                DbEquivalence(
+                    code=code,
+                    name=raw_block.Nombre,
+                    is_homogeneous=False,
+                    courses=codes,
+                )
+            )
+        elif raw_block.CodSigla is not None and raw_block.Equivalencias is not None:
+            code = f"?{raw_block.CodSigla}"
+            if courseinfo.try_equiv(code) is not None:
+                continue
+            codes = [raw_block.CodSigla]
+            for equiv in raw_block.Equivalencias.Cursos:
+                codes.append(equiv.Sigla)
+            await add_equivalence(
+                DbEquivalence(
+                    code=code, name=raw_block.Nombre, is_homogeneous=True, courses=codes
+                )
+            )
+
+    return raw_blocks
+
+
+async def fetch_curriculum_from_siding(
+    courseinfo: CourseInfo, spec: CurriculumSpec
+) -> Curriculum:
+    raw_blocks = await _fetch_raw_blocks(courseinfo, spec)
+
     # Transform into standard blocks
     blocks: list[Node] = []
     for i, raw_block in enumerate(raw_blocks):
         if raw_block.CodLista is not None:
             # Predefined list
-            raw_courses = await predefined_list(raw_block.CodLista)
-            codes = list(map(lambda c: c.Sigla, raw_courses))
+            equiv_code = f"!{raw_block.CodLista}"
+            codes = courseinfo.equiv(equiv_code).courses
         elif raw_block.CodSigla is not None:
             # Course codes
-            codes = [raw_block.CodSigla]
-            if raw_block.Equivalencias is not None:
-                for equiv in raw_block.Equivalencias.Cursos:
-                    codes.append(equiv.Sigla)
+            if raw_block.Equivalencias is None:
+                codes = [raw_block.CodSigla]
+                equiv_code = None
+            else:
+                equiv_code = f"?{raw_block.CodSigla}"
+                codes = courseinfo.equiv(equiv_code).courses
         else:
             raise Exception("siding api returned invalid curriculum block")
         course = CourseList(
@@ -69,6 +100,7 @@ async def fetch_curriculum_from_siding(spec: CurriculumSpec) -> Curriculum:
             codes=codes,
             priority=i,
             superblock=raw_block.BloqueAcademico,
+            equivalence_code=equiv_code,
         )
         blocks.append(course)
 
@@ -85,55 +117,12 @@ async def fetch_curriculum_from_siding(spec: CurriculumSpec) -> Curriculum:
     return Curriculum(nodes=blocks)
 
 
-async def _debug_pick_good_course(
-    taken: list[list[str]], courselist: list[CursoSiding]
-) -> CursoSiding:
-    def count_nodes(expr: Expr) -> int:
-        cnt = 1
-        if isinstance(expr, Operator):
-            for child in expr.children:
-                cnt += count_nodes(child)
-        return cnt
-
-    courseinfo = await course_info()
-    best = None
-    best_cnt = 99999999
-    for _ in range(100):
-        c = random.choice(courselist)
-        if best is None:
-            best = c
-        if c.Sigla not in courseinfo:
-            continue
-        if courseinfo[c.Sigla].credits < 10:
-            continue
-        skip = False
-        for semester in taken:
-            if c.Sigla in semester:
-                skip = True
-        if skip:
-            continue
-        cnt = count_nodes(courseinfo[c.Sigla].deps)
-        if cnt < best_cnt:
-            best = c
-            best_cnt = cnt
-    assert best is not None
-    return best
-
-
 async def fetch_recommended_courses_from_siding(
+    courseinfo: CourseInfo,
     spec: CurriculumSpec,
-) -> list[list[str]]:
+) -> list[list[PseudoCourse]]:
     # Fetch raw curriculum blocks for the given cyear-major-minor-title combination
-    if spec.major is None or spec.minor is None or spec.title is None:
-        raise Exception("blank major/minor/titles are not supported yet")
-    raw_blocks = await client.get_curriculum_for_spec(
-        PlanEstudios(
-            CodCurriculum=spec.cyear,
-            CodMajor=spec.major,
-            CodMinor=spec.minor,
-            CodTitulo=spec.title,
-        )
-    )
+    raw_blocks = await _fetch_raw_blocks(courseinfo, spec)
 
     # Courses belonging to these superblocks will be skipped
     skip_superblocks = [
@@ -142,21 +131,25 @@ async def fetch_recommended_courses_from_siding(
         "Requisitos adicionales para obtener el Título Profesional",
     ]
 
-    # Transform into a list of lists of course codes
-    semesters: list[list[str]] = []
+    # Transform into a list of lists of pseudocourse ids
+    semesters: list[list[PseudoCourse]] = []
     for raw_block in raw_blocks:
         if raw_block.BloqueAcademico in skip_superblocks:
             continue
         if raw_block.CodLista is not None:
-            # TODO: Replace by an ambiguous course
-            representative_course = (
-                await _debug_pick_good_course(
-                    semesters, await predefined_list(raw_block.CodLista)
-                )
-            ).Sigla
+            representative_course = EquivalenceId(
+                code=f"!{raw_block.CodLista}", credits=raw_block.Creditos
+            )
         elif raw_block.CodSigla is not None:
-            # TODO: Consider using an ambiguous course for some equivalencies
-            representative_course = raw_block.CodSigla
+            if raw_block.Equivalencias is not None and raw_block.Equivalencias.Cursos:
+                representative_course = ConcreteId(
+                    code=raw_block.CodSigla,
+                    equivalence=EquivalenceId(
+                        code=f"?{raw_block.CodSigla}", credits=raw_block.Creditos
+                    ),
+                )
+            else:
+                representative_course = ConcreteId(code=raw_block.CodSigla)
         else:
             raise Exception("invalid siding curriculum block")
         semester_number = raw_block.SemestreBloque

@@ -174,12 +174,12 @@ export class DefaultService {
      * Generate Plan
      * Generate a hopefully error-free plan from an initial plan.
      * @param requestBody
-     * @returns any Successful Response
+     * @returns ValidatablePlan Successful Response
      * @throws ApiError
      */
     public static generatePlan(
         requestBody: ValidatablePlan,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<ValidatablePlan> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/plan/generate',

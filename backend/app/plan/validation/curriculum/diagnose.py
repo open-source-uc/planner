@@ -1,5 +1,5 @@
 from .solve import SolvedBlock, SolvedNode, solve_curriculum
-from ...plan import ValidatablePlan
+from ...plan import PseudoCourse, ValidatablePlan
 from ..diagnostic import DiagnosticErr, ValidationResult
 from .tree import Curriculum
 from ...courseinfo import CourseInfo
@@ -30,16 +30,16 @@ def _diagnose_block(out: ValidationResult, node: SolvedNode):
 
 
 def diagnose_curriculum(
-    courseinfo: dict[str, CourseInfo],
+    courseinfo: CourseInfo,
     curriculum: Curriculum,
     plan: ValidatablePlan,
     out: ValidationResult,
 ):
     # Build a set of courses from the plan
-    taken_courses: list[str] = []
+    taken_courses: list[PseudoCourse] = []
     for sem in plan.classes:
-        for code in sem:
-            taken_courses.append(code)
+        for courseid in sem:
+            taken_courses.append(courseid)
 
     # Solve plan
     solved = solve_curriculum(courseinfo, curriculum, taken_courses)

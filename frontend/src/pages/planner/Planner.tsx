@@ -1,7 +1,10 @@
 import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import { useState, useEffect, useRef } from 'react'
-import { DefaultService, FlatDiagnostic, ValidatablePlan, Course } from '../../client'
+import { DefaultService, FlatDiagnostic, ValidatablePlan, Course, ConcreteId, EquivalenceId } from '../../client'
+
+type PseudoCourse = ConcreteId | EquivalenceId
+
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
@@ -9,14 +12,18 @@ import { DefaultService, FlatDiagnostic, ValidatablePlan, Course } from '../../c
 const Planner = (): JSX.Element => {
   const [plan, setPlan] = useState<ValidatablePlan >({ classes: [], next_semester: 0 })
   const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course }>({})
-  const previousClasses = useRef<string[][]>([['']])
+  const previousClasses = useRef<PseudoCourse[][]>([[]])
   const [loading, setLoading] = useState(true)
   const [validating, setValidanting] = useState(false)
   const [validationDiagnostics, setValidationDiagnostics] = useState<FlatDiagnostic[]>([])
 
-  async function getCourseDetails (codes: string[]): Promise<void> {
+  async function getCourseDetails (courses: PseudoCourse[]): Promise<void> {
     setValidanting(true)
     console.log('getting Courses Details...')
+    const codes = []
+    for (const courseid of courses) {
+      if (courseid.is_concrete === true) { codes.push(courseid.code) }
+    }
     const response = await DefaultService.getCourseDetails(codes)
     // transform response to dict with key code:
     const dict = response.reduce((acc: { [code: string]: Course }, curr: Course) => {
@@ -34,23 +41,32 @@ const Planner = (): JSX.Element => {
     const response = await DefaultService.validatePlan(plan)
     setValidationDiagnostics(response.diagnostics)
     console.log('validated')
-    // make a deep copy of the classes to compare with the next validation
-    previousClasses.current = JSON.parse(JSON.stringify(plan.classes))
+    // keep a copy of the classes to compare with the next validation
+    previousClasses.current = plan.classes
     setValidanting(false)
   }
 
   async function addCourse (semIdx: number): Promise<void> {
-    const courseCode = prompt('Course code?')
-    if (courseCode == null || courseCode === '') return
-    if (plan?.classes.flat().includes(courseCode.toUpperCase())) { alert(`${courseCode} already on plan`); return }
+    const courseCodeRaw = prompt('Course code?')
+    if (courseCodeRaw == null || courseCodeRaw === '') return
+    const courseCode = courseCodeRaw.toUpperCase()
+    for (const existingCourse of plan?.classes.flat()) {
+      if (existingCourse.code === courseCode) {
+        alert(`${courseCode} already on plan`)
+        return
+      }
+    }
     setValidanting(true)
     try {
-      const response = await DefaultService.getCourseDetails([courseCode.toUpperCase()])
+      const response = await DefaultService.getCourseDetails([courseCode])
       setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
       setPlan((prev) => {
         const newClasses = [...prev.classes]
         newClasses[semIdx] = [...prev.classes[semIdx]]
-        newClasses[semIdx].push(response[0].code)
+        newClasses[semIdx].push({
+          is_concrete: true,
+          code: response[0].code
+        })
         return { ...prev, classes: newClasses }
       })
     } catch (err) {
@@ -70,7 +86,7 @@ const Planner = (): JSX.Element => {
         career: 'Ingenieria'
       })
       setPlan(response)
-      await getCourseDetails(response.classes).catch(err => {
+      await getCourseDetails(response.classes.flat()).catch(err => {
         setValidationDiagnostics([{
           is_warning: false,
           message: `Internal error: ${String(err)}`
@@ -93,9 +109,18 @@ const Planner = (): JSX.Element => {
   useEffect(() => {
     if (!loading) {
       // dont validate if the classes are rearranging the same semester at previous validation
-      if (!plan.classes.map((sem, index) =>
-        JSON.stringify([...sem].sort()) === JSON.stringify(previousClasses.current[index]?.sort())).every(Boolean) ||
-         plan.classes.length !== previousClasses.current.length) {
+      let changed = plan.classes.length !== previousClasses.current.length
+      if (!changed) {
+        for (let idx = 0; idx < plan.classes.length; idx++) {
+          const cur = [...plan.classes[idx]].sort((a, b) => a.code.localeCompare(b.code))
+          const prev = [...previousClasses.current[idx]].sort((a, b) => a.code.localeCompare(b.code))
+          if (JSON.stringify(cur) !== JSON.stringify(prev)) {
+            changed = true
+            break
+          }
+        }
+      }
+      if (changed) {
         validate(plan).catch(err => {
           setValidationDiagnostics([{
             is_warning: false,

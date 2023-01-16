@@ -33,6 +33,13 @@ model Course {
   semestrality_tav    Boolean
 }
 
+model Equivalence {
+  code           String   @id
+  name           String
+  is_homogeneous Boolean
+  courses        String[]
+}
+
 model Major {
   // C2013, C2020, C2022, etc...
   cyear   String
