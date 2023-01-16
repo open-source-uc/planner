@@ -8,7 +8,7 @@
     height: 90px;
     border-radius: theme('borderRadius.lg');
     padding: theme('spacing.1');
-    box-shadow: theme('boxShadow.xl');
+    box-shadow: theme('boxShadow.lg');
     position: relative;
     display: flex; 
     justify-content: center;

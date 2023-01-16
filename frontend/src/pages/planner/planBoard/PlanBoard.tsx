@@ -52,7 +52,7 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating }: Plan
       while (newClasses[newClasses.length - 1].length === 0) {
         newClasses.pop()
       }
-      return { ...prev, classes: newClasses }
+      return { ...prev, validatable_plan: { next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
     })
   }
 
@@ -63,7 +63,7 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating }: Plan
             <SemesterColumn
               key={semester}
               semester={semester + 1}
-              addEnd={({ course }: any) => moveCourse(semester, course, '')}
+              addEnd={({ course }: { course: Course & { semester: number } }) => moveCourse(semester, course, '')}
             >
               {classes?.map((code: string, index: number) => ((courseDetails?.[code]) != null) && (
                 <CourseCard

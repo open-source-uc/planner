@@ -4,11 +4,10 @@ import { useAuth } from '../../contexts/auth.context'
 interface ControlTopBarProps {
   reset: Function
   save: Function
-  erase: Function
   validating: boolean
 }
 
-function ControlTopBar ({ reset, save, erase, validating }: ControlTopBarProps): JSX.Element {
+function ControlTopBar ({ reset, save, validating }: ControlTopBarProps): JSX.Element {
   const authState = useAuth()
 
   return (

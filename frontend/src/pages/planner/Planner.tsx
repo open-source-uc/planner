@@ -4,12 +4,21 @@ import ControlTopBar from './ControlTopBar'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
 import { DefaultService, FlatDiagnostic, ValidatablePlan, Course, PlanView } from '../../client'
+interface EmptyPlan {
+  validatable_plan: ValidatablePlan
+}
+function instanceOfPlanView (object: unknown): object is PlanView {
+  if (object != null && typeof object === 'object') {
+    return 'validatable_plan' in object
+  }
+  return false
+}
+
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
-
 const Planner = (): JSX.Element => {
-  const [plan, setPlan] = useState<PlanView | { validatable_plan: ValidatablePlan }>({ validatable_plan: { classes: [], next_semester: 1 } })
+  const [plan, setPlan] = useState<PlanView | EmptyPlan>({ validatable_plan: { classes: [], next_semester: 0 } })
   const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course }>({})
   const previousClasses = useRef<string[][]>([['']])
   const [loading, setLoading] = useState(true)
@@ -19,12 +28,15 @@ const Planner = (): JSX.Element => {
 
   async function getDefaultPlan (): Promise<void> {
     console.log('getting Basic Plan...')
-    const response = await DefaultService.generatePlan({
+    const response: ValidatablePlan = await DefaultService.generatePlan({
       classes: [],
-      next_semester: 1
+      next_semester: 0,
+      level: 1,
+      school: 'Ingenieria',
+      career: 'Ingenieria'
     })
     setPlan({ ...plan, validatable_plan: response })
-    await getCourseDetails(response.classes).catch(err => {
+    await getCourseDetails(response.classes.flat()).catch(err => {
       setValidationDiagnostics([{
         is_warning: false,
         message: `Internal error: ${String(err)}`
@@ -42,9 +54,8 @@ const Planner = (): JSX.Element => {
 
   async function getPlanById (id: string): Promise<void> {
     console.log('getting Plan by Id...')
-    const response = await DefaultService.readPlan(id)
-    setPlan(response)
-    await getCourseDetails(response.validatable_plan.classes).catch(err => {
+    const response: PlanView = await DefaultService.readPlan(id)
+    await getCourseDetails(response.validatable_plan.classes.flat()).catch(err => {
       setValidationDiagnostics([{
         is_warning: false,
         message: `Internal error: ${String(err)}`
@@ -61,9 +72,10 @@ const Planner = (): JSX.Element => {
   }
 
   async function getCourseDetails (codes: string[]): Promise<void> {
+    console.log(codes)
     setValidanting(true)
     console.log('getting Courses Details...')
-    const response = await DefaultService.getCourseDetails(codes)
+    const response: Course[] = await DefaultService.getCourseDetails(codes)
     // transform response to dict with key code:
     const dict = response.reduce((acc: { [code: string]: Course }, curr: Course) => {
       acc[curr.code] = curr
@@ -77,7 +89,7 @@ const Planner = (): JSX.Element => {
   async function validate (plan: ValidatablePlan): Promise<void> {
     setValidanting(true)
     console.log('validating...')
-    const response = await DefaultService.validatePlan(plan)
+    const response = await DefaultService.validatePlan({ ...plan, level: 1, school: 'Ingenieria', career: 'Ingenieria' })
     setValidationDiagnostics(response.diagnostics)
     console.log('validated')
     // make a deep copy of the classes to compare with the next validation
@@ -94,7 +106,6 @@ const Planner = (): JSX.Element => {
       } catch (err) {
         alert(err)
       }
-      setValidanting(false)
     } else {
       const planName = prompt('Nombre de la malla?')
       if (planName == null || planName === '') return
@@ -103,19 +114,6 @@ const Planner = (): JSX.Element => {
         const res = await DefaultService.savePlan(planName, plan?.validatable_plan)
         alert('Plan saved successfully')
         window.location.href = `/planner/${res.id}`
-      } catch (err) {
-        alert(err)
-      }
-      setValidanting(false)
-    }
-  }
-  async function erasePlan (): Promise<void> {
-    setValidanting(true)
-    if (params?.plannerId != null) {
-      try {
-        await DefaultService.deletePlan(params?.plannerId)
-        alert('Plan erased successfully')
-        window.location.href = '/'
       } catch (err) {
         alert(err)
       }
@@ -176,17 +174,15 @@ const Planner = (): JSX.Element => {
       {(!loading)
         ? <>
         <div className={'flex flex-col w-5/6'}>
-
-        <ul className={'w-full mb-1 mt-2 relative'}>
-            <li className={'inline text-md ml-3 mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> Civil de Industrias, Diploma en Ingeniería de Computación</li>
-            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div> Ingeniería y Ciencias Ambientales</li>
+          <ul className={'w-full mb-1 mt-2 relative'}>
+            <li className={'inline text-md ml-3 mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div> Ingeniería y Ciencias Ambientales</li>
             <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Amplitud en Programación</li>
-            <li className={'inline text-2xl ml-40 font-bold absolute'}>{plan?.name}</li>
+            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> </li>
+            {instanceOfPlanView(plan) && <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {plan.name}</li>}
           </ul>
           <ControlTopBar
             reset={getDefaultPlan}
             save={savePlan}
-            erase={erasePlan}
             validating={validating}
           />
           <PlanBoard
