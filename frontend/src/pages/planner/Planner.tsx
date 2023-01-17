@@ -9,7 +9,7 @@ interface EmptyPlan {
 }
 function instanceOfPlanView (object: unknown): object is PlanView {
   if (object != null && typeof object === 'object') {
-    return 'validatable_plan' in object
+    return 'id' in object
   }
   return false
 }
@@ -55,6 +55,7 @@ const Planner = (): JSX.Element => {
   async function getPlanById (id: string): Promise<void> {
     console.log('getting Plan by Id...')
     const response: PlanView = await DefaultService.readPlan(id)
+    setPlan(response)
     await getCourseDetails(response.validatable_plan.classes.flat()).catch(err => {
       setValidationDiagnostics([{
         is_warning: false,
@@ -72,7 +73,6 @@ const Planner = (): JSX.Element => {
   }
 
   async function getCourseDetails (codes: string[]): Promise<void> {
-    console.log(codes)
     setValidanting(true)
     console.log('getting Courses Details...')
     const response: Course[] = await DefaultService.getCourseDetails(codes)
@@ -168,7 +168,6 @@ const Planner = (): JSX.Element => {
       }
     }
   }, [loading, plan])
-
   return (
     <div className={`w-full h-full pb-10 flex flex-row border-red-400 border-2 ${validating ? 'cursor-wait' : ''}`}>
       {(!loading)
@@ -177,8 +176,8 @@ const Planner = (): JSX.Element => {
           <ul className={'w-full mb-1 mt-2 relative'}>
             <li className={'inline text-md ml-3 mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div> Ingeniería y Ciencias Ambientales</li>
             <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Amplitud en Programación</li>
-            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> </li>
-            {instanceOfPlanView(plan) && <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {plan.name}</li>}
+            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> Por seleccionar</li>
+            {instanceOfPlanView(plan) && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {plan.name}</li>}
           </ul>
           <ControlTopBar
             reset={getDefaultPlan}
@@ -186,7 +185,7 @@ const Planner = (): JSX.Element => {
             validating={validating}
           />
           <PlanBoard
-            plan={plan?.validatable_plan}
+            plan={plan.validatable_plan}
             courseDetails={courseDetails}
             setPlan={setPlan}
             addCourse={addCourse}

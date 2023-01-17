@@ -37,7 +37,7 @@ const userPageRoute = rootRoute.createRoute({
 })
 
 const newPlannerRoute = rootRoute.createRoute({
-  path: '/planner',
+  path: '/planner/',
   component: Planner,
   loader: () => ({
     plannerId: null
@@ -45,7 +45,7 @@ const newPlannerRoute = rootRoute.createRoute({
 })
 
 const getPlannerRoute = newPlannerRoute.createRoute({
-  path: '/$plannerId',
+  path: '$plannerId',
   loader: async ({ params }) => ({
     plannerId: params.plannerId
   }),
