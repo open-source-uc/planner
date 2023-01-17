@@ -29,12 +29,12 @@ const CurriculumList = (): JSX.Element => {
 
   async function handleDelete (id: string): Promise<void> {
     console.log('click', id)
-    const response = await DefaultService.deletePlan(id)
+    await DefaultService.deletePlan(id)
     readPlans().catch(err => {
       console.log(err)
     })
     console.log('plan deleted')
-    console.log(response)
+    alert('Malla eliminada exitosamente')
   }
 
   return (

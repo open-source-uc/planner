@@ -35,13 +35,13 @@ const Planner = (): JSX.Element => {
       school: 'Ingenieria',
       career: 'Ingenieria'
     })
-    setPlan({ ...plan, validatable_plan: response })
     await getCourseDetails(response.classes.flat()).catch(err => {
       setValidationDiagnostics([{
         is_warning: false,
         message: `Internal error: ${String(err)}`
       }])
     })
+    setPlan({ ...plan, validatable_plan: response })
     await validate(response).catch(err => {
       setValidationDiagnostics([{
         is_warning: false,
@@ -54,20 +54,25 @@ const Planner = (): JSX.Element => {
 
   async function getPlanById (id: string): Promise<void> {
     console.log('getting Plan by Id...')
-    const response: PlanView = await DefaultService.readPlan(id)
-    setPlan(response)
-    await getCourseDetails(response.validatable_plan.classes.flat()).catch(err => {
-      setValidationDiagnostics([{
-        is_warning: false,
-        message: `Internal error: ${String(err)}`
-      }])
-    })
-    await validate(response.validatable_plan).catch(err => {
-      setValidationDiagnostics([{
-        is_warning: false,
-        message: `Internal error: ${String(err)}`
-      }])
-    })
+    try {
+      const response: PlanView = await DefaultService.readPlan(id)
+      setPlan(response)
+      await getCourseDetails(response.validatable_plan.classes.flat()).catch(err => {
+        setValidationDiagnostics([{
+          is_warning: false,
+          message: `Internal error: ${String(err)}`
+        }])
+      })
+      await validate(response.validatable_plan).catch(err => {
+        setValidationDiagnostics([{
+          is_warning: false,
+          message: `Internal error: ${String(err)}`
+        }])
+      })
+    } catch (err) {
+      alert(err)
+      window.location.href = '/planner'
+    }
     setLoading(false)
     console.log('data loaded')
   }
@@ -92,16 +97,16 @@ const Planner = (): JSX.Element => {
     const response = await DefaultService.validatePlan({ ...plan, level: 1, school: 'Ingenieria', career: 'Ingenieria' })
     setValidationDiagnostics(response.diagnostics)
     console.log('validated')
+    setValidanting(false)
     // make a deep copy of the classes to compare with the next validation
     previousClasses.current = JSON.parse(JSON.stringify(plan.classes))
-    setValidanting(false)
   }
 
   async function savePlan (): Promise<void> {
     if (params?.plannerId != null) {
       setValidanting(true)
       try {
-        await DefaultService.updatePlan(params.plannerId, plan?.validatable_plan)
+        await DefaultService.updatePlan(params.plannerId, plan.validatable_plan)
         alert('Plan updated successfully')
       } catch (err) {
         alert(err)
@@ -111,7 +116,7 @@ const Planner = (): JSX.Element => {
       if (planName == null || planName === '') return
       setValidanting(true)
       try {
-        const res = await DefaultService.savePlan(planName, plan?.validatable_plan)
+        const res = await DefaultService.savePlan(planName, plan.validatable_plan)
         alert('Plan saved successfully')
         window.location.href = `/planner/${res.id}`
       } catch (err) {

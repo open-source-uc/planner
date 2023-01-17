@@ -15,7 +15,7 @@ const UserInfo = (): JSX.Element => {
                 <h3 className="text-4xl font-normal leading-normal mt-0 mb-2 text-gray-800">Información Académica (Según SIDING)</h3>
                 <ul className="m-3 space-y-2">
                     <li>Título: No Inscrito</li>
-                    <li>Major: Ingenieria Robotica</li>
+                    <li>Major: Ingeniería y Ciencias Ambientales</li>
                     <li>Minor: Amplitud Programacion</li>
                 </ul>
             </div>
