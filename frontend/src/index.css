@@ -23,7 +23,28 @@
   }
 }
 
+.CienciasBasicas{
+  background-color: #FFC840;
+}
 
+.BaseGeneral{
+  background-color: #48A6D0;
+}
+
+.FormacionGeneral{
+  background-color: #483D8B;
+}
+
+.Major{
+  background-color: #F74F23;
+}
+
+.Minor{
+  background-color: #32CD33;
+}
+.titulo{
+  background-color: #9966CC;
+}
 
 .hover-text {
   position: relative;

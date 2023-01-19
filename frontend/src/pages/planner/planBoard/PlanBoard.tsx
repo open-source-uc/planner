@@ -28,14 +28,6 @@ const findCourseSuperblock = (validationResults: FlatValidationResult | null, co
   return null
 }
 
-const getCourseColor = (superblock: string | null): string => {
-  if (superblock === null) return '#93F6E8'
-  const hash = superblock.split('').reduce((a, b) => (((a << 5) - a) + b.charCodeAt(0)) | 0, 0)
-  let color = hash.toString(16).substring(6)
-  while (color.length < 6) color += '0'
-  return '#' + color
-}
-
 const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, validationResult }: PlanBoardProps): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false)
   function remCourse (semIdx: number, code: string): void {
@@ -111,7 +103,7 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, valida
                   isDragging={(e: boolean) => setIsDragging(e)}
                   handleMove={({ course }: { course: Course & { semester: number } }) => moveCourse(semester, course, courseid.code)}
                   remCourse={() => remCourse(semester, courseid.code)}
-                  courseColor={getCourseColor(findCourseSuperblock(validationResult, courseid.code))}
+                  courseBlock={findCourseSuperblock(validationResult, courseid.code)}
                 />
               ))}
               {!isDragging && <div className="h-10 mx-2 bg-slate-300 card">
