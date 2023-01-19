@@ -21,7 +21,7 @@ from prisma.models import Course as DbCourse
 from .auth import require_authentication, login_cas, UserData
 from .sync import run_upstream_sync
 from .plan.courseinfo import clear_course_info_cache, course_info
-from typing import Optional
+from typing import Optional, Union
 from pydantic import BaseModel
 
 
@@ -240,20 +240,25 @@ async def update_plan(
     )
 
 
-@app.put("/plan/storage/name", response_model=PlanView)
-async def rename_plan(
+@app.put("/plan/storage/metadata", response_model=PlanView)
+async def update_plan_metadata(
     plan_id: str,
-    new_name: str,
+    set_name: Union[str, None] = None,
+    set_favorite: Union[bool, None] = None,
     user_data: UserData = Depends(require_authentication),
 ) -> PlanView:
     """
-    Modifies the metadata of a plan (currently only the name).
+    Modifies the metadata of a plan (currently only `name` or `is_favorite`).
+    Modify one attribute per request.
     Requires the current user to be the owner of this plan.
     Returns the updated plan.
     """
 
     return await modify_plan_metadata(
-        user_rut=user_data.rut, plan_id=plan_id, new_name=new_name
+        user_rut=user_data.rut,
+        plan_id=plan_id,
+        set_name=set_name,
+        set_favorite=set_favorite,
     )
 
 

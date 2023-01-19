@@ -310,25 +310,29 @@ export class DefaultService {
     }
 
     /**
-     * Rename Plan
-     * Modifies the metadata of a plan (currently only the name).
+     * Update Plan Metadata
+     * Modifies the metadata of a plan (currently only `name` or `is_favorite`).
+     * Modify one attribute per request.
      * Requires the current user to be the owner of this plan.
      * Returns the updated plan.
      * @param planId
-     * @param newName
+     * @param setName
+     * @param setFavorite
      * @returns PlanView Successful Response
      * @throws ApiError
      */
-    public static renamePlan(
+    public static updatePlanMetadata(
         planId: string,
-        newName: string,
+        setName?: string,
+        setFavorite?: boolean,
     ): CancelablePromise<PlanView> {
         return __request(OpenAPI, {
             method: 'PUT',
-            url: '/plan/storage/name',
+            url: '/plan/storage/metadata',
             query: {
                 'plan_id': planId,
-                'new_name': newName,
+                'set_name': setName,
+                'set_favorite': setFavorite,
             },
             errors: {
                 422: `Validation Error`,

@@ -15,6 +15,7 @@ export type PlanView = {
     created_at: string;
     updated_at: string;
     name: string;
+    is_favorite: boolean;
     user_rut: string;
     validatable_plan: ValidatablePlan;
 };
