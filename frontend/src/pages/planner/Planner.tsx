@@ -138,6 +138,7 @@ const Planner = (): JSX.Element => {
         })
       }
     }
+    console.log(plan, courseDetails)
   }, [loading, plan])
 
   return (

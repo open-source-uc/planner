@@ -4,12 +4,8 @@ import { HTML5Backend } from 'react-dnd-html5-backend'
 import SemesterColumn from './SemesterColumn'
 import CourseCard from './CourseCard'
 import { ValidatablePlan, Course, ConcreteId, EquivalenceId, FlatValidationResult } from '../../../client'
-/**
- * The main drag-n-drop planner interface.
- * Displays several semesters, as well as several classes per semester.
- */
 
-type PseudoCourse = ConcreteId | EquivalenceId
+export type PseudoCourse = ConcreteId | EquivalenceId
 
 interface PlanBoardProps {
   plan: ValidatablePlan
@@ -27,6 +23,11 @@ const findCourseSuperblock = (validationResults: FlatValidationResult | null, co
   }
   return null
 }
+
+/**
+ * The main drag-n-drop planner interface.
+ * Displays several semesters, as well as several classes per semester.
+ */
 
 const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, validationResult }: PlanBoardProps): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false)
@@ -96,14 +97,14 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, valida
               semester={semester + 1}
               addEnd={({ course }: any) => moveCourse(semester, course, '')}
             >
-              {classes?.map((courseid: PseudoCourse, index: number) => ((courseDetails?.[courseid.code]) != null) && (
+              {classes?.map((course: PseudoCourse, index: number) => (
                 <CourseCard
-                  key={courseid.code}
-                  course={{ ...courseDetails[courseid.code], semester }}
+                  key={index}
+                  course={{ ...courseDetails[course.code], ...course, semester }}
                   isDragging={(e: boolean) => setIsDragging(e)}
-                  handleMove={({ course }: { course: Course & { semester: number } }) => moveCourse(semester, course, courseid.code)}
-                  remCourse={() => remCourse(semester, courseid.code)}
-                  courseBlock={findCourseSuperblock(validationResult, courseid.code)}
+                  handleMove={({ course }: { course: Course & { semester: number } }) => moveCourse(semester, course, course.code)}
+                  remCourse={() => remCourse(semester, course.code)}
+                  courseBlock={findCourseSuperblock(validationResult, course.code)}
                 />
               ))}
               {!isDragging && <div className="h-10 mx-2 bg-slate-300 card">
