@@ -17,7 +17,7 @@ from fastapi import FastAPI, Query, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from .database import prisma
-from prisma.models import Course as DbCourse
+from prisma.models import Course as DbCourse, Equivalence as DbEquivalence
 from .auth import require_authentication, login_cas, UserData
 from .sync import run_upstream_sync
 from .plan.courseinfo import clear_course_info_cache, course_info
@@ -149,6 +149,22 @@ async def get_course_details(codes: list[str] = Query()) -> list[DbCourse]:
             raise HTTPException(status_code=404, detail=f"Course '{code}' not found")
         courses.append(course)
     return courses
+
+
+@app.get("/equivalences", response_model=list[DbEquivalence])
+async def get_equivalence_details(codes: list[str] = Query()) -> list[DbEquivalence]:
+    """
+    For a list of equivalence codes, fetch a corresponding list of equivalence details.
+    """
+    equivs: list[DbEquivalence] = []
+    for code in codes:
+        equiv = await DbEquivalence.prisma().find_unique(where={"code": code})
+        if equiv is None:
+            raise HTTPException(
+                status_code=404, detail=f"Equivalence '{equiv}' not found"
+            )
+        equivs.append(equiv)
+    return equivs
 
 
 @app.post("/plan/rebuild")

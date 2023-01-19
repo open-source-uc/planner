@@ -3,6 +3,7 @@
 /* eslint-disable */
 import type { Course } from '../models/Course';
 import type { CourseOverview } from '../models/CourseOverview';
+import type { Equivalence } from '../models/Equivalence';
 import type { FlatValidationResult } from '../models/FlatValidationResult';
 import type { LowDetailPlanView } from '../models/LowDetailPlanView';
 import type { PlanView } from '../models/PlanView';
@@ -127,6 +128,28 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/courses',
+            query: {
+                'codes': codes,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Get Equivalence Details
+     * For a list of equivalence codes, fetch a corresponding list of equivalence details.
+     * @param codes
+     * @returns Equivalence Successful Response
+     * @throws ApiError
+     */
+    public static getEquivalenceDetails(
+        codes: Array<string>,
+    ): CancelablePromise<Array<Equivalence>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/equivalences',
             query: {
                 'codes': codes,
             },
