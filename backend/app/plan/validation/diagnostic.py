@@ -11,6 +11,9 @@ class FlatDiagnostic(BaseModel):
 
 class FlatValidationResult(BaseModel):
     diagnostics: list[FlatDiagnostic]
+    # Associates course codes with academic block names (superblocks).
+    # Used to assign colors to each course depending on what purpose they serve.
+    course_superblocks: dict[str, str]
 
 
 class Diagnostic(BaseModel, ABC):
@@ -40,6 +43,9 @@ class ValidationResult(BaseModel):
     """
 
     diagnostics: list[Diagnostic]
+    # Associates course codes with academic block names (superblocks).
+    # Used to assign colors to each course depending on what purpose they serve.
+    course_superblocks: dict[str, str]
 
     def add(self, diag: Diagnostic):
         self.diagnostics.append(diag)
@@ -53,4 +59,6 @@ class ValidationResult(BaseModel):
                 message=diag.message(),
             )
             flat_diags.append(flat)
-        return FlatValidationResult(diagnostics=flat_diags)
+        return FlatValidationResult(
+            diagnostics=flat_diags, course_superblocks=self.course_superblocks
+        )

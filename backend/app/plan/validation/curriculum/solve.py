@@ -84,6 +84,7 @@ SolvedNode = Union[SolvedBlock, SolvedCourse]
 @dataclass
 class SolvedCurriculum:
     blocks: list[SolvedNode]
+    course_assignments: dict[str, SolvedCourse]
 
 
 def _calc_taken_courses(
@@ -171,7 +172,6 @@ class CurriculumSolver:
             self.course_assignments[course_code] = node
             if DEBUG_SOLVE:
                 print(f"course {course_code} assigned to {node.name}")
-            # TODO: Mark this course with its corresponding block
         return subflow
 
     def assign(self, node: SolvedNode, flow_cap: Optional[int]):
@@ -212,7 +212,9 @@ class CurriculumSolver:
                 if course not in self.course_assignments:
                     print(f"course {course} left unassigned")
 
-        return SolvedCurriculum(blocks=solved)
+        return SolvedCurriculum(
+            blocks=solved, course_assignments=self.course_assignments
+        )
 
 
 def solve_curriculum(

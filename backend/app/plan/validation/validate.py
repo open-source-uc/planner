@@ -12,7 +12,7 @@ async def diagnose_plan(
 ) -> ValidationResult:
     courseinfo = await course_info()
     curriculum = await fetch_curriculum_from_siding(courseinfo, curriculum_spec)
-    out = ValidationResult(diagnostics=[])
+    out = ValidationResult(diagnostics=[], course_superblocks={})
 
     # Ensure all courses are known
     plan = sanitize_plan(courseinfo, out, plan)
@@ -29,7 +29,7 @@ async def diagnose_plan(
 
 async def diagnose_plan_skip_curriculum(plan: ValidatablePlan) -> ValidationResult:
     courseinfo = await course_info()
-    out = ValidationResult(diagnostics=[])
+    out = ValidationResult(diagnostics=[], course_superblocks={})
 
     course_ctx = PlanContext(courseinfo, plan)
     course_ctx.validate(out)

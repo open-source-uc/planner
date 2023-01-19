@@ -7,9 +7,10 @@ interface CourseCardProps {
   isDragging: Function
   handleMove: Function
   remCourse: Function
+  courseColor: string
 }
 
-const CourseCard = ({ course, isDragging, handleMove, remCourse }: CourseCardProps): JSX.Element => {
+const CourseCard = ({ course, isDragging, handleMove, remCourse, courseColor }: CourseCardProps): JSX.Element => {
   const ref = useRef(null)
   const [collected = { isDragging: false }, drag] = useDrag(() => ({
     type: 'card',
@@ -41,7 +42,7 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse }: CourseCardPro
     <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3' : ''}`}>
       {dropProps.isOver
         ? <div className={'bg-place-holder card'} />
-        : <>{!collected.isDragging && <div className={'bg-plan-comun card group'}>
+        : <>{!collected.isDragging && <div className={'card group'} style={{ backgroundColor: courseColor }}>
           <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>
           <div className='flex items-center justify-center text-center flex-col'>
             <div className='text-xs'>{ course.name }</div>
@@ -52,7 +53,7 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse }: CourseCardPro
       </>}
     </div>
     { dropProps.isOver && <div className={'px-2 pb-3'}>
-      <div className={'bg-plan-comun card'}>
+      <div className={'card'} style={{ backgroundColor: courseColor }}>
         <div className='flex items-center justify-center text-center flex-col'>
           <div className='text-xs'>{course.name}</div>
           <div className='text-[0.6rem] text-gray-600'>{course.code}</div>

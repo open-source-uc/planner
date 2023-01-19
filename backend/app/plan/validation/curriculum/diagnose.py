@@ -47,3 +47,7 @@ def diagnose_curriculum(
     # Generate diagnostics
     for block in solved.blocks:
         _diagnose_block(out, block)
+
+    # Tag each course with its associated superblock
+    for code, block in solved.course_assignments.items():
+        out.course_superblocks[code] = block.superblock

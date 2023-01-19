@@ -1,7 +1,7 @@
 import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import { useState, useEffect, useRef } from 'react'
-import { DefaultService, FlatDiagnostic, ValidatablePlan, Course, ConcreteId, EquivalenceId } from '../../client'
+import { DefaultService, ValidatablePlan, Course, ConcreteId, EquivalenceId, FlatValidationResult } from '../../client'
 
 type PseudoCourse = ConcreteId | EquivalenceId
 
@@ -15,7 +15,7 @@ const Planner = (): JSX.Element => {
   const previousClasses = useRef<PseudoCourse[][]>([[]])
   const [loading, setLoading] = useState(true)
   const [validating, setValidanting] = useState(false)
-  const [validationDiagnostics, setValidationDiagnostics] = useState<FlatDiagnostic[]>([])
+  const [validationResult, setValidationResult] = useState<FlatValidationResult | null>(null)
 
   async function getCourseDetails (courses: PseudoCourse[]): Promise<void> {
     setValidanting(true)
@@ -39,7 +39,7 @@ const Planner = (): JSX.Element => {
     setValidanting(true)
     console.log('validating...')
     const response = await DefaultService.validatePlan(plan)
-    setValidationDiagnostics(response.diagnostics)
+    setValidationResult(response)
     console.log('validated')
     // keep a copy of the classes to compare with the next validation
     previousClasses.current = plan.classes
@@ -87,16 +87,22 @@ const Planner = (): JSX.Element => {
       })
       setPlan(response)
       await getCourseDetails(response.classes.flat()).catch(err => {
-        setValidationDiagnostics([{
-          is_warning: false,
-          message: `Internal error: ${String(err)}`
-        }])
+        setValidationResult({
+          diagnostics: [{
+            is_warning: false,
+            message: `Internal error: ${String(err)}`
+          }],
+          course_superblocks: {}
+        })
       })
       await validate(response).catch(err => {
-        setValidationDiagnostics([{
-          is_warning: false,
-          message: `Internal error: ${String(err)}`
-        }])
+        setValidationResult({
+          diagnostics: [{
+            is_warning: false,
+            message: `Internal error: ${String(err)}`
+          }],
+          course_superblocks: {}
+        })
       })
       setLoading(false)
       console.log('data loaded')
@@ -122,10 +128,13 @@ const Planner = (): JSX.Element => {
       }
       if (changed) {
         validate(plan).catch(err => {
-          setValidationDiagnostics([{
-            is_warning: false,
-            message: `Internal error: ${String(err)}`
-          }])
+          setValidationResult({
+            diagnostics: [{
+              is_warning: false,
+              message: `Internal error: ${String(err)}`
+            }],
+            course_superblocks: {}
+          })
         })
       }
     }
@@ -148,9 +157,10 @@ const Planner = (): JSX.Element => {
             setPlan={setPlan}
             addCourse={addCourse}
             validating={validating}
+            validationResult={validationResult}
           />
         </div>
-        <ErrorTray diagnostics={validationDiagnostics} />
+        <ErrorTray diagnostics={validationResult?.diagnostics ?? []} />
         </>
         : <div>Loading</div>}
     </div>

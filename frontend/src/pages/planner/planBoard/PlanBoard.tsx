@@ -3,7 +3,7 @@ import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import SemesterColumn from './SemesterColumn'
 import CourseCard from './CourseCard'
-import { ValidatablePlan, Course, ConcreteId, EquivalenceId } from '../../../client'
+import { ValidatablePlan, Course, ConcreteId, EquivalenceId, FlatValidationResult } from '../../../client'
 /**
  * The main drag-n-drop planner interface.
  * Displays several semesters, as well as several classes per semester.
@@ -17,9 +17,26 @@ interface PlanBoardProps {
   setPlan: Function
   addCourse: Function
   validating: Boolean
+  validationResult: FlatValidationResult | null
 }
 
-const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating }: PlanBoardProps): JSX.Element => {
+const findCourseSuperblock = (validationResults: FlatValidationResult | null, code: string): string | null => {
+  if (validationResults == null) return null
+  for (const c in validationResults.course_superblocks) {
+    if (c === code) return validationResults.course_superblocks[c]
+  }
+  return null
+}
+
+const getCourseColor = (superblock: string | null): string => {
+  if (superblock === null) return '#93F6E8'
+  const hash = superblock.split('').reduce((a, b) => (((a << 5) - a) + b.charCodeAt(0)) | 0, 0)
+  let color = hash.toString(16).substring(6)
+  while (color.length < 6) color += '0'
+  return '#' + color
+}
+
+const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, validationResult }: PlanBoardProps): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false)
   function remCourse (semIdx: number, code: string): void {
     let idx = -1
@@ -94,6 +111,7 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating }: Plan
                   isDragging={(e: boolean) => setIsDragging(e)}
                   handleMove={({ course }: { course: Course & { semester: number } }) => moveCourse(semester, course, courseid.code)}
                   remCourse={() => remCourse(semester, courseid.code)}
+                  courseColor={getCourseColor(findCourseSuperblock(validationResult, courseid.code))}
                 />
               ))}
               {!isDragging && <div className="h-10 mx-2 bg-slate-300 card">

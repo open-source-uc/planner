@@ -9,6 +9,7 @@ export type { OpenAPIConfig } from './core/OpenAPI';
 export type { ConcreteId } from './models/ConcreteId';
 export type { Course } from './models/Course';
 export type { CourseOverview } from './models/CourseOverview';
+export type { Equivalence } from './models/Equivalence';
 export type { EquivalenceId } from './models/EquivalenceId';
 export type { FlatDiagnostic } from './models/FlatDiagnostic';
 export type { FlatValidationResult } from './models/FlatValidationResult';
