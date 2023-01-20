@@ -37,6 +37,22 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse, courseBlock }: 
       item: monitor.getItem()
     })
   }))
+
+  const BlockInitials = (courseBlock: string): string => {
+    switch (courseBlock) {
+      case 'CienciasBasicas':
+        return 'PC'
+      case 'BaseGeneral':
+        return 'PC'
+      case 'FormacionGeneral':
+        return 'OFG'
+      case 'Major':
+        return 'M'
+      case 'Minor':
+        return 'm'
+    }
+    return ''
+  }
   drag(drop(ref))
   return (
     <>
@@ -44,7 +60,9 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse, courseBlock }: 
       {dropProps.isOver
         ? <div className={'card bg-place-holder'} />
         : <>{!collected.isDragging && <div className={`card group ${courseBlock != null ? courseBlock : ''}`}>
-          {courseBlock == null && <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>}
+          {courseBlock == null
+            ? <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>
+            : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{BlockInitials(courseBlock)}</div>}
           <div className='flex items-center justify-center text-center flex-col'>
             <div className='text-xs'>{ course.is_concrete === true ? course.name : 'Seleccionar Curso!' }</div>
             <div className='text-[0.6rem] opacity-75'>{course.code}</div>
@@ -55,6 +73,7 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse, courseBlock }: 
     </div>
     { dropProps.isOver && <div className={'px-2 pb-3'}>
       <div className={`${courseBlock != null ? courseBlock : ''}  card`}>
+        {courseBlock != null && <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{BlockInitials(courseBlock)}</div>}
         <div className='flex items-center justify-center text-center flex-col'>
           <div className='text-xs'>{ course.is_concrete === true ? course.name : 'Seleccionar Curso!'}</div>
           <div className='text-[0.6rem] opacity-75'>{ course.code}</div>
