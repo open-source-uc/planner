@@ -58,10 +58,10 @@ class PlanEstudios(BaseModel):
 
 class Curso(BaseModel):
     Sigla: str
-    Nombre: str
+    Nombre: Optional[str]
     # Strings like `I`, `II`, `I y II`, o `None`
     Semestralidad: Optional[str]
-    Creditos: int
+    Creditos: Optional[int]
 
 
 class ListaCursos(BaseModel):
@@ -75,6 +75,10 @@ class Restriccion(BaseModel):
 
 class ListaRestricciones(BaseModel):
     Restricciones: list[Restriccion]
+
+
+class ListaRequisitos(BaseModel):
+    Cursos: list[Curso]
 
 
 class BloqueMalla(BaseModel):
@@ -95,7 +99,7 @@ class BloqueMalla(BaseModel):
     Tipocurso: Optional[str]
     BloqueAcademico: str
     # Seems to always be empty.
-    Requisitos: Optional[ListaCursos]
+    Requisitos: Optional[ListaRequisitos]
     # Seems to always be empty.
     Restricciones: Optional[ListaRestricciones]
 

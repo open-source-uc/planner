@@ -6,15 +6,12 @@
 	<wsdl:types>
 		<xsd:schema targetNamespace="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/">
 			<xsd:element name="getInfoEstudianteRequest" type="tns:Rut">
-
 			</xsd:element>
 			<xsd:element name="getInfoEstudianteResponse" type="tns:InfoEstudiante">
-
 			</xsd:element>
 			<xsd:element name="getInfoEstudianteFault">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="getInfoEstudianteFault" type="xsd:string">
 						</xsd:element>
 					</xsd:sequence>
@@ -22,18 +19,15 @@
 			</xsd:element>
 			<xsd:element name="fault" type="xsd:string"></xsd:element>
 			<xsd:element name="getCursosHechosRequest" type="tns:Rut">
-
 			</xsd:element>
 			<xsd:element name="getCursosHechosResponse">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="CursosHechos" type="tns:CursoHecho" maxOccurs="unbounded" minOccurs="0">
 						</xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
 			</xsd:element>
-
 			<xsd:complexType name="InfoEstudiante">
 				<xsd:all>
 					<xsd:element name="Nombre" type="xsd:string" maxOccurs="1" minOccurs="1" />
@@ -59,7 +53,6 @@
 					</xsd:element>
 				</xsd:all>
 			</xsd:complexType>
-
 			<xsd:complexType name="CursoHecho">
 				<xsd:all>
 					<xsd:element name="Sigla" type="xsd:string" maxOccurs="1" minOccurs="1">
@@ -79,7 +72,7 @@
 				</xsd:all>
 			</xsd:complexType>
 			<xsd:complexType name="Curso">
-				<xsd:all>
+				<xsd:sequence>
 					<xsd:element name="Sigla" type="xsd:string" maxOccurs="1" minOccurs="1">
 					</xsd:element>
 					<xsd:element name="Nombre" type="xsd:string" maxOccurs="1" minOccurs="1">
@@ -88,22 +81,19 @@
 					</xsd:element>
 					<xsd:element name="Creditos" type="xsd:int" maxOccurs="1" minOccurs="1">
 					</xsd:element>
-				</xsd:all>
+				</xsd:sequence>
 			</xsd:complexType>
 			<xsd:element name="getCursosHechosFault">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="getCursosHechosFault" type="xsd:string">
 						</xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
 			</xsd:element>
-
 			<xsd:element name="getListadoMajorResponse">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="Majors" type="tns:Major" maxOccurs="unbounded" minOccurs="0">
 						</xsd:element>
 					</xsd:sequence>
@@ -112,19 +102,16 @@
 			<xsd:element name="getListadoMajorFault">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="getListadoMajorFault" type="xsd:string">
 						</xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
 			</xsd:element>
 			<xsd:element name="getOfertaMajorRequest" type="tns:Rut">
-
 			</xsd:element>
 			<xsd:element name="getOfertaMajorResponse">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="Majors" type="tns:Major" maxOccurs="unbounded" minOccurs="0"></xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
@@ -132,7 +119,6 @@
 			<xsd:element name="getOfertaMajorFault">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="getOfertaMajorFault" type="xsd:string">
 						</xsd:element>
 					</xsd:sequence>
@@ -141,7 +127,6 @@
 			<xsd:element name="getListadoMinorResponse">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="Minors" type="tns:Minor" maxOccurs="unbounded" minOccurs="0">
 						</xsd:element>
 					</xsd:sequence>
@@ -150,19 +135,16 @@
 			<xsd:element name="getListadoMinorFault">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="getListadoMinorFault" type="xsd:string">
 						</xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
 			</xsd:element>
 			<xsd:element name="getOfertaMinorRequest" type="tns:Rut">
-
 			</xsd:element>
 			<xsd:element name="getOfertaMinorResponse">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="Minors" type="tns:Minor" maxOccurs="unbounded" minOccurs="0"></xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
@@ -170,7 +152,6 @@
 			<xsd:element name="getOfertaMinorFault">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="getOfertaMinorFault" type="xsd:string">
 						</xsd:element>
 					</xsd:sequence>
@@ -179,7 +160,6 @@
 			<xsd:element name="getListadoTitulo">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="in" type="xsd:string"></xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
@@ -187,7 +167,6 @@
 			<xsd:element name="getListadoTituloResponse">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="Titulos" type="tns:Titulo" maxOccurs="unbounded" minOccurs="0"></xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
@@ -195,19 +174,16 @@
 			<xsd:element name="getListadoTituloFault">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="getListadoTituloFault" type="xsd:string">
 						</xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
 			</xsd:element>
 			<xsd:element name="getOfertaTituloRequest" type="tns:Rut">
-
 			</xsd:element>
 			<xsd:element name="getOfertaTituloResponse">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="Titulos" type="tns:Titulo" maxOccurs="unbounded" minOccurs="0"></xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
@@ -215,7 +191,6 @@
 			<xsd:element name="getOfertaTituloFault">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="getOfertaTituloFault" type="xsd:string">
 						</xsd:element>
 					</xsd:sequence>
@@ -231,7 +206,6 @@
 			<xsd:element name="getMajorMinorAsociadoResponse">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="Minors" type="tns:Minor" maxOccurs="unbounded" minOccurs="0"></xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
@@ -239,19 +213,16 @@
 			<xsd:element name="getMajorMinorAsociadoFault">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="getMajorMinorAsociadoFault" type="xsd:string">
 						</xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
 			</xsd:element>
 			<xsd:element name="getConcentracionCursosRequest" type="tns:PlanEstudios">
-
 			</xsd:element>
 			<xsd:element name="getConcentracionCursosResponse">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="Cursos" type="tns:Curso" maxOccurs="unbounded" minOccurs="0"></xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
@@ -259,19 +230,16 @@
 			<xsd:element name="getConcentracionCursosFault">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="getConcentracionCursosFault" type="xsd:string">
 						</xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
 			</xsd:element>
 			<xsd:element name="getMallaSugeridaRequest" type="tns:PlanEstudios">
-
 			</xsd:element>
 			<xsd:element name="getMallaSugeridaResponse">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="BloquesMalla" type="tns:BloqueMalla" maxOccurs="unbounded" minOccurs="0"></xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
@@ -279,19 +247,16 @@
 			<xsd:element name="getMallaSugeridaFault">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="getMallaSugeridaFault" type="xsd:string">
 						</xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
 			</xsd:element>
 			<xsd:element name="getCursoEquivalenteRequest" type="tns:CursoPlanEstudios">
-
 			</xsd:element>
 			<xsd:element name="getCursoEquivalenteResponse">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="Cursos" type="tns:Curso" maxOccurs="unbounded" minOccurs="0"></xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
@@ -299,39 +264,33 @@
 			<xsd:element name="getCursoEquivalenteFault">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="getCursoEquivalenteFault" type="xsd:string">
 						</xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
 			</xsd:element>
 			<xsd:element name="getRequisitoRequest" type="tns:CursoPlanEstudios">
-
 			</xsd:element>
 			<xsd:element name="getRequisitoResponse">
 				<xsd:complexType>
 					<xsd:sequence>
-
-						<xsd:element name="Cursos" type="tns:Curso" maxOccurs="unbounded" minOccurs="0"></xsd:element>
+						<xsd:element name="Cursos" type="tns:CursoRequisito" maxOccurs="unbounded" minOccurs="0"></xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
 			</xsd:element>
 			<xsd:element name="getRequisitoFault">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="getRequisitosFault" type="xsd:string">
 						</xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
 			</xsd:element>
 			<xsd:element name="getRestriccionRequest" type="tns:CursoPlanEstudios">
-
 			</xsd:element>
 			<xsd:element name="getRestriccionResponse">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="Restricciones" type="tns:Restriccion" maxOccurs="unbounded" minOccurs="0"></xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
@@ -339,7 +298,6 @@
 			<xsd:element name="getRestriccionFault">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="getRestriccionFault" type="xsd:string">
 						</xsd:element>
 					</xsd:sequence>
@@ -348,7 +306,6 @@
 			<xsd:element name="getListaPredefinidaRequest">
 				<xsd:complexType>
 					<xsd:all maxOccurs="1" minOccurs="1">
-
 						<xsd:element name="CodLista" type="xsd:string"></xsd:element>
 					</xsd:all>
 				</xsd:complexType>
@@ -356,7 +313,6 @@
 			<xsd:element name="getListaPredefinidaResponse">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="Cursos" type="tns:Curso" maxOccurs="unbounded" minOccurs="0"></xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
@@ -364,13 +320,11 @@
 			<xsd:element name="getListaPredefinidaFault">
 				<xsd:complexType>
 					<xsd:sequence>
-
 						<xsd:element name="getListaPredefinidaFault" type="xsd:string">
 						</xsd:element>
 					</xsd:sequence>
 				</xsd:complexType>
 			</xsd:element>
-
 			<xsd:complexType name="Major">
 				<xsd:all>
 					<xsd:element name="CodMajor" type="xsd:string" maxOccurs="1" minOccurs="1">
@@ -456,7 +410,7 @@
 					<xsd:element name="Requisitos" maxOccurs="1" minOccurs="1">
 						<xsd:complexType>
 							<xsd:sequence>
-								<xsd:element name="Cursos" type="tns:Curso" maxOccurs="unbounded" minOccurs="0">
+								<xsd:element name="Cursos" type="tns:CursoRequisito" maxOccurs="unbounded" minOccurs="0">
 								</xsd:element>
 							</xsd:sequence>
 						</xsd:complexType>
@@ -472,33 +426,31 @@
 				</xsd:sequence>
 			</xsd:complexType>
 			<xsd:complexType name="Void"></xsd:complexType>
-
 			<xsd:element name="getListadoMinorRequest" type="tns:Void">
 			</xsd:element>
 			<xsd:element name="getListadoMajorRequest" type="tns:Void">
 			</xsd:element>
 			<xsd:element name="getListadoTituloRequest" type="tns:Void">
 			</xsd:element>
-
 			<xsd:complexType name="Rut">
 				<xsd:all>
 					<xsd:element name="rut" maxOccurs="1" minOccurs="1" type="xsd:string">
-
 					</xsd:element>
 				</xsd:all>
 			</xsd:complexType>
-
+			<xsd:complexType name="CursoRequisito">
+				<xsd:complexContent>
+					<xsd:extension base="tns:Curso">
+						<xsd:sequence>
+							<xsd:element name="TipoRequisito" type="xsd:string" maxOccurs="1" minOccurs="1">
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:extension>
+				</xsd:complexContent>
+			</xsd:complexType>
 			<xsd:complexType name="stringArray">
-				<xsd:all>
-					<xsd:element name="strings" type="tns:stringsList" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-				</xsd:all>
-			</xsd:complexType>
-
-			<xsd:complexType name="stringsList">
 				<xsd:sequence>
-					<xsd:element name="string" type="xsd:string" maxOccurs="unbounded" minOccurs="0">
-					</xsd:element>
+					<xsd:element name="String" type="xsd:string" maxOccurs="unbounded" minOccurs="0"></xsd:element>
 				</xsd:sequence>
 			</xsd:complexType>
 		</xsd:schema>
@@ -558,7 +510,6 @@
 		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getListadoTituloRequest">
-
 		<wsdl:part name="request" element="tns:getListadoTituloRequest"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getListadoTituloResponse">
@@ -716,247 +667,185 @@
 			<wsdl:fault name="fault" message="tns:getListaPredefinidaFault"></wsdl:fault>
 		</wsdl:operation>
 	</wsdl:portType>
-
 	<wsdl:binding name="ServiciosPlannerBind" type="tns:ServiciosPlanner">
-
 		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http" />
 		<wsdl:operation name="getInfoEstudiante">
-
 			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getInfoEstudiante" />
 			<wsdl:input>
-
 				<soap:body use="literal" />
 			</wsdl:input>
 			<wsdl:output>
-
 				<soap:body use="literal" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
-
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getCursosHechos">
-
 			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getCursosHechos" />
 			<wsdl:input>
-
 				<soap:body use="literal" />
 			</wsdl:input>
 			<wsdl:output>
-
 				<soap:body use="literal" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
-
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getListadoMajor">
-
 			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getListadoMajor" />
 			<wsdl:input>
-
 				<soap:body use="literal" />
 			</wsdl:input>
 			<wsdl:output>
-
 				<soap:body use="literal" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
-
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getOfertaMajor">
-
 			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getOfertaMajor" />
 			<wsdl:input>
-
 				<soap:body use="literal" />
 			</wsdl:input>
 			<wsdl:output>
-
 				<soap:body use="literal" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
-
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getListadoMinor">
-
 			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getListadoMinor" />
 			<wsdl:input>
-
 				<soap:body use="literal" />
 			</wsdl:input>
 			<wsdl:output>
-
 				<soap:body use="literal" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
-
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getOfertaMinor">
-
 			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getOfertaMinor" />
 			<wsdl:input>
-
 				<soap:body use="literal" />
 			</wsdl:input>
 			<wsdl:output>
-
 				<soap:body use="literal" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
-
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getListadoTitulo">
-
 			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getListadoTitulo" />
 			<wsdl:input>
-
 				<soap:body use="literal" />
 			</wsdl:input>
 			<wsdl:output>
-
 				<soap:body use="literal" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
-
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getOfertaTitulo">
-
 			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getOfertaTitulo" />
 			<wsdl:input>
-
 				<soap:body use="literal" />
 			</wsdl:input>
 			<wsdl:output>
-
 				<soap:body use="literal" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
-
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getMajorMinorAsociado">
-
 			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getMajorMinorAsociado" />
 			<wsdl:input>
-
 				<soap:body use="literal" />
 			</wsdl:input>
 			<wsdl:output>
-
 				<soap:body use="literal" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
-
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getConcentracionCursos">
-
 			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getConcentracionCursos" />
 			<wsdl:input>
-
 				<soap:body use="literal" />
 			</wsdl:input>
 			<wsdl:output>
-
 				<soap:body use="literal" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
-
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getMallaSugerida">
-
 			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getMallaSugerida" />
 			<wsdl:input>
-
 				<soap:body use="literal" />
 			</wsdl:input>
 			<wsdl:output>
-
 				<soap:body use="literal" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
-
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getCursoEquivalente">
-
 			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getCursoEquivalente" />
 			<wsdl:input>
-
 				<soap:body use="literal" />
 			</wsdl:input>
 			<wsdl:output>
-
 				<soap:body use="literal" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
-
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getRequisito">
-
 			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getRequisito" />
 			<wsdl:input>
-
 				<soap:body use="literal" />
 			</wsdl:input>
 			<wsdl:output>
-
 				<soap:body use="literal" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
-
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getRestriccion">
-
 			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getRestriccion" />
 			<wsdl:input>
-
 				<soap:body use="literal" />
 			</wsdl:input>
 			<wsdl:output>
-
 				<soap:body use="literal" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
-
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getListaPredefinida">
-
 			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getListaPredefinida" />
 			<wsdl:input>
-
 				<soap:body use="literal" />
 			</wsdl:input>
 			<wsdl:output>
-
 				<soap:body use="literal" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
-
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
