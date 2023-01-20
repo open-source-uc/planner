@@ -42,7 +42,7 @@ const Planner = (): JSX.Element => {
     setValidationResult(response)
     console.log('validated')
     // Es necesario hacer una copia profunda del plan para comparar, pues si se copia el objeto entero
-    // entonces la copia es modificada junto al objeto original. Lo ideal seria usar una librearia para esto en el fyuturo
+    // entonces la copia es modificada junto al objeto original. Lo ideal seria usar una librearia para esto en el futuro
     previousClasses.current = JSON.parse(JSON.stringify(plan.classes))
     setValidanting(false)
   }
