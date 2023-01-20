@@ -41,8 +41,9 @@ const Planner = (): JSX.Element => {
     const response = await DefaultService.validatePlan(plan)
     setValidationResult(response)
     console.log('validated')
-    // keep a copy of the classes to compare with the next validation
-    previousClasses.current = plan.classes
+    // Es necesario hacer una copia profunda del plan para comparar, pues si se copia el objeto entero
+    // entonces la copia es modificada junto al objeto original. Lo ideal seria usar una librearia para esto en el fyuturo
+    previousClasses.current = JSON.parse(JSON.stringify(plan.classes))
     setValidanting(false)
   }
 
@@ -117,6 +118,7 @@ const Planner = (): JSX.Element => {
       // dont validate if the classes are rearranging the same semester at previous validation
       let changed = plan.classes.length !== previousClasses.current.length
       if (!changed) {
+        console.log()
         for (let idx = 0; idx < plan.classes.length; idx++) {
           const cur = [...plan.classes[idx]].sort((a, b) => a.code.localeCompare(b.code))
           const prev = [...previousClasses.current[idx]].sort((a, b) => a.code.localeCompare(b.code))
@@ -138,7 +140,6 @@ const Planner = (): JSX.Element => {
         })
       }
     }
-    console.log(plan, courseDetails)
   }, [loading, plan])
 
   return (

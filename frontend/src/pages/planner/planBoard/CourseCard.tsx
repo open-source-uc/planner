@@ -17,7 +17,7 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse, courseBlock }: 
     type: 'card',
     item: () => {
       isDragging(true)
-      return { course }
+      return course
     },
     end () {
       isDragging(false)
@@ -42,7 +42,7 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse, courseBlock }: 
     <>
     <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3' : ''}`}>
       {dropProps.isOver
-        ? <div className={'card'} />
+        ? <div className={'card bg-place-holder'} />
         : <>{!collected.isDragging && <div className={`card group ${courseBlock != null ? courseBlock : ''}`}>
           {courseBlock == null && <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>}
           <div className='flex items-center justify-center text-center flex-col'>

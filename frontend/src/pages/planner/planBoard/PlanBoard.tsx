@@ -51,17 +51,17 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, valida
     })
   }
 
-  function moveCourse (semester: number, drag: Course & { semester: number }, code: string): void {
-    setPlan((prev: { classes: string[][] }) => {
-      const dragIndex: number = prev.classes[drag.semester].indexOf(drag.code)
+  function moveCourse (semester: number, drag: Course & { semester: number }, index: number): void {
+    console.log(drag, index)
+    setPlan((prev: { classes: PseudoCourse[][] }) => {
+      console.log(prev)
+      const dragIndex: number = prev.classes[drag.semester].findIndex((c: PseudoCourse) => c.code === drag.code)
       const newClasses = [...prev.classes]
       if (semester - prev.classes.length >= 0) {
         if (semester - prev.classes.length > 0) newClasses.push([])
         newClasses.push([])
       }
-      let index = newClasses[semester].indexOf(code)
-      if (index === -1) index = newClasses[semester].length
-      newClasses[semester].splice(index, 0, drag.code)
+      newClasses[semester].splice(index, 0, prev.classes[drag.semester][dragIndex])
       if (semester === drag.semester && index < dragIndex) {
         newClasses[drag.semester].splice(dragIndex + 1, 1)
       } else {
@@ -95,14 +95,14 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, valida
             <SemesterColumn
               key={semester}
               semester={semester + 1}
-              addEnd={({ course }: any) => moveCourse(semester, course, '')}
+              addEnd={(dragCourse: Course & { semester: number }) => moveCourse(semester, dragCourse, classes.length)}
             >
               {classes?.map((course: PseudoCourse, index: number) => (
                 <CourseCard
-                  key={index}
+                  key={index.toString() + course.code}
                   course={{ ...courseDetails[course.code], ...course, semester }}
                   isDragging={(e: boolean) => setIsDragging(e)}
-                  handleMove={({ course }: { course: Course & { semester: number } }) => moveCourse(semester, course, course.code)}
+                  handleMove={(dragCourse: Course & { semester: number }) => moveCourse(semester, dragCourse, index)}
                   remCourse={() => remCourse(semester, course.code)}
                   courseBlock={findCourseSuperblock(validationResult, course.code)}
                 />
@@ -116,12 +116,12 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, valida
           <SemesterColumn
             key={plan.classes.length }
             semester={plan.classes.length + 1}
-            addEnd={({ course }: { course: Course & { semester: number } }) => moveCourse(plan.classes.length, course, '')}
+            addEnd={(dragCourse: Course & { semester: number }) => moveCourse(plan.classes.length, dragCourse, 0)}
           />
           <SemesterColumn
             key={plan.classes.length + 1}
             semester={plan.classes.length + 2}
-            addEnd={({ course }: { course: Course & { semester: number } }) => moveCourse(plan.classes.length + 1, course, '')}
+            addEnd={(dragCourse: Course & { semester: number }) => moveCourse(plan.classes.length + 1, dragCourse, 0)}
           />
         </>}
       </div>

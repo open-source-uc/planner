@@ -24,24 +24,24 @@
 }
 
 .CienciasBasicas{
-  background-color: #FFC840;
+  background-color: #93F6E8; /*#FFC840*/
 }
 
 .BaseGeneral{
-  background-color: #48A6D0;
+  background-color: #93F6E8; /*#48A6D0*/
 }
 
 .FormacionGeneral{
-  background-color: #483D8B;
+  background-color: #355484; /*#483D8B*/
   color: white;
 }
 
 .Major{
-  background-color: #F74F23;
+  background-color: #B3A9E4; /*#F74F23*/
 }
 
 .Minor{
-  background-color: #32CD33;
+  background-color: #13CDB2; /*#32CD33*/
 }
 .titulo{
   background-color: #9966CC;
