@@ -19,7 +19,7 @@ interface PlanBoardProps {
 const findCourseSuperblock = (validationResults: FlatValidationResult | null, code: string): string | null => {
   if (validationResults == null) return null
   for (const c in validationResults.course_superblocks) {
-    if (c === code) return validationResults.course_superblocks[c]
+    if (c === code) return validationResults.course_superblocks[c].normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(' ', '').split(' ')[0]
   }
   return null
 }

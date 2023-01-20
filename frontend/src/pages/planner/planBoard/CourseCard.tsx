@@ -38,29 +38,28 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse, courseBlock }: 
     })
   }))
   drag(drop(ref))
-  console.log(course)
   return (
     <>
     <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3' : ''}`}>
       {dropProps.isOver
         ? <div className={'card'} />
-        : <>{!collected.isDragging && <div className={`card group ${courseBlock != null ? courseBlock.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(' ', '') : ''}`}>
+        : <>{!collected.isDragging && <div className={`card group ${courseBlock != null ? courseBlock : ''}`}>
           {courseBlock == null && <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>}
           <div className='flex items-center justify-center text-center flex-col'>
             <div className='text-xs'>{ course.is_concrete === true ? course.name : 'Seleccionar Curso!' }</div>
-            <div className='text-[0.6rem] text-gray-600'>{course.code}</div>
+            <div className='text-[0.6rem] opacity-75'>{course.code}</div>
           </div>
-          <div className='absolute bottom-2 left-2 text-[0.5rem] text-gray-600'>{course.credits} creditos</div>
+          <div className='absolute bottom-2 left-2 text-[0.5rem] opacity-75'>{course.credits} creditos</div>
       </div>}
       </>}
     </div>
     { dropProps.isOver && <div className={'px-2 pb-3'}>
-      <div className={`${courseBlock != null ? courseBlock.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(' ', '') : ''}  card`}>
+      <div className={`${courseBlock != null ? courseBlock : ''}  card`}>
         <div className='flex items-center justify-center text-center flex-col'>
           <div className='text-xs'>{ course.is_concrete === true ? course.name : 'Seleccionar Curso!'}</div>
-          <div className='text-[0.6rem] text-gray-600'>{ course.code}</div>
+          <div className='text-[0.6rem] opacity-75'>{ course.code}</div>
         </div>
-        <div className='absolute bottom-2 left-2 text-[0.5rem] text-gray-600'>{course.credits} creditos</div>
+        <div className='absolute bottom-2 left-2 text-[0.5rem] opacity-75'>{course.credits} creditos</div>
       </div>
     </div>
     }
