@@ -14,7 +14,7 @@ interface PlanBoardProps {
   courseDetails: { [code: string]: Course }
   setPlan: Function
   addCourse: Function
-  validating: Boolean
+  validating: boolean
 }
 
 const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating }: PlanBoardProps): JSX.Element => {
@@ -22,23 +22,23 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating }: Plan
   function remCourse (semIdx: number, code: string): void {
     const idx = plan.classes[semIdx].indexOf(code)
     if (idx === -1) return
-    setPlan((prev: { classes: string[][] }) => {
-      const newClasses = [...prev.classes]
-      newClasses[semIdx] = [...prev.classes[semIdx]]
+    setPlan((prev: { validatable_plan: ValidatablePlan }) => {
+      const newClasses = [...prev.validatable_plan.classes]
+      newClasses[semIdx] = [...prev.validatable_plan.classes[semIdx]]
       newClasses[semIdx].splice(idx, 1)
       while (newClasses[newClasses.length - 1].length === 0) {
         newClasses.pop()
       }
-      return { ...prev, classes: newClasses }
+      return { ...prev, validatable_plan: { next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
     })
   }
 
   function moveCourse (semester: number, drag: Course & { semester: number }, code: string): void {
-    setPlan((prev: { classes: string[][] }) => {
-      const dragIndex: number = prev.classes[drag.semester].indexOf(drag.code)
-      const newClasses = [...prev.classes]
-      if (semester - prev.classes.length >= 0) {
-        if (semester - prev.classes.length > 0) newClasses.push([])
+    setPlan((prev: { validatable_plan: ValidatablePlan }) => {
+      const dragIndex: number = prev.validatable_plan.classes[drag.semester].indexOf(drag.code)
+      const newClasses = [...prev.validatable_plan.classes]
+      if (semester - prev.validatable_plan.classes.length >= 0) {
+        if (semester - prev.validatable_plan.classes.length > 0) newClasses.push([])
         newClasses.push([])
       }
       let index = newClasses[semester].indexOf(code)
@@ -52,32 +52,18 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating }: Plan
       while (newClasses[newClasses.length - 1].length === 0) {
         newClasses.pop()
       }
-      return { ...prev, classes: newClasses }
+      return { ...prev, validatable_plan: { next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
     })
   }
 
-  /* TODO: add a button to reset the plan to the default one
-  const options: Array<[string, string[][]]> = [
-    ['Resetear malla', []],
-    ['Plan comun (sin lab de dinamica)', [['MAT1610', 'MAT1203', 'QIM100E', 'ING1004', 'FIL2001'], ['MAT1620', 'ICE1514', 'ICS1513', 'IIC1103', 'TTF058']]],
-    ['Plan comun', [['MAT1610', 'MAT1203', 'QIM100E', 'ING1004', 'FIL2001'], ['MAT1620', 'ICE1514', 'ICS1513', 'FIS0154', 'IIC1103', 'TTF058']]]
-  ]
-  const buttons = options.map(btndata => {
-    const [name, plan] = btndata
-    return (
-      <button className="w-40 h-10 rounded-md bg-slate-700 text-white" onClick={() => onPlanChange(plan)} key={name}>
-        {name}
-      </button>
-    )
-  }) */
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className= {`CurriculumTable ${validating === true ? 'pointer-events-none' : ''}`}>
+      <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap rtl-grid ${validating ? 'pointer-events-none' : ''}`}>
         {plan.classes.map((classes: string[], semester: number) => (
             <SemesterColumn
               key={semester}
               semester={semester + 1}
-              addEnd={({ course }: any) => moveCourse(semester, course, '')}
+              addEnd={({ course }: { course: Course & { semester: number } }) => moveCourse(semester, course, '')}
             >
               {classes?.map((code: string, index: number) => ((courseDetails?.[code]) != null) && (
                 <CourseCard
