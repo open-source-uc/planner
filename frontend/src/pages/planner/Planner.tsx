@@ -107,7 +107,7 @@ const Planner = (): JSX.Element => {
       setValidanting(true)
       try {
         await DefaultService.updatePlan(params.plannerId, plan.validatable_plan)
-        alert('Plan updated successfully')
+        alert('Plan actualizado exitosamente')
       } catch (err) {
         alert(err)
       }
@@ -117,7 +117,7 @@ const Planner = (): JSX.Element => {
       setValidanting(true)
       try {
         const res = await DefaultService.savePlan(planName, plan.validatable_plan)
-        alert('Plan saved successfully')
+        alert('Plan guardado exitosamente')
         window.location.href = `/planner/${res.id}`
       } catch (err) {
         alert(err)
@@ -127,9 +127,9 @@ const Planner = (): JSX.Element => {
   }
 
   async function addCourse (semIdx: number): Promise<void> {
-    const courseCode = prompt('Course code?')
+    const courseCode = prompt('Sigla del curso:')
     if (courseCode == null || courseCode === '') return
-    if (plan.validatable_plan.classes.flat().includes(courseCode.toUpperCase())) { alert(`${courseCode} already on plan`); return }
+    if (plan.validatable_plan.classes.flat().includes(courseCode.toUpperCase())) { alert(`${courseCode} ya se encuentra en el plan`); return }
     setValidanting(true)
     try {
       const response = await DefaultService.getCourseDetails([courseCode.toUpperCase()])
@@ -162,7 +162,7 @@ const Planner = (): JSX.Element => {
     if (!loading) {
       // dont validate if the classes are rearranging the same semester at previous validation
       if (!plan.validatable_plan.classes.map((sem, index) =>
-        JSON.stringify([...sem].sort()) === JSON.stringify(previousClasses.current[index]?.sort())).every(Boolean) ||
+        JSON.stringify([...sem].sort((a, b) => a.localeCompare(b))) === JSON.stringify(previousClasses.current[index]?.sort())).every(Boolean) ||
          plan.validatable_plan.classes.length !== previousClasses.current.length) {
         validate(plan.validatable_plan).catch(err => {
           setValidationDiagnostics([{

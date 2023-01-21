@@ -17,7 +17,7 @@ function Navbar (): JSX.Element {
           {authState?.user == null
             ? (<a href="/api/auth/login">Log in</a>)
             : (<>
-              <li className="inline mr-4"><Link to="/user">User</Link></li>
+              <Link to="/user" className="inline mr-4">Listado de mallas</Link>
               <Link to="/logout">Cerrar sesión</Link>
             </>)}
           </li>
