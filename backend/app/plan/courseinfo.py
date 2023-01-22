@@ -50,6 +50,12 @@ class CourseDetails:
 class EquivDetails:
     code: str
     name: str
+    # Indicates whether this equivalence is "homogeneous".
+    # A homogeneous equivalence is one where all of its concrete courses have the same
+    # requirements and reverse requirements (eg. "Dinamica" is homogeneous, but "OFG"
+    # is not).
+    # The requirement validator gives up on non-homogeneous equivalences, but tries to
+    # validate homogeneous dependencies.
     is_homogeneous: bool
     courses: list[str]
 
