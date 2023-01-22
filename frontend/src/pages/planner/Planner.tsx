@@ -38,6 +38,7 @@ const Planner = (): JSX.Element => {
       school: 'Ingenieria',
       career: 'Ingenieria'
     })
+    console.log(response)
     await getCourseDetails(response.classes.flat()).catch(err => {
       setValidationResult({
         diagnostics: [{

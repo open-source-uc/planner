@@ -45,7 +45,7 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse, courseBlock }: 
       case 'BaseGeneral':
         return 'PC'
       case 'FormacionGeneral':
-        return 'OFG'
+        return 'FG'
       case 'Major':
         return 'M'
       case 'Minor':
@@ -60,7 +60,7 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse, courseBlock }: 
       {dropProps.isOver
         ? <div className={'card bg-place-holder'} />
         : <>{!collected.isDragging && <div className={`card group ${courseBlock != null ? courseBlock : ''}`}>
-          {courseBlock == null
+          {courseBlock == null || course.is_concrete === false
             ? <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>
             : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{BlockInitials(courseBlock)}</div>}
           <div className='flex items-center justify-center text-center flex-col'>
