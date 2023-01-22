@@ -11,7 +11,7 @@ interface SemesterColumnProps {
 const SemesterColumn = ({ semester, addEnd, children }: SemesterColumnProps): JSX.Element => {
   const [dropProps, drop] = useDrop(() => ({
     accept: 'card',
-    drop (course: Course) {
+    drop (course: Course & { semester: number }) {
       addEnd(course)
     },
     collect: monitor => ({

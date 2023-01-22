@@ -56,7 +56,7 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse, courseBlock }: 
   drag(drop(ref))
   return (
     <>
-    <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3' : ''}`}>
+    <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3 cursor-grab' : 'cursor-grabbing'} `}>
       {dropProps.isOver
         ? <div className={'card bg-place-holder'} />
         : <>{!collected.isDragging && <div className={`card group ${courseBlock != null ? courseBlock : ''}`}>
