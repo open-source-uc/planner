@@ -72,9 +72,15 @@ async def _fetch_raw_blocks(
     return raw_blocks
 
 
+_curriculum_cache: dict[CurriculumSpec, Curriculum] = {}
+
+
 async def fetch_curriculum_from_siding(
     courseinfo: CourseInfo, spec: CurriculumSpec
 ) -> Curriculum:
+    if spec in _curriculum_cache:
+        return _curriculum_cache[spec]
+
     raw_blocks = await _fetch_raw_blocks(courseinfo, spec)
 
     # Transform into standard blocks
@@ -117,7 +123,9 @@ async def fetch_curriculum_from_siding(
     # TODO: Figure out proper validation order, or if flow has to be used.
     blocks.sort(key=lambda b: len(b.codes) if isinstance(b, CourseList) else 1e6)
 
-    return Curriculum(nodes=blocks)
+    curr = Curriculum(nodes=blocks)
+    _curriculum_cache[spec] = curr
+    return curr
 
 
 async def fetch_recommended_courses_from_siding(

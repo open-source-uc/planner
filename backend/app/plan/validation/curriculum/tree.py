@@ -42,7 +42,7 @@ class Curriculum(BaseModel):
     nodes: list[Node]
 
 
-class CurriculumSpec(BaseModel):
+class CurriculumSpec(BaseModel, frozen=True):
     """
     Represents a curriculum specification.
     This specification should uniquely specify a curriculum.
