@@ -32,10 +32,10 @@ const Message = (diag: FlatDiagnostic, key: number): JSX.Element => {
 /**
  * The error tray shows errors and warnings about the current plan that come from the validation backend.
  */
-const ErrorTray = ({ diagnostics }: { diagnostics: FlatDiagnostic[] }): JSX.Element => {
+const ErrorTray = ({ diagnostics, validating }: { diagnostics: FlatDiagnostic[], validating: boolean }): JSX.Element => {
   const messageList: JSX.Element[] = diagnostics.map((diag, index) => Message(diag, index))
   return (<div className="w-80 h-full overflow-x-hidden overflow-y-auto p-4 flex flex-col gap-4 border border-black border-dashed">
-    {messageList.length > 0 ? messageList : <NoMessages/>}
+    {validating ? <p className="font-medium">Validando...</p> : <>{messageList.length > 0 ? messageList : <NoMessages/>}</>}
   </div>)
 }
 

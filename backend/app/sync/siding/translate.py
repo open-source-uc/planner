@@ -63,9 +63,12 @@ async def fetch_curriculum_from_siding(spec: CurriculumSpec) -> Curriculum:
                     codes.append(equiv.Sigla)
         else:
             raise Exception("siding api returned invalid curriculum block")
+        creds = raw_block.Creditos
+        if creds is None:
+            creds = 0
         course = CourseList(
             name=raw_block.Nombre,
-            cap=raw_block.Creditos,
+            cap=creds,
             codes=codes,
             priority=i,
             superblock=raw_block.BloqueAcademico,
