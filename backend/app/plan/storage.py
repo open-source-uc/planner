@@ -102,6 +102,8 @@ async def get_plan_details(user_rut: str, plan_id: str) -> PlanView:
 
 
 async def get_user_plans(user_rut: str) -> list[LowDetailPlanView]:
+    # NOTE: this query interpolation is safe because the value to interpolate is
+    # internally managed. Otherwise, do not interpolate without input sanitization!
     plans = await DbPlan.prisma().query_raw(
         f"""
         SELECT {", ".join(_low_detail_attributes)}
