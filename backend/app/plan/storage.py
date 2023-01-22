@@ -34,8 +34,6 @@ class PlanView(BaseModel):
 
     @staticmethod
     def from_db(db: DbPlan) -> "PlanView":
-        assert isinstance(db.is_favorite, bool)
-
         return PlanView(
             id=db.id,
             created_at=db.created_at,
@@ -63,8 +61,6 @@ class LowDetailPlanView(BaseModel):
 
     @staticmethod
     def from_db(db: DbPlan) -> "LowDetailPlanView":
-        assert isinstance(db.is_favorite, bool)
-
         return LowDetailPlanView(
             id=db.id,
             created_at=db.created_at,

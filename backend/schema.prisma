@@ -83,7 +83,7 @@ model Plan {
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
   name             String
-  is_favorite      Boolean? @default(false)
+  is_favorite      Boolean @default(false)
   user_rut         String
   validatable_plan Json
 }
