@@ -168,11 +168,9 @@ async def rename_plan(plan_id: str, new_name: str):
 
 
 async def set_favorite_plan(user_rut: str, plan_id: str, favorite: bool):
-    # TODO: esta operacion DEBE ser atómica para evitar problemas a gran escala...
-    # se me ocurren 2 formas de hacer la transacción atómica:
-    # 1. usando la API $transactions que aún no está disponible en prisma-python.
-    # 2. usando otra tabla "model FavoritePlan" que relacione user_rut con plan_id.
-    # -> la forma actual se asegura que nunca hayan 2 favoritos, pero no es eficiente.
+    # NOTE: with the current algorithm there cannot be more than one favorite plan
+    # per user originated by this method. But there is no validation of uniqueness in
+    # the DB.
 
     plan = await DbPlan.prisma().find_unique(where={"id": plan_id})
     if plan is None:
@@ -182,15 +180,26 @@ async def set_favorite_plan(user_rut: str, plan_id: str, favorite: bool):
         # nothing to be done
         return PlanView.from_db(plan)
 
-    # make all other favorite plans not favorite
-    await DbPlan.prisma().update_many(
-        where={"user_rut": user_rut, "is_favorite": True, "NOT": [{"id": plan_id}]},
-        data={"is_favorite": False},
+    # Transaction (atomic)
+    await DbPlan.prisma().query_raw("BEGIN")
+    await DbPlan.prisma().query_raw(
+        """
+        UPDATE "Plan" SET is_favorite = FALSE
+            WHERE user_rut = $1
+        """,
+        user_rut,
     )
-    # set the is_favorite attribute in the requested plan
-    updated_plan = await DbPlan.prisma().update(
-        where={"id": plan_id}, data={"is_favorite": favorite}
+    await DbPlan.prisma().query_raw(
+        """
+        UPDATE "Plan" SET is_favorite = $1
+            WHERE id = $2
+        """,
+        favorite,
+        plan_id,
     )
+    await DbPlan.prisma().query_raw("COMMIT")
+
+    updated_plan = await DbPlan.prisma().find_unique(where={"id": plan_id})
 
     # Must be true because access was authorized
     assert updated_plan is not None
