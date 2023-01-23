@@ -1,6 +1,7 @@
 from abc import ABC
+from dataclasses import dataclass
 from ..diagnostic import DiagnosticErr, ValidationResult
-from ...plan import ValidatablePlan
+from ...plan import EquivalenceId, PseudoCourse, ValidatablePlan
 from ...courseinfo import CourseInfo
 from .logic import (
     Atom,
@@ -19,17 +20,14 @@ from typing import Callable, Optional, Type
 from .simplify import simplify
 
 
-class Class:
+@dataclass
+class CourseInstance:
     """
     An instance of a course, with a student and semester associated with it.
     """
 
-    code: str
+    course: PseudoCourse
     semester: int
-
-    def __init__(self, code: str, semester: int):
-        self.code = code
-        self.semester = semester
 
 
 class PlanContext:
@@ -40,17 +38,17 @@ class PlanContext:
     semester-in-which-the-course-is-taken, a dict that is useful when validating.
     """
 
-    courseinfo: dict[str, CourseInfo]
+    courseinfo: CourseInfo
     # A dictionary of classes and their respective semesters
-    classes: dict[str, Class]
+    classes: dict[str, CourseInstance]
     # A list of accumulated total approved credits per semester
     # approved_credits[i] contains the amount of approved credits in the range [0, i)
     approved_credits: list[int]
     # Original validatable plan object.
     plan: ValidatablePlan
 
-    def __init__(self, courseinfo: dict[str, CourseInfo], plan: ValidatablePlan):
-        # Map from coursecode to class
+    def __init__(self, courseinfo: CourseInfo, plan: ValidatablePlan):
+        # Map from coursecode to course instance
         classes = {}
         # List of total approved credits per semester
         acc_credits = [0]
@@ -58,14 +56,17 @@ class PlanContext:
         for sem in range(len(plan.classes)):
             creds = acc_credits[-1]
             # Iterate over classes in this semester
-            for code in plan.classes[sem]:
+            for course in plan.classes[sem]:
                 # Add this class to the map
-                if code not in classes:
-                    classes[code] = Class(code, sem)
+                if course.code not in classes:
+                    classes[course.code] = CourseInstance(course, sem)
                 # Accumulate credits
-                # TODO: Credits only accumulate if they count towards the curriculum!!
-                if code in courseinfo:
-                    creds += courseinfo[code].credits
+                if isinstance(course, EquivalenceId):
+                    creds += course.credits
+                else:
+                    # TODO: Credits only accumulate if they count towards the
+                    # curriculum!!
+                    creds += courseinfo.course(course.code).credits
             acc_credits.append(creds)
         self.courseinfo = courseinfo
         self.classes = classes
@@ -74,52 +75,53 @@ class PlanContext:
 
     def validate(self, out: ValidationResult):
         for sem in range(self.plan.next_semester, len(self.plan.classes)):
-            for code in self.plan.classes[sem]:
-                if code not in self.courseinfo:
-                    out.add(UnknownCourseErr(code=code))
+            for courseid in self.plan.classes[sem]:
+                if isinstance(courseid, EquivalenceId):
+                    out.add(AmbiguousCourseErr(code=courseid.code))
                     continue
-                course = self.courseinfo[code]
-                cl = self.classes[code]
-                self.diagnose(out, cl, course.deps)
+                course = self.courseinfo.course(courseid.code)
+                inst = self.classes[courseid.code]
+                self.diagnose(out, inst, course.deps)
 
-    def diagnose(self, out: ValidationResult, cl: Class, expr: "Expr"):
-        if is_satisfied(self, cl, expr):
+    def diagnose(self, out: ValidationResult, inst: CourseInstance, expr: "Expr"):
+        if is_satisfied(self, inst, expr):
             return None
         # Some requirement is not satisfied
         # Fill in satisfied requirements, and then simplify resulting expression to get
         # an indication of "what do I have to do in order to satisfy requirements"
-        # Stage 1: ignore courses not in database and fix school/program/career
+        # Stage 1: ignore unavailable courses and fix school/program/career
         missing = simplify(
             fold_atoms(
                 self,
-                cl,
+                inst,
                 expr,
                 lambda atom, sat: sat
                 or isinstance(atom, (ReqSchool, ReqProgram, ReqCareer))
-                or (isinstance(atom, ReqCourse) and atom.code not in self.courseinfo),
+                or (
+                    isinstance(atom, ReqCourse)
+                    and not self.courseinfo.course(atom.code).is_available
+                ),
             )
         )
-        # Stage 2: allow courses that are not in database
+        # Stage 2: allow unavailable courses
         if isinstance(missing, Const):
             missing = simplify(
                 fold_atoms(
                     self,
-                    cl,
+                    inst,
                     expr,
                     lambda atom, sat: sat
-                    or (
-                        isinstance(atom, ReqCourse) and atom.code not in self.courseinfo
-                    ),
+                    or isinstance(atom, (ReqSchool, ReqProgram, ReqCareer)),
                 )
             )
         # Stage 3: allow changing everything
         if isinstance(missing, Const):
-            missing = simplify(fold_atoms(self, cl, expr, lambda atom, sat: sat))
+            missing = simplify(fold_atoms(self, inst, expr, lambda atom, sat: sat))
         # Show this expression
-        out.add(RequirementErr(code=cl.code, missing=missing))
+        out.add(RequirementErr(code=inst.course.code, missing=missing))
 
 
-def is_satisfied(ctx: PlanContext, cl: Class, expr: Expr) -> bool:
+def is_satisfied(ctx: PlanContext, cl: CourseInstance, expr: Expr) -> bool:
     """
     Core logic to check whether an expression is satisfied by a student and their plan.
     """
@@ -156,7 +158,10 @@ def is_satisfied(ctx: PlanContext, cl: Class, expr: Expr) -> bool:
 
 
 def fold_atoms(
-    ctx: PlanContext, cl: Class, expr: Expr, do_replace: Callable[[Atom, bool], bool]
+    ctx: PlanContext,
+    cl: CourseInstance,
+    expr: Expr,
+    do_replace: Callable[[Atom, bool], bool],
 ) -> Expr:
     if isinstance(expr, Operator):
         # Recursively replace atoms
@@ -180,7 +185,7 @@ def fold_atoms(
 
 def strip_satisfied(
     ctx: PlanContext,
-    cl: Class,
+    cl: CourseInstance,
     expr: Expr,
     fixed_nodes: tuple[Type[Expr], ...] = tuple(),
 ) -> Expr:
@@ -213,6 +218,36 @@ def strip_satisfied(
         return expr
 
 
+def is_course_known(courseinfo: CourseInfo, courseid: PseudoCourse) -> bool:
+    if isinstance(courseid, EquivalenceId):
+        return courseinfo.try_equiv(courseid.code) is not None
+    else:
+        return courseinfo.try_course(courseid.code) is not None
+
+
+def sanitize_plan(courseinfo: CourseInfo, out: ValidationResult, plan: ValidatablePlan):
+    unknown = False
+    for semester in plan.classes:
+        for courseid in semester:
+            if not is_course_known(courseinfo, courseid):
+                unknown = True
+
+    if unknown:
+        copy = plan.copy()
+        copy.classes = []
+        for semester in plan.classes:
+            new_sem: list[PseudoCourse] = []
+            for courseid in semester:
+                if is_course_known(courseinfo, courseid):
+                    new_sem.append(courseid)
+                else:
+                    out.add(UnknownCourseErr(code=courseid.code))
+            copy.classes.append(new_sem)
+        return copy
+    else:
+        return plan
+
+
 class CourseErr(DiagnosticErr, ABC):
     code: str
 
@@ -223,6 +258,11 @@ class CourseErr(DiagnosticErr, ABC):
 class UnknownCourseErr(CourseErr):
     def message(self) -> str:
         return "Curso desconocido"
+
+
+class AmbiguousCourseErr(CourseErr):
+    def message(self) -> str:
+        return "Curso requiere desambiguacion"
 
 
 class RequirementErr(CourseErr):

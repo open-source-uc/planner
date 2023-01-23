@@ -3,7 +3,10 @@ import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
-import { DefaultService, FlatDiagnostic, ValidatablePlan, Course, PlanView } from '../../client'
+import { DefaultService, ValidatablePlan, Course, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
+
+type PseudoCourse = ConcreteId | EquivalenceId
+
 interface EmptyPlan {
   validatable_plan: ValidatablePlan
 }
@@ -20,10 +23,10 @@ function instanceOfPlanView (object: unknown): object is PlanView {
 const Planner = (): JSX.Element => {
   const [plan, setPlan] = useState<PlanView | EmptyPlan>({ validatable_plan: { classes: [], next_semester: 0 } })
   const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course }>({})
-  const previousClasses = useRef<string[][]>([['']])
+  const previousClasses = useRef<PseudoCourse[][]>([[]])
   const [loading, setLoading] = useState(true)
   const [validating, setValidanting] = useState(false)
-  const [validationDiagnostics, setValidationDiagnostics] = useState<FlatDiagnostic[]>([])
+  const [validationResult, setValidationResult] = useState<FlatValidationResult | null>(null)
   const params = useParams()
 
   async function getDefaultPlan (): Promise<void> {
@@ -35,18 +38,25 @@ const Planner = (): JSX.Element => {
       school: 'Ingenieria',
       career: 'Ingenieria'
     })
+    console.log(response)
     await getCourseDetails(response.classes.flat()).catch(err => {
-      setValidationDiagnostics([{
-        is_warning: false,
-        message: `Internal error: ${String(err)}`
-      }])
+      setValidationResult({
+        diagnostics: [{
+          is_warning: false,
+          message: `Internal error: ${String(err)}`
+        }],
+        course_superblocks: {}
+      })
     })
     setPlan({ ...plan, validatable_plan: response })
     await validate(response).catch(err => {
-      setValidationDiagnostics([{
-        is_warning: false,
-        message: `Internal error: ${String(err)}`
-      }])
+      setValidationResult({
+        diagnostics: [{
+          is_warning: false,
+          message: `Internal error: ${String(err)}`
+        }],
+        course_superblocks: {}
+      })
     })
     setLoading(false)
     console.log('data loaded')
@@ -58,16 +68,22 @@ const Planner = (): JSX.Element => {
       const response: PlanView = await DefaultService.readPlan(id)
       setPlan(response)
       await getCourseDetails(response.validatable_plan.classes.flat()).catch(err => {
-        setValidationDiagnostics([{
-          is_warning: false,
-          message: `Internal error: ${String(err)}`
-        }])
+        setValidationResult({
+          diagnostics: [{
+            is_warning: false,
+            message: `Internal error: ${String(err)}`
+          }],
+          course_superblocks: {}
+        })
       })
       await validate(response.validatable_plan).catch(err => {
-        setValidationDiagnostics([{
-          is_warning: false,
-          message: `Internal error: ${String(err)}`
-        }])
+        setValidationResult({
+          diagnostics: [{
+            is_warning: false,
+            message: `Internal error: ${String(err)}`
+          }],
+          course_superblocks: {}
+        })
       })
     } catch (err) {
       alert(err)
@@ -77,10 +93,14 @@ const Planner = (): JSX.Element => {
     console.log('data loaded')
   }
 
-  async function getCourseDetails (codes: string[]): Promise<void> {
+  async function getCourseDetails (courses: PseudoCourse[]): Promise<void> {
     setValidanting(true)
     console.log('getting Courses Details...')
-    const response: Course[] = await DefaultService.getCourseDetails(codes)
+    const codes = []
+    for (const courseid of courses) {
+      if (courseid.is_concrete === true) { codes.push(courseid.code) }
+    }
+    const response = await DefaultService.getCourseDetails(codes)
     // transform response to dict with key code:
     const dict = response.reduce((acc: { [code: string]: Course }, curr: Course) => {
       acc[curr.code] = curr
@@ -91,15 +111,16 @@ const Planner = (): JSX.Element => {
     setValidanting(false)
   }
 
-  async function validate (plan: ValidatablePlan): Promise<void> {
+  async function validate (validatablePlan: ValidatablePlan): Promise<void> {
     setValidanting(true)
     console.log('validating...')
-    const response = await DefaultService.validatePlan({ ...plan, level: 1, school: 'Ingenieria', career: 'Ingenieria' })
-    setValidationDiagnostics(response.diagnostics)
+    const response = await DefaultService.validatePlan(validatablePlan)
+    setValidationResult(response)
     console.log('validated')
     setValidanting(false)
-    // make a deep copy of the classes to compare with the next validation
-    previousClasses.current = JSON.parse(JSON.stringify(plan.classes))
+    // Es necesario hacer una copia profunda del plan para comparar, pues si se copia el objeto entero
+    // entonces la copia es modificada junto al objeto original. Lo ideal seria usar una librearia para esto en el futuro
+    previousClasses.current = JSON.parse(JSON.stringify(validatablePlan.classes))
   }
 
   async function savePlan (): Promise<void> {
@@ -127,17 +148,26 @@ const Planner = (): JSX.Element => {
   }
 
   async function addCourse (semIdx: number): Promise<void> {
-    const courseCode = prompt('Sigla del curso:')
-    if (courseCode == null || courseCode === '') return
-    if (plan.validatable_plan.classes.flat().includes(courseCode.toUpperCase())) { alert(`${courseCode} ya se encuentra en el plan`); return }
+    const courseCodeRaw = prompt('Course code?')
+    if (courseCodeRaw == null || courseCodeRaw === '') return
+    const courseCode = courseCodeRaw.toUpperCase()
+    for (const existingCourse of plan?.validatable_plan.classes.flat()) {
+      if (existingCourse.code === courseCode) {
+        alert(`${courseCode} ya se encuentra en el plan`)
+        return
+      }
+    }
     setValidanting(true)
     try {
-      const response = await DefaultService.getCourseDetails([courseCode.toUpperCase()])
+      const response = await DefaultService.getCourseDetails([courseCode])
       setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
       setPlan((prev) => {
         const newClasses = [...prev.validatable_plan.classes]
         newClasses[semIdx] = [...prev.validatable_plan.classes[semIdx]]
-        newClasses[semIdx].push(response[0].code)
+        newClasses[semIdx].push({
+          is_concrete: true,
+          code: response[0].code
+        })
         return { ...prev, validatable_plan: { next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
       })
     } catch (err) {
@@ -161,14 +191,27 @@ const Planner = (): JSX.Element => {
   useEffect(() => {
     if (!loading) {
       // dont validate if the classes are rearranging the same semester at previous validation
-      if (!plan.validatable_plan.classes.map((sem, index) =>
-        JSON.stringify([...sem].sort((a, b) => a.localeCompare(b))) === JSON.stringify(previousClasses.current[index]?.sort())).every(Boolean) ||
-         plan.validatable_plan.classes.length !== previousClasses.current.length) {
+      let changed = plan.validatable_plan.classes.length !== previousClasses.current.length
+      if (!changed) {
+        console.log()
+        for (let idx = 0; idx < plan.validatable_plan.classes.length; idx++) {
+          const cur = [...plan.validatable_plan.classes[idx]].sort((a, b) => a.code.localeCompare(b.code))
+          const prev = [...previousClasses.current[idx]].sort((a, b) => a.code.localeCompare(b.code))
+          if (JSON.stringify(cur) !== JSON.stringify(prev)) {
+            changed = true
+            break
+          }
+        }
+      }
+      if (changed) {
         validate(plan.validatable_plan).catch(err => {
-          setValidationDiagnostics([{
-            is_warning: false,
-            message: `Internal error: ${String(err)}`
-          }])
+          setValidationResult({
+            diagnostics: [{
+              is_warning: false,
+              message: `Internal error: ${String(err)}`
+            }],
+            course_superblocks: {}
+          })
         })
       }
     }
@@ -195,9 +238,10 @@ const Planner = (): JSX.Element => {
             setPlan={setPlan}
             addCourse={addCourse}
             validating={validating}
+            validationResult={validationResult}
           />
         </div>
-        <ErrorTray diagnostics={validationDiagnostics} validating={validating}/>
+        <ErrorTray diagnostics={validationResult?.diagnostics ?? []} validating={validating}/>
         </>
         : <div>Loading</div>}
     </div>

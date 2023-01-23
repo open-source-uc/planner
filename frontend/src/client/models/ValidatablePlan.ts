@@ -2,6 +2,8 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { ConcreteId } from './ConcreteId';
+import type { EquivalenceId } from './EquivalenceId';
 import type { Level } from './Level';
 
 /**
@@ -10,7 +12,7 @@ import type { Level } from './Level';
  * `ValidatablePlan` should represent any user & plan configuration.
  */
 export type ValidatablePlan = {
-    classes: Array<Array<string>>;
+    classes: Array<Array<(ConcreteId | EquivalenceId)>>;
     next_semester: number;
     level?: Level;
     school?: string;

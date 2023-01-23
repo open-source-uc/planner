@@ -1,18 +1,21 @@
 from .curriculum.diagnose import diagnose_curriculum
 from .curriculum.tree import CurriculumSpec
-from .courses.validate import Class, PlanContext, is_satisfied
+from .courses.validate import CourseInstance, PlanContext, is_satisfied, sanitize_plan
 from ..courseinfo import CourseInfo, course_info
 from ...sync.siding.translate import fetch_curriculum_from_siding
 from .diagnostic import ValidationResult
-from ..plan import ValidatablePlan
+from ..plan import PseudoCourse, ValidatablePlan
 
 
 async def diagnose_plan(
     plan: ValidatablePlan, curriculum_spec: CurriculumSpec
 ) -> ValidationResult:
     courseinfo = await course_info()
-    curriculum = await fetch_curriculum_from_siding(curriculum_spec)
-    out = ValidationResult(diagnostics=[])
+    curriculum = await fetch_curriculum_from_siding(courseinfo, curriculum_spec)
+    out = ValidationResult(diagnostics=[], course_superblocks={})
+
+    # Ensure all courses are known
+    plan = sanitize_plan(courseinfo, out, plan)
 
     # Ensure course requirements are met
     course_ctx = PlanContext(courseinfo, plan)
@@ -26,7 +29,7 @@ async def diagnose_plan(
 
 async def diagnose_plan_skip_curriculum(plan: ValidatablePlan) -> ValidationResult:
     courseinfo = await course_info()
-    out = ValidationResult(diagnostics=[])
+    out = ValidationResult(diagnostics=[], course_superblocks={})
 
     course_ctx = PlanContext(courseinfo, plan)
     course_ctx.validate(out)
@@ -35,13 +38,15 @@ async def diagnose_plan_skip_curriculum(plan: ValidatablePlan) -> ValidationResu
 
 
 def quick_validate_dependencies(
-    courseinfo: dict[str, CourseInfo],
+    courseinfo: CourseInfo,
     plan: ValidatablePlan,
     semester: int,
-    course_code: str,
+    course: PseudoCourse,
 ) -> bool:
-    assert course_code in courseinfo
+    assert courseinfo.try_course(course.code)
     course_ctx = PlanContext(courseinfo, plan)
     return is_satisfied(
-        course_ctx, Class(course_code, semester), courseinfo[course_code].deps
+        course_ctx,
+        CourseInstance(course, semester),
+        courseinfo.course(course.code).deps,
     )

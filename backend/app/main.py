@@ -17,7 +17,7 @@ from fastapi import FastAPI, Query, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from .database import prisma
-from prisma.models import Course as DbCourse
+from prisma.models import Course as DbCourse, Equivalence as DbEquivalence
 from .auth import require_authentication, login_cas, UserData
 from .sync import run_upstream_sync
 from .plan.courseinfo import clear_course_info_cache, course_info
@@ -59,7 +59,7 @@ async def startup():
         await DbCourse.prisma().delete_many()
         courseinfo = await course_info()
     # Sync courses if database is empty
-    if not courseinfo:
+    if len(courseinfo.courses) == 0:
         await run_upstream_sync()
         await course_info()
 
@@ -151,6 +151,22 @@ async def get_course_details(codes: list[str] = Query()) -> list[DbCourse]:
     return courses
 
 
+@app.get("/equivalences", response_model=list[DbEquivalence])
+async def get_equivalence_details(codes: list[str] = Query()) -> list[DbEquivalence]:
+    """
+    For a list of equivalence codes, fetch a corresponding list of equivalence details.
+    """
+    equivs: list[DbEquivalence] = []
+    for code in codes:
+        equiv = await DbEquivalence.prisma().find_unique(where={"code": code})
+        if equiv is None:
+            raise HTTPException(
+                status_code=404, detail=f"Equivalence '{equiv}' not found"
+            )
+        equivs.append(equiv)
+    return equivs
+
+
 @app.post("/plan/rebuild")
 async def rebuild_validation_rules():
     """
@@ -159,7 +175,8 @@ async def rebuild_validation_rules():
     clear_course_info_cache()
     info = await course_info()
     return {
-        "message": f"Recached {len(info)} courses",
+        "message": f"Recached {len(info.courses)} courses and "
+        f"{len(info.equivs)} equivalences",
     }
 
 
@@ -177,7 +194,7 @@ async def validate_plan(plan: ValidatablePlan):
     return (await diagnose_plan(plan, curr)).flatten()
 
 
-@app.post("/plan/generate")
+@app.post("/plan/generate", response_model=ValidatablePlan)
 async def generate_plan(passed: ValidatablePlan):
     """
     Generate a hopefully error-free plan from an initial plan.

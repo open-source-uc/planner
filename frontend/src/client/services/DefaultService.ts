@@ -3,6 +3,7 @@
 /* eslint-disable */
 import type { Course } from '../models/Course';
 import type { CourseOverview } from '../models/CourseOverview';
+import type { Equivalence } from '../models/Equivalence';
 import type { FlatValidationResult } from '../models/FlatValidationResult';
 import type { LowDetailPlanView } from '../models/LowDetailPlanView';
 import type { PlanView } from '../models/PlanView';
@@ -137,6 +138,28 @@ export class DefaultService {
     }
 
     /**
+     * Get Equivalence Details
+     * For a list of equivalence codes, fetch a corresponding list of equivalence details.
+     * @param codes
+     * @returns Equivalence Successful Response
+     * @throws ApiError
+     */
+    public static getEquivalenceDetails(
+        codes: Array<string>,
+    ): CancelablePromise<Array<Equivalence>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/equivalences',
+            query: {
+                'codes': codes,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
      * Rebuild Validation Rules
      * Recache course information from internal database.
      * @returns any Successful Response
@@ -174,12 +197,12 @@ export class DefaultService {
      * Generate Plan
      * Generate a hopefully error-free plan from an initial plan.
      * @param requestBody
-     * @returns any Successful Response
+     * @returns ValidatablePlan Successful Response
      * @throws ApiError
      */
     public static generatePlan(
         requestBody: ValidatablePlan,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<ValidatablePlan> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/plan/generate',

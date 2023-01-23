@@ -3,7 +3,9 @@ Fill the slots of a curriculum with courses, making sure that there is no overla
 within a block and respecting exclusivity rules.
 """
 
-from typing import Callable, Optional, Union
+from typing import Optional, Union
+
+from ...plan import EquivalenceId, PseudoCourse
 
 from ...courseinfo import CourseInfo
 from .tree import CourseList, Curriculum, Node
@@ -49,6 +51,8 @@ class SolvedCourse:
     name: Optional[str]
     # Course codes.
     codes: list[str]
+    # The code of the equivalence that satisfies this block, if any.
+    equiv_code: Optional[str]
     # Maximum sum of credits that could potentially be achieved.
     cap: int
     # How many credits are actually taken.
@@ -80,34 +84,41 @@ SolvedNode = Union[SolvedBlock, SolvedCourse]
 @dataclass
 class SolvedCurriculum:
     blocks: list[SolvedNode]
+    course_assignments: dict[str, SolvedCourse]
 
 
 def _calc_taken_courses(
-    done_courses: list[str], courseinfo: dict[str, CourseInfo]
+    done_courses: list[PseudoCourse], courseinfo: CourseInfo
 ) -> dict[str, int]:
     taken_courses: dict[str, int] = {}
-    for code in done_courses:
-        if code not in courseinfo:
-            print(f"course {code} not found in database. assuming 10 credits")
-            creds = 10
+    for courseid in done_courses:
+        max_creds = None
+        if isinstance(courseid, EquivalenceId):
+            creds = courseid.credits
         else:
-            creds = courseinfo[code].credits
-        taken_courses[code] = taken_courses.get(code, 0) + creds
+            creds = courseinfo.course(courseid.code).credits
+            # TODO: Cursos de seleccion deportiva se pueden tomar 2 veces y
+            # contar para el avance curricular
+            max_creds = creds
+        new_creds = taken_courses.get(courseid.code, 0) + creds
+        if max_creds and new_creds > max_creds:
+            new_creds = max_creds
+        taken_courses[courseid.code] = new_creds
     return taken_courses
 
 
 class CurriculumSolver:
     taken_courses: dict[str, int]
     curriculum: Curriculum
-    courseinfo: dict[str, CourseInfo]
+    courseinfo: CourseInfo
 
     course_assignments: dict[str, SolvedCourse]
 
     def __init__(
         self,
         curriculum: Curriculum,
-        courseinfo: dict[str, CourseInfo],
-        done_courses: list[str],
+        courseinfo: CourseInfo,
+        done_courses: list[PseudoCourse],
     ):
         self.taken_courses = _calc_taken_courses(done_courses, courseinfo)
         self.curriculum = curriculum
@@ -119,6 +130,7 @@ class CurriculumSolver:
             return SolvedCourse(
                 name=node.name,
                 codes=node.codes,
+                equiv_code=node.equivalence_code,
                 cap=node.cap,
                 flow=0,
                 exclusive=exclusive,
@@ -147,6 +159,21 @@ class CurriculumSolver:
                 superblock=node.superblock,
             )
 
+    def try_assign_course(self, node: SolvedCourse, course_code: str) -> int:
+        if course_code not in self.taken_courses:
+            # Course not taken by student
+            return 0
+        if node.exclusive and course_code in self.course_assignments:
+            # Course already assigned to another block
+            return 0
+        subflow = self.taken_courses[course_code]
+        node.flow += subflow
+        if node.exclusive:
+            self.course_assignments[course_code] = node
+            if DEBUG_SOLVE:
+                print(f"course {course_code} assigned to {node.name}")
+        return subflow
+
     def assign(self, node: SolvedNode, flow_cap: Optional[int]):
         if flow_cap is None or node.cap < flow_cap:
             flow_cap = node.cap
@@ -156,37 +183,14 @@ class CurriculumSolver:
                 node.flow += child.flow
                 flow_cap -= child.flow
         else:
+            if flow_cap > 0 and node.equiv_code is not None:
+                flow_cap -= self.try_assign_course(node, node.equiv_code)
             for course_code in node.codes:
                 if flow_cap <= 0:
                     # No more courses are needed
                     break
-                if course_code not in self.taken_courses:
-                    # Course not taken by student
-                    continue
-                if node.exclusive and course_code in self.course_assignments:
-                    # Course already assigned to another block
-                    continue
-                # Assign this course to the current block
-                if course_code not in self.courseinfo:
-                    print(
-                        f"course {course_code} not found in database. "
-                        "assuming 10 credits"
-                    )
-                    creds = 10
-                else:
-                    creds = self.courseinfo[course_code].credits
-                subflow = self.taken_courses[course_code]
-                if subflow > creds:
-                    # TODO: Cursos de seleccion deportiva se pueden tomar 2 veces y
-                    # contar para el avance curricular
-                    subflow = creds
-                flow_cap -= subflow
-                node.flow += subflow
-                if node.exclusive:
-                    self.course_assignments[course_code] = node
-                    if DEBUG_SOLVE:
-                        print(f"course {course_code} assigned to {node.name}")
-                    # TODO: Mark this course with its corresponding block
+                # Try to assign this course to the current block
+                flow_cap -= self.try_assign_course(node, course_code)
             if DEBUG_SOLVE and flow_cap > 0:
                 codes = (
                     f"{len(node.codes)} courses"
@@ -208,25 +212,14 @@ class CurriculumSolver:
                 if course not in self.course_assignments:
                     print(f"course {course} left unassigned")
 
-        return SolvedCurriculum(blocks=solved)
-
-
-special_sources: dict[str, Callable[[CourseInfo], bool]] = {
-    "!dpt5": lambda c: c.credits == 5 and c.code.startswith("DPT"),
-    "!ttf": lambda c: c.code.startswith("TTF"),
-    # TODO: Investigar que define a un OFG
-    "!ofg": lambda c: False,
-    # TODO: La definicion de un optativo de ingenieria es: "cursos de la Escuela de
-    # Ingeniería nivel 3000, que no sean cursos de servicio exclusivo para otras
-    # facultades"
-    # Investigar que significa esto exactamente
-    "!opting": lambda c: c.school == "Ingenieria"
-    and 3 < len(c.code)
-    and c.code[3] == "3",
-}
+        return SolvedCurriculum(
+            blocks=solved, course_assignments=self.course_assignments
+        )
 
 
 def solve_curriculum(
-    courseinfo: dict[str, CourseInfo], curriculum: Curriculum, taken_courses: list[str]
+    courseinfo: CourseInfo,
+    curriculum: Curriculum,
+    taken_courses: list[PseudoCourse],
 ) -> SolvedCurriculum:
     return CurriculumSolver(curriculum, courseinfo, taken_courses).solve()
