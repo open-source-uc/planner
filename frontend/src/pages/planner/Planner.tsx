@@ -223,7 +223,6 @@ const Planner = (): JSX.Element => {
       setModalData({ equivalence, semester, index })
     } else {
       const response = await DefaultService.getEquivalenceDetails([equivalence.code])
-      console.log(response[0])
       setModalData({ equivalence: response[0], semester, index })
     }
     setIsModalOpen(true)
@@ -251,6 +250,7 @@ const Planner = (): JSX.Element => {
     }
     setIsModalOpen(false)
   }
+
   return (
     <div className={`w-full h-full pb-10 flex flex-row ${validating ? 'cursor-wait' : ''}`}>
       <MyDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={async (selection?: string) => await closeModal(selection)}/>
@@ -259,7 +259,7 @@ const Planner = (): JSX.Element => {
         <div className={'flex flex-col w-5/6'}>
           <ul className={'w-full mb-1 mt-2 relative'}>
             <li className={'inline text-md ml-3 mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div> Ingeniería y Ciencias Ambientales</li>
-            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Amplitud en Programación</li>
+            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Por seleccionar</li>
             <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> Por seleccionar</li>
             {'id' in plan && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {plan.name}</li>}
           </ul>
