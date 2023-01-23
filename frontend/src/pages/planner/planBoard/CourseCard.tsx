@@ -1,17 +1,19 @@
 import { useRef } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
-import { Course } from '../../../client'
-import { PseudoCourse } from './PlanBoard'
+import { Course, Equivalence, ConcreteId, EquivalenceId } from '../../../client'
+import editWhiteIcon from '../../../assets/editWhite.svg'
+import editBlackIcon from '../../../assets/editBlack.svg'
 
 interface CourseCardProps {
-  course: Course & { semester: number } & PseudoCourse
+  course: ((Course & ConcreteId) | (Equivalence & EquivalenceId)) & { semester: number }
   isDragging: Function
   handleMove: Function
   remCourse: Function
   courseBlock: string | null
+  openSelector: Function
 }
 
-const CourseCard = ({ course, isDragging, handleMove, remCourse, courseBlock }: CourseCardProps): JSX.Element => {
+const CourseCard = ({ course, isDragging, handleMove, remCourse, courseBlock, openSelector }: CourseCardProps): JSX.Element => {
   const ref = useRef(null)
   const [collected = { isDragging: false }, drag] = useDrag(() => ({
     type: 'card',
@@ -53,6 +55,7 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse, courseBlock }: 
     }
     return ''
   }
+
   drag(drop(ref))
   return (
     <>
@@ -60,11 +63,15 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse, courseBlock }: 
       {dropProps.isOver
         ? <div className={'card bg-place-holder'} />
         : <>{!collected.isDragging && <div className={`card group ${courseBlock != null ? courseBlock : ''}`}>
-          {courseBlock == null || course.is_concrete === false
+          { (course.is_concrete === false) && (courseBlock === 'FormacionGeneral'
+            ? <button onClick={() => openSelector()}><img className='absolute w-3 top-2 left-2' src={editWhiteIcon} alt="Seleccionar Curso" /></button>
+            : <button onClick={() => openSelector()}><img className='absolute w-3 top-2 left-2' src={editBlackIcon} alt="Seleccionar Curso" /></button>)
+          }
+          {courseBlock == null
             ? <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>
             : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{BlockInitials(courseBlock)}</div>}
           <div className='flex items-center justify-center text-center flex-col'>
-            <div className='text-xs'>{ course.is_concrete === true ? course.name : 'Seleccionar Curso!' }</div>
+            <div className='text-xs'>{ course.name}</div>
             <div className='text-[0.6rem] opacity-75'>{course.code}</div>
           </div>
           <div className='absolute bottom-2 left-2 text-[0.5rem] opacity-75'>{course.credits} creditos</div>

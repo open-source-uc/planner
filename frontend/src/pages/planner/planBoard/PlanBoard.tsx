@@ -3,14 +3,15 @@ import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import SemesterColumn from './SemesterColumn'
 import CourseCard from './CourseCard'
-import { ValidatablePlan, Course, ConcreteId, EquivalenceId, FlatValidationResult } from '../../../client'
+import { ValidatablePlan, Course, ConcreteId, Equivalence, EquivalenceId, FlatValidationResult } from '../../../client'
 
 export type PseudoCourse = ConcreteId | EquivalenceId
 
 interface PlanBoardProps {
   plan: ValidatablePlan
-  courseDetails: { [code: string]: Course }
+  courseDetails: { [code: string]: Course | Equivalence }
   setPlan: Function
+  openModal: Function
   addCourse: Function
   validating: Boolean
   validationResult: FlatValidationResult | null
@@ -29,7 +30,7 @@ const findCourseSuperblock = (validationResults: FlatValidationResult | null, co
  * Displays several semesters, as well as several classes per semester.
  */
 
-const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, validationResult }: PlanBoardProps): JSX.Element => {
+const PlanBoard = ({ plan, courseDetails, setPlan, openModal, addCourse, validating, validationResult }: PlanBoardProps): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false)
   function remCourse (semIdx: number, code: string): void {
     let idx = -1
@@ -47,7 +48,7 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, valida
       while (newClasses[newClasses.length - 1].length === 0) {
         newClasses.pop()
       }
-      return { ...prev, validatable_plan: { next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
+      return { ...prev, validatable_plan: { ...prev.validatable_plan, classes: newClasses } }
     })
   }
 
@@ -70,7 +71,7 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, valida
       while (newClasses[newClasses.length - 1].length === 0) {
         newClasses.pop()
       }
-      return { ...prev, validatable_plan: { next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
+      return { ...prev, validatable_plan: { ...prev.validatable_plan, classes: newClasses } }
     })
   }
 
@@ -91,6 +92,7 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, valida
                   handleMove={(dragCourse: Course & { semester: number }) => moveCourse(semester, dragCourse, index)}
                   remCourse={() => remCourse(semester, course.code)}
                   courseBlock={findCourseSuperblock(validationResult, course.code)}
+                  openSelector={() => openModal(courseDetails[course.code], semester, index)}
                 />
               ))}
               {!isDragging && <div className="h-10 mx-2 bg-slate-300 card">

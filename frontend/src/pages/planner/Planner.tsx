@@ -1,12 +1,13 @@
 import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
+import MyDialog from '../../components/Modal'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
-import { DefaultService, ValidatablePlan, Course, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
+import { DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
 
 type PseudoCourse = ConcreteId | EquivalenceId
-
+type ModalData = { equivalence: Equivalence, semester: number, index: number } | undefined
 interface EmptyPlan {
   validatable_plan: ValidatablePlan
 }
@@ -22,7 +23,9 @@ function instanceOfPlanView (object: unknown): object is PlanView {
  */
 const Planner = (): JSX.Element => {
   const [plan, setPlan] = useState<PlanView | EmptyPlan>({ validatable_plan: { classes: [], next_semester: 0 } })
-  const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course }>({})
+  const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course | Equivalence }>({})
+  const [modalData, setModalData] = useState<ModalData>()
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const previousClasses = useRef<PseudoCourse[][]>([[]])
   const [loading, setLoading] = useState(true)
   const [validating, setValidanting] = useState(false)
@@ -38,7 +41,6 @@ const Planner = (): JSX.Element => {
       school: 'Ingenieria',
       career: 'Ingenieria'
     })
-    console.log(response)
     await getCourseDetails(response.classes.flat()).catch(err => {
       setValidationResult({
         diagnostics: [{
@@ -96,13 +98,15 @@ const Planner = (): JSX.Element => {
   async function getCourseDetails (courses: PseudoCourse[]): Promise<void> {
     setValidanting(true)
     console.log('getting Courses Details...')
-    const codes = []
+    const coursesCodes = []
+    const equivalenceCodes = []
     for (const courseid of courses) {
-      if (courseid.is_concrete === true) { codes.push(courseid.code) }
+      if (courseid.is_concrete === true) { coursesCodes.push(courseid.code) } else { equivalenceCodes.push(courseid.code) }
     }
-    const response = await DefaultService.getCourseDetails(codes)
+    const response = await DefaultService.getCourseDetails(coursesCodes)
+    const response2 = await DefaultService.getEquivalenceDetails(equivalenceCodes)
     // transform response to dict with key code:
-    const dict = response.reduce((acc: { [code: string]: Course }, curr: Course) => {
+    const dict = [...response, ...response2].reduce((acc: { [code: string]: Course | Equivalence }, curr: Course | Equivalence) => {
       acc[curr.code] = curr
       return acc
     }, {})
@@ -168,7 +172,7 @@ const Planner = (): JSX.Element => {
           is_concrete: true,
           code: response[0].code
         })
-        return { ...prev, validatable_plan: { next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
+        return { ...prev, validatable_plan: { ...prev.validatable_plan, classes: newClasses } }
       })
     } catch (err) {
       alert(err)
@@ -216,8 +220,33 @@ const Planner = (): JSX.Element => {
       }
     }
   }, [loading, plan])
+
+  function openModal (equivalence: Equivalence, semester: number, index: number): void {
+    setModalData({ equivalence, semester, index })
+    setIsModalOpen(true)
+  }
+
+  async function closeModal (selection?: string): Promise<void> {
+    if (selection != null && modalData !== undefined) {
+      setValidanting(true)
+      const response = await DefaultService.getCourseDetails([selection])
+      setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
+      setPlan((prev) => {
+        const newClasses = [...prev.validatable_plan.classes]
+        newClasses[modalData.semester] = [...prev.validatable_plan.classes[modalData.semester]]
+        newClasses[modalData.semester][modalData.index] = {
+          is_concrete: true,
+          code: selection
+        }
+        return { ...prev, validatable_plan: { ...prev.validatable_plan, classes: newClasses } }
+      })
+    }
+    setIsModalOpen(false)
+  }
+
   return (
-    <div className={`w-full h-full pb-10 flex flex-row border-red-400 border-2 ${validating ? 'cursor-wait' : ''}`}>
+    <div className={`w-full h-full pb-10 flex flex-row ${validating ? 'cursor-wait' : ''}`}>
+      <MyDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={async (selection?: string) => await closeModal(selection)}/>
       {(!loading)
         ? <>
         <div className={'flex flex-col w-5/6'}>
@@ -236,6 +265,7 @@ const Planner = (): JSX.Element => {
             plan={plan.validatable_plan}
             courseDetails={courseDetails}
             setPlan={setPlan}
+            openModal={openModal}
             addCourse={addCourse}
             validating={validating}
             validationResult={validationResult}
