@@ -13,9 +13,7 @@ const MyDialog = ({ equivalence, open, onClose }: { equivalence?: Equivalence, o
                     <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
                         {equivalence.name}
                     </Dialog.Title>
-                    <Dialog.Description>
                     <div className='ml-10 '>Sigla</div>
-                    </Dialog.Description>
                     <div className='max-h-96 overflow-y-auto'>
                     {equivalence.courses.map((code: string) => (
                         <div key={code}>

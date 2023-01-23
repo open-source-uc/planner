@@ -7,15 +7,10 @@ import { useState, useEffect, useRef } from 'react'
 import { DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
 
 type PseudoCourse = ConcreteId | EquivalenceId
-type ModalData = { equivalence: Equivalence, semester: number, index: number } | undefined
+
+type ModalData = { equivalence: Equivalence | EquivalenceId, semester: number, index: number } | undefined
 interface EmptyPlan {
   validatable_plan: ValidatablePlan
-}
-function instanceOfPlanView (object: unknown): object is PlanView {
-  if (object != null && typeof object === 'object') {
-    return 'id' in object
-  }
-  return false
 }
 
 /**
@@ -41,6 +36,7 @@ const Planner = (): JSX.Element => {
       school: 'Ingenieria',
       career: 'Ingenieria'
     })
+    console.log(response)
     await getCourseDetails(response.classes.flat()).catch(err => {
       setValidationResult({
         diagnostics: [{
@@ -118,6 +114,7 @@ const Planner = (): JSX.Element => {
   async function validate (validatablePlan: ValidatablePlan): Promise<void> {
     setValidanting(true)
     console.log('validating...')
+    console.log(plan)
     const response = await DefaultService.validatePlan(validatablePlan)
     setValidationResult(response)
     console.log('validated')
@@ -221,8 +218,14 @@ const Planner = (): JSX.Element => {
     }
   }, [loading, plan])
 
-  function openModal (equivalence: Equivalence, semester: number, index: number): void {
-    setModalData({ equivalence, semester, index })
+  async function openModal (equivalence: Equivalence | EquivalenceId, semester: number, index: number): Promise<void> {
+    if ('courses' in equivalence) {
+      setModalData({ equivalence, semester, index })
+    } else {
+      const response = await DefaultService.getEquivalenceDetails([equivalence.code])
+      console.log(response[0])
+      setModalData({ equivalence: response[0], semester, index })
+    }
     setIsModalOpen(true)
   }
 
@@ -234,16 +237,20 @@ const Planner = (): JSX.Element => {
       setPlan((prev) => {
         const newClasses = [...prev.validatable_plan.classes]
         newClasses[modalData.semester] = [...prev.validatable_plan.classes[modalData.semester]]
+        let newEquivalence = prev.validatable_plan.classes[modalData.semester][modalData.index].equivalence
+        if ('credits' in prev.validatable_plan.classes[modalData.semester][modalData.index]) {
+          newEquivalence = prev.validatable_plan.classes[modalData.semester][modalData.index]
+        }
         newClasses[modalData.semester][modalData.index] = {
           is_concrete: true,
-          code: selection
+          code: selection,
+          equivalence: newEquivalence
         }
         return { ...prev, validatable_plan: { ...prev.validatable_plan, classes: newClasses } }
       })
     }
     setIsModalOpen(false)
   }
-
   return (
     <div className={`w-full h-full pb-10 flex flex-row ${validating ? 'cursor-wait' : ''}`}>
       <MyDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={async (selection?: string) => await closeModal(selection)}/>
@@ -254,7 +261,7 @@ const Planner = (): JSX.Element => {
             <li className={'inline text-md ml-3 mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div> Ingeniería y Ciencias Ambientales</li>
             <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Amplitud en Programación</li>
             <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> Por seleccionar</li>
-            {instanceOfPlanView(plan) && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {plan.name}</li>}
+            {'id' in plan && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {plan.name}</li>}
           </ul>
           <ControlTopBar
             reset={getDefaultPlan}

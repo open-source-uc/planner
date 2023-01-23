@@ -74,7 +74,6 @@ const PlanBoard = ({ plan, courseDetails, setPlan, openModal, addCourse, validat
       return { ...prev, validatable_plan: { ...prev.validatable_plan, classes: newClasses } }
     })
   }
-
   return (
     <DndProvider backend={HTML5Backend}>
       <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap rtl-grid ${validating === true ? 'pointer-events-none' : ''}`}>
@@ -87,12 +86,13 @@ const PlanBoard = ({ plan, courseDetails, setPlan, openModal, addCourse, validat
               {classes?.map((course: PseudoCourse, index: number) => (
                 <CourseCard
                   key={index.toString() + course.code}
-                  course={{ ...courseDetails[course.code], ...course, semester }}
+                  cardData={{ ...courseDetails[course.code], ...course, semester }}
                   isDragging={(e: boolean) => setIsDragging(e)}
                   handleMove={(dragCourse: Course & { semester: number }) => moveCourse(semester, dragCourse, index)}
                   remCourse={() => remCourse(semester, course.code)}
                   courseBlock={findCourseSuperblock(validationResult, course.code)}
-                  openSelector={() => openModal(courseDetails[course.code], semester, index)}
+                  openSelector={() => { if (course.is_concrete === false) openModal(courseDetails[course.code], semester, index); else openModal(course.equivalence, semester, index) }}
+                  hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
                 />
               ))}
               {!isDragging && <div className="h-10 mx-2 bg-slate-300 card">
