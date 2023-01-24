@@ -98,10 +98,12 @@ const Planner = (): JSX.Element => {
     for (const courseid of courses) {
       if (courseid.is_concrete === true) { coursesCodes.push(courseid.code) } else { equivalenceCodes.push(courseid.code) }
     }
-    const response = await DefaultService.getCourseDetails(coursesCodes)
-    const response2 = await DefaultService.getEquivalenceDetails(equivalenceCodes)
+    let responseEquivalenceDetails: Equivalence[] = []
+    let responseCourseDetails: Course[] = []
+    if (coursesCodes.length > 0) responseCourseDetails = await DefaultService.getCourseDetails(coursesCodes)
+    if (equivalenceCodes.length > 0) responseEquivalenceDetails = await DefaultService.getEquivalenceDetails(equivalenceCodes)
     // transform response to dict with key code:
-    const dict = [...response, ...response2].reduce((acc: { [code: string]: Course | Equivalence }, curr: Course | Equivalence) => {
+    const dict = [...responseCourseDetails, ...responseEquivalenceDetails].reduce((acc: { [code: string]: Course | Equivalence }, curr: Course | Equivalence) => {
       acc[curr.code] = curr
       return acc
     }, {})
