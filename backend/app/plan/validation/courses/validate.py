@@ -58,8 +58,13 @@ class PlanContext:
             # Iterate over classes in this semester
             for course in plan.classes[sem]:
                 # Add this class to the map
-                if course.code not in classes:
-                    classes[course.code] = CourseInstance(course, sem)
+                code = course.code
+                if isinstance(course, EquivalenceId):
+                    equiv = courseinfo.equiv(course.code)
+                    if equiv.is_homogeneous and len(equiv.courses) >= 1:
+                        code = equiv.courses[0]
+                if code not in classes:
+                    classes[code] = CourseInstance(course, sem)
                 # Accumulate credits
                 if isinstance(course, EquivalenceId):
                     creds += course.credits
@@ -77,10 +82,15 @@ class PlanContext:
         for sem in range(self.plan.next_semester, len(self.plan.classes)):
             for courseid in self.plan.classes[sem]:
                 if isinstance(courseid, EquivalenceId):
-                    out.add(AmbiguousCourseErr(code=courseid.code))
-                    continue
-                course = self.courseinfo.course(courseid.code)
-                inst = self.classes[courseid.code]
+                    equiv = self.courseinfo.equiv(courseid.code)
+                    if equiv.is_homogeneous and len(equiv.courses) >= 1:
+                        course = self.courseinfo.course(equiv.courses[0])
+                    else:
+                        out.add(AmbiguousCourseErr(code=courseid.code))
+                        continue
+                else:
+                    course = self.courseinfo.course(courseid.code)
+                inst = self.classes[course.code]
                 self.diagnose(out, inst, course.deps)
 
     def diagnose(self, out: ValidationResult, inst: CourseInstance, expr: "Expr"):

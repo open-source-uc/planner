@@ -97,6 +97,10 @@ def _calc_taken_courses(
             creds = courseid.credits
         else:
             creds = courseinfo.course(courseid.code).credits
+            if creds == 0:
+                # To allow for zero-credit courses to still be validated, a single
+                # phantom credit is given to zero-credit courses
+                creds = 1
             # TODO: Cursos de seleccion deportiva se pueden tomar 2 veces y
             # contar para el avance curricular
             max_creds = creds
@@ -175,8 +179,11 @@ class CurriculumSolver:
         return subflow
 
     def assign(self, node: SolvedNode, flow_cap: Optional[int]):
-        if flow_cap is None or node.cap < flow_cap:
-            flow_cap = node.cap
+        node_cap = node.cap
+        if node_cap == 0:
+            node_cap = 1
+        if flow_cap is None or node_cap < flow_cap:
+            flow_cap = node_cap
         if isinstance(node, SolvedBlock):
             for child in node.children:
                 self.assign(child, flow_cap)
