@@ -52,7 +52,9 @@ async def _fetch_raw_blocks(
                 DbEquivalence(
                     code=code,
                     name=raw_block.Nombre,
-                    is_homogeneous=False,
+                    # TODO: Do some deeper analysis to determine if an equivalency is
+                    # homogeneous
+                    is_homogeneous=len(codes) < 5,
                     courses=codes,
                 )
             )
