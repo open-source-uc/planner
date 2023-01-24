@@ -227,17 +227,19 @@ const Planner = (): JSX.Element => {
 
   async function closeModal (selection?: string): Promise<void> {
     if (selection != null && modalData !== undefined) {
+      const pastClass = plan.validatable_plan.classes[modalData.semester][modalData.index]
+      if (selection === pastClass.code) { setIsModalOpen(false); return }
       setValidanting(true)
       const response = await DefaultService.getCourseDetails([selection])
       setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
       setPlan((prev) => {
         const newClasses = [...prev.validatable_plan.classes]
         newClasses[modalData.semester] = [...prev.validatable_plan.classes[modalData.semester]]
-        const pastClass = prev.validatable_plan.classes[modalData.semester][modalData.index]
         let newEquivalence: EquivalenceId | undefined
         if ('credits' in pastClass) {
           newEquivalence = pastClass
         } else newEquivalence = pastClass.equivalence
+        console.log(newEquivalence)
         newClasses[modalData.semester][modalData.index] = {
           is_concrete: true,
           code: selection,
