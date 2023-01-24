@@ -168,7 +168,7 @@ const Planner = (): JSX.Element => {
           is_concrete: true,
           code: response[0].code
         })
-        return { ...prev, validatable_plan: { next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
+        return { ...prev, validatable_plan: { ...prev.validatable_plan, next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
       })
     } catch (err) {
       alert(err)

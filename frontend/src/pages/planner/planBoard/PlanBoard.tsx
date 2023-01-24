@@ -47,7 +47,7 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, valida
       while (newClasses[newClasses.length - 1].length === 0) {
         newClasses.pop()
       }
-      return { ...prev, validatable_plan: { next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
+      return { ...prev, validatable_plan: { ...prev.validatable_plan, next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
     })
   }
 
@@ -70,7 +70,7 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, valida
       while (newClasses[newClasses.length - 1].length === 0) {
         newClasses.pop()
       }
-      return { ...prev, validatable_plan: { next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
+      return { ...prev, validatable_plan: { ...prev.validatable_plan, next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
     })
   }
 
