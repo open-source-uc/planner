@@ -21,6 +21,16 @@
     flex-direction: row; 
     flex-wrap: nowrap;
   }
+
+  .btn{
+    @apply font-semibold py-1 px-4 rounded;
+    @apply  text-white;
+    background-color: #3D4451;
+  }
+
+  .btn-blue::hover {
+    background-color: #25282D;
+  }
 }
 
 .CienciasBasicas{
