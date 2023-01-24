@@ -11,5 +11,6 @@ export type LowDetailPlanView = {
     created_at: string;
     updated_at: string;
     name: string;
+    is_favorite: boolean;
 };
 
