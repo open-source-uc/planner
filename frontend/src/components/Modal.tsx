@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog } from '@headlessui/react'
 import { DefaultService, Equivalence, Course } from '../client'
 import info from '../assets/info.svg'
@@ -6,9 +6,7 @@ import info from '../assets/info.svg'
 const MyDialog = ({ equivalence, open, onClose }: { equivalence?: Equivalence, open: boolean, onClose: Function }): JSX.Element => {
   const [courses, setCourses] = useState<Course[]>([])
   const [offset, setOffset] = useState(10)
-  const [selectedCourse, setSelectedCourse] = useState('')
-
-  const tbodyRef = useRef<HTMLTableSectionElement>(null)
+  const [selectedCourse, setSelectedCourse] = useState<string>()
 
   async function getCourseDetails (coursesCodes: string[]): Promise<void> {
     const response = await DefaultService.getCourseDetails(coursesCodes)
@@ -29,7 +27,7 @@ const MyDialog = ({ equivalence, open, onClose }: { equivalence?: Equivalence, o
 
   if (equivalence === undefined) return <></>
   return (
-    <Dialog as="div" className="relative z-10" open={open} onClose={() => { if (tbodyRef.current != null) onClose() }}>
+    <Dialog as="div" className="relative z-10" open={open} onClose={() => { setSelectedCourse(undefined); onClose() }}>
         <div className="fixed inset-0 overflow-y-auto ">
             <div className="flex items-center min-h-screen justify-center p-4 text-center">
                 <Dialog.Panel className=" w-11/12 bg-blue-50 overflow-y-hidden max-w-4xl transform  rounded-2xl border border-indigo-900 p-6 text-left align-middle shadow-xl transition-all">
@@ -50,7 +48,9 @@ const MyDialog = ({ equivalence, open, onClose }: { equivalence?: Equivalence, o
                         <tbody onScroll={handleScroll} className="bg-white flex flex-col items-center justify-between overflow-y-scroll w-full max-h-72 pt-2">
                         {courses.map((course: Course) => (
                             <tr key={course.code} className="flex w-full mb-3">
-                                <td className="w-8"><input className='ml-1' id={course.code} type="radio" name="status" value={course.code} onChange={e => setSelectedCourse(e.target.value)}/></td>
+                                <td className="w-8">
+                                  <input className='ml-1' id={course.code} type="radio" name="status" value={course.code} onChange={e => setSelectedCourse(e.target.value)}/>
+                                </td>
                                 <td className='w-20'>{course.code}</td>
                                 <td className='w-96'>{course.name}</td>
                                 <td className='w-8'>{course.credits}</td>

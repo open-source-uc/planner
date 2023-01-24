@@ -8,7 +8,7 @@ import { DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, Equiv
 
 type PseudoCourse = ConcreteId | EquivalenceId
 
-type ModalData = { equivalence: Equivalence | EquivalenceId, semester: number, index: number } | undefined
+type ModalData = { equivalence: Equivalence, semester: number, index: number } | undefined
 interface EmptyPlan {
   validatable_plan: ValidatablePlan
 }
@@ -36,7 +36,6 @@ const Planner = (): JSX.Element => {
       school: 'Ingenieria',
       career: 'Ingenieria'
     })
-    console.log(response)
     await getCourseDetails(response.classes.flat()).catch(err => {
       setValidationResult({
         diagnostics: [{
@@ -114,7 +113,6 @@ const Planner = (): JSX.Element => {
   async function validate (validatablePlan: ValidatablePlan): Promise<void> {
     setValidanting(true)
     console.log('validating...')
-    console.log(plan)
     const response = await DefaultService.validatePlan(validatablePlan)
     setValidationResult(response)
     console.log('validated')
@@ -194,7 +192,6 @@ const Planner = (): JSX.Element => {
       // dont validate if the classes are rearranging the same semester at previous validation
       let changed = plan.validatable_plan.classes.length !== previousClasses.current.length
       if (!changed) {
-        console.log()
         for (let idx = 0; idx < plan.validatable_plan.classes.length; idx++) {
           const cur = [...plan.validatable_plan.classes[idx]].sort((a, b) => a.code.localeCompare(b.code))
           const prev = [...previousClasses.current[idx]].sort((a, b) => a.code.localeCompare(b.code))
@@ -236,10 +233,11 @@ const Planner = (): JSX.Element => {
       setPlan((prev) => {
         const newClasses = [...prev.validatable_plan.classes]
         newClasses[modalData.semester] = [...prev.validatable_plan.classes[modalData.semester]]
-        let newEquivalence = prev.validatable_plan.classes[modalData.semester][modalData.index].equivalence
-        if ('credits' in prev.validatable_plan.classes[modalData.semester][modalData.index]) {
-          newEquivalence = prev.validatable_plan.classes[modalData.semester][modalData.index]
-        }
+        const pastClass = prev.validatable_plan.classes[modalData.semester][modalData.index]
+        let newEquivalence: EquivalenceId | undefined
+        if ('credits' in pastClass) {
+          newEquivalence = pastClass
+        } else newEquivalence = pastClass.equivalence
         newClasses[modalData.semester][modalData.index] = {
           is_concrete: true,
           code: selection,

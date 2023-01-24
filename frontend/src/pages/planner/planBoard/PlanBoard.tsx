@@ -53,9 +53,7 @@ const PlanBoard = ({ plan, courseDetails, setPlan, openModal, addCourse, validat
   }
 
   function moveCourse (semester: number, drag: Course & { semester: number }, index: number): void {
-    console.log(drag, index)
     setPlan((prev: { validatable_plan: ValidatablePlan }) => {
-      console.log(prev)
       const dragIndex: number = prev.validatable_plan.classes[drag.semester].findIndex((c: PseudoCourse) => c.code === drag.code)
       const newClasses = [...prev.validatable_plan.classes]
       if (semester - prev.validatable_plan.classes.length >= 0) {
@@ -91,7 +89,7 @@ const PlanBoard = ({ plan, courseDetails, setPlan, openModal, addCourse, validat
                   handleMove={(dragCourse: Course & { semester: number }) => moveCourse(semester, dragCourse, index)}
                   remCourse={() => remCourse(semester, course.code)}
                   courseBlock={findCourseSuperblock(validationResult, course.code)}
-                  openSelector={() => { if (course.is_concrete === false) openModal(courseDetails[course.code], semester, index); else openModal(course.equivalence, semester, index) }}
+                  openSelector={() => { if ('credits' in course) openModal(courseDetails[course.code], semester, index); else openModal(course.equivalence, semester, index) }}
                   hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
                 />
               ))}

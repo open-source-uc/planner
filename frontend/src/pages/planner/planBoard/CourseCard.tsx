@@ -5,8 +5,7 @@ import editWhiteIcon from '../../../assets/editWhite.svg'
 import editBlackIcon from '../../../assets/editBlack.svg'
 
 interface CourseCardProps {
-  cardData: { name: string, code: string, credits: number, semester: number }
-  hasAlternatives: boolean
+  cardData: { name: string, code: string, credits?: number, semester: number }
   isDragging: Function
   handleMove: Function
   remCourse: Function
