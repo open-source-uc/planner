@@ -152,7 +152,7 @@ const Planner = (): JSX.Element => {
     const courseCode = courseCodeRaw.toUpperCase()
     for (const existingCourse of plan?.validatable_plan.classes.flat()) {
       if (existingCourse.code === courseCode) {
-        alert(`${courseCode} ya se encuentra en el plan`)
+        alert(`${courseCode} ya se encuentra en el plan, seleccione otro curso por favor`)
         return
       }
     }
@@ -229,6 +229,13 @@ const Planner = (): JSX.Element => {
     if (selection != null && modalData !== undefined) {
       const pastClass = plan.validatable_plan.classes[modalData.semester][modalData.index]
       if (selection === pastClass.code) { setIsModalOpen(false); return }
+      for (const existingCourse of plan?.validatable_plan.classes.flat()) {
+        if (existingCourse.code === selection) {
+          alert(`${selection} ya se encuentra en el plan, seleccione otro curso por favor`)
+          return
+        }
+      }
+
       setValidanting(true)
       const response = await DefaultService.getCourseDetails([selection])
       setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
@@ -239,7 +246,6 @@ const Planner = (): JSX.Element => {
         if ('credits' in pastClass) {
           newEquivalence = pastClass
         } else newEquivalence = pastClass.equivalence
-        console.log(newEquivalence)
         newClasses[modalData.semester][modalData.index] = {
           is_concrete: true,
           code: selection,
