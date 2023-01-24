@@ -7,8 +7,7 @@
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 	"features": {
 		"ghcr.io/devcontainers/features/github-cli:1": {},
-		"ghcr.io/devcontainers-contrib/features/poetry:1": {},
-		"ghcr.io/guiyomh/features/just:0": {}
+		"ghcr.io/devcontainers-contrib/features/poetry:1": {}
 	},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// This can be used to network with other containers or the host.
@@ -36,15 +35,12 @@
 				"ms-python.python",
 				"ms-python.flake8",
 				"kokakiwi.vscode-just"
-			]
+			],
+			"settings": {
+				"terminal.integrated.env.linux": {
+					"NODE_ENV": "development"
+				}
+			}
 		}
-	},
-	"settings": {
-		"terminal.integrated.env.linux": {
-			"NODE_ENV": "development"
-		}
-	},
-	"runArgs": [
-		"--memory=4gb"
-	]
+	}
 }
