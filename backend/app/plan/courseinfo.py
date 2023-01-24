@@ -98,13 +98,17 @@ def clear_course_info_cache():
 async def add_equivalence(equiv: Equivalence):
     print(f"adding equivalence {equiv.code}")
     # Add equivalence to database
-    await Equivalence.prisma().create(
-        data={
-            "code": equiv.code,
-            "name": equiv.name,
-            "is_homogeneous": equiv.is_homogeneous,
-            "courses": equiv.courses,
-        },
+    await Equivalence.prisma().query_raw(
+        """
+        INSERT INTO "Equivalence" (code, name, is_homogeneous, courses)
+        VALUES($1, $2, $3, $4)
+        ON CONFLICT (code)
+        DO UPDATE SET name = $2, is_homogeneous = $3, courses = $4
+        """,
+        equiv.code,
+        equiv.name,
+        equiv.is_homogeneous,
+        equiv.courses,
     )
     # Update in-memory cache if it was already loaded
     if _course_info_cache:
