@@ -1,3 +1,4 @@
+import { Spinner } from '../../components/Spinner'
 import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
@@ -243,13 +244,7 @@ const Planner = (): JSX.Element => {
         </div>
         <ErrorTray diagnostics={validationResult?.diagnostics ?? []} validating={validating}/>
         </>
-        : <div className='mx-auto my-auto w-20 h-10'>
-            <div className="flex justify-center items-center mb-4">
-              <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full" role="status">
-              </div>
-            </div>
-            <p>Cargando...</p>
-          </div>}
+        : <Spinner />}
     </div>
   )
 }
