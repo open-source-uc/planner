@@ -81,7 +81,7 @@ class PlanContext:
     def validate(self, out: ValidationResult):
         ambiguous_codes: list[str] = []
         for sem in range(self.plan.next_semester, len(self.plan.classes)):
-            sem_credits = 0
+            sem_credits: int = 0
 
             for courseid in self.plan.classes[sem]:
                 if isinstance(courseid, EquivalenceId):
@@ -90,6 +90,7 @@ class PlanContext:
                         course = self.courseinfo.course(equiv.courses[0])
                     else:
                         ambiguous_codes.append(courseid.code)
+                        sem_credits += courseid.credits
                         continue
                 else:
                     course = self.courseinfo.course(courseid.code)
@@ -277,7 +278,9 @@ class AmbiguousCoursesErr(DiagnosticErr):
         return self.codes[0]
 
     def message(self) -> str:
-        return f"Es necesario escoger un curso para {', '.join(self.codes)}"
+        if len(self.codes) == 1:
+            return f"Es necesario escoger un curso en el bloque {self.codes[0]}"
+        return f"Es necesario escoger cursos para los bloques {', '.join(self.codes)}"
 
 
 class CourseErr(DiagnosticErr, ABC):
