@@ -1,6 +1,6 @@
 from .solve import SolvedBlock, SolvedNode, solve_curriculum
 from ...plan import PseudoCourse, ValidatablePlan
-from ..diagnostic import DiagnosticErr, ValidationResult
+from ..diagnostic import DiagnosticErr, DiagnosticWarn, ValidationResult
 from .tree import Curriculum
 from ...courseinfo import CourseInfo
 
@@ -10,7 +10,15 @@ class CurriculumErr(DiagnosticErr):
     missing: str
 
     def message(self) -> str:
-        return f"Faltan créditos del bloque '{self.superblock}'.\nFalta: {self.missing}"
+        return f"""Se deben completar los créditos de '{self.superblock}'.
+        Falta lo siguiente: {self.missing}"""
+
+
+class UnassignedWarn(DiagnosticWarn):
+    code: str
+
+    def message(self) -> str:
+        return f"El curso {self.code} no cuenta para tu avance curricular"
 
 
 def _diagnose_block(out: ValidationResult, node: SolvedNode):
@@ -51,3 +59,7 @@ def diagnose_curriculum(
     # Tag each course with its associated superblock
     for code, block in solved.course_assignments.items():
         out.course_superblocks[code] = block.superblock
+
+    # Send warning for each unassigned course
+    for code in solved.unassigned_codes:
+        out.add(UnassignedWarn(code=code))
