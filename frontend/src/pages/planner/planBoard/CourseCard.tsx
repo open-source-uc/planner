@@ -63,11 +63,17 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse, courseBlock }: 
           {courseBlock == null || course.is_concrete === false
             ? <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>
             : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{BlockInitials(courseBlock)}</div>}
+          {(course.is_concrete === false)
+            ? <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-300 opacity-90"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-400"></span>
+          </span>
+            : ''}
           <div className='flex items-center justify-center text-center flex-col'>
-            <div className='text-xs'>{ course.is_concrete === true ? course.name : 'Seleccionar Curso!' }</div>
+            <div className='text-xs'>{ course.is_concrete === true ? course.name : 'Seleccionar curso' }</div>
             <div className='text-[0.6rem] opacity-75'>{course.code}</div>
           </div>
-          <div className='absolute bottom-2 left-2 text-[0.5rem] opacity-75'>{course.credits} creditos</div>
+          <div className='absolute bottom-2 left-2 text-[0.5rem] opacity-75'>{course.credits} créd.</div>
       </div>}
       </>}
     </div>
@@ -75,10 +81,10 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse, courseBlock }: 
       <div className={`${courseBlock != null ? courseBlock : ''}  card`}>
         {courseBlock != null && <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{BlockInitials(courseBlock)}</div>}
         <div className='flex items-center justify-center text-center flex-col'>
-          <div className='text-xs'>{ course.is_concrete === true ? course.name : 'Seleccionar Curso!'}</div>
+          <div className='text-xs'>{ course.is_concrete === true ? course.name : 'Seleccionar curso'}</div>
           <div className='text-[0.6rem] opacity-75'>{ course.code}</div>
         </div>
-        <div className='absolute bottom-2 left-2 text-[0.5rem] opacity-75'>{course.credits} creditos</div>
+        <div className='absolute bottom-2 left-2 text-[0.5rem] opacity-75'>{course.credits} créd.</div>
       </div>
     </div>
     }
