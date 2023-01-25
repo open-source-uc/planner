@@ -6,7 +6,6 @@ import { ReactComponent as PanguiPath } from '../assets/PanguiPath.svg'
 
 function Navbar (): JSX.Element {
   const authState = useAuth()
-  console.debug('Navbar', authState)
 
   return (
 <nav className="bg-gray border-slate-200 px-2 sm:px-4 py-2.5 rounded border">
