@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from ..diagnostic import DiagnosticErr, ValidationResult
+from ..diagnostic import DiagnosticErr, DiagnosticWarn, ValidationResult
 from ...plan import EquivalenceId, PseudoCourse, ValidatablePlan
 from ...courseinfo import CourseInfo
 from .logic import (
@@ -16,7 +16,7 @@ from .logic import (
     ReqProgram,
     ReqSchool,
 )
-from typing import Callable, Optional, Type
+from typing import Callable, Optional, Type, Union, ClassVar
 from .simplify import simplify
 
 
@@ -81,6 +81,8 @@ class PlanContext:
     def validate(self, out: ValidationResult):
         ambiguous_codes: list[str] = []
         for sem in range(self.plan.next_semester, len(self.plan.classes)):
+            sem_credits = 0
+
             for courseid in self.plan.classes[sem]:
                 if isinstance(courseid, EquivalenceId):
                     equiv = self.courseinfo.equiv(courseid.code)
@@ -91,9 +93,17 @@ class PlanContext:
                         continue
                 else:
                     course = self.courseinfo.course(courseid.code)
+
                 inst = self.classes[course.code]
                 self.diagnose(out, inst, course.deps)
         out.add(AmbiguousCoursesErr(codes=ambiguous_codes))
+
+                sem_credits += course.credits
+
+            if max_creds_err := SemesterErrHandler.check_error(
+                semester=sem, credits=sem_credits
+            ):
+                out.add(max_creds_err)
 
     def diagnose(self, out: ValidationResult, inst: CourseInstance, expr: "Expr"):
         if is_satisfied(self, inst, expr):
@@ -287,3 +297,47 @@ class RequirementErr(CourseErr):
 
     def message(self) -> str:
         return f"Requisitos faltantes: {self.missing}"
+
+
+class SemesterErrHandler:
+    # TODO: the threadhold should depend on the amount of approved/dropped credits
+
+    @staticmethod
+    def check_error(
+        semester: int, credits: int
+    ) -> Union["MaxCreditsErr", "MaxCreditsWarn", None]:
+        if credits > MaxCreditsErr.max_credits:
+            return MaxCreditsErr(semester=semester)
+        if credits > MaxCreditsWarn.max_credits:
+            return MaxCreditsWarn(semester=semester)
+        return None
+
+
+class MaxCreditsErr(DiagnosticErr):
+    """
+    Occurs when the amount of credits in a semester is greater than a certain threshold.
+    """
+
+    max_credits: ClassVar[int] = 65
+    semester: int
+
+    def message(self) -> str:
+        return (
+            f"El semestre {self.semester + 1} sobrepasa el máximo de {self.max_credits}"
+            " créditos permitido"
+        )
+
+
+class MaxCreditsWarn(DiagnosticWarn):
+    """
+    Warns when the amount of credits in a semester is greater than a certain threshold.
+    """
+
+    max_credits: ClassVar[int] = 55
+    semester: int
+
+    def message(self) -> str:
+        return (
+            f"El semestre {self.semester + 1} sobrepasa los {self.max_credits} créditos"
+            " (revisa los requisitos relevantes)"
+        )
