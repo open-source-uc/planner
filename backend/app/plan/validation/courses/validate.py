@@ -276,7 +276,9 @@ class AmbiguousCoursesErr(DiagnosticErr):
         return self.codes[0]
 
     def message(self) -> str:
-        return f"Es necesario escoger un curso para {', '.join(self.codes)}"
+        if len(self.codes) == 1:
+            return f"Es necesario escoger un curso en el bloque {self.codes[0]}"
+        return f"Es necesario escoger cursos para los bloques {', '.join(self.codes)}"
 
 
 class CourseErr(DiagnosticErr, ABC):
