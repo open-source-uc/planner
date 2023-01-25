@@ -74,7 +74,7 @@ const PlanBoard = ({ plan, courseDetails, setPlan, openModal, addCourse, validat
   }
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap rtl-grid ${validating === true ? 'pointer-events-none' : ''}`}>
+      <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap rtl-grid flex-grow ${validating === true ? 'pointer-events-none' : ''}`}>
         {plan.classes.map((classes: PseudoCourse[], semester: number) => (
             <SemesterColumn
               key={semester}

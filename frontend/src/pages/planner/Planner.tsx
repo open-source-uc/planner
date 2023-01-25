@@ -285,7 +285,7 @@ const Planner = (): JSX.Element => {
       <MyDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={async (selection?: string) => await closeModal(selection)}/>
       {(!loading)
         ? <>
-        <div className={'flex flex-col w-5/6'}>
+        <div className={'flex flex-col w-5/6 flex-grow'}>
           <ul className={'w-full mb-1 mt-2 relative'}>
             <li className={'inline text-md ml-3 mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div> Ingeniería y Ciencias Ambientales</li>
             <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Por seleccionar</li>
