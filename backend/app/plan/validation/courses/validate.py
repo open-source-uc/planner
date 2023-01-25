@@ -90,6 +90,7 @@ class PlanContext:
                         course = self.courseinfo.course(equiv.courses[0])
                     else:
                         ambiguous_codes.append(courseid.code)
+                        sem_credits += courseid.credits
                         continue
                 else:
                     course = self.courseinfo.course(courseid.code)
