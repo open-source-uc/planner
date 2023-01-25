@@ -12,6 +12,8 @@
     position: relative;
     display: flex; 
     justify-content: center;
+    opacity: 1;
+    transition: opacity 0.5s ease;
   }
   
   .CurriculumTable{
@@ -30,6 +32,19 @@
 
   .btn-blue::hover {
     background-color: #25282D;
+  }
+}
+
+.animated {
+  animation: opacity-animation 1s infinite alternate;;
+}
+
+@keyframes opacity-animation {
+  5% {
+    opacity: 1;
+  }
+  100%{
+    opacity: 0.5;
   }
 }
 

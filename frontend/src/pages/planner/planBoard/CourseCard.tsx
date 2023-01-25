@@ -5,7 +5,7 @@ import editWhiteIcon from '../../../assets/editWhite.svg'
 import editBlackIcon from '../../../assets/editBlack.svg'
 
 interface CourseCardProps {
-  cardData: { name: string, code: string, credits?: number, semester: number }
+  cardData: { name: string, code: string, credits?: number, semester: number, is_concrete?: boolean }
   isDragging: Function
   handleMove: Function
   remCourse: Function
@@ -58,7 +58,7 @@ const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, 
       return ''
     }
     return (
-      <div className={`card group ${courseBlock != null ? courseBlock : ''}`}>
+      <div className={`card group ${courseBlock != null ? courseBlock : ''} ${cardData.is_concrete !== true ? 'animated' : ''}`}>
         { hasEquivalence === true && (courseBlock === 'FormacionGeneral'
           ? <button onClick={() => openSelector()}><img className='absolute w-3 top-2 left-2' src={editWhiteIcon} alt="Seleccionar Curso" /></button>
           : <button onClick={() => openSelector()}><img className='absolute w-3 top-2 left-2' src={editBlackIcon} alt="Seleccionar Curso" /></button>)
@@ -81,7 +81,9 @@ const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, 
       <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3 cursor-grab' : 'cursor-grabbing'} `}>
       {!collected.isDragging && <>{dropProps.isOver
         ? <div className={'card bg-place-holder'} />
-        : <> {!collected.isDragging && <Card />}</>}
+        : <> {!collected.isDragging && (cardData.is_concrete !== true
+          ? <button className='w-full' onClick={() => openSelector()}> <Card /></button>
+          : <Card />)}</>}
           </>}
       </div>
       {!collected.isDragging && dropProps.isOver && <div className={'px-2 pb-3'}>
