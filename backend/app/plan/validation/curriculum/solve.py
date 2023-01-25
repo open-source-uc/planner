@@ -85,6 +85,7 @@ SolvedNode = Union[SolvedBlock, SolvedCourse]
 class SolvedCurriculum:
     blocks: list[SolvedNode]
     course_assignments: dict[str, SolvedCourse]
+    unassigned_codes: list[str]
 
 
 def _calc_taken_courses(
@@ -214,13 +215,17 @@ class CurriculumSolver:
         for block in solved:
             self.assign(block, None)
 
-        if DEBUG_SOLVE:
-            for course in self.taken_courses.keys():
-                if course not in self.course_assignments:
+        unassigned: list[str] = []
+        for course in self.taken_courses.keys():
+            if course not in self.course_assignments:
+                unassigned.append(course)
+                if DEBUG_SOLVE:
                     print(f"course {course} left unassigned")
 
         return SolvedCurriculum(
-            blocks=solved, course_assignments=self.course_assignments
+            blocks=solved,
+            course_assignments=self.course_assignments,
+            unassigned_codes=unassigned,
         )
 
 
