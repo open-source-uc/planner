@@ -18,6 +18,7 @@ from prisma.models import (
     Equivalence as DbEquivalence,
 )
 from ...plan.validation.curriculum.tree import (
+    Block,
     Curriculum,
     CourseList,
     CurriculumSpec,
@@ -52,7 +53,9 @@ async def _fetch_raw_blocks(
                 DbEquivalence(
                     code=code,
                     name=raw_block.Nombre,
-                    is_homogeneous=False,
+                    # TODO: Do some deeper analysis to determine if an equivalency is
+                    # homogeneous
+                    is_homogeneous=len(codes) < 5,
                     courses=codes,
                 )
             )
@@ -114,8 +117,50 @@ async def fetch_curriculum_from_siding(
         )
         blocks.append(course)
 
-    # TODO: Apply OFG transformation (merge all OFGs into a single 50-credit block, and
-    # only allow up to 10 credits of 5-credit sports courses)
+    # Apply OFG transformation (merge all OFGs into a single 50-credit block, and only
+    # allow up to 10 credits of 5-credit sports courses)
+    if spec.cyear == "C2020":
+        ofg_course = None
+        for i in reversed(range(len(blocks))):
+            block = blocks[i]
+            if isinstance(block, CourseList) and block.equivalence_code == "!L1":
+                if ofg_course is None:
+                    ofg_course = block
+                else:
+                    ofg_course.cap += block.cap
+                blocks.pop(i)
+        if ofg_course is not None:
+            non_5_credits = ofg_course.copy(
+                update={
+                    "codes": list(
+                        filter(
+                            lambda c: courseinfo.course(c).credits != 5,
+                            ofg_course.codes,
+                        )
+                    ),
+                }
+            )
+            yes_5_credits = ofg_course.copy(
+                update={
+                    "codes": list(
+                        filter(
+                            lambda c: courseinfo.course(c).credits == 5,
+                            ofg_course.codes,
+                        )
+                    ),
+                    "cap": 10,
+                }
+            )
+            blocks.append(
+                Block(
+                    superblock=ofg_course.superblock,
+                    name=ofg_course.name,
+                    cap=ofg_course.cap,
+                    children=[non_5_credits, yes_5_credits],
+                )
+            )
+    else:
+        raise Exception(f"unsupported curriculum year '{spec.cyear}'")
 
     # TODO: Apply title transformation (130 credits must be exclusive to the title, the
     # rest can be shared)
