@@ -38,30 +38,32 @@ const CurriculumList = (): JSX.Element => {
   }
 
   return (
-      <div className="flex  mb-4 h-full w-full"> {/* revisar si mejor con o sin items-center */}
+      <div className="flex mb-4 h-full w-full"> {/* revisar si mejor con o sin items-center */}
           <div className="m-3 w-full">
-                <div className="flex space-x-4 items-center">
-                    <h2 className="text-5xl font-normal leading-normal mt-0 mb-2 text-gray-800">Listado de Mallas</h2>
+                <div className="flex gap-4 items-center">
+                    <h2 className="text-3xl font-medium leading-normal mb-2 text-gray-800 text-center">Mis mallas</h2>
                     <Link to="/planner">
                         <div className="hover-text">
-                            <button><img className="w-10 h-10" src={plusIcon} alt="Nueva Malla" /></button>
-                            <span className="tooltip-text">Crear Nueva Malla</span>
+                            <button><img className="w-8 h-8" src={plusIcon} alt="Crear nueva malla" /></button>
+                            <span className="tooltip-text">Crear nueva malla</span>
                         </div>
                     </Link>
                 </div>
+                { plans.length === 0 && <div className="mx-auto my-auto"><p className="text-gray-500 text-center">Todavía no tienes ninguna malla. Puedes partir <Link to="/planner" className='underline'>creando una nueva.</Link></p></div>}
 
-                <table className="table-auto text-center w-full p-3">
-                  <thead>
+                { plans.length === 0 || <div className='relative overflow-x-auto shadow-md sm:rounded-lg max-w-2xl mt-2'>
+                <table className="w-full text-sm text-left text-gray-500">
+                  <thead className="text-xs text-gray-700 uppercase bg-gray-50 ">
                     <tr className="border-b-4 border-gray-600">
                         {/* <th></th> para favourite */}
-                        <th>Nombre</th>
-                        <th>Fecha Creación</th>
-                        <th>Fecha Modificación</th>
-                        <th>Acciones</th>
+                        <th scope="col" className="px-6 py-3">Nombre</th>
+                        <th scope="col" className="px-6 py-3">Fecha Creación</th>
+                        <th scope="col" className="px-6 py-3">Fecha Modificación</th>
+                        <th scope="col" className="px-6 py-3"><span className="sr-only">Acciones</span></th>
                     </tr>
                   </thead>
 
-                  <tbody>
+                  <tbody className='bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'>
                     {plans?.map((plan: LowDetailPlanView) => {
                       return (
                               <CurriculumListRow key={plan.id} handleDelete={handleDelete} curriculum={plan}/>
@@ -70,6 +72,7 @@ const CurriculumList = (): JSX.Element => {
                   </tbody>
 
                 </table>
+                </div>}
           </div>
       </div>
 

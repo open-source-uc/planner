@@ -1,4 +1,4 @@
-import UserInfo from '../components/UserInfo'
+// import UserInfo from '../components/UserInfo'
 import CurriculumList from '../components/CurriculumList'
 
 /**
@@ -8,8 +8,8 @@ const UserPage = (): JSX.Element => {
   return (
 
   <div className="flex my-2 h-full">
-    <div className="w-2/3"> <CurriculumList /></div>
-    <div className="w-1/3 bg-blue-100"><UserInfo /></div>
+    <div className="mx-auto"> <CurriculumList /></div>
+    {/* <div className="w-1/3 bg-blue-100"><UserInfo /></div> */}
   </div>
 
   )
