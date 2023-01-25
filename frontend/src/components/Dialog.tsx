@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Dialog } from '@headlessui/react'
 import { DefaultService, Equivalence, Course } from '../client'
-import info from '../assets/info.svg'
 
 const MyDialog = ({ equivalence, open, onClose }: { equivalence?: Equivalence, open: boolean, onClose: Function }): JSX.Element => {
   const [courses, setCourses] = useState<Course[]>([])
@@ -55,7 +54,7 @@ const MyDialog = ({ equivalence, open, onClose }: { equivalence?: Equivalence, o
                                 <td className='w-96'>{course.name}</td>
                                 <td className='w-8'>{course.credits}</td>
                                 <td className='w-48'>{course.school}</td>
-                                <th className="w-8"><img height="15" src={info} alt="Info del Curso" /></th>
+                                <th className="w-8"></th>
                             </tr>
                         ))}</tbody>
                     </table>
