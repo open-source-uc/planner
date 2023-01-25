@@ -65,8 +65,8 @@ const CourseCard = ({ course, isDragging, handleMove, remCourse, courseBlock }: 
             : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{BlockInitials(courseBlock)}</div>}
           {(course.is_concrete === false)
             ? <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-300 opacity-90"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-400"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-300 opacity-90"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-400"></span>
           </span>
             : ''}
           <div className='flex items-center justify-center text-center flex-col'>
