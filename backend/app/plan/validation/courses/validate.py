@@ -97,10 +97,11 @@ class PlanContext:
                 inst = self.classes[course.code]
                 self.diagnose(out, inst, course.deps)
                 sem_credits += course.credits
-                if max_creds_err := SemesterErrHandler.check_error(
-                    semester=sem, credits=sem_credits
-                ):
-                    out.add(max_creds_err)
+
+            if max_creds_err := SemesterErrHandler.check_error(
+                semester=sem, credits=sem_credits
+            ):
+                out.add(max_creds_err)
 
         out.add(AmbiguousCoursesErr(codes=ambiguous_codes))
 
