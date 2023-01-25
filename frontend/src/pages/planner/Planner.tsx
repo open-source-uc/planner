@@ -217,11 +217,11 @@ const Planner = (): JSX.Element => {
     }
   }, [loading, plan])
   return (
-    <div className={`w-full h-full pb-10 flex flex-row border-red-400 border-2 ${validating ? 'cursor-wait' : ''}`}>
+    <div className={`w-full h-full p-3 pb-10 flex flex-row border-2 ${validating ? 'cursor-wait' : ''}`}>
       {(!loading)
         ? <>
         <div className={'flex flex-col w-5/6'}>
-          <ul className={'w-full mb-1 mt-2 relative'}>
+          <ul className={'w-full mb-3 mt-2 relative'}>
             <li className={'inline text-md ml-3 mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div> Ingeniería y Ciencias Ambientales</li>
             <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Amplitud en Programación</li>
             <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> Por seleccionar</li>
@@ -243,7 +243,13 @@ const Planner = (): JSX.Element => {
         </div>
         <ErrorTray diagnostics={validationResult?.diagnostics ?? []} validating={validating}/>
         </>
-        : <div>Loading</div>}
+        : <div className='mx-auto my-auto w-20 h-10'>
+            <div className="flex justify-center items-center mb-4">
+              <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full" role="status">
+              </div>
+            </div>
+            <p>Cargando...</p>
+          </div>}
     </div>
   )
 }
