@@ -79,6 +79,7 @@ class PlanContext:
         self.plan = plan
 
     def validate(self, out: ValidationResult):
+        ambiguous_codes: list[str] = []
         for sem in range(self.plan.next_semester, len(self.plan.classes)):
             for courseid in self.plan.classes[sem]:
                 if isinstance(courseid, EquivalenceId):
@@ -86,12 +87,13 @@ class PlanContext:
                     if equiv.is_homogeneous and len(equiv.courses) >= 1:
                         course = self.courseinfo.course(equiv.courses[0])
                     else:
-                        out.add(AmbiguousCourseErr(code=courseid.code))
+                        ambiguous_codes.append(courseid.code)
                         continue
                 else:
                     course = self.courseinfo.course(courseid.code)
                 inst = self.classes[course.code]
                 self.diagnose(out, inst, course.deps)
+        out.add(AmbiguousCoursesErr(codes=ambiguous_codes))
 
     def diagnose(self, out: ValidationResult, inst: CourseInstance, expr: "Expr"):
         if is_satisfied(self, inst, expr):
@@ -258,6 +260,16 @@ def sanitize_plan(courseinfo: CourseInfo, out: ValidationResult, plan: Validatab
         return plan
 
 
+class AmbiguousCoursesErr(DiagnosticErr):
+    codes: list[str]
+
+    def first(self) -> str:
+        return self.codes[0]
+
+    def message(self) -> str:
+        return f"Es necesario escoger un curso para {', '.join(self.codes)}"
+
+
 class CourseErr(DiagnosticErr, ABC):
     code: str
 
@@ -268,11 +280,6 @@ class CourseErr(DiagnosticErr, ABC):
 class UnknownCourseErr(CourseErr):
     def message(self) -> str:
         return "Curso desconocido"
-
-
-class AmbiguousCourseErr(CourseErr):
-    def message(self) -> str:
-        return "Curso requiere desambiguacion"
 
 
 class RequirementErr(CourseErr):
