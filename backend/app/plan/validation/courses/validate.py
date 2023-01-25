@@ -316,7 +316,7 @@ class MaxCreditsErr(DiagnosticErr):
 
     def message(self) -> str:
         return (
-            f"Semestre {self.semester + 1} sobrepasa el máximo de {self.max_credits}"
+            f"El semestre {self.semester + 1} sobrepasa el máximo de {self.max_credits}"
             " créditos permitido"
         )
 
@@ -331,6 +331,6 @@ class MaxCreditsWarn(DiagnosticWarn):
 
     def message(self) -> str:
         return (
-            f"Semestre {self.semester + 1} sobrepasa {self.max_credits} créditos"
-            " (revisar requisitos para sobrecargar el semestre)"
+            f"El semestre {self.semester + 1} sobrepasa los {self.max_credits} créditos"
+            " (revisa los requisitos relevantes)"
         )
