@@ -215,7 +215,7 @@ const Planner = (): JSX.Element => {
     }
   }, [loading, plan])
   return (
-    <div className={`w-full h-full p-3 pb-10 flex flex-row border-2 ${validating ? 'cursor-wait' : ''}`}>
+    <div className={`w-full h-full p-3 pb-10 flex flex-row ${validating ? 'cursor-wait' : ''}`}>
       {(!loading)
         ? <>
         <div className={'flex flex-col w-5/6'}>
