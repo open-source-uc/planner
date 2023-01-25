@@ -1,5 +1,5 @@
-import okIcon from '../../assets/ok.svg'
 import { FlatDiagnostic } from '../../client'
+import { Spinner } from '../../components/Spinner'
 
 /**
  * This is what is displayed when there are no errors or warnings.
@@ -47,7 +47,7 @@ const ErrorTray = ({ diagnostics, validating }: { diagnostics: FlatDiagnostic[],
   return (<div className="w-80 mb-6 overflow-y-auto px-6 py-6 bg-slate-100 border-slate-300 border-2 rounded-lg shadow-lg">
     <p className="text-xl font-semibold mb-4 text-center">Errores y advertencias</p>
   <div className="flex flex-col gap-2">
-    {validating ? <p className="font-medium">Validando...</p> : <>{messageList.length > 0 ? messageList : <NoMessages/>}</>}
+    {validating ? <Spinner message='Validando...'/> : <>{messageList.length > 0 ? messageList : <NoMessages/>}</>}
   </div>
   </div>)
 }

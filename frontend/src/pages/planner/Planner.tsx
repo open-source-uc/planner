@@ -26,7 +26,7 @@ const Planner = (): JSX.Element => {
   const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course }>({})
   const previousClasses = useRef<PseudoCourse[][]>([[]])
   const [loading, setLoading] = useState(true)
-  const [validating, setValidanting] = useState(false)
+  const [validating, setValidating] = useState(false)
   const [validationResult, setValidationResult] = useState<FlatValidationResult | null>(null)
   const params = useParams()
 
@@ -95,7 +95,7 @@ const Planner = (): JSX.Element => {
   }
 
   async function getCourseDetails (courses: PseudoCourse[]): Promise<void> {
-    setValidanting(true)
+    setValidating(true)
     console.log('getting Courses Details...')
     const codes = []
     for (const courseid of courses) {
@@ -108,17 +108,14 @@ const Planner = (): JSX.Element => {
       return acc
     }, {})
     setCourseDetails((prev) => { return { ...prev, ...dict } })
-    console.log('Details loaded')
-    setValidanting(false)
+    setValidating(false)
   }
 
   async function validate (validatablePlan: ValidatablePlan): Promise<void> {
-    setValidanting(true)
-    console.log('validating...')
+    setValidating(true)
     const response = await DefaultService.validatePlan(validatablePlan)
     setValidationResult(response)
-    console.log('validated')
-    setValidanting(false)
+    setValidating(false)
     // Es necesario hacer una copia profunda del plan para comparar, pues si se copia el objeto entero
     // entonces la copia es modificada junto al objeto original. Lo ideal seria usar una librearia para esto en el futuro
     previousClasses.current = JSON.parse(JSON.stringify(validatablePlan.classes))
@@ -126,30 +123,30 @@ const Planner = (): JSX.Element => {
 
   async function savePlan (): Promise<void> {
     if (params?.plannerId != null) {
-      setValidanting(true)
+      setValidating(true)
       try {
         await DefaultService.updatePlan(params.plannerId, plan.validatable_plan)
-        alert('Plan actualizado exitosamente')
+        alert('Plan actualizado exitosamente.')
       } catch (err) {
         alert(err)
       }
     } else {
-      const planName = prompt('Nombre de la malla?')
+      const planName = prompt('¿Cómo quieres llamarle a esta planificación?')
       if (planName == null || planName === '') return
-      setValidanting(true)
+      setValidating(true)
       try {
         const res = await DefaultService.savePlan(planName, plan.validatable_plan)
-        alert('Plan guardado exitosamente')
+        alert('Plan guardado exitosamente.')
         window.location.href = `/planner/${res.id}`
       } catch (err) {
         alert(err)
       }
     }
-    setValidanting(false)
+    setValidating(false)
   }
 
   async function addCourse (semIdx: number): Promise<void> {
-    const courseCodeRaw = prompt('Course code?')
+    const courseCodeRaw = prompt('Sigla del curso?')
     if (courseCodeRaw == null || courseCodeRaw === '') return
     const courseCode = courseCodeRaw.toUpperCase()
     for (const existingCourse of plan?.validatable_plan.classes.flat()) {
@@ -158,7 +155,7 @@ const Planner = (): JSX.Element => {
         return
       }
     }
-    setValidanting(true)
+    setValidating(true)
     try {
       const response = await DefaultService.getCourseDetails([courseCode])
       setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
@@ -174,7 +171,7 @@ const Planner = (): JSX.Element => {
     } catch (err) {
       alert(err)
     }
-    setValidanting(false)
+    setValidating(false)
   }
 
   useEffect(() => {
@@ -244,7 +241,7 @@ const Planner = (): JSX.Element => {
         </div>
         <ErrorTray diagnostics={validationResult?.diagnostics ?? []} validating={validating}/>
         </>
-        : <Spinner />}
+        : <Spinner message='Cargando...' />}
     </div>
   )
 }
