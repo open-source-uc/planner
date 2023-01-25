@@ -1,5 +1,5 @@
 import CurriculumListRow from './CurriculumListRow'
-import plusIcon from '../assets/plus.svg'
+import { ReactComponent as PlusIcon } from '../assets/plus.svg'
 import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { DefaultService, LowDetailPlanView } from '../client'
@@ -45,7 +45,7 @@ const CurriculumList = (): JSX.Element => {
                     <h2 className="text-3xl font-medium leading-normal mb-2 text-gray-800 text-center">Mis mallas</h2>
                     <Link to="/planner">
                         <div className="hover-text">
-                            <button><img className="w-8 h-8" src={plusIcon} alt="Crear nueva malla" /></button>
+                            <button><PlusIcon className="w-8 h-8" title="Crear nueva malla"/></button>
                             <span className="tooltip-text">Crear nueva malla</span>
                         </div>
                     </Link>
