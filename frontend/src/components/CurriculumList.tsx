@@ -3,6 +3,7 @@ import plusIcon from '../assets/plus.svg'
 import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { DefaultService, LowDetailPlanView } from '../client'
+import { Spinner } from './Spinner'
 
 //   const curriculums = [
 //     { id: 0, fav: true, name: 'Computación', creation: '10-01-2022', modified: '14-12-2022' },
@@ -13,12 +14,12 @@ import { DefaultService, LowDetailPlanView } from '../client'
 
 const CurriculumList = (): JSX.Element => {
   const [plans, setPlans] = useState <LowDetailPlanView[]>([])
+  const [loading, setLoading] = useState <boolean>(true)
 
   const readPlans = async (): Promise<void> => {
-    console.log('getting Plans ...')
     const response = await DefaultService.readPlans()
     setPlans(response)
-    console.log('data loaded')
+    setLoading(false)
   }
 
   useEffect(() => {
@@ -49,9 +50,12 @@ const CurriculumList = (): JSX.Element => {
                         </div>
                     </Link>
                 </div>
-                { plans.length === 0 && <div className="mx-auto my-auto"><p className="text-gray-500 text-center">Todavía no tienes ninguna malla. Puedes partir <Link to="/planner" className='underline'>creando una nueva.</Link></p></div>}
 
-                { plans.length === 0 || <div className='relative overflow-x-auto shadow-md sm:rounded-lg max-w-2xl mt-2'>
+                { loading && <div className="mt-5"><Spinner message="Cargando..." /></div> }
+
+                { !loading && plans.length === 0 && <div className="mx-auto my-auto"><p className="text-gray-500 text-center">Todavía no tienes ninguna malla. Puedes partir <Link to="/planner" className='underline'>creando una nueva.</Link></p></div>}
+
+                { !loading && plans.length > 0 && <div className='relative overflow-x-auto shadow-md sm:rounded-lg max-w-2xl mt-2'>
                 <table className="w-full text-sm text-left text-gray-500">
                   <thead className="text-xs text-gray-700 uppercase bg-gray-50 ">
                     <tr className="border-b-4 border-gray-600">
