@@ -130,6 +130,24 @@ class PlanContext:
         # Show this expression
         out.add(RequirementErr(code=inst.course.code, missing=missing))
 
+    def simplify_diagnostics(self, out: ValidationResult):
+        # TODO: add more simplifications for a cleaner diagnostic
+        self.ambiguous_simplification(out)
+
+    def ambiguous_simplification(self, out: ValidationResult):
+        """
+        This method groups all AmbiguousCourseErr into a single one
+        """
+        ambiguous: list[int] = []
+        ambiguous_codes: list[str] = []
+        for i, diag in list(enumerate(out.diagnostics)):
+            if isinstance(diag, AmbiguousCourseErr):
+                ambiguous.append(i)
+                ambiguous_codes.append(diag.code)
+        if ambiguous:
+            out.remove(indices=ambiguous)
+            out.add(AmbiguousCourseErr(code=", ".join(ambiguous_codes)))
+
 
 def is_satisfied(ctx: PlanContext, cl: CourseInstance, expr: Expr) -> bool:
     """
@@ -272,7 +290,7 @@ class UnknownCourseErr(CourseErr):
 
 class AmbiguousCourseErr(CourseErr):
     def message(self) -> str:
-        return "Curso requiere desambiguacion"
+        return f"Es necesario escoger un curso para {self.course_code()}"
 
 
 class RequirementErr(CourseErr):

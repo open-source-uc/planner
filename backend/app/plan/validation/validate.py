@@ -20,6 +20,7 @@ async def diagnose_plan(
     # Ensure course requirements are met
     course_ctx = PlanContext(courseinfo, plan)
     course_ctx.validate(out)
+    course_ctx.simplify_diagnostics(out)
 
     # Ensure the given curriculum is fulfilled
     diagnose_curriculum(courseinfo, curriculum, plan, out)
