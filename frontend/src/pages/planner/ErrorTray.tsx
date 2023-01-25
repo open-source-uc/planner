@@ -23,7 +23,7 @@ const Message = (diag: FlatDiagnostic, key: number): JSX.Element => {
     <img
       className="w-12 h-12"
       src={w ? warningIcon : errorIcon}
-      alt={w ? 'Warning' : 'Error'}
+      alt={w ? 'Alerta' : 'Error'}
     />
     <p className="text-left">{`${w ? 'Aviso' : 'Error'}: ${coursePrefix}${diag.message}`}</p>
   </div>)
@@ -33,6 +33,16 @@ const Message = (diag: FlatDiagnostic, key: number): JSX.Element => {
  * The error tray shows errors and warnings about the current plan that come from the validation backend.
  */
 const ErrorTray = ({ diagnostics, validating }: { diagnostics: FlatDiagnostic[], validating: boolean }): JSX.Element => {
+  // Order diagnostics by putting errors first, then warnings.
+  diagnostics.sort((a, b) => {
+    if (a.is_warning === b.is_warning) {
+      return 0
+    } else if (a.is_warning) {
+      return 1
+    } else {
+      return -1
+    }
+  })
   const messageList: JSX.Element[] = diagnostics.map((diag, index) => Message(diag, index))
   return (<div className="w-80 h-full overflow-x-hidden overflow-y-auto p-4 flex flex-col gap-4 border border-black border-dashed">
     {validating ? <p className="font-medium">Validando...</p> : <>{messageList.length > 0 ? messageList : <NoMessages/>}</>}
