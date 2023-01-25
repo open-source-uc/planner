@@ -79,6 +79,7 @@ class PlanContext:
         self.plan = plan
 
     def validate(self, out: ValidationResult):
+        ambiguous_codes: list[str] = []
         for sem in range(self.plan.next_semester, len(self.plan.classes)):
             for courseid in self.plan.classes[sem]:
                 if isinstance(courseid, EquivalenceId):
@@ -86,12 +87,13 @@ class PlanContext:
                     if equiv.is_homogeneous and len(equiv.courses) >= 1:
                         course = self.courseinfo.course(equiv.courses[0])
                     else:
-                        out.add(AmbiguousCourseErr(code=courseid.code))
+                        ambiguous_codes.append(courseid.code)
                         continue
                 else:
                     course = self.courseinfo.course(courseid.code)
                 inst = self.classes[course.code]
                 self.diagnose(out, inst, course.deps)
+        out.add(AmbiguousCoursesErr(codes=ambiguous_codes))
 
     def diagnose(self, out: ValidationResult, inst: CourseInstance, expr: "Expr"):
         if is_satisfied(self, inst, expr):
@@ -129,24 +131,6 @@ class PlanContext:
             missing = simplify(fold_atoms(self, inst, expr, lambda atom, sat: sat))
         # Show this expression
         out.add(RequirementErr(code=inst.course.code, missing=missing))
-
-    def simplify_diagnostics(self, out: ValidationResult):
-        # TODO: add more simplifications for a cleaner diagnostic
-        self.ambiguous_simplification(out)
-
-    def ambiguous_simplification(self, out: ValidationResult):
-        """
-        This method groups all AmbiguousCourseErr into a single one
-        """
-        ambiguous: list[int] = []
-        ambiguous_codes: list[str] = []
-        for i, diag in list(enumerate(out.diagnostics)):
-            if isinstance(diag, AmbiguousCourseErr):
-                ambiguous.append(i)
-                ambiguous_codes.append(diag.code)
-        if ambiguous:
-            out.remove(indices=ambiguous)
-            out.add(AmbiguousCourseErr(code=", ".join(ambiguous_codes)))
 
 
 def is_satisfied(ctx: PlanContext, cl: CourseInstance, expr: Expr) -> bool:
@@ -276,6 +260,16 @@ def sanitize_plan(courseinfo: CourseInfo, out: ValidationResult, plan: Validatab
         return plan
 
 
+class AmbiguousCoursesErr(DiagnosticErr):
+    codes: list[str]
+
+    def first(self) -> str:
+        return self.codes[0]
+
+    def message(self) -> str:
+        return f"Es necesario escoger un curso para {', '.join(self.codes)}"
+
+
 class CourseErr(DiagnosticErr, ABC):
     code: str
 
@@ -286,11 +280,6 @@ class CourseErr(DiagnosticErr, ABC):
 class UnknownCourseErr(CourseErr):
     def message(self) -> str:
         return "Curso desconocido"
-
-
-class AmbiguousCourseErr(CourseErr):
-    def message(self) -> str:
-        return f"Es necesario escoger un curso para {self.course_code()}"
 
 
 class RequirementErr(CourseErr):
