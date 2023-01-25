@@ -10,7 +10,7 @@ class CurriculumErr(DiagnosticErr):
     missing: str
 
     def message(self) -> str:
-        return f"Faltan créditos del bloque '{self.superblock}'.\nFalta: {self.missing}"
+        return f"Debe completar los créditos de '{self.superblock}'.\nFalta: {self.missing}"
 
 
 def _diagnose_block(out: ValidationResult, node: SolvedNode):
