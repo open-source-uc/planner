@@ -60,8 +60,12 @@ const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, 
     return (
       <div className={`card group ${courseBlock != null ? courseBlock : ''} ${cardData.is_concrete !== true ? 'animated' : ''}`}>
         { hasEquivalence === true && (courseBlock === 'FormacionGeneral'
-          ? <button onClick={() => openSelector()}><img className='absolute w-3 top-2 left-2' src={editWhiteIcon} alt="Seleccionar Curso" /></button>
-          : <button onClick={() => openSelector()}><img className='absolute w-3 top-2 left-2' src={editBlackIcon} alt="Seleccionar Curso" /></button>)
+          ? cardData.is_concrete === true
+            ? <button onClick={() => openSelector()}><img className='opacity-60 absolute w-3 top-2 left-2' src={editWhiteIcon} alt="Seleccionar Curso" /></button>
+            : <img className='opacity-60 absolute w-3 top-2 left-2' src={editWhiteIcon} alt="Seleccionar Curso" />
+          : cardData.is_concrete === true
+            ? <button onClick={() => openSelector()}><img className='opacity-60 absolute w-3 top-2 left-2' src={editBlackIcon} alt="Seleccionar Curso" /></button>
+            : <img className='opacity-60 absolute w-3 top-2 left-2' src={editBlackIcon} alt="Seleccionar Curso" />)
         }
         {courseBlock == null
           ? <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>

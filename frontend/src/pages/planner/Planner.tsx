@@ -1,7 +1,7 @@
 import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
-import MyDialog from '../../components/Modal'
+import MyDialog from '../../components/Dialog'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
 import { DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
@@ -252,6 +252,27 @@ const Planner = (): JSX.Element => {
           is_concrete: true,
           code: selection,
           equivalence: newEquivalence
+        }
+        if (newEquivalence !== undefined && newEquivalence.credits !== response[0].credits) {
+          if (newEquivalence.credits > response[0].credits) {
+            newClasses[modalData.semester].splice(modalData.index + 1, 0,
+              {
+                is_concrete: false,
+                code: newEquivalence.code,
+                credits: newEquivalence.credits - response[0].credits
+              }
+            )
+          } else {
+            // To-DO: handle when credis exced necesary
+            // General logic: if there are not other courses with the same code then it dosnt matters
+            // If there are other course with the same code, and exact same creddits that this card exceed, delete the other
+
+            // On other way, one should decresed credits of other course with the same code
+            // Problem In this part: if i exceed by 5 and have a course of 4 and 10, what do i do
+            // option 1: delete the course with 4 and decresed the one of 10 by 1
+            // option 2: decresed the one of 10 to 5
+            console.log('help')
+          }
         }
         return { ...prev, validatable_plan: { ...prev.validatable_plan, classes: newClasses } }
       })
