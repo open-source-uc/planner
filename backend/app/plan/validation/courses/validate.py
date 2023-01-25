@@ -81,7 +81,7 @@ class PlanContext:
     def validate(self, out: ValidationResult):
         ambiguous_codes: list[str] = []
         for sem in range(self.plan.next_semester, len(self.plan.classes)):
-            sem_credits = 0
+            sem_credits: int = 0
 
             for courseid in self.plan.classes[sem]:
                 if isinstance(courseid, EquivalenceId):
@@ -96,14 +96,13 @@ class PlanContext:
 
                 inst = self.classes[course.code]
                 self.diagnose(out, inst, course.deps)
-        out.add(AmbiguousCoursesErr(codes=ambiguous_codes))
-
                 sem_credits += course.credits
+                if max_creds_err := SemesterErrHandler.check_error(
+                    semester=sem, credits=sem_credits
+                ):
+                    out.add(max_creds_err)
 
-            if max_creds_err := SemesterErrHandler.check_error(
-                semester=sem, credits=sem_credits
-            ):
-                out.add(max_creds_err)
+        out.add(AmbiguousCoursesErr(codes=ambiguous_codes))
 
     def diagnose(self, out: ValidationResult, inst: CourseInstance, expr: "Expr"):
         if is_satisfied(self, inst, expr):
