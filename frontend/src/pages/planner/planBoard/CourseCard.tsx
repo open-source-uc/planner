@@ -63,16 +63,16 @@ const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, 
           ? cardData.is_concrete === true
             ? <button onClick={() => openSelector()}><img className='opacity-60 absolute w-3 top-2 left-2' src={editWhiteIcon} alt="Seleccionar Curso" /></button>
             : <><img className='opacity-60 absolute w-3 top-2 left-2' src={editWhiteIcon} alt="Seleccionar Curso" />
-            <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
+            {/* <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-300 opacity-90"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-red-400"></span>
-            </span></>
+            </span> */}</>
           : cardData.is_concrete === true
             ? <button onClick={() => openSelector()}><img className='opacity-60 absolute w-3 top-2 left-2' src={editBlackIcon} alt="Seleccionar Curso" /></button>
-            : <><img className='opacity-60 absolute w-3 top-2 left-2' src={editBlackIcon} alt="Seleccionar Curso" /><span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
+            : <><img className='opacity-60 absolute w-3 top-2 left-2' src={editBlackIcon} alt="Seleccionar Curso" />{/* <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-300 opacity-90"></span>
             <span className="relative inline-flex rounded-full h-3 w-3 bg-red-400"></span>
-          </span></>)
+          </span> */}</>)
         }
         {courseBlock == null
           ? <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>
