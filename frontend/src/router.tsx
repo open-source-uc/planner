@@ -1,7 +1,7 @@
 import Home from './pages/Home'
 import Planner from './pages/planner/Planner'
 import Layout from './layout/Layout'
-import UserPage from './pages/UserPage'
+import UserPage from './pages/user/UserPage'
 import Logout from './pages/Logout'
 
 import {
