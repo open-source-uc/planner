@@ -28,6 +28,7 @@ const Planner = (): JSX.Element => {
   const [loading, setLoading] = useState(true)
   const [validating, setValidating] = useState(false)
   const [validationResult, setValidationResult] = useState<FlatValidationResult | null>(null)
+  const [error, setError] = useState<String | null>(null)
   const params = useParams()
 
   async function getDefaultPlan (): Promise<void> {
@@ -44,7 +45,7 @@ const Planner = (): JSX.Element => {
       setValidationResult({
         diagnostics: [{
           is_warning: false,
-          message: `Internal error: ${String(err)}`
+          message: `Error interno: ${String(err)}`
         }],
         course_superblocks: {}
       })
@@ -54,7 +55,7 @@ const Planner = (): JSX.Element => {
       setValidationResult({
         diagnostics: [{
           is_warning: false,
-          message: `Internal error: ${String(err)}`
+          message: `Error interno: ${String(err)}`
         }],
         course_superblocks: {}
       })
@@ -72,7 +73,7 @@ const Planner = (): JSX.Element => {
         setValidationResult({
           diagnostics: [{
             is_warning: false,
-            message: `Internal error: ${String(err)}`
+            message: `Error interno: ${String(err)}`
           }],
           course_superblocks: {}
         })
@@ -81,7 +82,7 @@ const Planner = (): JSX.Element => {
         setValidationResult({
           diagnostics: [{
             is_warning: false,
-            message: `Internal error: ${String(err)}`
+            message: `Error interno: ${String(err)}`
           }],
           course_superblocks: {}
         })
@@ -178,10 +179,14 @@ const Planner = (): JSX.Element => {
     if (params?.plannerId != null) {
       getPlanById(params.plannerId).catch(err => {
         console.log(err)
+        setLoading(false)
+        setError('Ocurrió un error al cargar el plan escogido.')
       })
     } else {
       getDefaultPlan().catch(err => {
         console.log(err)
+        setLoading(false)
+        setError('Ocurrió un error al cargar el plan por defecto.')
       })
     }
   }, [])
@@ -206,7 +211,7 @@ const Planner = (): JSX.Element => {
           setValidationResult({
             diagnostics: [{
               is_warning: false,
-              message: `Internal error: ${String(err)}`
+              message: `Error interno: ${String(err)}`
             }],
             course_superblocks: {}
           })
@@ -216,8 +221,7 @@ const Planner = (): JSX.Element => {
   }, [loading, plan])
   return (
     <div className={`w-full h-full p-3 pb-10 flex flex-row ${validating ? 'cursor-wait' : ''}`}>
-      {(!loading)
-        ? <>
+      {(!loading && error === null) && <>
         <div className={'flex flex-col w-5/6'}>
           <ul className={'w-full mb-3 mt-2 relative'}>
             <li className={'inline text-md ml-3 mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div> Ingeniería y Ciencias Ambientales</li>
@@ -240,8 +244,13 @@ const Planner = (): JSX.Element => {
           />
         </div>
         <ErrorTray diagnostics={validationResult?.diagnostics ?? []} validating={validating}/>
-        </>
-        : <Spinner message='Cargando...' />}
+        </>}
+
+        {loading && error === null && <Spinner message='Cargando planificación...' />}
+        {error !== null && <div className={'w-full h-full flex flex-col justify-center items-center'}>
+          <p className={'text-2xl font-semibold mb-4'}>Error al cargar plan</p>
+          <p className={'text-sm font-normal'}>{error}</p>
+        </div>}
     </div>
   )
 }

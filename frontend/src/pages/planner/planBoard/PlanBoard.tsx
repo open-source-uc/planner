@@ -91,6 +91,8 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, valida
                   handleMove={(dragCourse: Course & { semester: number }) => moveCourse(semester, dragCourse, index)}
                   remCourse={() => remCourse(semester, course.code)}
                   courseBlock={findCourseSuperblock(validationResult, course.code)}
+                  hasError={validationResult?.diagnostics?.find((e) => e.course_code === course.code && !e.is_warning) != null}
+                  hasWarning={validationResult?.diagnostics?.find((e) => e.course_code === course.code && e.is_warning) != null}
                 />
               ))}
               {!isDragging && <div className="h-10 mx-2 bg-slate-300 card">
