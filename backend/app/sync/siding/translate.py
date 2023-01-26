@@ -75,15 +75,10 @@ async def _fetch_raw_blocks(
     return raw_blocks
 
 
-# TODO: Keep this cache in the database instead of in memory.
-_curriculum_cache: dict[CurriculumSpec, Curriculum] = {}
-
-
 async def fetch_curriculum_from_siding(
     courseinfo: CourseInfo, spec: CurriculumSpec
 ) -> Curriculum:
-    if spec in _curriculum_cache:
-        return _curriculum_cache[spec]
+    print(f"fetching curriculum from siding for spec {spec}")
 
     raw_blocks = await _fetch_raw_blocks(courseinfo, spec)
 
@@ -169,21 +164,14 @@ async def fetch_curriculum_from_siding(
     # TODO: Figure out proper validation order, or if flow has to be used.
     blocks.sort(key=lambda b: len(b.codes) if isinstance(b, CourseList) else 1e6)
 
-    curr = Curriculum(nodes=blocks)
-    _curriculum_cache[spec] = curr
-    return curr
-
-
-# TODO: Keep this cache in the database instead of in memory.
-_recommended_cache: dict[CurriculumSpec, list[list[PseudoCourse]]] = {}
+    return Curriculum(nodes=blocks)
 
 
 async def fetch_recommended_courses_from_siding(
     courseinfo: CourseInfo,
     spec: CurriculumSpec,
 ) -> list[list[PseudoCourse]]:
-    if spec in _recommended_cache:
-        return _recommended_cache[spec]
+    print(f"fetching recommended courses from siding for spec {spec}")
 
     # Fetch raw curriculum blocks for the given cyear-major-minor-title combination
     raw_blocks = await _fetch_raw_blocks(courseinfo, spec)
@@ -226,7 +214,6 @@ async def fetch_recommended_courses_from_siding(
                 f"selected course {representative_course} for block {raw_block.Nombre}"
             )
 
-    _recommended_cache[spec] = semesters
     return semesters
 
 

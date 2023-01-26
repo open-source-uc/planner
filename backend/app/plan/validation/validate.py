@@ -2,7 +2,7 @@ from .curriculum.diagnose import diagnose_curriculum
 from .curriculum.tree import CurriculumSpec
 from .courses.validate import CourseInstance, PlanContext, is_satisfied, sanitize_plan
 from ..courseinfo import CourseInfo, course_info
-from ...sync.siding.translate import fetch_curriculum_from_siding
+from ...sync import get_curriculum
 from .diagnostic import ValidationResult
 from ..plan import PseudoCourse, ValidatablePlan
 
@@ -11,7 +11,7 @@ async def diagnose_plan(
     plan: ValidatablePlan, curriculum_spec: CurriculumSpec
 ) -> ValidationResult:
     courseinfo = await course_info()
-    curriculum = await fetch_curriculum_from_siding(courseinfo, curriculum_spec)
+    curriculum = await get_curriculum(curriculum_spec)
     out = ValidationResult(diagnostics=[], course_superblocks={})
 
     # Ensure all courses are known

@@ -1,9 +1,9 @@
+from ..sync import get_recommended_plan
 from .validation.courses.logic import And, Expr, Or, ReqCourse
 from .validation.curriculum.tree import CurriculumSpec
 from .plan import EquivalenceId, PseudoCourse, ValidatablePlan
 from .courseinfo import CourseInfo, course_info
 from .validation.validate import quick_validate_dependencies
-from ..sync.siding.translate import fetch_recommended_courses_from_siding
 
 
 class CurriculumRecommender:
@@ -18,7 +18,7 @@ class CurriculumRecommender:
     async def recommend(
         cls, courseinfo: CourseInfo, curr: CurriculumSpec
     ) -> ValidatablePlan:
-        courses = await fetch_recommended_courses_from_siding(courseinfo, curr)
+        courses = await get_recommended_plan(curr)
         return ValidatablePlan(classes=courses, next_semester=0)
 
 
