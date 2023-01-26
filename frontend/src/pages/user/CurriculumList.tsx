@@ -1,16 +1,9 @@
 import CurriculumListRow from './CurriculumListRow'
-import { ReactComponent as PlusIcon } from '../assets/plus.svg'
+import { ReactComponent as PlusIcon } from '../../assets/plus.svg'
 import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { DefaultService, LowDetailPlanView } from '../client'
-import { Spinner } from './Spinner'
-
-//   const curriculums = [
-//     { id: 0, fav: true, name: 'Computación', creation: '10-01-2022', modified: '14-12-2022' },
-//     { id: 1, fav: false, name: 'Diseno v2 esta si', creation: '10-03-2022', modified: '21-10-2022' },
-//     { id: 2, fav: false, name: 'Diseno', creation: '10-10-2020', modified: '10-10-2020' },
-//     { id: 3, fav: false, name: 'No seee', creation: '10-02-2020', modified: '14-12-2020' }
-//   ]
+import { DefaultService, LowDetailPlanView } from '../../client'
+import { Spinner } from '../../components/Spinner'
 
 const CurriculumList = (): JSX.Element => {
   const [plans, setPlans] = useState <LowDetailPlanView[]>([])
@@ -39,7 +32,7 @@ const CurriculumList = (): JSX.Element => {
   }
 
   return (
-      <div className="flex mb-4 h-full w-full"> {/* revisar si mejor con o sin items-center */}
+      <div className="flex mb-4 h-full w-full">
           <div className="m-3 w-full">
                 <div className="flex gap-4 items-center">
                     <h2 className="text-3xl font-medium leading-normal mb-2 text-gray-800 text-center">Mis mallas</h2>
