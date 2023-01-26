@@ -17,6 +17,9 @@ class CurriculumErr(DiagnosticErr):
 class UnassignedWarn(DiagnosticWarn):
     code: str
 
+    def course_code(self) -> str:
+        return self.code
+
     def message(self) -> str:
         return f"El curso {self.code} no cuenta para tu avance curricular"
 

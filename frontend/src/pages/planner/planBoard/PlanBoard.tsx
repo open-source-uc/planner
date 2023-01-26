@@ -91,6 +91,8 @@ const PlanBoard = ({ plan, courseDetails, setPlan, openModal, addCourse, validat
                   courseBlock={findCourseSuperblock(validationResult, course.code)}
                   openSelector={() => { if ('credits' in course) openModal(courseDetails[course.code], semester, index); else openModal(course.equivalence, semester, index) }}
                   hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
+                  hasError={validationResult?.diagnostics?.find((e) => e.course_code === course.code && !e.is_warning) != null}
+                  hasWarning={validationResult?.diagnostics?.find((e) => e.course_code === course.code && e.is_warning) != null}
                 />
               ))}
               {!isDragging && <div className="h-10 mx-2 bg-slate-300 card">

@@ -12,9 +12,11 @@ interface CourseCardProps {
   courseBlock: string | null
   openSelector: Function
   hasEquivalence?: boolean
+  hasError: boolean
+  hasWarning: boolean
 }
 
-const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, openSelector, hasEquivalence }: CourseCardProps): JSX.Element => {
+const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, openSelector, hasEquivalence, hasError, hasWarning }: CourseCardProps): JSX.Element => {
   const ref = useRef(null)
   const [collected = { isDragging: false }, drag] = useDrag(() => ({
     type: 'card',
@@ -92,9 +94,18 @@ const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, 
       <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3 cursor-grab' : 'cursor-grabbing'} `}>
       {!collected.isDragging && <>{dropProps.isOver
         ? <div className={'card bg-place-holder'} />
-        : <> {!collected.isDragging && (cardData.is_concrete !== true
+        : <div> {!collected.isDragging && (cardData.is_concrete !== true
           ? <button className='w-full' onClick={() => openSelector()}> <Card /></button>
-          : <Card />)}</>}
+          : <Card />)}
+            {hasError && <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-300 opacity-90"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-400"></span>
+          </span> }
+          {!hasError && hasWarning && <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-90"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-400"></span>
+          </span> }
+          </div>}
           </>}
       </div>
       {!collected.isDragging && dropProps.isOver && <div className={'px-2 pb-3'}>
