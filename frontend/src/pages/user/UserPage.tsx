@@ -1,5 +1,5 @@
 // import UserInfo from '../components/UserInfo'
-import CurriculumList from '../components/CurriculumList'
+import CurriculumList from './CurriculumList'
 
 /**
  * The user page. Contains the list of curriculums and some user information.
