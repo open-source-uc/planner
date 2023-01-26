@@ -3,14 +3,15 @@ import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import SemesterColumn from './SemesterColumn'
 import CourseCard from './CourseCard'
-import { ValidatablePlan, Course, ConcreteId, EquivalenceId, FlatValidationResult } from '../../../client'
+import { ValidatablePlan, Course, ConcreteId, Equivalence, EquivalenceId, FlatValidationResult } from '../../../client'
 
 export type PseudoCourse = ConcreteId | EquivalenceId
 
 interface PlanBoardProps {
   plan: ValidatablePlan
-  courseDetails: { [code: string]: Course }
+  courseDetails: { [code: string]: Course | Equivalence }
   setPlan: Function
+  openModal: Function
   addCourse: Function
   validating: Boolean
   validationResult: FlatValidationResult | null
@@ -29,7 +30,7 @@ const findCourseSuperblock = (validationResults: FlatValidationResult | null, co
  * Displays several semesters, as well as several classes per semester.
  */
 
-const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, validationResult }: PlanBoardProps): JSX.Element => {
+const PlanBoard = ({ plan, courseDetails, setPlan, openModal, addCourse, validating, validationResult }: PlanBoardProps): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false)
   function remCourse (semIdx: number, code: string): void {
     let idx = -1
@@ -47,14 +48,12 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, valida
       while (newClasses[newClasses.length - 1].length === 0) {
         newClasses.pop()
       }
-      return { ...prev, validatable_plan: { ...prev.validatable_plan, next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
+      return { ...prev, validatable_plan: { ...prev.validatable_plan, classes: newClasses } }
     })
   }
 
   function moveCourse (semester: number, drag: Course & { semester: number }, index: number): void {
-    console.log(drag, index)
     setPlan((prev: { validatable_plan: ValidatablePlan }) => {
-      console.log(prev)
       const dragIndex: number = prev.validatable_plan.classes[drag.semester].findIndex((c: PseudoCourse) => c.code === drag.code)
       const newClasses = [...prev.validatable_plan.classes]
       if (semester - prev.validatable_plan.classes.length >= 0) {
@@ -70,13 +69,12 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, valida
       while (newClasses[newClasses.length - 1].length === 0) {
         newClasses.pop()
       }
-      return { ...prev, validatable_plan: { ...prev.validatable_plan, next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
+      return { ...prev, validatable_plan: { ...prev.validatable_plan, classes: newClasses } }
     })
   }
-
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap rtl-grid ${validating === true ? 'pointer-events-none' : ''}`}>
+      <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap rtl-grid flex-grow ${validating === true ? 'pointer-events-none' : ''}`}>
         {plan.classes.map((classes: PseudoCourse[], semester: number) => (
             <SemesterColumn
               key={semester}
@@ -86,11 +84,13 @@ const PlanBoard = ({ plan, courseDetails, setPlan, addCourse, validating, valida
               {classes?.map((course: PseudoCourse, index: number) => (
                 <CourseCard
                   key={index.toString() + course.code}
-                  course={{ ...courseDetails[course.code], ...course, semester }}
+                  cardData={{ ...courseDetails[course.code], ...course, semester }}
                   isDragging={(e: boolean) => setIsDragging(e)}
                   handleMove={(dragCourse: Course & { semester: number }) => moveCourse(semester, dragCourse, index)}
                   remCourse={() => remCourse(semester, course.code)}
                   courseBlock={findCourseSuperblock(validationResult, course.code)}
+                  openSelector={() => { if ('credits' in course) openModal(courseDetails[course.code], semester, index); else openModal(course.equivalence, semester, index) }}
+                  hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
                   hasError={validationResult?.diagnostics?.find((e) => e.course_code === course.code && !e.is_warning) != null}
                   hasWarning={validationResult?.diagnostics?.find((e) => e.course_code === course.code && e.is_warning) != null}
                 />

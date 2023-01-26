@@ -18,6 +18,8 @@
     position: relative;
     display: flex;
     justify-content: center;
+    opacity: 1;
+    transition: opacity 0.5s ease;
   }
 
   .CurriculumTable{
@@ -26,6 +28,29 @@
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
+  }
+
+  .btn{
+    @apply font-semibold py-1 px-4 rounded;
+    @apply  text-white;
+    background-color: #3D4451;
+  }
+
+  .btn-blue::hover {
+    background-color: #25282D;
+  }
+}
+
+.animated {
+  animation: opacity-animation 1s infinite alternate;;
+}
+
+@keyframes opacity-animation {
+  5% {
+    opacity: 1;
+  }
+  100%{
+    opacity: 0.5;
   }
 }
 

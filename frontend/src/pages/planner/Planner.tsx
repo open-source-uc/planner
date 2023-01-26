@@ -2,20 +2,16 @@ import { Spinner } from '../../components/Spinner'
 import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
+import MyDialog from '../../components/Dialog'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
-import { DefaultService, ValidatablePlan, Course, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
+import { DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
 
 type PseudoCourse = ConcreteId | EquivalenceId
 
+type ModalData = { equivalence: Equivalence, semester: number, index: number } | undefined
 interface EmptyPlan {
   validatable_plan: ValidatablePlan
-}
-function instanceOfPlanView (object: unknown): object is PlanView {
-  if (object != null && typeof object === 'object') {
-    return 'id' in object
-  }
-  return false
 }
 
 /**
@@ -23,7 +19,9 @@ function instanceOfPlanView (object: unknown): object is PlanView {
  */
 const Planner = (): JSX.Element => {
   const [plan, setPlan] = useState<PlanView | EmptyPlan>({ validatable_plan: { classes: [], next_semester: 0 } })
-  const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course }>({})
+  const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course | Equivalence }>({})
+  const [modalData, setModalData] = useState<ModalData>()
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const previousClasses = useRef<PseudoCourse[][]>([[]])
   const [loading, setLoading] = useState(true)
   const [validating, setValidating] = useState(false)
@@ -40,7 +38,6 @@ const Planner = (): JSX.Element => {
       school: 'Ingenieria',
       career: 'Ingenieria'
     })
-    console.log(response)
     await getCourseDetails(response.classes.flat()).catch(err => {
       setValidationResult({
         diagnostics: [{
@@ -98,13 +95,17 @@ const Planner = (): JSX.Element => {
   async function getCourseDetails (courses: PseudoCourse[]): Promise<void> {
     setValidating(true)
     console.log('getting Courses Details...')
-    const codes = []
+    const coursesCodes = []
+    const equivalenceCodes = []
     for (const courseid of courses) {
-      if (courseid.is_concrete === true) { codes.push(courseid.code) }
+      if (courseid.is_concrete === true) { coursesCodes.push(courseid.code) } else { equivalenceCodes.push(courseid.code) }
     }
-    const response = await DefaultService.getCourseDetails(codes)
+    let responseEquivalenceDetails: Equivalence[] = []
+    let responseCourseDetails: Course[] = []
+    if (coursesCodes.length > 0) responseCourseDetails = await DefaultService.getCourseDetails(coursesCodes)
+    if (equivalenceCodes.length > 0) responseEquivalenceDetails = await DefaultService.getEquivalenceDetails(equivalenceCodes)
     // transform response to dict with key code:
-    const dict = response.reduce((acc: { [code: string]: Course }, curr: Course) => {
+    const dict = [...responseCourseDetails, ...responseEquivalenceDetails].reduce((acc: { [code: string]: Course | Equivalence }, curr: Course | Equivalence) => {
       acc[curr.code] = curr
       return acc
     }, {})
@@ -152,7 +153,7 @@ const Planner = (): JSX.Element => {
     const courseCode = courseCodeRaw.toUpperCase()
     for (const existingCourse of plan?.validatable_plan.classes.flat()) {
       if (existingCourse.code === courseCode) {
-        alert(`${courseCode} ya se encuentra en el plan`)
+        alert(`${courseCode} ya se encuentra en el plan, seleccione otro curso por favor`)
         return
       }
     }
@@ -167,7 +168,7 @@ const Planner = (): JSX.Element => {
           is_concrete: true,
           code: response[0].code
         })
-        return { ...prev, validatable_plan: { ...prev.validatable_plan, next_semester: prev.validatable_plan.next_semester, classes: newClasses } }
+        return { ...prev, validatable_plan: { ...prev.validatable_plan, classes: newClasses } }
       })
     } catch (err) {
       alert(err)
@@ -196,7 +197,6 @@ const Planner = (): JSX.Element => {
       // dont validate if the classes are rearranging the same semester at previous validation
       let changed = plan.validatable_plan.classes.length !== previousClasses.current.length
       if (!changed) {
-        console.log()
         for (let idx = 0; idx < plan.validatable_plan.classes.length; idx++) {
           const cur = [...plan.validatable_plan.classes[idx]].sort((a, b) => a.code.localeCompare(b.code))
           const prev = [...previousClasses.current[idx]].sort((a, b) => a.code.localeCompare(b.code))
@@ -219,15 +219,79 @@ const Planner = (): JSX.Element => {
       }
     }
   }, [loading, plan])
+
+  async function openModal (equivalence: Equivalence | EquivalenceId, semester: number, index: number): Promise<void> {
+    if ('courses' in equivalence) {
+      setModalData({ equivalence, semester, index })
+    } else {
+      const response = await DefaultService.getEquivalenceDetails([equivalence.code])
+      setModalData({ equivalence: response[0], semester, index })
+    }
+    setIsModalOpen(true)
+  }
+
+  async function closeModal (selection?: string): Promise<void> {
+    if (selection != null && modalData !== undefined) {
+      const pastClass = plan.validatable_plan.classes[modalData.semester][modalData.index]
+      if (selection === pastClass.code) { setIsModalOpen(false); return }
+      for (const existingCourse of plan?.validatable_plan.classes.flat()) {
+        if (existingCourse.code === selection) {
+          alert(`${selection} ya se encuentra en el plan, seleccione otro curso por favor`)
+          return
+        }
+      }
+      setValidating(true)
+      const response = await DefaultService.getCourseDetails([selection])
+      setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
+      setPlan((prev) => {
+        const newClasses = [...prev.validatable_plan.classes]
+        newClasses[modalData.semester] = [...prev.validatable_plan.classes[modalData.semester]]
+        let newEquivalence: EquivalenceId | undefined
+        if ('credits' in pastClass) {
+          newEquivalence = pastClass
+        } else newEquivalence = pastClass.equivalence
+        newClasses[modalData.semester][modalData.index] = {
+          is_concrete: true,
+          code: selection,
+          equivalence: newEquivalence
+        }
+        if (newEquivalence !== undefined && newEquivalence.credits !== response[0].credits) {
+          if (newEquivalence.credits > response[0].credits) {
+            newClasses[modalData.semester].splice(modalData.index + 1, 0,
+              {
+                is_concrete: false,
+                code: newEquivalence.code,
+                credits: newEquivalence.credits - response[0].credits
+              }
+            )
+          } else {
+            // To-DO: handle when credis exced necesary
+            // General logic: if there are not other courses with the same code then it dosnt matters
+            // If there are other course with the same code, and exact same creddits that this card exceed, delete the other
+
+            // On other way, one should decresed credits of other course with the same code
+            // Problem In this part: if i exceed by 5 and have a course of 4 and 10, what do i do
+            // option 1: delete the course with 4 and decresed the one of 10 by 1
+            // option 2: decresed the one of 10 to 5
+            console.log('help')
+          }
+        }
+        return { ...prev, validatable_plan: { ...prev.validatable_plan, classes: newClasses } }
+      })
+    }
+    setIsModalOpen(false)
+  }
+
   return (
     <div className={`w-full h-full p-3 pb-10 flex flex-row ${validating ? 'cursor-wait' : ''}`}>
+      <MyDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={async (selection?: string) => await closeModal(selection)}/>
       {(!loading && error === null) && <>
-        <div className={'flex flex-col w-5/6'}>
+        <div className={'flex flex-col w-5/6 flex-grow'}>
           <ul className={'w-full mb-3 mt-2 relative'}>
             <li className={'inline text-md ml-3 mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div> Ingeniería y Ciencias Ambientales</li>
-            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Amplitud en Programación</li>
+            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Por seleccionar</li>
             <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> Por seleccionar</li>
-            {instanceOfPlanView(plan) && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {plan.name}</li>}
+            {'id' in plan && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {plan.name}</li>}
           </ul>
           <ControlTopBar
             reset={getDefaultPlan}
@@ -238,6 +302,7 @@ const Planner = (): JSX.Element => {
             plan={plan.validatable_plan}
             courseDetails={courseDetails}
             setPlan={setPlan}
+            openModal={openModal}
             addCourse={addCourse}
             validating={validating}
             validationResult={validationResult}
