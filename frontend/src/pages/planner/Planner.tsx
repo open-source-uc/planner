@@ -28,7 +28,7 @@ const Planner = (): JSX.Element => {
   const [loading, setLoading] = useState(true)
   const [validating, setValidating] = useState(false)
   const [validationResult, setValidationResult] = useState<FlatValidationResult | null>(null)
-  const [error, setError] = useState<Error | null>(null)
+  const [error, setError] = useState<String | null>(null)
   const params = useParams()
 
   async function getDefaultPlan (): Promise<void> {
@@ -180,13 +180,13 @@ const Planner = (): JSX.Element => {
       getPlanById(params.plannerId).catch(err => {
         console.log(err)
         setLoading(false)
-        setError(err)
+        setError('Ocurrió un error al cargar el plan escogido.')
       })
     } else {
       getDefaultPlan().catch(err => {
         console.log(err)
         setLoading(false)
-        setError(err)
+        setError('Ocurrió un error al cargar el plan por defecto.')
       })
     }
   }, [])
@@ -248,8 +248,8 @@ const Planner = (): JSX.Element => {
 
         {loading && error === null && <Spinner message='Cargando...' />}
         {error !== null && <div className={'w-full h-full flex flex-col justify-center items-center'}>
-          <div className={'text-2xl font-semibold'}>Error al cargar plan</div>
-          <div className={'text-md font-normal'}>{String(error)}</div>
+          <p className={'text-2xl font-semibold mb-4'}>Error al cargar plan</p>
+          <p className={'text-sm font-normal'}>{error}</p>
         </div>}
     </div>
   )
