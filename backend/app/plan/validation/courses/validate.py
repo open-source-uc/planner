@@ -97,14 +97,29 @@ class PlanContext:
 
                 inst = self.classes[course.code]
                 self.diagnose(out, inst, course.deps)
+                self.check_semestrality(out, inst, course.semestrality)
                 sem_credits += course.credits
 
-            if max_creds_err := SemesterErrHandler.check_error(
-                semester=sem, credits=sem_credits
-            ):
-                out.add(max_creds_err)
+            self.check_max_credits(out, semester=sem, credits=sem_credits)
 
-        out.add(AmbiguousCoursesErr(codes=ambiguous_codes))
+        if ambiguous_codes:
+            out.add(AmbiguousCoursesErr(codes=ambiguous_codes))
+
+    def check_semestrality(
+        self,
+        out: ValidationResult,
+        inst: CourseInstance,
+        semestrality: tuple[bool, bool, bool],
+    ):
+        # TODO: check for TAV semester
+        if not semestrality[inst.semester % 2]:
+            out.add(SemestralityWarn(code=inst.course.code, semester=inst.semester))
+
+    def check_max_credits(self, out: ValidationResult, semester: int, credits: int):
+        if max_creds_err := SemesterErrHandler.check_error(
+            semester=semester, credits=credits
+        ):
+            out.add(max_creds_err)
 
     def diagnose(self, out: ValidationResult, inst: CourseInstance, expr: "Expr"):
         if is_satisfied(self, inst, expr):
@@ -269,6 +284,25 @@ def sanitize_plan(courseinfo: CourseInfo, out: ValidationResult, plan: Validatab
         return copy
     else:
         return plan
+
+
+class SemestralityWarn(DiagnosticWarn):
+    code: str
+    semester: int
+
+    def course_code(self) -> Optional[str]:
+        return self.code
+
+    def message(self) -> str:
+        return (
+            f"El curso {self.code} usualmente no se dicta en"
+            f" {self.semester_type()} semestres."
+        )
+
+    def semester_type(self):
+        if self.semester % 2 == 0:
+            return "primeros"
+        return "segundos"
 
 
 class AmbiguousCoursesErr(DiagnosticErr):
