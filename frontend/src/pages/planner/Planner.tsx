@@ -246,7 +246,7 @@ const Planner = (): JSX.Element => {
         <ErrorTray diagnostics={validationResult?.diagnostics ?? []} validating={validating}/>
         </>}
 
-        {loading && error === null && <Spinner message='Cargando...' />}
+        {loading && error === null && <Spinner message='Cargando planificación...' />}
         {error !== null && <div className={'w-full h-full flex flex-col justify-center items-center'}>
           <p className={'text-2xl font-semibold mb-4'}>Error al cargar plan</p>
           <p className={'text-sm font-normal'}>{error}</p>
