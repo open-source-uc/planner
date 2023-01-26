@@ -102,7 +102,8 @@ class PlanContext:
 
             self.check_max_credits(out, semester=sem, credits=sem_credits)
 
-        out.add(AmbiguousCoursesErr(codes=ambiguous_codes))
+        if ambiguous_codes:
+            out.add(AmbiguousCoursesErr(codes=ambiguous_codes))
 
     def check_semestrality(
         self,
