@@ -280,7 +280,7 @@ class AmbiguousCoursesErr(DiagnosticErr):
     def message(self) -> str:
         if len(self.codes) == 1:
             return f"Es necesario escoger un curso en el bloque {self.codes[0]}"
-        return f"Es necesario escoger cursos para los bloques {', '.join(self.codes)}"
+        return f"Es necesario escoger cursos en los bloques {', '.join(self.codes)}"
 
 
 class CourseErr(DiagnosticErr, ABC):
@@ -292,14 +292,14 @@ class CourseErr(DiagnosticErr, ABC):
 
 class UnknownCourseErr(CourseErr):
     def message(self) -> str:
-        return "Curso desconocido"
+        return f"El curso {self.code} es desconocido. Revisa la sigla."
 
 
 class RequirementErr(CourseErr):
     missing: Expr
 
     def message(self) -> str:
-        return f"Requisitos faltantes: {self.missing}"
+        return f"Requisitos insatisfechos para {self.code}, se necesita: {self.missing}"
 
 
 class SemesterErrHandler:
