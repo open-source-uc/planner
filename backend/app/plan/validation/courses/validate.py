@@ -295,9 +295,14 @@ class SemestralityWarn(DiagnosticWarn):
 
     def message(self) -> str:
         return (
-            f"El curso {self.code} probablemente NO se dictará el"
-            f" semestre {self.semester}"
+            f"El curso {self.code} usualmente no se dicta en"
+            f" {self.semester_type()} semestres."
         )
+
+    def semester_type(self):
+        if self.semester % 2 == 0:
+            return "primeros"
+        return "segundos"
 
 
 class AmbiguousCoursesErr(DiagnosticErr):
