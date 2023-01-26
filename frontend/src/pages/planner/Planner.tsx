@@ -283,7 +283,7 @@ const Planner = (): JSX.Element => {
   }
 
   return (
-    <div className={`w-full h-full p-3 pb-10 flex flex-row ${validating ? 'cursor-wait' : ''}`}>
+    <div className={`w-full h-full p-3 flex flex-grow overflow-hidden flex-row ${validating ? 'cursor-wait' : ''}`}>
       <MyDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={async (selection?: string) => await closeModal(selection)}/>
       {(!loading && error === null) && <>
         <div className={'flex flex-col w-5/6 flex-grow'}>
