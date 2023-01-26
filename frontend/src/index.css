@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    font-family: Inter, system-ui, sans-serif;
+  }
+}
+
 @layer components {
   .card {
     background-color: #D8D8D8;
@@ -10,17 +16,17 @@
     padding: theme('spacing.1');
     box-shadow: theme('boxShadow.lg');
     position: relative;
-    display: flex; 
+    display: flex;
     justify-content: center;
     opacity: 1;
     transition: opacity 0.5s ease;
   }
-  
+
   .CurriculumTable{
     overflow-y: overlay;
-    overflow-x: auto; 
-    display: flex; 
-    flex-direction: row; 
+    overflow-x: auto;
+    display: flex;
+    flex-direction: row;
     flex-wrap: nowrap;
   }
 

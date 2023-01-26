@@ -50,6 +50,11 @@ class ValidationResult(BaseModel):
     def add(self, diag: Diagnostic):
         self.diagnostics.append(diag)
 
+    def remove(self, indices: list[int]):
+        for i, _diag in reversed(list(enumerate(self.diagnostics))):
+            if i in indices:
+                del self.diagnostics[i]
+
     def flatten(self) -> FlatValidationResult:
         flat_diags: list[FlatDiagnostic] = []
         for diag in self.diagnostics:
