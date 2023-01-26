@@ -14,9 +14,6 @@ interface CourseCardProps {
 }
 
 const CourseCard = ({ course, isDragging, handleMove, remCourse, courseBlock, hasError, hasWarning }: CourseCardProps): JSX.Element => {
-  if (course.code === 'IIC2613') {
-    console.debug(course, hasError, hasWarning)
-  }
   const ref = useRef(null)
   const [collected = { isDragging: false }, drag] = useDrag(() => ({
     type: 'card',
