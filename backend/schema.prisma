@@ -90,7 +90,27 @@ model Plan {
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
   name             String
-  is_favorite      Boolean @default(false)
+  is_favorite      Boolean  @default(false)
   user_rut         String
   validatable_plan Json
+}
+
+model Curriculum {
+  cyear      String
+  major      String
+  minor      String
+  title      String
+  curriculum Json
+
+  @@unique([cyear, major, minor, title])
+}
+
+model PlanRecommendation {
+  cyear            String
+  major            String
+  minor            String
+  title            String
+  recommended_plan Json
+
+  @@unique([cyear, major, minor, title])
 }
