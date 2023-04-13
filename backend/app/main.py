@@ -127,17 +127,22 @@ async def search_courses(
     Fetches a list of courses that match the given name (including code), credits, and school.
     """
     conditions: list[str] = []
-    params: list[str] = []
+    params: list[Union[str, int]] = []
+
     if name is not None:
+        name_parts = name.split()
+        name_pattern = "%" + "%".join(name_parts) + "%"
         conditions.append(
-            "(code ILIKE '%' || $1 || '%' OR name ILIKE '%' || $1 || '%')"
+            f"(code ILIKE ${len(params) + 1} OR name ILIKE ${len(params) + 1})"
         )
-        params.append(name)
+        params.append(name_pattern)
+
     if credits is not None:
-        conditions.append("credits = $2")
-        params.append(f"{credits}")
+        conditions.append(f"credits = ${len(params) + 1}")
+        params.append(credits)
+
     if school is not None:
-        conditions.append("school = $3")
+        conditions.append(f"school ILIKE '%' || ${len(params) + 1} || '%'")
         params.append(school)
 
     if not conditions:
