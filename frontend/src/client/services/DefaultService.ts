@@ -93,19 +93,26 @@ export class DefaultService {
 
     /**
      * Search Courses
-     * Fetches a list of courses that match a given search query string.
-     * @param text
+     * Fetches a list of courses that match the given name (including code),
+     * credits, and school.
+     * @param name
+     * @param credits
+     * @param school
      * @returns CourseOverview Successful Response
      * @throws ApiError
      */
     public static searchCourses(
-        text: string,
+        name?: string,
+        credits?: number,
+        school?: string,
     ): CancelablePromise<Array<CourseOverview>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/courses/search',
             query: {
-                'text': text,
+                'name': name,
+                'credits': credits,
+                'school': school,
             },
             errors: {
                 422: `Validation Error`,
