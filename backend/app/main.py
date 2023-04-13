@@ -124,7 +124,8 @@ async def search_courses(
     school: Optional[str] = None,
 ):
     """
-    Fetches a list of courses that match the given name (including code), credits, and school.
+    Fetches a list of courses that match the given name (including code),
+    credits, and school.
     """
     conditions: list[str] = []
     params: list[Union[str, int]] = []
