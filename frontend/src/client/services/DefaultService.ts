@@ -6,7 +6,10 @@ import type { CourseOverview } from '../models/CourseOverview';
 import type { Equivalence } from '../models/Equivalence';
 import type { FlatValidationResult } from '../models/FlatValidationResult';
 import type { LowDetailPlanView } from '../models/LowDetailPlanView';
+import type { Major } from '../models/Major';
+import type { Minor } from '../models/Minor';
 import type { PlanView } from '../models/PlanView';
+import type { Title } from '../models/Title';
 import type { ValidatablePlan } from '../models/ValidatablePlan';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -396,6 +399,73 @@ export class DefaultService {
                 'plan_id': planId,
                 'set_name': setName,
                 'set_favorite': setFavorite,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Get Majors
+     * Get all the available majors for a given curriculum version (cyear).
+     * @param cyear
+     * @returns Major Successful Response
+     * @throws ApiError
+     */
+    public static getMajors(
+        cyear: string,
+    ): CancelablePromise<Array<Major>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/offer/major',
+            query: {
+                'cyear': cyear,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Get Minors
+     * @param cyear
+     * @param majorCode
+     * @returns Minor Successful Response
+     * @throws ApiError
+     */
+    public static getMinors(
+        cyear: string,
+        majorCode?: string,
+    ): CancelablePromise<Array<Minor>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/offer/minor',
+            query: {
+                'cyear': cyear,
+                'major_code': majorCode,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Get Titles
+     * @param cyear
+     * @returns Title Successful Response
+     * @throws ApiError
+     */
+    public static getTitles(
+        cyear: string,
+    ): CancelablePromise<Array<Title>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/offer/title',
+            query: {
+                'cyear': cyear,
             },
             errors: {
                 422: `Validation Error`,
