@@ -180,6 +180,38 @@ export class DefaultService {
     }
 
     /**
+     * Empty Plan For User
+     * Generate an empty plan using the current user as context.
+     * For example, the created plan includes all passed courses, uses the curriculum
+     * version for the given user and selects the student's official choice of
+     * major/minor/title if available.
+     *
+     * (Currently this is equivalent to `empty_guest_plan()` until we get user data)
+     * @returns ValidatablePlan Successful Response
+     * @throws ApiError
+     */
+    public static emptyPlanForUser(): CancelablePromise<ValidatablePlan> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/plan/empty_for',
+        });
+    }
+
+    /**
+     * Empty Guest Plan
+     * Generates a generic empty plan with no user context, using the latest curriculum
+     * version.
+     * @returns ValidatablePlan Successful Response
+     * @throws ApiError
+     */
+    public static emptyGuestPlan(): CancelablePromise<ValidatablePlan> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/plan/empty_guest',
+        });
+    }
+
+    /**
      * Validate Plan
      * Validate a plan, generating diagnostics.
      * @param requestBody
@@ -202,7 +234,8 @@ export class DefaultService {
 
     /**
      * Generate Plan
-     * Generate a hopefully error-free plan from an initial plan.
+     * From a base plan, generate a new plan that should lead the user to earn their title
+     * of choice.
      * @param requestBody
      * @returns ValidatablePlan Successful Response
      * @throws ApiError
