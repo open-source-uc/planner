@@ -1,7 +1,9 @@
+from typing import Optional
+from ..auth import UserData
 from ..sync import get_recommended_plan
 from .validation.courses.logic import And, Expr, Or, ReqCourse
 from .validation.curriculum.tree import CurriculumSpec
-from .plan import EquivalenceId, PseudoCourse, ValidatablePlan
+from .plan import EquivalenceId, Level, PseudoCourse, ValidatablePlan
 from .courseinfo import CourseInfo, course_info
 from .validation.validate import quick_validate_dependencies
 
@@ -17,9 +19,8 @@ class CurriculumRecommender:
     @classmethod
     async def recommend(
         cls, courseinfo: CourseInfo, curr: CurriculumSpec
-    ) -> ValidatablePlan:
-        courses = await get_recommended_plan(curr)
-        return ValidatablePlan(classes=courses, next_semester=0)
+    ) -> list[list[PseudoCourse]]:
+        return await get_recommended_plan(curr)
 
 
 def _compute_courses_to_pass(
@@ -34,19 +35,6 @@ def _compute_courses_to_pass(
             lambda course: all(course not in passed for passed in passed_classes),
             flat_curriculum_classes,
         )
-    )
-
-
-def _clone_plan(plan: ValidatablePlan):
-    classes: list[list[PseudoCourse]] = []
-    for semester in plan.classes:
-        classes.append(semester.copy())
-    return ValidatablePlan(
-        classes=classes,
-        next_semester=plan.next_semester,
-        level=plan.level,
-        school=plan.school,
-        career=plan.career,
     )
 
 
@@ -185,14 +173,41 @@ def _try_add_course_group(
     return "added"
 
 
-async def generate_default_plan(passed: ValidatablePlan, curriculum: CurriculumSpec):
+async def generate_empty_plan(user: Optional[UserData] = None) -> ValidatablePlan:
+    """
+    Generate an empty plan with optional user context.
+    If no user context is available, uses the latest curriculum version.
+
+    All plans are born from this function (or deserialized from plans that were born
+    from this function, except for manually crafted plans).
+    """
+    # TODO: Use user context when available
+    # TODO: Support empty major/minor/title selection
+    return ValidatablePlan(
+        classes=[],
+        next_semester=0,
+        level=Level.PREGRADO,
+        school="Ingenieria",
+        program=None,
+        career="Ingenieria",
+        curriculum=CurriculumSpec(
+            cyear=CurriculumSpec.LATEST_CYEAR, major="M170", minor="N776", title="40082"
+        ),
+    )
+
+
+async def generate_recommended_plan(passed: ValidatablePlan):
+    """
+    Take a base plan that the user has already passed, and recommend a plan that should
+    lead to the user getting the title in whatever major-minor-career they chose.
+    """
     courseinfo = await course_info()
-    recommended = await CurriculumRecommender.recommend(courseinfo, curriculum)
+    recommended = await CurriculumRecommender.recommend(courseinfo, passed.curriculum)
 
     # Flat list of all curriculum courses left to pass
-    courses_to_pass = _compute_courses_to_pass(recommended.classes, passed.classes)
+    courses_to_pass = _compute_courses_to_pass(recommended, passed.classes)
 
-    plan = _clone_plan(passed)
+    plan = passed.copy(deep=True)
     plan.classes.append([])
 
     # Precompute corequirements for courses

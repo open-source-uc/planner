@@ -3,7 +3,7 @@ Models a flow network in the context of curriculums.
 """
 
 from pydantic import BaseModel
-from typing import Literal, Optional, Union
+from typing import ClassVar, Literal, Optional, Union
 
 
 class Block(BaseModel):
@@ -47,6 +47,8 @@ class CurriculumSpec(BaseModel, frozen=True):
     Represents a curriculum specification.
     This specification should uniquely specify a curriculum.
     """
+
+    LATEST_CYEAR: ClassVar[Literal["C2020"]] = "C2020"
 
     # Curriculum year.
     cyear: Literal["C2020"]

@@ -178,18 +178,23 @@ Hay ramos con Aprob. Especial, que requieren autorización de la DIPRE para toma
 
 Estados de un curso:
 
-A: Aprobado.
-R: Reprobado?
-C: Ramo convalidado de otra universidad, pero sin nota.
-I: Ramo incompleto, aun no puede ser calificado. (ie. ramo anual)
-P: Ramo pendiente, esta temporalmente no-aprobado hasta que se pruebe lo contrario.
+**A**: Aprobado.
+
+**R**: Reprobado?
+
+**C**: Ramo convalidado de otra universidad, pero sin nota.
+
+**I**: Ramo incompleto, aun no puede ser calificado. (ie. ramo anual)
+
+**P**: Ramo pendiente, esta temporalmente no-aprobado hasta que se pruebe lo contrario.
     Notar que segun
     [https://registrosacademicos.uc.cl/informacion-para-estudiantes/inscripcion-y-retiro-de-cursos/preguntas-frecuentes/]
     si se considera como aprobado para efectos de requisitos.
-D?: Algunos labs pueden tener nota D. (distinguido = nota 7.0)
-    Anecdotico: Conozco a alguien con nota D en intro a la progra, tras convalidarlo
-    por examen de conocimientos relevantes.
-    Sin embargo, conozco a otras personas que tambien lo convalidaron, pero tienen
+
+**D**?: Algunos labs pueden tener nota D. (distinguido = nota 7.0)
+    Anecdotico: Conozco a alguien que tiene nota D en intro a la progra, tras
+    convalidarla por examen de conocimientos relevantes.
+    Sin embargo, conozco a otras personas que tambien la convalidaron, pero tienen
     nota numerica normal.
 
 Pareciera que mas que estados, son notas que puede tener un ramo, tomando el lugar

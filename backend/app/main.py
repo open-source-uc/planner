@@ -1,8 +1,7 @@
-from .plan.validation.curriculum.tree import CurriculumSpec
 from .plan.validation.diagnostic import FlatValidationResult
 from .plan.validation.validate import diagnose_plan
 from .plan.plan import ValidatablePlan
-from .plan.generation import generate_default_plan
+from .plan.generation import generate_empty_plan, generate_recommended_plan
 from .plan.storage import (
     PlanView,
     LowDetailPlanView,
@@ -206,9 +205,26 @@ async def rebuild_validation_rules():
     }
 
 
-async def debug_get_curriculum() -> CurriculumSpec:
-    # TODO: Implement a proper curriculum selector
-    return CurriculumSpec(cyear="C2020", major="M170", minor="N776", title="40082")
+@app.get("/plan/empty_for", response_model=ValidatablePlan)
+async def empty_plan_for_user(user_data: UserData = Depends(require_authentication)):
+    """
+    Generate an empty plan using the current user as context.
+    For example, the created plan includes all passed courses, uses the curriculum
+    version for the given user and selects the student's official choice of
+    major/minor/title if available.
+
+    (Currently this is equivalent to `empty_guest_plan()` until we get user data)
+    """
+    return await generate_empty_plan(user_data)
+
+
+@app.get("/plan/empty_guest", response_model=ValidatablePlan)
+async def empty_guest_plan():
+    """
+    Generates a generic empty plan with no user context, using the latest curriculum
+    version.
+    """
+    return await generate_empty_plan(None)
 
 
 @app.post("/plan/validate", response_model=FlatValidationResult)
@@ -216,17 +232,16 @@ async def validate_plan(plan: ValidatablePlan):
     """
     Validate a plan, generating diagnostics.
     """
-    curr = await debug_get_curriculum()
-    return (await diagnose_plan(plan, curr)).flatten()
+    return (await diagnose_plan(plan)).flatten()
 
 
 @app.post("/plan/generate", response_model=ValidatablePlan)
 async def generate_plan(passed: ValidatablePlan):
     """
-    Generate a hopefully error-free plan from an initial plan.
+    From a base plan, generate a new plan that should lead the user to earn their title
+    of choice.
     """
-    curr = await debug_get_curriculum()
-    plan = await generate_default_plan(passed, curr)
+    plan = await generate_recommended_plan(passed)
     return plan
 
 

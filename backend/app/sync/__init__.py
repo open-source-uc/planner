@@ -40,6 +40,12 @@ async def run_upstream_sync():
 
 
 async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
+    """
+    Get the curriculum definition for a given spec.
+    In other words, fetch the full curriculum corresponding to a given
+    cyear-major-minor-title combination.
+    Currently, these have to be requested from SIDING, so some caching is performed.
+    """
     db_curr = await DbCurriculum.prisma().find_unique(
         where={
             "cyear_major_minor_title": {
@@ -73,6 +79,12 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
 
 
 async def get_recommended_plan(spec: CurriculumSpec) -> list[list[PseudoCourse]]:
+    """
+    Fetch the ideal recommended plan for a given curriculum spec.
+    In other words, transform a cyear-major-minor-title combination into a list of
+    semesters with the ideal course order.
+    Currently, these have to be requested from SIDING, so some caching is performed.
+    """
     db_plan = await DbPlanRecommendation.prisma().find_unique(
         where={
             "cyear_major_minor_title": {

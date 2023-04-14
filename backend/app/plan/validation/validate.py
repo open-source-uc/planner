@@ -1,5 +1,4 @@
 from .curriculum.diagnose import diagnose_curriculum
-from .curriculum.tree import CurriculumSpec
 from .courses.validate import CourseInstance, PlanContext, is_satisfied, sanitize_plan
 from ..courseinfo import CourseInfo, course_info
 from ...sync import get_curriculum
@@ -7,11 +6,9 @@ from .diagnostic import ValidationResult
 from ..plan import PseudoCourse, ValidatablePlan
 
 
-async def diagnose_plan(
-    plan: ValidatablePlan, curriculum_spec: CurriculumSpec
-) -> ValidationResult:
+async def diagnose_plan(plan: ValidatablePlan) -> ValidationResult:
     courseinfo = await course_info()
-    curriculum = await get_curriculum(curriculum_spec)
+    curriculum = await get_curriculum(plan.curriculum)
     out = ValidationResult(diagnostics=[], course_superblocks={})
 
     # Ensure all courses are known
