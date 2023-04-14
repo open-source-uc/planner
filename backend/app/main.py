@@ -130,6 +130,8 @@ async def search_courses(
     conditions: list[str] = []
     params: list[Union[str, int]] = []
 
+    # TODO: Implement proper text search using `tsquery` or similar.
+
     if name is not None:
         name_parts = name.split()
         name_pattern = "%" + "%".join(name_parts) + "%"
