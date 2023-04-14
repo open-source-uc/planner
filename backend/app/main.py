@@ -118,20 +118,46 @@ class CourseOverview(BaseModel):
 
 
 @app.get("/courses/search", response_model=list[CourseOverview])
-async def search_courses(text: str):
+async def search_courses(
+    name: Optional[str] = None,
+    credits: Optional[int] = None,
+    school: Optional[str] = None,
+):
     """
-    Fetches a list of courses that match a given search query string.
+    Fetches a list of courses that match the given name (including code),
+    credits, and school.
     """
-    results: list[DbCourse]
-    results = await prisma.query_raw(
-        """
-        SELECT code, name, credits FROM "Course"
-        WHERE code LIKE '%' || $1 || '%'
-            OR name LIKE '%' || $1 || '%'
+    conditions: list[str] = []
+    params: list[Union[str, int]] = []
+
+    # TODO: Implement proper text search using `tsquery` or similar.
+
+    if name is not None:
+        name_parts = name.split()
+        name_pattern = "%" + "%".join(name_parts) + "%"
+        conditions.append(
+            f"(code ILIKE ${len(params) + 1} OR name ILIKE ${len(params) + 1})"
+        )
+        params.append(name_pattern)
+
+    if credits is not None:
+        conditions.append(f"credits = ${len(params) + 1}")
+        params.append(credits)
+
+    if school is not None:
+        conditions.append(f"school ILIKE '%' || ${len(params) + 1} || '%'")
+        params.append(school)
+
+    if not conditions:
+        return await prisma.course.find_many(take=50)
+
+    query = f"""
+        SELECT code, name, credits, school FROM "Course"
+        WHERE {" AND ".join(conditions)}
         LIMIT 50
-        """,
-        text,
-    )
+    """
+
+    results: list[DbCourse] = await prisma.query_raw(query, *params)
     return results
 
 
