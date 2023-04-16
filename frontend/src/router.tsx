@@ -3,6 +3,8 @@ import Planner from './pages/planner/Planner'
 import Layout from './layout/Layout'
 import UserPage from './pages/user/UserPage'
 import Logout from './pages/Logout'
+import Error403 from './pages/Error403'
+import { DefaultService } from './client'
 
 import {
   createReactRouter,
@@ -18,16 +20,26 @@ const homeRoute = rootRoute.createRoute({
   component: Home
 })
 
-function authenticateRoute (): void {
-  const token = localStorage.getItem('access-token')
-  if (token == null) {
-    throw new Error('Not authenticated')
-  }
+async function authenticateRoute (): Promise<void> {
+  await DefaultService.checkAuth().catch(err => {
+    if (err.status === 401) {
+      throw new Error(err.message)
+    }
+    if (err.status === 403) {
+      window.location.href = '/403'
+    }
+  })
 }
 
 function onAuthenticationError (): void {
   window.location.href = `${import.meta.env.VITE_BASE_API_URL as string}/auth/login`
+  localStorage.removeItem('access-token')
 }
+
+const error403 = rootRoute.createRoute({
+  path: '/403',
+  component: Error403
+})
 
 const userPageRoute = rootRoute.createRoute({
   path: '/user',
@@ -58,7 +70,7 @@ const logoutRoute = rootRoute.createRoute({
   component: Logout
 })
 
-const routeConfig = rootRoute.addChildren([homeRoute, userPageRoute, newPlannerRoute.addChildren([getPlannerRoute]), logoutRoute])
+const routeConfig = rootRoute.addChildren([homeRoute, userPageRoute, error403, newPlannerRoute.addChildren([getPlannerRoute]), logoutRoute])
 
 export const router = createReactRouter({
   routeConfig
