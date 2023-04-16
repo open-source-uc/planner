@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
 
     # Time to expire JWT tokens in seconds.
-    jwt_expire: int = 10
+    jwt_expire: int = 18_000
 
     # Siding SOAP WebService access username.
     siding_username: str = Field(...)
