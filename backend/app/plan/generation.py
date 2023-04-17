@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from ..user.auth import UserKey
 from ..sync import get_recommended_plan
 from .validation.courses.logic import And, Expr, Or, ReqCourse
-from .validation.curriculum.tree import CurriculumSpec, Cyear
+from .validation.curriculum.tree import LATEST_CYEAR, CurriculumSpec, Cyear
 from .plan import EquivalenceId, Level, PseudoCourse, ValidatablePlan
 from .courseinfo import CourseInfo, course_info
 from .validation.validate import quick_validate_dependencies
@@ -194,7 +194,7 @@ async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan
         classes = []
         next_semester = 0
         curriculum = CurriculumSpec(
-            cyear=Cyear.LATEST,
+            cyear=LATEST_CYEAR,
             major="M170",
             minor="N776",
             title="40082",

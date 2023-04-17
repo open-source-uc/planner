@@ -64,15 +64,19 @@ def _semesters_elapsed(start: tuple[int, int], end: tuple[int, int]) -> int:
 async def _fetch_raw_blocks(
     courseinfo: CourseInfo, spec: CurriculumSpec
 ) -> list[BloqueMalla]:
+    """
+    NOTE: Blank major/minors raise an error.
+    """
+
     # Fetch raw curriculum blocks for the given cyear-major-minor-title combination
-    if spec.major is None or spec.minor is None or spec.title is None:
-        raise Exception("blank major/minor/titles are not supported yet")
+    if spec.major is None or spec.minor is None:
+        raise Exception("blank major/minor is not supported")
     raw_blocks = await client.get_curriculum_for_spec(
         PlanEstudios(
             CodCurriculum=str(spec.cyear),
             CodMajor=spec.major,
             CodMinor=spec.minor,
-            CodTitulo=spec.title,
+            CodTitulo=spec.title or "",
         )
     )
 
@@ -113,6 +117,8 @@ async def _fetch_raw_blocks(
 async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curriculum:
     """
     Call into the SIDING webservice and get the curriculum definition for a given spec.
+
+    NOTE: Blank major/minors raise an error.
     """
 
     print(f"fetching curriculum from siding for spec {spec}")
@@ -151,7 +157,7 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
 
     # Apply OFG transformation (merge all OFGs into a single 50-credit block, and only
     # allow up to 10 credits of 5-credit sports courses)
-    match spec.cyear.__root__:
+    match spec.cyear.raw:
         case "C2020":
             ofg_course = None
             for i in reversed(range(len(blocks))):
@@ -209,6 +215,8 @@ async def fetch_recommended_courses(
 ) -> list[list[PseudoCourse]]:
     """
     Call into the SIDING webservice and get the recommended courses for a given spec.
+
+    NOTE: Blank major/minors raise an error.
     """
 
     print(f"fetching recommended courses from siding for spec {spec}")

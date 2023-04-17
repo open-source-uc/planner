@@ -42,8 +42,15 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
     Get the curriculum definition for a given spec.
     In other words, fetch the full curriculum corresponding to a given
     cyear-major-minor-title combination.
+    Note that currently when there is no major/minor selected, an empty curriculum is
+    returned.
     Currently, these have to be requested from SIDING, so some caching is performed.
     """
+
+    # The underlying SIDING webservice does not support empty major/minor selections
+    if spec.major is None or spec.minor is None:
+        return Curriculum(nodes=[])
+
     db_curr = await DbCurriculum.prisma().find_unique(
         where={
             "cyear_major_minor_title": {
@@ -65,7 +72,7 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
             ON CONFLICT (cyear, major, minor, title)
             DO UPDATE SET curriculum = $5
             """,
-            spec.cyear,
+            str(spec.cyear),
             spec.major or "",
             spec.minor or "",
             spec.title or "",
@@ -81,8 +88,15 @@ async def get_recommended_plan(spec: CurriculumSpec) -> list[list[PseudoCourse]]
     Fetch the ideal recommended plan for a given curriculum spec.
     In other words, transform a cyear-major-minor-title combination into a list of
     semesters with the ideal course order.
+    Note that currently when there is no major/minor selected, no courses are
+    recommended.
     Currently, these have to be requested from SIDING, so some caching is performed.
     """
+
+    # The underlying SIDING webservice does not support empty major/minor selections
+    if spec.major is None or spec.minor is None:
+        return []
+
     db_plan = await DbPlanRecommendation.prisma().find_unique(
         where={
             "cyear_major_minor_title": {
@@ -104,7 +118,7 @@ async def get_recommended_plan(spec: CurriculumSpec) -> list[list[PseudoCourse]]
             ON CONFLICT (cyear, major, minor, title)
             DO UPDATE SET recommended_plan = $5
             """,
-            spec.cyear,
+            str(spec.cyear),
             spec.major or "",
             spec.minor or "",
             spec.title or "",

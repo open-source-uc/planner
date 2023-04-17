@@ -6,6 +6,7 @@ import MyDialog from '../../components/Dialog'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
 import { DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
+import { useAuth } from '../../contexts/auth.context'
 
 type PseudoCourse = ConcreteId | EquivalenceId
 
@@ -32,11 +33,12 @@ const Planner = (): JSX.Element => {
   const [validationResult, setValidationResult] = useState<FlatValidationResult | null>(null)
   const [error, setError] = useState<String | null>(null)
   const params = useParams()
+  const authState = useAuth()
 
   async function getDefaultPlan (): Promise<void> {
     console.log('getting Basic Plan...')
-    // TODO: Use current user to generate plan if logged in
-    const response: ValidatablePlan = await DefaultService.generatePlan(await DefaultService.emptyGuestPlan())
+    const basePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
+    const response: ValidatablePlan = await DefaultService.generatePlan(basePlan)
     await getCourseDetails(response.classes.flat()).catch(err => {
       setValidationResult({
         diagnostics: [{

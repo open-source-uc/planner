@@ -3,7 +3,7 @@ Models a flow network in the context of curriculums.
 """
 
 from pydantic import BaseModel
-from typing import ClassVar, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
 
 class Block(BaseModel):
@@ -46,32 +46,30 @@ class Cyear(BaseModel, frozen=True):
     """
     A curriculum version, constrained to whatever curriculum versions we support.
     Whenever something depends on the version of the curriculum, it should match
-    exhaustively on the `__root__` field (using Python's `match` statement).
+    exhaustively on the `raw` field (using Python's `match` statement).
     This allows the linter to pinpoint all places that need to be updated whenever a
     new curriculum version is added.
     """
 
-    __root__: Literal["C2020"]
-
-    LATEST: ClassVar["Cyear"]
+    raw: Literal["C2020"]
 
     @staticmethod
     def from_str(cyear: str) -> Optional["Cyear"]:
         if cyear == "C2020":
-            return Cyear(__root__=cyear)
+            return Cyear(raw=cyear)
         else:
             return None
 
     def __str__(self) -> str:
         """
         Intended for communication with untyped systems like SIDING or the database.
-        To switch based on the curriculum version, use `__root__` directly, which
+        To switch based on the curriculum version, use `raw` directly, which
         preserves type information.
         """
-        return self.__root__
+        return self.raw
 
 
-Cyear.LATEST = Cyear(__root__="C2020")
+LATEST_CYEAR = Cyear(raw="C2020")
 
 
 class CurriculumSpec(BaseModel, frozen=True):
