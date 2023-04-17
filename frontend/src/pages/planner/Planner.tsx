@@ -5,7 +5,7 @@ import ControlTopBar from './ControlTopBar'
 import MyDialog from '../../components/Dialog'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
-import { DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
+import { Major, Minor, Title, DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
 
 type PseudoCourse = ConcreteId | EquivalenceId
 
@@ -15,12 +15,18 @@ interface PlanWithNoOwner {
   validatable_plan: ValidatablePlan
 }
 
+interface CurriculumData {
+  majors: { [code: string]: Major }
+  minors: { [code: string]: Minor }
+  titles: { [code: string]: Title }
+}
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
 const Planner = (): JSX.Element => {
   const [plan, setPlan] = useState<PlanView | PlanWithNoOwner | null>(null)
   const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course | Equivalence }>({})
+  const [curriculumData, setCurriculumData] = useState<CurriculumData | null>(null)
   const [modalData, setModalData] = useState<ModalData>()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const previousClasses = useRef<PseudoCourse[][]>([[]])
@@ -46,6 +52,7 @@ const Planner = (): JSX.Element => {
         course_superblocks: {}
       })
     })
+    setCurriculumData(await loadCurriculumsData(response.curriculum.cyear, response.curriculum.major))
     setPlan({ ...plan, validatable_plan: response })
     await validate(response).catch(err => {
       setValidationResult({
@@ -183,6 +190,29 @@ const Planner = (): JSX.Element => {
     setValidating(false)
   }
 
+  async function loadCurriculumsData (cYear: string, cMajor?: string): Promise<CurriculumData> {
+    const [majors, minors, titles] = await Promise.all([
+      DefaultService.getMajors(cYear),
+      DefaultService.getMinors(cYear, cMajor),
+      DefaultService.getTitles(cYear)
+    ])
+    const curriculumData: CurriculumData = {
+      majors: majors.reduce((dict: { [code: string]: Major }, m: Major) => {
+        dict[m.code] = m
+        return dict
+      }, {}),
+      minors: minors.reduce((dict: { [code: string]: Minor }, m: Minor) => {
+        dict[m.code] = m
+        return dict
+      }, {}),
+      titles: titles.reduce((dict: { [code: string]: Title }, t: Title) => {
+        dict[t.code] = t
+        return dict
+      }, {})
+    }
+    return curriculumData
+  }
+
   useEffect(() => {
     if (params?.plannerId != null) {
       getPlanById(params.plannerId).catch(err => {
@@ -296,9 +326,9 @@ const Planner = (): JSX.Element => {
       {(!loading && error === null) && <>
         <div className={'flex flex-col w-5/6 flex-grow'}>
           <ul className={'w-full mb-3 mt-2 relative'}>
-            <li className={'inline text-md ml-3 mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div> Ingeniería y Ciencias Ambientales</li>
-            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Por seleccionar</li>
-            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> Por seleccionar</li>
+            <li className={'inline text-md ml-3 mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div> {plan?.validatable_plan.curriculum.major}</li>
+            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> {plan?.validatable_plan.curriculum.minor}</li>
+            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> {plan?.validatable_plan.curriculum.title}</li>
             {plan != null && 'id' in plan && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {plan.name}</li>}
           </ul>
           <ControlTopBar
