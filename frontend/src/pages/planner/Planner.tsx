@@ -250,28 +250,33 @@ const Planner = (): JSX.Element => {
         }
       }
       setValidating(true)
-      const response = await DefaultService.getCourseDetails([selection])
-      setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
+      const details = (await DefaultService.getCourseDetails([selection]))[0]
+      setCourseDetails((prev) => { return { ...prev, [details.code]: details } })
       setPlan((prev) => {
         if (prev == null) return prev
         const newClasses = [...prev.validatable_plan.classes]
         newClasses[modalData.semester] = [...prev.validatable_plan.classes[modalData.semester]]
-        let newEquivalence: EquivalenceId | undefined
-        if ('credits' in pastClass) {
-          newEquivalence = pastClass
-        } else newEquivalence = pastClass.equivalence
+        const oldEquivalence = 'credits' in pastClass ? pastClass : pastClass.equivalence
         newClasses[modalData.semester][modalData.index] = {
           is_concrete: true,
           code: selection,
-          equivalence: newEquivalence
+          equivalence: oldEquivalence
         }
-        if (newEquivalence !== undefined && newEquivalence.credits !== response[0].credits) {
-          if (newEquivalence.credits > response[0].credits) {
-            newClasses[modalData.semester].splice(modalData.index + 1, 0,
+        if (oldEquivalence !== undefined && oldEquivalence.credits !== details.credits) {
+          if (oldEquivalence.credits > details.credits) {
+            newClasses[modalData.semester].splice(modalData.index, 1,
+              {
+                is_concrete: true,
+                code: selection,
+                equivalence: {
+                  ...oldEquivalence,
+                  credits: details.credits
+                }
+              },
               {
                 is_concrete: false,
-                code: newEquivalence.code,
-                credits: newEquivalence.credits - response[0].credits
+                code: oldEquivalence.code,
+                credits: oldEquivalence.credits - details.credits
               }
             )
           } else {
@@ -283,7 +288,37 @@ const Planner = (): JSX.Element => {
             // Problem In this part: if i exceed by 5 and have a course of 4 and 10, what do i do
             // option 1: delete the course with 4 and decresed the one of 10 by 1
             // option 2: decresed the one of 10 to 5
-            console.log('help')
+
+            // Partial solution: just consume anything we find
+            const semester = newClasses[modalData.semester]
+            let extra = details.credits - oldEquivalence.credits
+            for (let i = semester.length; i-- > 0;) {
+              const equiv = semester[i]
+              if ('credits' in equiv && equiv.code === oldEquivalence.code) {
+                if (equiv.credits <= extra) {
+                  // Consume this equivalence entirely
+                  semester.splice(modalData.index, 1)
+                  extra -= equiv.credits
+                } else {
+                  // Consume part of this equivalence
+                  equiv.credits -= extra
+                  extra = 0
+                }
+              }
+            }
+
+            // Increase the credits of the equivalence
+            // We might not have found all the missing credits, but that's ok
+            newClasses[modalData.semester].splice(modalData.index, 1,
+              {
+                is_concrete: true,
+                code: selection,
+                equivalence: {
+                  ...oldEquivalence,
+                  credits: details.credits
+                }
+              }
+            )
           }
         }
         return { ...prev, validatable_plan: { ...prev.validatable_plan, classes: newClasses } }
