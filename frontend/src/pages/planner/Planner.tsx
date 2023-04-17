@@ -2,18 +2,23 @@ import { Spinner } from '../../components/Spinner'
 import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
-import MyDialog from '../../components/CourseSelectorDialog'
+import CourseSelectorDialog from '../../components/CourseSelectorDialog'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
-import { DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
-
+import { ApiError, DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
+import { toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 type PseudoCourse = ConcreteId | EquivalenceId
 
 type ModalData = { equivalence: Equivalence, semester: number, index: number } | undefined
 interface EmptyPlan {
   validatable_plan: ValidatablePlan
 }
+type Status = 'loading' | 'validating' | 'ready' | 'error'
 
+const isApiError = (err: any): err is ApiError => {
+  return err.status !== undefined
+}
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
@@ -23,128 +28,133 @@ const Planner = (): JSX.Element => {
   const [modalData, setModalData] = useState<ModalData>()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const previousClasses = useRef<PseudoCourse[][]>([[]])
-  const [loading, setLoading] = useState(true)
-  const [validating, setValidating] = useState(false)
+  const [status, setStatus] = useState<Status>('loading')
   const [validationResult, setValidationResult] = useState<FlatValidationResult | null>(null)
   const [error, setError] = useState<String | null>(null)
   const params = useParams()
 
+  function handleErrors (err): void {
+    console.log(err)
+    setStatus('error')
+    if(isApiError(err)){
+      switch (err.status) {
+        case 401:
+          console.log('token invalid or expired, loading re-login page')
+          toast.error('Token invalido. Redireccionando a pagina de inicio...')
+          break
+        case 403:
+          setError(err.message)
+          break
+        case 500:
+          setError(err.message)
+          break
+        default:
+          console.log(err.status)
+          setError('error desconocido')
+          break
+      }
+    } else {
+      setError('error desconocido')
+    }
+  }
+
   async function getDefaultPlan (): Promise<void> {
-    console.log('getting Basic Plan...')
-    const response: ValidatablePlan = await DefaultService.generatePlan({
-      classes: [],
-      next_semester: 0,
-      level: 1,
-      school: 'Ingenieria',
-      career: 'Ingenieria'
-    })
-    await getCourseDetails(response.classes.flat()).catch(err => {
-      setValidationResult({
-        diagnostics: [{
-          is_warning: false,
-          message: `Error interno: ${String(err)}`
-        }],
-        course_superblocks: {}
+    try {
+      setStatus('loading')
+      console.log('getting Basic Plan...')
+      const response: ValidatablePlan = await DefaultService.generatePlan({
+        classes: [],
+        next_semester: 0,
+        level: 1,
+        school: 'Ingenieria',
+        career: 'Ingenieria'
       })
-    })
-    setPlan({ ...plan, validatable_plan: response })
-    await validate(response).catch(err => {
-      setValidationResult({
-        diagnostics: [{
-          is_warning: false,
-          message: `Error interno: ${String(err)}`
-        }],
-        course_superblocks: {}
-      })
-    })
-    setLoading(false)
-    console.log('data loaded')
+      await Promise.all([
+        validate(response),
+        getCourseDetails(response.classes.flat())
+      ])
+      setStatus('ready')
+      setPlan(prevPlan => ({ ...prevPlan, validatable_plan: response }))
+      console.log('data loaded')
+    } catch (err) {
+      handleErrors(err)
+    }
   }
 
   async function getPlanById (id: string): Promise<void> {
-    console.log('getting Plan by Id...')
     try {
+      setStatus('loading')
+      console.log('getting Plan by Id...')
       const response: PlanView = await DefaultService.readPlan(id)
+      await Promise.all([
+        validate(response.validatable_plan),
+        getCourseDetails(response.validatable_plan.classes.flat())
+      ])
       setPlan(response)
-      await getCourseDetails(response.validatable_plan.classes.flat()).catch(err => {
-        setValidationResult({
-          diagnostics: [{
-            is_warning: false,
-            message: `Error interno: ${String(err)}`
-          }],
-          course_superblocks: {}
-        })
-      })
-      await validate(response.validatable_plan).catch(err => {
-        setValidationResult({
-          diagnostics: [{
-            is_warning: false,
-            message: `Error interno: ${String(err)}`
-          }],
-          course_superblocks: {}
-        })
-      })
+      setStatus('ready')
+      console.log('data loaded')
     } catch (err) {
-      alert(err)
-      window.location.href = '/planner'
+      handleErrors(err)
     }
-    setLoading(false)
-    console.log('data loaded')
   }
 
   async function getCourseDetails (courses: PseudoCourse[]): Promise<void> {
-    setValidating(true)
     console.log('getting Courses Details...')
     const coursesCodes = []
     const equivalenceCodes = []
     for (const courseid of courses) {
       if (courseid.is_concrete === true) { coursesCodes.push(courseid.code) } else { equivalenceCodes.push(courseid.code) }
     }
-    let responseEquivalenceDetails: Equivalence[] = []
-    let responseCourseDetails: Course[] = []
-    if (coursesCodes.length > 0) responseCourseDetails = await DefaultService.getCourseDetails(coursesCodes)
-    if (equivalenceCodes.length > 0) responseEquivalenceDetails = await DefaultService.getEquivalenceDetails(equivalenceCodes)
-    // transform response to dict with key code:
-    const dict = [...responseCourseDetails, ...responseEquivalenceDetails].reduce((acc: { [code: string]: Course | Equivalence }, curr: Course | Equivalence) => {
-      acc[curr.code] = curr
-      return acc
-    }, {})
-    setCourseDetails((prev) => { return { ...prev, ...dict } })
-    setValidating(false)
+    try {
+      const promises = []
+      if (coursesCodes.length > 0) promises.push(DefaultService.getCourseDetails(coursesCodes))
+      if (equivalenceCodes.length > 0) promises.push(DefaultService.getEquivalenceDetails(equivalenceCodes))
+      const courseDetails = await Promise.all(promises)
+      const dict = courseDetails.flat().reduce((acc: { [code: string]: Course | Equivalence }, curr: Course | Equivalence) => {
+        acc[curr.code] = curr
+        return acc
+      }, {})
+      setCourseDetails((prev) => { return { ...prev, ...dict } })
+    } catch (err) {
+      handleErrors(err)
+    }
   }
 
   async function validate (validatablePlan: ValidatablePlan): Promise<void> {
-    setValidating(true)
-    const response = await DefaultService.validatePlan(validatablePlan)
-    setValidationResult(response)
-    setValidating(false)
-    // Es necesario hacer una copia profunda del plan para comparar, pues si se copia el objeto entero
-    // entonces la copia es modificada junto al objeto original. Lo ideal seria usar una librearia para esto en el futuro
-    previousClasses.current = JSON.parse(JSON.stringify(validatablePlan.classes))
+    try {
+      const response = await DefaultService.validatePlan(validatablePlan)
+      setValidationResult(response)
+      setStatus('ready')
+      // Es necesario hacer una copia profunda del plan para comparar, pues si se copia el objeto entero
+      // entonces la copia es modificada junto al objeto original. Lo ideal seria usar una librearia para esto en el futuro
+      previousClasses.current = JSON.parse(JSON.stringify(validatablePlan.classes))
+    } catch (err) {
+      handleErrors(err)
+    }
   }
 
   async function savePlan (): Promise<void> {
     if (params?.plannerId != null) {
-      setValidating(true)
+      setStatus('validating')
       try {
         await DefaultService.updatePlan(params.plannerId, plan.validatable_plan)
         alert('Plan actualizado exitosamente.')
       } catch (err) {
-        alert(err)
+        handleErrors(err)
       }
     } else {
       const planName = prompt('¿Cómo quieres llamarle a esta planificación?')
       if (planName == null || planName === '') return
-      setValidating(true)
+      setStatus('validating')
       try {
         const res = await DefaultService.savePlan(planName, plan.validatable_plan)
         alert('Plan guardado exitosamente.')
         window.location.href = `/planner/${res.id}`
       } catch (err) {
-        alert(err)
+        handleErrors(err)
       }
     }
-    setValidating(false)
+    setStatus('ready')
   }
 
   async function addCourse (semIdx: number): Promise<void> {
@@ -157,7 +167,7 @@ const Planner = (): JSX.Element => {
         return
       }
     }
-    setValidating(true)
+    setStatus('validating')
     try {
       const response = await DefaultService.getCourseDetails([courseCode])
       setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
@@ -171,29 +181,24 @@ const Planner = (): JSX.Element => {
         return { ...prev, validatable_plan: { ...prev.validatable_plan, classes: newClasses } }
       })
     } catch (err) {
-      alert(err)
+      handleErrors(err)
     }
-    setValidating(false)
   }
 
   useEffect(() => {
     if (params?.plannerId != null) {
       getPlanById(params.plannerId).catch(err => {
-        console.log(err)
-        setLoading(false)
-        setError('Ocurrió un error al cargar el plan escogido.')
+        handleErrors(err)
       })
     } else {
       getDefaultPlan().catch(err => {
-        console.log(err)
-        setLoading(false)
-        setError('Ocurrió un error al cargar el plan por defecto.')
+        handleErrors(err)
       })
     }
   }, [])
 
   useEffect(() => {
-    if (!loading) {
+    if (status === 'validating') {
       // dont validate if the classes are rearranging the same semester at previous validation
       let changed = plan.validatable_plan.classes.length !== previousClasses.current.length
       if (!changed) {
@@ -202,11 +207,11 @@ const Planner = (): JSX.Element => {
           const prev = [...previousClasses.current[idx]].sort((a, b) => a.code.localeCompare(b.code))
           if (JSON.stringify(cur) !== JSON.stringify(prev)) {
             changed = true
+            setStatus('ready')
             break
           }
         }
-      }
-      if (changed) {
+      } else {
         validate(plan.validatable_plan).catch(err => {
           setValidationResult({
             diagnostics: [{
@@ -217,8 +222,9 @@ const Planner = (): JSX.Element => {
           })
         })
       }
+      setStatus('ready')
     }
-  }, [loading, plan])
+  }, [status, plan])
 
   async function openModal (equivalence: Equivalence | EquivalenceId, semester: number, index: number): Promise<void> {
     if ('courses' in equivalence) {
@@ -240,7 +246,7 @@ const Planner = (): JSX.Element => {
           return
         }
       }
-      setValidating(true)
+      setStatus('validating')
       const response = await DefaultService.getCourseDetails([selection])
       setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
       setPlan((prev) => {
@@ -283,9 +289,9 @@ const Planner = (): JSX.Element => {
   }
 
   return (
-    <div className={`w-full h-full p-3 flex flex-grow overflow-hidden flex-row ${validating ? 'cursor-wait' : ''}`}>
-      <MyDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={async (selection?: string) => await closeModal(selection)}/>
-      {(!loading && error === null) && <>
+    <div className={`w-full h-full p-3 flex flex-grow overflow-hidden flex-row ${status === 'validating' ? 'cursor-wait' : ''}`}>
+      <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={async (selection?: string) => await closeModal(selection)}/>
+      {(status !== 'loading' && error === null) && <>
         <div className={'flex flex-col w-5/6 flex-grow'}>
           <ul className={'w-full mb-3 mt-2 relative'}>
             <li className={'inline text-md ml-3 mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div> Ingeniería y Ciencias Ambientales</li>
@@ -294,9 +300,9 @@ const Planner = (): JSX.Element => {
             {'id' in plan && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {plan.name}</li>}
           </ul>
           <ControlTopBar
-            reset={getDefaultPlan}
+            reset={() => setStatus('loading')}
             save={savePlan}
-            validating={validating}
+            validating={status === 'validating'}
           />
           <PlanBoard
             plan={plan.validatable_plan}
@@ -304,14 +310,14 @@ const Planner = (): JSX.Element => {
             setPlan={setPlan}
             openModal={openModal}
             addCourse={addCourse}
-            validating={validating}
+            validating={status === 'validating'}
             validationResult={validationResult}
           />
         </div>
-        <ErrorTray diagnostics={validationResult?.diagnostics ?? []} validating={validating}/>
+        <ErrorTray diagnostics={validationResult?.diagnostics ?? []} validating={status === 'validating'}/>
         </>}
 
-        {loading && error === null && <Spinner message='Cargando planificación...' />}
+        {status === 'loading' && error === null && <Spinner message='Cargando planificación...' />}
         {error !== null && <div className={'w-full h-full flex flex-col justify-center items-center'}>
           <p className={'text-2xl font-semibold mb-4'}>Error al cargar plan</p>
           <p className={'text-sm font-normal'}>{error}</p>

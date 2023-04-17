@@ -2,8 +2,13 @@ import CurriculumListRow from './CurriculumListRow'
 import { ReactComponent as PlusIcon } from '../../assets/plus.svg'
 import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { DefaultService, LowDetailPlanView } from '../../client'
+import { DefaultService, LowDetailPlanView, ApiError } from '../../client'
 import { Spinner } from '../../components/Spinner'
+import { toast } from 'react-toastify'
+
+const isApiError = (err: any): err is ApiError => {
+  return err.status !== undefined
+}
 
 const CurriculumList = (): JSX.Element => {
   const [plans, setPlans] = useState <LowDetailPlanView[]>([])
@@ -18,17 +23,26 @@ const CurriculumList = (): JSX.Element => {
   useEffect(() => {
     readPlans().catch(err => {
       console.log(err)
+      if (err.status === 401) {
+        console.log('token invalid or expired, loading re-login page')
+        toast.error('Token invalido. Redireccionando a pagina de inicio...')
+      }
     })
   }, [])
-
   async function handleDelete (id: string): Promise<void> {
-    console.log('click', id)
-    await DefaultService.deletePlan(id)
-    readPlans().catch(err => {
+    try {
+      console.log('click', id)
+      await DefaultService.deletePlan(id)
+      await readPlans()
+      console.log('plan deleted')
+      alert('Malla eliminada exitosamente')
+    } catch (err) {
       console.log(err)
-    })
-    console.log('plan deleted')
-    alert('Malla eliminada exitosamente')
+      if (isApiError(err) && err.status === 401) {
+        console.log('token invalid or expired, loading re-login page')
+        toast.error('Token invalido. Redireccionando a pagina de inicio...')
+      }
+    }
   }
 
   return (

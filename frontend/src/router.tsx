@@ -3,9 +3,10 @@ import Planner from './pages/planner/Planner'
 import Layout from './layout/Layout'
 import UserPage from './pages/user/UserPage'
 import Logout from './pages/Logout'
-import Error403 from './pages/Error403'
-import { DefaultService } from './client'
-
+import Error403 from './pages/errors/Error403'
+import Error404 from './pages/errors/Error404'
+import { DefaultService, ApiError } from './client'
+import { toast } from 'react-toastify'
 import {
   createReactRouter,
   createRouteConfig
@@ -21,19 +22,17 @@ const homeRoute = rootRoute.createRoute({
 })
 
 async function authenticateRoute (): Promise<void> {
-  await DefaultService.checkAuth().catch(err => {
-    if (err.status === 401) {
-      throw new Error(err.message)
-    }
-    if (err.status === 403) {
-      window.location.href = '/403'
-    }
-  })
+  await DefaultService.checkAuth()
 }
 
-function onAuthenticationError (): void {
-  window.location.href = `${import.meta.env.VITE_BASE_API_URL as string}/auth/login`
-  localStorage.removeItem('access-token')
+function onAuthenticationError (err: ApiError): void {
+  if (err.status === 401) {
+    console.log('token invalid or expired, loading re-login page')
+    toast.error('Token invalido. Redireccionando a pagina de inicio...')
+  }
+  if (err.status === 403) {
+    window.location.href = '/403'
+  }
 }
 
 const error403 = rootRoute.createRoute({
@@ -70,7 +69,12 @@ const logoutRoute = rootRoute.createRoute({
   component: Logout
 })
 
-const routeConfig = rootRoute.addChildren([homeRoute, userPageRoute, error403, newPlannerRoute.addChildren([getPlannerRoute]), logoutRoute])
+const error404 = rootRoute.createRoute({
+  path: '*',
+  component: Error404
+})
+
+const routeConfig = rootRoute.addChildren([homeRoute, userPageRoute, error403, newPlannerRoute.addChildren([getPlannerRoute]), logoutRoute, error404])
 
 export const router = createReactRouter({
   routeConfig
