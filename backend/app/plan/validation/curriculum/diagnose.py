@@ -40,6 +40,14 @@ def _diagnose_block(out: ValidationResult, node: SolvedNode):
     out.add(CurriculumErr(superblock=node.superblock, missing=node.name or "?"))
 
 
+def _is_course_not_passed(plan: ValidatablePlan, code: str) -> bool:
+    for sem_i in range(plan.next_semester, len(plan.classes)):
+        for c in plan.classes[sem_i]:
+            if code == c.code:
+                return True
+    return False
+
+
 def diagnose_curriculum(
     courseinfo: CourseInfo,
     curriculum: Curriculum,
@@ -64,5 +72,7 @@ def diagnose_curriculum(
         out.course_superblocks[code] = block.superblock
 
     # Send warning for each unassigned course
+    # (Only for courses that have not been passed)
     for code in solved.unassigned_codes:
-        out.add(UnassignedWarn(code=code))
+        if _is_course_not_passed(plan, code):
+            out.add(UnassignedWarn(code=code))
