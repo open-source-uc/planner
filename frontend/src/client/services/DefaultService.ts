@@ -9,7 +9,7 @@ import type { LowDetailPlanView } from '../models/LowDetailPlanView';
 import type { Major } from '../models/Major';
 import type { Minor } from '../models/Minor';
 import type { PlanView } from '../models/PlanView';
-import type { StudentInfo } from '../models/StudentInfo';
+import type { StudentContext } from '../models/StudentContext';
 import type { Title } from '../models/Title';
 import type { ValidatablePlan } from '../models/ValidatablePlan';
 
@@ -87,10 +87,10 @@ export class DefaultService {
      * Get the student info for the currently logged in user.
      * Requires authentication (!)
      * This forwards a request to the SIDING service.
-     * @returns StudentInfo Successful Response
+     * @returns StudentContext Successful Response
      * @throws ApiError
      */
-    public static getStudentInfo(): CancelablePromise<StudentInfo> {
+    public static getStudentInfo(): CancelablePromise<StudentContext> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/student/info',
@@ -231,18 +231,40 @@ export class DefaultService {
     }
 
     /**
-     * Validate Plan
+     * Validate Guest Plan
      * Validate a plan, generating diagnostics.
      * @param requestBody
      * @returns FlatValidationResult Successful Response
      * @throws ApiError
      */
-    public static validatePlan(
+    public static validateGuestPlan(
         requestBody: ValidatablePlan,
     ): CancelablePromise<FlatValidationResult> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/plan/validate',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Validate Plan For User
+     * Validate a plan, generating diagnostics.
+     * Includes warnings tailored for the given user.
+     * @param requestBody
+     * @returns FlatValidationResult Successful Response
+     * @throws ApiError
+     */
+    public static validatePlanForUser(
+        requestBody: ValidatablePlan,
+    ): CancelablePromise<FlatValidationResult> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/plan/validate_for',
             body: requestBody,
             mediaType: 'application/json',
             errors: {

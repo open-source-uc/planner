@@ -116,7 +116,7 @@ const Planner = (): JSX.Element => {
 
   async function validate (validatablePlan: ValidatablePlan): Promise<void> {
     setValidating(true)
-    const response = await DefaultService.validatePlan(validatablePlan)
+    const response = authState?.user == null ? await DefaultService.validateGuestPlan(validatablePlan) : await DefaultService.validatePlanForUser(validatablePlan)
     setValidationResult(response)
     setValidating(false)
     // Es necesario hacer una copia profunda del plan para comparar, pues si se copia el objeto entero

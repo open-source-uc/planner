@@ -248,14 +248,14 @@ async def empty_guest_plan():
 
 
 @app.post("/plan/validate", response_model=FlatValidationResult)
-async def validate_plan(plan: ValidatablePlan):
+async def validate_guest_plan(plan: ValidatablePlan):
     """
     Validate a plan, generating diagnostics.
     """
     return (await diagnose_plan(plan, user_ctx=None)).flatten()
 
 
-@app.post("/plan/validate", response_model=FlatValidationResult)
+@app.post("/plan/validate_for", response_model=FlatValidationResult)
 async def validate_plan_for_user(
     plan: ValidatablePlan, user: UserKey = Depends(require_authentication)
 ):

@@ -21,6 +21,7 @@ export type { LowDetailPlanView } from './models/LowDetailPlanView';
 export type { Major } from './models/Major';
 export type { Minor } from './models/Minor';
 export type { PlanView } from './models/PlanView';
+export type { StudentContext } from './models/StudentContext';
 export type { StudentInfo } from './models/StudentInfo';
 export type { Title } from './models/Title';
 export type { ValidatablePlan } from './models/ValidatablePlan';

@@ -112,6 +112,7 @@ class PlanContext:
         semestrality: tuple[bool, bool, bool],
     ):
         # TODO: check for TAV semester
+        # TODO: what about students that joined in an even semester?
         if not semestrality[inst.semester % 2]:
             out.add(SemestralityWarn(code=inst.course.code, semester=inst.semester))
 
