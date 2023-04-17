@@ -8,7 +8,7 @@ from ..user.info import StudentInfo
 from pydantic import parse_raw_as
 from ..plan.plan import PseudoCourse
 from prisma import Json
-from .siding import translate as siding
+from .siding import translate as siding_translate
 from ..plan.validation.curriculum.tree import Curriculum, CurriculumSpec
 from ..plan.courseinfo import clear_course_info_cache, course_info
 from . import buscacursos_dl
@@ -31,7 +31,7 @@ async def run_upstream_sync():
     # Currently we have no official source
     await buscacursos_dl.fetch_to_database()
     # Fetch major, minor and title offer to database
-    await siding.load_siding_offer_to_database()
+    await siding_translate.load_siding_offer_to_database()
     # Recache course info
     clear_course_info_cache()
     await course_info()
@@ -63,7 +63,7 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
     )
     if db_curr is None:
         courseinfo = await course_info()
-        curr = await siding.fetch_curriculum(courseinfo, spec)
+        curr = await siding_translate.fetch_curriculum(courseinfo, spec)
         await DbCurriculum.prisma().query_raw(
             """
             INSERT INTO "Curriculum"
@@ -109,7 +109,7 @@ async def get_recommended_plan(spec: CurriculumSpec) -> list[list[PseudoCourse]]
     )
     if db_plan is None:
         courseinfo = await course_info()
-        plan = await siding.fetch_recommended_courses(courseinfo, spec)
+        plan = await siding_translate.fetch_recommended_courses(courseinfo, spec)
         await DbPlanRecommendation.prisma().query_raw(
             """
             INSERT INTO "PlanRecommendation"
@@ -134,7 +134,7 @@ async def fetch_student_info(user: UserKey) -> StudentInfo:
     Get the basic student info associated with the given RUT.
     Note that the resulting information may be sensitive.
     """
-    return await siding.fetch_student_info(user.rut)
+    return await siding_translate.fetch_student_info(user.rut)
 
 
 async def fetch_student_previous_courses(
@@ -143,4 +143,4 @@ async def fetch_student_previous_courses(
     """
     Get the courses that a student has done previously.
     """
-    return await siding.fetch_student_previous_courses(user.rut, info)
+    return await siding_translate.fetch_student_previous_courses(user.rut, info)
