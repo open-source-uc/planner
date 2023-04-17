@@ -1,4 +1,5 @@
 from datetime import datetime
+from ..user.auth import UserKey
 from fastapi import HTTPException
 from prisma import Json
 from prisma.models import Plan as DbPlan
@@ -70,19 +71,19 @@ class LowDetailPlanView(BaseModel):
         )
 
 
-async def authorize_plan_access(user_rut: str, plan_id: str) -> DbPlan:
+async def authorize_plan_access(user: UserKey, plan_id: str) -> DbPlan:
     plan = await DbPlan.prisma().find_unique(where={"id": plan_id})
-    if not plan or plan.user_rut != user_rut:
+    if not plan or plan.user_rut != user.rut:
         raise HTTPException(status_code=404, detail="Plan not found in user storage")
     return plan
 
 
-async def store_plan(plan_name: str, user_rut: str, plan: ValidatablePlan) -> PlanView:
+async def store_plan(plan_name: str, user: UserKey, plan: ValidatablePlan) -> PlanView:
     # TODO: set max 50 plans per user
 
     data = {
         "name": plan_name,
-        "user_rut": user_rut,
+        "user_rut": user.rut,
         "is_favorite": False,
         "validatable_plan": Json(plan.json()),
     }
@@ -96,12 +97,12 @@ async def store_plan(plan_name: str, user_rut: str, plan: ValidatablePlan) -> Pl
     return PlanView.from_db(stored_plan)
 
 
-async def get_plan_details(user_rut: str, plan_id: str) -> PlanView:
-    plan = await authorize_plan_access(user_rut, plan_id)
+async def get_plan_details(user: UserKey, plan_id: str) -> PlanView:
+    plan = await authorize_plan_access(user, plan_id)
     return PlanView.from_db(plan)
 
 
-async def get_user_plans(user_rut: str) -> list[LowDetailPlanView]:
+async def get_user_plans(user: UserKey) -> list[LowDetailPlanView]:
     # NOTE: this query interpolation is safe because the value to interpolate is
     # internally managed. Otherwise, do not interpolate without input sanitization!
     plans = await DbPlan.prisma().query_raw(
@@ -110,16 +111,16 @@ async def get_user_plans(user_rut: str) -> list[LowDetailPlanView]:
         FROM "Plan"
         WHERE user_rut = $1
         """,
-        user_rut,
+        user.rut,
     )
 
     return list(map(lambda plan: LowDetailPlanView.from_db(plan), plans))
 
 
 async def modify_validatable_plan(
-    user_rut: str, plan_id: str, new_plan: ValidatablePlan
+    user: UserKey, plan_id: str, new_plan: ValidatablePlan
 ) -> PlanView:
-    await authorize_plan_access(user_rut, plan_id)
+    await authorize_plan_access(user, plan_id)
 
     updated_plan = await DbPlan.prisma().update(
         where={"id": plan_id}, data={"validatable_plan": Json(new_plan.json())}
@@ -131,19 +132,19 @@ async def modify_validatable_plan(
 
 
 async def modify_plan_metadata(
-    user_rut: str,
+    user: UserKey,
     plan_id: str,
     set_name: Union[str, None],
     set_favorite: Union[bool, None],
 ) -> PlanView:
-    await authorize_plan_access(user_rut, plan_id)
+    await authorize_plan_access(user, plan_id)
 
     if set_name is not None:
-        return await rename_plan(plan_id=plan_id, new_name=set_name)
+        return await _rename_plan(plan_id=plan_id, new_name=set_name)
 
     if set_favorite is not None:
-        return await set_favorite_plan(
-            user_rut=user_rut, plan_id=plan_id, favorite=set_favorite
+        return await _set_favorite_plan(
+            user=user, plan_id=plan_id, favorite=set_favorite
         )
 
     raise HTTPException(
@@ -151,7 +152,7 @@ async def modify_plan_metadata(
     )
 
 
-async def rename_plan(plan_id: str, new_name: str):
+async def _rename_plan(plan_id: str, new_name: str):
     updated_plan = await DbPlan.prisma().update(
         where={
             "id": plan_id,
@@ -167,7 +168,7 @@ async def rename_plan(plan_id: str, new_name: str):
     return PlanView.from_db(updated_plan)
 
 
-async def set_favorite_plan(user_rut: str, plan_id: str, favorite: bool):
+async def _set_favorite_plan(user: UserKey, plan_id: str, favorite: bool):
     # NOTE: with the current algorithm there cannot be more than one favorite plan
     # per user originated by this method. But there is no validation of uniqueness in
     # the DB.
@@ -187,7 +188,7 @@ async def set_favorite_plan(user_rut: str, plan_id: str, favorite: bool):
         UPDATE "Plan" SET is_favorite = FALSE
             WHERE user_rut = $1
         """,
-        user_rut,
+        user.rut,
     )
     await DbPlan.prisma().query_raw(
         """
@@ -207,8 +208,8 @@ async def set_favorite_plan(user_rut: str, plan_id: str, favorite: bool):
     return PlanView.from_db(updated_plan)
 
 
-async def remove_plan(user_rut: str, plan_id: str) -> PlanView:
-    await authorize_plan_access(user_rut, plan_id)
+async def remove_plan(user: UserKey, plan_id: str) -> PlanView:
+    await authorize_plan_access(user, plan_id)
 
     deleted_plan = await DbPlan.prisma().delete(where={"id": plan_id})
     # Must be true because access was authorized

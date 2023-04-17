@@ -269,18 +269,18 @@ async def generate_plan(passed: ValidatablePlan):
 async def save_plan(
     name: str,
     plan: ValidatablePlan,
-    user_data: UserKey = Depends(require_authentication),
+    user: UserKey = Depends(require_authentication),
 ) -> PlanView:
     """
     Save a plan with the given name in the storage of the current user.
     Fails if the user is not logged  in.
     """
-    return await store_plan(plan_name=name, user_rut=user_data.rut, plan=plan)
+    return await store_plan(plan_name=name, user=user, plan=plan)
 
 
 @app.get("/plan/storage", response_model=list[LowDetailPlanView])
 async def read_plans(
-    user_data: UserKey = Depends(require_authentication),
+    user: UserKey = Depends(require_authentication),
 ) -> list[LowDetailPlanView]:
     """
     Fetches an overview of all the plans in the storage of the current user.
@@ -288,34 +288,32 @@ async def read_plans(
     Does not return the courses in each plan, only the plan metadata required
     to show the users their list of plans (e.g. the plan id).
     """
-    return await get_user_plans(user_rut=user_data.rut)
+    return await get_user_plans(user)
 
 
 @app.get("/plan/storage/details", response_model=PlanView)
 async def read_plan(
-    plan_id: str, user_data: UserKey = Depends(require_authentication)
+    plan_id: str, user: UserKey = Depends(require_authentication)
 ) -> PlanView:
     """
     Fetch the plan details for a given plan id.
     Requires the current user to be the plan owner.
     """
-    return await get_plan_details(user_rut=user_data.rut, plan_id=plan_id)
+    return await get_plan_details(user=user, plan_id=plan_id)
 
 
 @app.put("/plan/storage", response_model=PlanView)
 async def update_plan(
     plan_id: str,
     new_plan: ValidatablePlan,
-    user_data: UserKey = Depends(require_authentication),
+    user: UserKey = Depends(require_authentication),
 ) -> PlanView:
     """
     Modifies the courses of a plan by id.
     Requires the current user to be the owner of this plan.
     Returns the updated plan.
     """
-    return await modify_validatable_plan(
-        user_rut=user_data.rut, plan_id=plan_id, new_plan=new_plan
-    )
+    return await modify_validatable_plan(user=user, plan_id=plan_id, new_plan=new_plan)
 
 
 @app.put("/plan/storage/metadata", response_model=PlanView)
@@ -323,7 +321,7 @@ async def update_plan_metadata(
     plan_id: str,
     set_name: Union[str, None] = None,
     set_favorite: Union[bool, None] = None,
-    user_data: UserKey = Depends(require_authentication),
+    user: UserKey = Depends(require_authentication),
 ) -> PlanView:
     """
     Modifies the metadata of a plan (currently only `name` or `is_favorite`).
@@ -333,7 +331,7 @@ async def update_plan_metadata(
     """
 
     return await modify_plan_metadata(
-        user_rut=user_data.rut,
+        user=user,
         plan_id=plan_id,
         set_name=set_name,
         set_favorite=set_favorite,
@@ -343,14 +341,14 @@ async def update_plan_metadata(
 @app.delete("/plan/storage", response_model=PlanView)
 async def delete_plan(
     plan_id: str,
-    user_data: UserKey = Depends(require_authentication),
+    user: UserKey = Depends(require_authentication),
 ) -> PlanView:
     """
     Deletes a plan by ID.
     Requires the current user to be the owner of this plan.
     Returns the removed plan.
     """
-    return await remove_plan(user_rut=user_data.rut, plan_id=plan_id)
+    return await remove_plan(user=user, plan_id=plan_id)
 
 
 @app.get("/offer/major", response_model=list[DbMajor])

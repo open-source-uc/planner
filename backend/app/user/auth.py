@@ -61,6 +61,8 @@ class UserKey:
     Contains data that identifies a user.
     Holding an instance of this class is intended to mean "I have authorization to
     access data for this user".
+    Similarly, requiring this type as an argument is intended to mean "using this
+    function requires authorization to access the user".
     """
 
     user: str
