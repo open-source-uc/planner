@@ -226,7 +226,7 @@ def _try_add_course_group(
     courses_to_pass: list[PseudoCourse],
     current_credits: int,
     course_group: list[PseudoCourse],
-) -> Literal["credits", "cant", "added"]:
+) -> Literal["credits", "deps", "added"]:
     """
     Attempt to add a group of courses to the last semester of the given plan.
     Fails if they cannot be added.
@@ -257,7 +257,7 @@ def _try_add_course_group(
             # Undo changes and cancel
             while len(semester) > original_length:
                 semester.pop()
-            return "cant"
+            return "deps"
 
     # Added course successfully
     # Remove added courses from `courses_to_pass`
@@ -346,6 +346,7 @@ async def generate_recommended_plan(passed: ValidatablePlan):
         # Go in order, attempting to add each course to the semester
         added_course = False
         could_use_more_credits = False
+        some_requirements_missing = False
         for try_course in courses_to_pass:
             course_group = coreq_components[try_course.code]
 
@@ -360,6 +361,9 @@ async def generate_recommended_plan(passed: ValidatablePlan):
                 # Keep track of the case when there are some courses that need more
                 # credit-space
                 could_use_more_credits = True
+            elif status == "deps":
+                # Keep track on when we need more requirements
+                some_requirements_missing = True
 
         if added_course:
             # Made some progress!
@@ -369,6 +373,12 @@ async def generate_recommended_plan(passed: ValidatablePlan):
         if could_use_more_credits:
             # Maybe we couldn't make progress because there is no space for any more
             # courses
+            plan.classes.append([])
+            continue
+
+        if some_requirements_missing and len(plan.classes[-1]) != 0:
+            # Last chance: maybe we can't make progress because there's a course that
+            # depends on the courses on this very semester
             plan.classes.append([])
             continue
 
