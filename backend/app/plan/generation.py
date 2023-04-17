@@ -30,6 +30,7 @@ def _is_course_necessary(
     courseinfo: CourseInfo,
     required: ConcreteId,
     passed_classes: list[list[PseudoCourse]],
+    consumed: list[set[str]],
     allow_modifying_passed_classes: bool,
 ) -> bool:
     """
@@ -39,9 +40,12 @@ def _is_course_necessary(
     classes if the student has a free equivalence in their passed classes, and this
     equivalence can be narrowed to match the concrete requirement.
     """
-    for passed_sem in passed_classes:
+    for sem_i in range(len(passed_classes)):
+        passed_sem = passed_classes[sem_i]
         for i in range(len(passed_sem)):
             passed = passed_sem[i]
+            if passed.code in consumed[sem_i]:
+                continue
             if isinstance(passed, EquivalenceId):
                 # Required is concrete but passed is equivalence
                 # If the equivalence contains the concrete course, narrow
@@ -52,14 +56,18 @@ def _is_course_necessary(
                         passed_equiv is not None
                         and required.code in passed_equiv.courses
                     ):
+                        # TODO: This could generate duplicate courses in edge cases
+                        # Maybe do something about it
                         passed_sem[i] = ConcreteId(
                             code=required.code, equivalence=passed
                         )
+                        consumed[sem_i].add(passed.code)
                         return False
             else:
                 # Both are concrete
                 # Only redundant if they match exactly
                 if passed.code == required.code:
+                    consumed[sem_i].add(passed.code)
                     return False
     return True
 
@@ -68,6 +76,7 @@ def _is_equiv_necessary(
     courseinfo: CourseInfo,
     required: EquivalenceId,
     passed_classes: list[list[PseudoCourse]],
+    consumed: list[set[str]],
 ) -> Optional[EquivalenceId]:
     """
     Check if the student must still take the required equivalence, even if they already
@@ -78,13 +87,20 @@ def _is_equiv_necessary(
     credits.
     """
     missing_creds = required.credits
-    for passed_sem in passed_classes:
-        for passed in passed_sem:
+    for sem_i in range(len(passed_classes)):
+        if missing_creds <= 0:
+            break
+        for passed in passed_classes[sem_i]:
+            if missing_creds <= 0:
+                break
+            if passed.code in consumed[sem_i]:
+                continue
             if isinstance(passed, EquivalenceId):
                 # Both are equivalences
                 # Discount credits only if equivalences are identical
                 if passed.code == required.code:
                     missing_creds -= passed.credits
+                    consumed[sem_i].add(passed.code)
             else:
                 # Required is equivalence but passed is concrete
                 # Discount credits only if concrete is part of equivalence
@@ -96,6 +112,7 @@ def _is_equiv_necessary(
                     and passed.code in required_equiv.courses
                 ):
                     missing_creds -= passed_info.credits
+                    consumed[sem_i].add(passed.code)
     if missing_creds > 0:
         return EquivalenceId(code=required.code, credits=missing_creds)
     else:
@@ -115,18 +132,25 @@ def _compute_courses_to_pass(
     concrete and match the recommended classes).
     """
 
+    consumed: list[set[str]] = [set() for _sem in passed_classes]
     to_pass: list[PseudoCourse] = []
     for required_sem in required_classes:
         for required in required_sem:
             if isinstance(required, ConcreteId) and required.equivalence is not None:
                 required = required.equivalence
             if isinstance(required, EquivalenceId):
-                need_to_pass = _is_equiv_necessary(courseinfo, required, passed_classes)
+                need_to_pass = _is_equiv_necessary(
+                    courseinfo, required, passed_classes, consumed
+                )
                 if need_to_pass is not None:
                     to_pass.append(need_to_pass)
             else:
                 if _is_course_necessary(
-                    courseinfo, required, passed_classes, allow_modifying_passed_classes
+                    courseinfo,
+                    required,
+                    passed_classes,
+                    consumed,
+                    allow_modifying_passed_classes,
                 ):
                     to_pass.append(required)
     return to_pass
@@ -289,9 +313,8 @@ async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan
             title="40082",
         )
     else:
-        info = await sync.fetch_student_info(user)
-        previous = await sync.fetch_student_previous_courses(user, info)
-        cyear = Cyear.from_str(info.cyear)
+        student = await sync.get_student_data(user)
+        cyear = Cyear.from_str(student.info.cyear)
         if cyear is None:
             # HTTP error 501: Unimplemented
             # The frontend could recognize this code and show a nice error message
@@ -299,13 +322,13 @@ async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan
             raise HTTPException(
                 status_code=501, detail="Your curriculum version is unsupported"
             )
-        classes = previous
-        next_semester = len(previous)
+        classes = student.passed_courses
+        next_semester = len(classes)
         curriculum = CurriculumSpec(
             cyear=cyear,
-            major=info.reported_major,
-            minor=info.reported_minor,
-            title=info.reported_title,
+            major=student.info.reported_major,
+            minor=student.info.reported_minor,
+            title=student.info.reported_title,
         )
     return ValidatablePlan(
         classes=classes,
