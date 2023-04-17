@@ -15,7 +15,10 @@ http_client = httpx.AsyncClient(
     )
 )
 
-soap_client = AsyncClient(wsdl_url, transport=AsyncTransport(http_client))
+soap_client = AsyncClient(
+    wsdl_url,
+    transport=AsyncTransport(http_client),
+)
 
 
 class StringArrayInner(BaseModel):
@@ -30,7 +33,10 @@ class Major(BaseModel):
     CodMajor: str
     Nombre: str
     VersionMajor: str
-    Curriculum: StringArray
+    # For some reason after a SIDING update majors stopped having associated
+    # curriculums
+    # TODO: Learn why and what to do about it
+    Curriculum: Optional[StringArray]
 
 
 class Minor(BaseModel):
@@ -38,7 +44,10 @@ class Minor(BaseModel):
     Nombre: str
     TipoMinor: Literal["Amplitud"] | Literal["Profundidad"]
     VersionMinor: Optional[str]
-    Curriculum: StringArray
+    # For some reason after a SIDING update minors stopped having associated
+    # curriculums
+    # TODO: Learn why and what to do about it
+    Curriculum: Optional[StringArray]
 
 
 class Titulo(BaseModel):
@@ -46,7 +55,10 @@ class Titulo(BaseModel):
     Nombre: str
     TipoTitulo: Literal["CIVIL"] | Literal["INDUSTRIAL"]
     VersionTitulo: Optional[str]
-    Curriculum: StringArray
+    # For some reason after a SIDING update titles stopped having associated
+    # curriculums
+    # TODO: Learn why and what to do about it
+    Curriculum: Optional[StringArray]
 
 
 class PlanEstudios(BaseModel):
@@ -108,6 +120,13 @@ async def get_majors() -> list[Major]:
     """
     Obtain a global list of all majors.
     """
+
+    # DEBUG: Show raw XML response
+    # with soap_client.settings(raw_response=True):
+    #     resp = await soap_client.service.getListadoMajor()
+    #     with open("log.txt", "a") as f:
+    #         print(resp.content, file=f)
+
     return parse_obj_as(
         list[Major],
         zeep.helpers.serialize_object(  # type: ignore

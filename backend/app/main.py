@@ -104,6 +104,9 @@ async def check_auth(user_data: UserData = Depends(require_authentication)):
     return {"message": "Authenticated"}
 
 
+# TODO: This HTTP method should not be GET, as it has side-effects.
+# For the meantime this makes it easier to trigger syncs, but in the future this must
+# change.
 @app.get("/sync")
 # TODO: Require admin permissions for this endpoint.
 async def sync_courses():

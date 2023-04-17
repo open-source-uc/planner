@@ -9,6 +9,7 @@ from prisma import Json
 from .siding.translate import (
     fetch_curriculum_from_siding,
     fetch_recommended_courses_from_siding,
+    load_siding_offer_to_database,
 )
 from ..plan.validation.curriculum.tree import Curriculum, CurriculumSpec
 from ..plan.courseinfo import clear_course_info_cache, course_info
@@ -32,8 +33,7 @@ async def run_upstream_sync():
     # Currently we have no official source
     await buscacursos_dl.fetch_to_database()
     # Fetch major, minor and title offer to database
-    # TODO: Update to new siding API
-    # await siding_translate.load_offer_to_database()
+    await load_siding_offer_to_database()
     # Recache course info
     clear_course_info_cache()
     await course_info()

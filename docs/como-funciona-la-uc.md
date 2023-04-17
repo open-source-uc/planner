@@ -41,12 +41,15 @@ y desigualdades de la forma `A = B`, `A >= B` o `A <> B`.
 
 Hay 5 posibles lados izquierdos para estas (des)igualdades, cada uno con sus lados derechos asociados:
 
-- `Nivel`: El lado derecho puede tomar 4 posibilidades. Se usa el operador `=`,
-        pero parece que semanticamente debiera ser `>=`.
+- `Nivel`: El lado derecho puede tomar 4 posibilidades.
     - `Pregrado`
     - `Magister`
     - `Doctorado`
     - `Postitulo`
+
+    Se usa el operador `=`, pero parece que semanticamente debiera ser `>=` (TODO: confirmar esto).
+    Eso si, existe exactamente 1 ramo en todo el catalogo que no usa `=`, y usa `<>`, que es
+    `PSI4050`.
 - `Escuela`: La facultad. Se usa el operador `=` y `<>`.
     - `Matemáticas`
     - `College`

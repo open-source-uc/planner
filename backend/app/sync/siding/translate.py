@@ -2,6 +2,7 @@
 Transform the Siding format into something usable.
 """
 
+from typing import Optional
 from ...plan.courseinfo import CourseInfo, add_equivalence
 from ...plan.plan import ConcreteId, EquivalenceId, PseudoCourse
 from ...plan.validation.curriculum.solve import DEBUG_SOLVE
@@ -9,6 +10,7 @@ from . import client
 from .client import (
     BloqueMalla,
     PlanEstudios,
+    StringArray,
 )
 from prisma.models import (
     Major as DbMajor,
@@ -24,6 +26,22 @@ from ...plan.validation.curriculum.tree import (
     CurriculumSpec,
     Node,
 )
+
+
+def _decode_curriculum_versions(input: Optional[StringArray]) -> list[str]:
+    """
+    SIDING returns lists of cyear codes (e.g. ["C2013", "C2020"]) as a convoluted
+    `stringArray` type that is currently empty for some reason.
+    Transform this type into a more manageable `list[str]`.
+    """
+    if input is None:
+        # Why are curriculum versions empty??
+        # TODO: Figure out why and remove this code
+        return ["C2020"]
+    output: list[str] = []
+    for string in input.strings.string:
+        output.append(string)
+    return output
 
 
 async def _fetch_raw_blocks(
@@ -100,8 +118,8 @@ async def fetch_curriculum_from_siding(
         else:
             raise Exception("siding api returned invalid curriculum block")
         creds = raw_block.Creditos
-        if creds is None:
-            creds = 0
+        # if creds is None:
+        #     creds = 0
         course = CourseList(
             name=raw_block.Nombre,
             cap=creds,
@@ -217,7 +235,7 @@ async def fetch_recommended_courses_from_siding(
     return semesters
 
 
-async def load_offer_to_database():
+async def load_siding_offer_to_database():
     """
     Fetch majors, minors and titles.
     """
@@ -233,7 +251,7 @@ async def load_offer_to_database():
     print("  loading majors")
     majors = await client.get_majors()
     for major in majors:
-        for cyear in major.Curriculum.strings.string:
+        for cyear in _decode_curriculum_versions(major.Curriculum):
             await DbMajor.prisma().create(
                 data={
                     "cyear": cyear,
@@ -246,7 +264,7 @@ async def load_offer_to_database():
     print("  loading minors")
     minors = await client.get_minors()
     for minor in minors:
-        for cyear in minor.Curriculum.strings.string:
+        for cyear in _decode_curriculum_versions(minor.Curriculum):
             await DbMinor.prisma().create(
                 data={
                     "cyear": cyear,
@@ -260,7 +278,7 @@ async def load_offer_to_database():
     print("  loading titles")
     titles = await client.get_titles()
     for title in titles:
-        for cyear in title.Curriculum.strings.string:
+        for cyear in _decode_curriculum_versions(title.Curriculum):
             await DbTitle.prisma().create(
                 data={
                     "cyear": cyear,
@@ -274,9 +292,9 @@ async def load_offer_to_database():
     print("  loading major-minor associations")
     for major in majors:
         assoc_minors = await client.get_minors_for_major(major.CodMajor)
-        for cyear in major.Curriculum.strings.string:
+        for cyear in _decode_curriculum_versions(major.Curriculum):
             for minor in assoc_minors:
-                if cyear not in minor.Curriculum.strings.string:
+                if cyear not in _decode_curriculum_versions(minor.Curriculum):
                     continue
                 await DbMajorMinor.prisma().create(
                     data={

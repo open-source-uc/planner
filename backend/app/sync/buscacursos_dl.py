@@ -22,7 +22,7 @@ from prisma import Json
 import requests
 import pydantic
 from pydantic import BaseModel
-from typing import Callable, Optional
+from typing import Callable, NoReturn, Optional
 
 
 class BcSection(BaseModel):
@@ -83,7 +83,7 @@ class BcParser:
     def eof(self):
         return self.i >= len(self.s)
 
-    def bail(self, msg: str):
+    def bail(self, msg: str) -> NoReturn:
         ty = "restrictions" if self.is_restr else "requirements"
         raise Exception(f'invalid {ty} "{self.s}" around character {self.i}: {msg}')
 
