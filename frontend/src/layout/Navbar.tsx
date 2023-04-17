@@ -18,7 +18,7 @@ function Navbar (): JSX.Element {
                     <Link to="/" className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${router.matchRoute({ to: '/' }) ? 'text-white bg-blue-700 md:bg-transparent md:text-blue-700' : ''}`}>Inicio</Link>
                 </li>
                 { authState?.user !== null && <li>
-                    <Link to="/planner" className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${router.matchRoute({ to: '/planner' }) ? 'text-white bg-blue-700 md:bg-transparent md:text-blue-700' : ''}`}>Nueva planificación</Link>
+                    <Link to="/planner/new" className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${router.matchRoute({ to: '/planner/new' }) ? 'text-white bg-blue-700 md:bg-transparent md:text-blue-700' : ''}`}>Nueva planificación</Link>
                 </li> }
                 { authState?.user !== null && <li>
                     <Link to="/user" className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${router.matchRoute({ to: '/user' }) ? 'text-white bg-blue-700 md:bg-transparent md:text-blue-700' : ''}`}>Mis mallas</Link>

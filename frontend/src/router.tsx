@@ -48,18 +48,19 @@ const userPageRoute = rootRoute.createRoute({
 })
 
 const newPlannerRoute = rootRoute.createRoute({
-  path: '/planner/',
+  path: '/planner/new',
   component: Planner,
   loader: () => ({
     plannerId: null
   })
 })
 
-const getPlannerRoute = newPlannerRoute.createRoute({
-  path: '$plannerId',
+const getPlannerRoute = rootRoute.createRoute({
+  path: '/planner/$plannerId',
   loader: async ({ params }) => ({
     plannerId: params.plannerId
   }),
+  component: Planner,
   beforeLoad: authenticateRoute,
   onLoadError: onAuthenticationError
 })
@@ -74,7 +75,7 @@ const error404 = rootRoute.createRoute({
   component: Error404
 })
 
-const routeConfig = rootRoute.addChildren([homeRoute, userPageRoute, error403, newPlannerRoute.addChildren([getPlannerRoute]), logoutRoute, error404])
+const routeConfig = rootRoute.addChildren([homeRoute, userPageRoute, error403, newPlannerRoute, getPlannerRoute, logoutRoute, error404])
 
 export const router = createReactRouter({
   routeConfig

@@ -33,10 +33,10 @@ const Planner = (): JSX.Element => {
   const [error, setError] = useState<String | null>(null)
   const params = useParams()
 
-  function handleErrors (err): void {
+  function handleErrors (err: unknown): void {
     console.log(err)
     setStatus('error')
-    if(isApiError(err)){
+    if (isApiError(err)) {
       switch (err.status) {
         case 401:
           console.log('token invalid or expired, loading re-login page')
@@ -300,7 +300,7 @@ const Planner = (): JSX.Element => {
             {'id' in plan && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {plan.name}</li>}
           </ul>
           <ControlTopBar
-            reset={() => setStatus('loading')}
+            reset={getDefaultPlan}
             save={savePlan}
             validating={status === 'validating'}
           />
