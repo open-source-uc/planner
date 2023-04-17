@@ -44,7 +44,7 @@ const Planner = (): JSX.Element => {
           toast.error('Token invalido. Redireccionando a pagina de inicio...')
           break
         case 403:
-          setError(err.message)
+          toast.warn('No tienes permisos para realizar esa accion')
           break
         case 500:
           setError(err.message)
