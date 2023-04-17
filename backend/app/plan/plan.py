@@ -1,3 +1,4 @@
+from .validation.curriculum.tree import CurriculumSpec
 from pydantic import BaseModel, Field
 from typing import Annotated, Literal, Optional, Union
 from enum import Enum
@@ -44,23 +45,40 @@ PseudoCourse = Annotated[
 
 class ValidatablePlan(BaseModel):
     """
-    Raw plan submitted by a user.
-    Also contains context about the user.
-    `ValidatablePlan` should represent any user & plan configuration.
+    An academic plan submitted by a user.
+    Contains all of the courses they have passed and intend to pass.
+    Also contains all of the context associated with the user (e.g. their choice of
+    major and minor).
+
+    Including user context here allows plans to be validated without external context,
+    allowing guests to simulate any plans they want to try out.
     """
 
-    # NOTE: remember to migrate JSON in DB when modifying this class
+    # NOTE: Modifying this class breaks all the JSON stored in the DB
+    # Currently, we don't handle migrations at all.
+    # Eventually, we will have to roll our own migration system if we allow
+    # ValidatablePlans to be exportable/importable.
+
+    # TODO: Warn when the real user context does not match the context in
+    # `ValidatablePlan`.
+    # For example, when exporting/importing is implemented, a user with `C2020` could
+    # import a plan made by a `C2021` user, and the context would not match.
+    # In this case, the correct approach is to warn the user that the plan was made for
+    # `C2021`, and to automatically correct the context.
 
     # Classes per semester.
     classes: list[list[PseudoCourse]]
     # The first semester to validate.
-    # Semester before this semester are considered approved.
+    # Semesters before this semester are considered approved.
     next_semester: int
     # Academic level of the student
-    level: Optional[Level] = None
+    level: Optional[Level]
     # Academic school (facultad) of the student
-    school: Optional[str] = None
+    school: Optional[str]
     # Academic program of the student (magisteres, doctorados, etc)
-    program: Optional[str] = None
+    program: Optional[str]
     # Career of the student
-    career: Optional[str] = None
+    career: Optional[str]
+    # The curriculum that the user wants to pursue
+    # Validate the plan against this curriculum
+    curriculum: CurriculumSpec

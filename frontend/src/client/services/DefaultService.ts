@@ -6,7 +6,10 @@ import type { CourseOverview } from '../models/CourseOverview';
 import type { Equivalence } from '../models/Equivalence';
 import type { FlatValidationResult } from '../models/FlatValidationResult';
 import type { LowDetailPlanView } from '../models/LowDetailPlanView';
+import type { Major } from '../models/Major';
+import type { Minor } from '../models/Minor';
 import type { PlanView } from '../models/PlanView';
+import type { Title } from '../models/Title';
 import type { ValidatablePlan } from '../models/ValidatablePlan';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -180,6 +183,38 @@ export class DefaultService {
     }
 
     /**
+     * Empty Plan For User
+     * Generate an empty plan using the current user as context.
+     * For example, the created plan includes all passed courses, uses the curriculum
+     * version for the given user and selects the student's official choice of
+     * major/minor/title if available.
+     *
+     * (Currently this is equivalent to `empty_guest_plan()` until we get user data)
+     * @returns ValidatablePlan Successful Response
+     * @throws ApiError
+     */
+    public static emptyPlanForUser(): CancelablePromise<ValidatablePlan> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/plan/empty_for',
+        });
+    }
+
+    /**
+     * Empty Guest Plan
+     * Generates a generic empty plan with no user context, using the latest curriculum
+     * version.
+     * @returns ValidatablePlan Successful Response
+     * @throws ApiError
+     */
+    public static emptyGuestPlan(): CancelablePromise<ValidatablePlan> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/plan/empty_guest',
+        });
+    }
+
+    /**
      * Validate Plan
      * Validate a plan, generating diagnostics.
      * @param requestBody
@@ -202,7 +237,8 @@ export class DefaultService {
 
     /**
      * Generate Plan
-     * Generate a hopefully error-free plan from an initial plan.
+     * From a base plan, generate a new plan that should lead the user to earn their title
+     * of choice.
      * @param requestBody
      * @returns ValidatablePlan Successful Response
      * @throws ApiError
@@ -363,6 +399,73 @@ export class DefaultService {
                 'plan_id': planId,
                 'set_name': setName,
                 'set_favorite': setFavorite,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Get Majors
+     * Get all the available majors for a given curriculum version (cyear).
+     * @param cyear
+     * @returns Major Successful Response
+     * @throws ApiError
+     */
+    public static getMajors(
+        cyear: string,
+    ): CancelablePromise<Array<Major>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/offer/major',
+            query: {
+                'cyear': cyear,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Get Minors
+     * @param cyear
+     * @param majorCode
+     * @returns Minor Successful Response
+     * @throws ApiError
+     */
+    public static getMinors(
+        cyear: string,
+        majorCode?: string,
+    ): CancelablePromise<Array<Minor>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/offer/minor',
+            query: {
+                'cyear': cyear,
+                'major_code': majorCode,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Get Titles
+     * @param cyear
+     * @returns Title Successful Response
+     * @throws ApiError
+     */
+    public static getTitles(
+        cyear: string,
+    ): CancelablePromise<Array<Title>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/offer/title',
+            query: {
+                'cyear': cyear,
             },
             errors: {
                 422: `Validation Error`,

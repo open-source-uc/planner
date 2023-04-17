@@ -11,7 +11,8 @@ import 'react-toastify/dist/ReactToastify.css'
 type PseudoCourse = ConcreteId | EquivalenceId
 
 type ModalData = { equivalence: Equivalence, semester: number, index: number } | undefined
-interface EmptyPlan {
+
+interface PlanWithNoOwner {
   validatable_plan: ValidatablePlan
 }
 type Status = 'loading' | 'validating' | 'ready' | 'error'
@@ -23,7 +24,7 @@ const isApiError = (err: any): err is ApiError => {
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
 const Planner = (): JSX.Element => {
-  const [plan, setPlan] = useState<PlanView | EmptyPlan>({ validatable_plan: { classes: [], next_semester: 0 } })
+  const [plan, setPlan] = useState<PlanView | PlanWithNoOwner | null>(null)
   const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course | Equivalence }>({})
   const [modalData, setModalData] = useState<ModalData>()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -62,13 +63,8 @@ const Planner = (): JSX.Element => {
     try {
       setStatus('loading')
       console.log('getting Basic Plan...')
-      const response: ValidatablePlan = await DefaultService.generatePlan({
-        classes: [],
-        next_semester: 0,
-        level: 1,
-        school: 'Ingenieria',
-        career: 'Ingenieria'
-      })
+      // TODO: Use current user to generate plan if logged in
+      const response: ValidatablePlan = await DefaultService.generatePlan(await DefaultService.emptyGuestPlan())
       await Promise.all([
         validate(response),
         getCourseDetails(response.classes.flat())
@@ -134,6 +130,10 @@ const Planner = (): JSX.Element => {
   }
 
   async function savePlan (): Promise<void> {
+    if (plan == null) {
+      alert('No se ha generado un plan aun')
+      return
+    }
     if (params?.plannerId != null) {
       setStatus('validating')
       try {
@@ -158,6 +158,9 @@ const Planner = (): JSX.Element => {
   }
 
   async function addCourse (semIdx: number): Promise<void> {
+    if (plan == null) {
+      return
+    }
     const courseCodeRaw = prompt('Sigla del curso?')
     if (courseCodeRaw == null || courseCodeRaw === '') return
     const courseCode = courseCodeRaw.toUpperCase()
@@ -172,6 +175,7 @@ const Planner = (): JSX.Element => {
       const response = await DefaultService.getCourseDetails([courseCode])
       setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
       setPlan((prev) => {
+        if (prev == null) return prev
         const newClasses = [...prev.validatable_plan.classes]
         newClasses[semIdx] = [...prev.validatable_plan.classes[semIdx]]
         newClasses[semIdx].push({
@@ -198,7 +202,7 @@ const Planner = (): JSX.Element => {
   }, [])
 
   useEffect(() => {
-    if (status === 'validating') {
+    if (status === 'validating' && plan !== null) {
       // dont validate if the classes are rearranging the same semester at previous validation
       let changed = plan.validatable_plan.classes.length !== previousClasses.current.length
       if (!changed) {
@@ -237,7 +241,7 @@ const Planner = (): JSX.Element => {
   }
 
   async function closeModal (selection?: string): Promise<void> {
-    if (selection != null && modalData !== undefined) {
+    if (selection != null && modalData !== undefined && plan != null) {
       const pastClass = plan.validatable_plan.classes[modalData.semester][modalData.index]
       if (selection === pastClass.code) { setIsModalOpen(false); return }
       for (const existingCourse of plan?.validatable_plan.classes.flat()) {
@@ -250,6 +254,7 @@ const Planner = (): JSX.Element => {
       const response = await DefaultService.getCourseDetails([selection])
       setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
       setPlan((prev) => {
+        if (prev == null) return prev
         const newClasses = [...prev.validatable_plan.classes]
         newClasses[modalData.semester] = [...prev.validatable_plan.classes[modalData.semester]]
         let newEquivalence: EquivalenceId | undefined
@@ -273,7 +278,7 @@ const Planner = (): JSX.Element => {
           } else {
             // To-DO: handle when credis exced necesary
             // General logic: if there are not other courses with the same code then it dosnt matters
-            // If there are other course with the same code, and exact same creddits that this card exceed, delete the other
+            // If there are other course with the same code, and exact same credits that this card exceed, delete the other
 
             // On other way, one should decresed credits of other course with the same code
             // Problem In this part: if i exceed by 5 and have a course of 4 and 10, what do i do
@@ -297,7 +302,7 @@ const Planner = (): JSX.Element => {
             <li className={'inline text-md ml-3 mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div> Ingeniería y Ciencias Ambientales</li>
             <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> Por seleccionar</li>
             <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> Por seleccionar</li>
-            {'id' in plan && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {plan.name}</li>}
+            {plan != null && 'id' in plan && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {plan.name}</li>}
           </ul>
           <ControlTopBar
             reset={getDefaultPlan}
@@ -305,7 +310,7 @@ const Planner = (): JSX.Element => {
             validating={status === 'validating'}
           />
           <PlanBoard
-            plan={plan.validatable_plan}
+            plan={plan?.validatable_plan ?? null}
             courseDetails={courseDetails}
             setPlan={setPlan}
             openModal={openModal}

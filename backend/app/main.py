@@ -1,8 +1,7 @@
-from .plan.validation.curriculum.tree import CurriculumSpec
 from .plan.validation.diagnostic import FlatValidationResult
 from .plan.validation.validate import diagnose_plan
 from .plan.plan import ValidatablePlan
-from .plan.generation import generate_default_plan
+from .plan.generation import generate_empty_plan, generate_recommended_plan
 from .plan.storage import (
     PlanView,
     LowDetailPlanView,
@@ -17,7 +16,13 @@ from fastapi import FastAPI, Query, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from .database import prisma
-from prisma.models import Course as DbCourse, Equivalence as DbEquivalence
+from prisma.models import (
+    Course as DbCourse,
+    Equivalence as DbEquivalence,
+    Major as DbMajor,
+    Minor as DbMinor,
+    Title as DbTitle,
+)
 from .auth import require_authentication, login_cas, UserData
 from .sync import run_upstream_sync
 from .plan.courseinfo import clear_course_info_cache, course_info
@@ -206,9 +211,26 @@ async def rebuild_validation_rules():
     }
 
 
-async def debug_get_curriculum() -> CurriculumSpec:
-    # TODO: Implement a proper curriculum selector
-    return CurriculumSpec(cyear="C2020", major="M170", minor="N776", title="40082")
+@app.get("/plan/empty_for", response_model=ValidatablePlan)
+async def empty_plan_for_user(user_data: UserData = Depends(require_authentication)):
+    """
+    Generate an empty plan using the current user as context.
+    For example, the created plan includes all passed courses, uses the curriculum
+    version for the given user and selects the student's official choice of
+    major/minor/title if available.
+
+    (Currently this is equivalent to `empty_guest_plan()` until we get user data)
+    """
+    return await generate_empty_plan(user_data)
+
+
+@app.get("/plan/empty_guest", response_model=ValidatablePlan)
+async def empty_guest_plan():
+    """
+    Generates a generic empty plan with no user context, using the latest curriculum
+    version.
+    """
+    return await generate_empty_plan(None)
 
 
 @app.post("/plan/validate", response_model=FlatValidationResult)
@@ -216,17 +238,16 @@ async def validate_plan(plan: ValidatablePlan):
     """
     Validate a plan, generating diagnostics.
     """
-    curr = await debug_get_curriculum()
-    return (await diagnose_plan(plan, curr)).flatten()
+    return (await diagnose_plan(plan)).flatten()
 
 
 @app.post("/plan/generate", response_model=ValidatablePlan)
 async def generate_plan(passed: ValidatablePlan):
     """
-    Generate a hopefully error-free plan from an initial plan.
+    From a base plan, generate a new plan that should lead the user to earn their title
+    of choice.
     """
-    curr = await debug_get_curriculum()
-    plan = await generate_default_plan(passed, curr)
+    plan = await generate_recommended_plan(passed)
     return plan
 
 
@@ -316,3 +337,47 @@ async def delete_plan(
     Returns the removed plan.
     """
     return await remove_plan(user_rut=user_data.rut, plan_id=plan_id)
+
+
+@app.get("/offer/major", response_model=list[DbMajor])
+async def get_majors(cyear: str):
+    """
+    Get all the available majors for a given curriculum version (cyear).
+    """
+    return await DbMajor.prisma().find_many(
+        where={
+            "cyear": cyear,
+        }
+    )
+
+
+@app.get("/offer/minor", response_model=list[DbMinor])
+async def get_minors(cyear: str, major_code: Optional[str] = None):
+    if major_code is None:
+        return await DbMinor.prisma().find_many(
+            where={
+                "cyear": cyear,
+            }
+        )
+    else:
+        return await DbMinor.prisma().query_raw(
+            """
+            SELECT *
+            FROM "Minor", "MajorMinor"
+            WHERE "MajorMinor".minor = "Minor".code
+                AND "MajorMinor".major = $2
+                AND "MajorMinor".cyear = $1
+                AND "Minor".cyear = $1
+            """,
+            cyear,
+            major_code,
+        )
+
+
+@app.get("/offer/title", response_model=list[DbTitle])
+async def get_titles(cyear: str):
+    return await DbTitle.prisma().find_many(
+        where={
+            "cyear": cyear,
+        }
+    )

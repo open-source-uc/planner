@@ -8,7 +8,7 @@ import { ValidatablePlan, Course, ConcreteId, Equivalence, EquivalenceId, FlatVa
 export type PseudoCourse = ConcreteId | EquivalenceId
 
 interface PlanBoardProps {
-  plan: ValidatablePlan
+  plan: ValidatablePlan | null
   courseDetails: { [code: string]: Course | Equivalence }
   setPlan: Function
   openModal: Function
@@ -31,11 +31,12 @@ const findCourseSuperblock = (validationResults: FlatValidationResult | null, co
  */
 
 const PlanBoard = ({ plan, courseDetails, setPlan, openModal, addCourse, validating, validationResult }: PlanBoardProps): JSX.Element => {
+  const classes = plan?.classes ?? []
   const [isDragging, setIsDragging] = useState(false)
   function remCourse (semIdx: number, code: string): void {
     let idx = -1
-    for (let i = 0; i < plan.classes[semIdx].length; i++) {
-      if (plan.classes[semIdx][i].code === code) {
+    for (let i = 0; i < classes[semIdx].length; i++) {
+      if (classes[semIdx][i].code === code) {
         idx = i
         break
       }
@@ -75,7 +76,7 @@ const PlanBoard = ({ plan, courseDetails, setPlan, openModal, addCourse, validat
   return (
     <DndProvider backend={HTML5Backend}>
       <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap rtl-grid flex-grow ${validating === true ? 'pointer-events-none' : ''}`}>
-        {plan.classes.map((classes: PseudoCourse[], semester: number) => (
+        {classes.map((classes: PseudoCourse[], semester: number) => (
             <SemesterColumn
               key={semester}
               semester={semester + 1}
@@ -102,14 +103,14 @@ const PlanBoard = ({ plan, courseDetails, setPlan, openModal, addCourse, validat
         ))}
         {isDragging && <>
           <SemesterColumn
-            key={plan.classes.length }
-            semester={plan.classes.length + 1}
-            addEnd={(dragCourse: Course & { semester: number }) => moveCourse(plan.classes.length, dragCourse, 0)}
+            key={classes.length }
+            semester={classes.length + 1}
+            addEnd={(dragCourse: Course & { semester: number }) => moveCourse(classes.length, dragCourse, 0)}
           />
           <SemesterColumn
-            key={plan.classes.length + 1}
-            semester={plan.classes.length + 2}
-            addEnd={(dragCourse: Course & { semester: number }) => moveCourse(plan.classes.length + 1, dragCourse, 0)}
+            key={classes.length + 1}
+            semester={classes.length + 2}
+            addEnd={(dragCourse: Course & { semester: number }) => moveCourse(classes.length + 1, dragCourse, 0)}
           />
         </>}
       </div>
