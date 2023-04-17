@@ -35,13 +35,16 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
 
     # Time to expire JWT tokens in seconds.
-    jwt_expire: int = 18_000
+    jwt_expire: float = 18_000
 
     # Siding SOAP WebService access username.
     siding_username: str = Field(...)
 
     # Siding SOAP WebService access password.
     siding_password: SecretStr = Field(...)
+
+    # Time to expire cached student information in seconds.
+    student_info_expire: float = 30
 
 
 # Load settings and allow global app access to them

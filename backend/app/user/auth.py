@@ -18,7 +18,7 @@ cas_client: CASClientV3 = CASClientV3(
 )
 
 
-def generate_token(user: str, rut: str, expire_delta: Optional[int] = None):
+def generate_token(user: str, rut: str, expire_delta: Optional[float] = None):
     """
     Generate a signed token (one that is unforgeable) with the given user, rut and
     expiration time.

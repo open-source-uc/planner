@@ -4,6 +4,7 @@ Definitions of basic student information.
 
 
 from typing import Optional
+from ..plan.plan import PseudoCourse
 from pydantic import BaseModel
 
 
@@ -23,3 +24,8 @@ class StudentInfo(BaseModel):
     reported_minor: Optional[str]
     # The self-reported title code.
     reported_title: Optional[str]
+
+
+class StudentContext(BaseModel):
+    info: StudentInfo
+    passed_courses: list[list[PseudoCourse]]

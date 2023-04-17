@@ -3,8 +3,12 @@ Update local database with an official but ugly source.
 Currently using unofficial sources until we get better API access.
 """
 
+from collections import OrderedDict
+import time
+
+from ..settings import settings
 from ..user.auth import UserKey
-from ..user.info import StudentInfo
+from ..user.info import StudentContext
 from pydantic import parse_raw_as
 from ..plan.plan import PseudoCourse
 from prisma import Json
@@ -18,8 +22,6 @@ from prisma.models import (
 )
 import json
 from pydantic.json import pydantic_encoder
-
-# from .siding import translate as siding_translate
 
 
 async def run_upstream_sync():
@@ -129,18 +131,31 @@ async def get_recommended_plan(spec: CurriculumSpec) -> list[list[PseudoCourse]]
         return parse_raw_as(list[list[PseudoCourse]], db_plan.recommended_plan)
 
 
-async def fetch_student_info(user: UserKey) -> StudentInfo:
-    """
-    Get the basic student info associated with the given RUT.
-    Note that the resulting information may be sensitive.
-    """
-    return await siding_translate.fetch_student_info(user.rut)
+_student_context_cache: OrderedDict[str, tuple[StudentContext, float]] = OrderedDict()
 
 
-async def fetch_student_previous_courses(
-    user: UserKey, info: StudentInfo
-) -> list[list[PseudoCourse]]:
-    """
-    Get the courses that a student has done previously.
-    """
-    return await siding_translate.fetch_student_previous_courses(user.rut, info)
+async def get_student_data(user: UserKey) -> StudentContext:
+    # Use entries in cache
+    if user.rut in _student_context_cache:
+        return _student_context_cache[user.rut][0]
+
+    # Delete old entries from cache
+    now = time.monotonic()
+    while _student_context_cache:
+        rut, (_ctx, expiration) = next(iter(_student_context_cache.items()))
+        if now <= expiration:
+            break
+        _student_context_cache.pop(rut)
+
+    # Request user context from SIDING
+    print(f"fetching user data for student {user.rut} from SIDING...")
+    info = await siding_translate.fetch_student_info(user.rut)
+    passed = await siding_translate.fetch_student_previous_courses(user.rut, info)
+    ctx = StudentContext(info=info, passed_courses=passed)
+
+    # Add to cache and return
+    _student_context_cache[user.rut] = (
+        ctx,
+        time.monotonic() + settings.student_info_expire,
+    )
+    return ctx

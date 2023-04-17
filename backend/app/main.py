@@ -1,4 +1,4 @@
-from .user.info import StudentInfo
+from .user.info import StudentContext
 from .plan.validation.diagnostic import FlatValidationResult
 from .plan.validation.validate import diagnose_plan
 from .plan.plan import ValidatablePlan
@@ -105,14 +105,14 @@ async def check_auth(user_data: UserKey = Depends(require_authentication)):
     return {"message": "Authenticated"}
 
 
-@app.get("/student/info", response_model=StudentInfo)
-async def get_student_info(user_data: UserKey = Depends(require_authentication)):
+@app.get("/student/info", response_model=StudentContext)
+async def get_student_info(user: UserKey = Depends(require_authentication)):
     """
     Get the student info for the currently logged in user.
     Requires authentication (!)
     This forwards a request to the SIDING service.
     """
-    return sync.fetch_student_info(user_data)
+    return sync.get_student_data(user)
 
 
 # TODO: This HTTP method should not be GET, as it has side-effects.
@@ -252,7 +252,19 @@ async def validate_plan(plan: ValidatablePlan):
     """
     Validate a plan, generating diagnostics.
     """
-    return (await diagnose_plan(plan)).flatten()
+    return (await diagnose_plan(plan, user_ctx=None)).flatten()
+
+
+@app.post("/plan/validate", response_model=FlatValidationResult)
+async def validate_plan_for_user(
+    plan: ValidatablePlan, user: UserKey = Depends(require_authentication)
+):
+    """
+    Validate a plan, generating diagnostics.
+    Includes warnings tailored for the given user.
+    """
+    user_ctx = await sync.get_student_data(user)
+    return (await diagnose_plan(plan, user_ctx)).flatten()
 
 
 @app.post("/plan/generate", response_model=ValidatablePlan)

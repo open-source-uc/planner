@@ -1,3 +1,8 @@
+from typing import Optional
+
+from .user import validate_against_owner
+
+from ...user.info import StudentContext
 from .curriculum.diagnose import diagnose_curriculum
 from .courses.validate import CourseInstance, PlanContext, is_satisfied, sanitize_plan
 from ..courseinfo import CourseInfo, course_info
@@ -6,7 +11,14 @@ from .diagnostic import ValidationResult
 from ..plan import PseudoCourse, ValidatablePlan
 
 
-async def diagnose_plan(plan: ValidatablePlan) -> ValidationResult:
+async def diagnose_plan(
+    plan: ValidatablePlan, user_ctx: Optional[StudentContext]
+) -> ValidationResult:
+    """
+    Validate a career plan, checking that all pending courses can actually be taken
+    (ie. validate their dependencies), and also check that if the plan is followed the
+    user will get their set major/minor/title degree.
+    """
     courseinfo = await course_info()
     curriculum = await get_curriculum(plan.curriculum)
     out = ValidationResult(diagnostics=[], course_superblocks={})
@@ -21,10 +33,18 @@ async def diagnose_plan(plan: ValidatablePlan) -> ValidationResult:
     # Ensure the given curriculum is fulfilled
     diagnose_curriculum(courseinfo, curriculum, plan, out)
 
+    # Validate against user context, if there is any context
+    if user_ctx is not None:
+        validate_against_owner(plan, user_ctx, out)
+
     return out
 
 
 async def diagnose_plan_skip_curriculum(plan: ValidatablePlan) -> ValidationResult:
+    """
+    Validate a career plan, but only the course dependencies.
+    Do not validate whether the student will get their selected degree.
+    """
     courseinfo = await course_info()
     out = ValidationResult(diagnostics=[], course_superblocks={})
 
@@ -40,6 +60,10 @@ def quick_validate_dependencies(
     semester: int,
     course: PseudoCourse,
 ) -> bool:
+    """
+    Simulate placing the given course at the given semester, and check if its
+    dependencies are met.
+    """
     assert courseinfo.try_course(course.code)
     course_ctx = PlanContext(courseinfo, plan)
     return is_satisfied(
