@@ -20,6 +20,8 @@ function Layout (): JSX.Element {
           hideProgressBar={false}
           newestOnTop={false}
           closeOnClick
+          pauseOnFocusLoss={false}
+          pauseOnHover={false}
           rtl={false}
           theme="light"
         />
