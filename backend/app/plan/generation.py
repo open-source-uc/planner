@@ -1,11 +1,11 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import HTTPException
 from ..user.auth import UserKey
 from ..sync import get_recommended_plan
 from .validation.courses.logic import And, Expr, Or, ReqCourse
 from .validation.curriculum.tree import LATEST_CYEAR, CurriculumSpec, Cyear
-from .plan import EquivalenceId, Level, PseudoCourse, ValidatablePlan
+from .plan import ConcreteId, EquivalenceId, Level, PseudoCourse, ValidatablePlan
 from .courseinfo import CourseInfo, course_info
 from .validation.validate import quick_validate_dependencies
 from .. import sync
@@ -26,19 +26,110 @@ class CurriculumRecommender:
         return await get_recommended_plan(curr)
 
 
-def _compute_courses_to_pass(
-    curriculum_classes: list[list[PseudoCourse]],
+def _is_course_necessary(
+    courseinfo: CourseInfo,
+    required: ConcreteId,
     passed_classes: list[list[PseudoCourse]],
+    allow_modifying_passed_classes: bool,
+) -> bool:
+    """
+    Check if the student must still take the required course, even if they already took
+    all `passed_classes` courses.
+    If `allow_modifying_passed_classes` is `True`, this function may modify the passed
+    classes if the student has a free equivalence in their passed classes, and this
+    equivalence can be narrowed to match the concrete requirement.
+    """
+    for passed_sem in passed_classes:
+        for i in range(len(passed_sem)):
+            passed = passed_sem[i]
+            if isinstance(passed, EquivalenceId):
+                # Required is concrete but passed is equivalence
+                # If the equivalence contains the concrete course, narrow
+                # the equivalence
+                if allow_modifying_passed_classes:
+                    passed_equiv = courseinfo.try_equiv(passed.code)
+                    if (
+                        passed_equiv is not None
+                        and required.code in passed_equiv.courses
+                    ):
+                        passed_sem[i] = ConcreteId(
+                            code=required.code, equivalence=passed
+                        )
+                        return False
+            else:
+                # Both are concrete
+                # Only redundant if they match exactly
+                if passed.code == required.code:
+                    return False
+    return True
+
+
+def _is_equiv_necessary(
+    courseinfo: CourseInfo,
+    required: EquivalenceId,
+    passed_classes: list[list[PseudoCourse]],
+) -> Optional[EquivalenceId]:
+    """
+    Check if the student must still take the required equivalence, even if they already
+    took all passed classes.
+    Returns the exact equivalence that the student must pass.
+    For example, if the student needs to pass 10 credits of Fundamentos but already
+    took 6, this function would return a smaller equivalence of Fundamentos of only 4
+    credits.
+    """
+    missing_creds = required.credits
+    for passed_sem in passed_classes:
+        for passed in passed_sem:
+            if isinstance(passed, EquivalenceId):
+                # Both are equivalences
+                # Discount credits only if equivalences are identical
+                if passed.code == required.code:
+                    missing_creds -= passed.credits
+            else:
+                # Required is equivalence but passed is concrete
+                # Discount credits only if concrete is part of equivalence
+                required_equiv = courseinfo.try_equiv(required.code)
+                passed_info = courseinfo.try_course(passed.code)
+                if (
+                    required_equiv is not None
+                    and passed_info is not None
+                    and passed.code in required_equiv.courses
+                ):
+                    missing_creds -= passed_info.credits
+    if missing_creds > 0:
+        return EquivalenceId(code=required.code, credits=missing_creds)
+    else:
+        return None
+
+
+def _compute_courses_to_pass(
+    courseinfo: CourseInfo,
+    required_classes: list[list[PseudoCourse]],
+    passed_classes: list[list[PseudoCourse]],
+    allow_modifying_passed_classes: bool,
 ):
-    flat_curriculum_classes = [
-        item for sublist in curriculum_classes for item in sublist
-    ]
-    return list(
-        filter(
-            lambda course: all(course not in passed for passed in passed_classes),
-            flat_curriculum_classes,
-        )
-    )
+    """
+    Given a recommended plan and a plan that is considered as "passed", add classes
+    after the last semester to match the recommended plan.
+    May modify the `passed_classes` if it contains equivalences (in order to make them
+    concrete and match the recommended classes).
+    """
+
+    to_pass: list[PseudoCourse] = []
+    for required_sem in required_classes:
+        for required in required_sem:
+            if isinstance(required, ConcreteId) and required.equivalence is not None:
+                required = required.equivalence
+            if isinstance(required, EquivalenceId):
+                need_to_pass = _is_equiv_necessary(courseinfo, required, passed_classes)
+                if need_to_pass is not None:
+                    to_pass.append(need_to_pass)
+            else:
+                if _is_course_necessary(
+                    courseinfo, required, passed_classes, allow_modifying_passed_classes
+                ):
+                    to_pass.append(required)
+    return to_pass
 
 
 def _find_corequirements(out: list[str], expr: Expr):
@@ -135,7 +226,7 @@ def _try_add_course_group(
     courses_to_pass: list[PseudoCourse],
     current_credits: int,
     course_group: list[PseudoCourse],
-):
+) -> Literal["credits", "cant", "added"]:
     """
     Attempt to add a group of courses to the last semester of the given plan.
     Fails if they cannot be added.
@@ -178,8 +269,6 @@ def _try_add_course_group(
 
 async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan:
     """
-    MUST BE CALLED WITH AUTHORIZATION
-
     Generate an empty plan with optional user context.
     If no user context is available, uses the latest curriculum version.
 
@@ -238,9 +327,11 @@ async def generate_recommended_plan(passed: ValidatablePlan):
     recommended = await CurriculumRecommender.recommend(courseinfo, passed.curriculum)
 
     # Flat list of all curriculum courses left to pass
-    courses_to_pass = _compute_courses_to_pass(recommended, passed.classes)
-
     plan = passed.copy(deep=True)
+    courses_to_pass = _compute_courses_to_pass(
+        courseinfo, recommended, plan.classes, True
+    )
+
     plan.classes.append([])
 
     # Precompute corequirements for courses
