@@ -116,6 +116,60 @@ class BloqueMalla(BaseModel):
     Restricciones: Optional[ListaRestricciones]
 
 
+class InfoEstudiante(BaseModel):
+    # Full name, all uppercase and with Unicode accents.
+    Nombre: str
+    # Either 'M' or 'F'.
+    Sexo: str
+    # The cyear string associated with the student (e.g. "C2020", "C2013", etc...).
+    # Usually coupled with `PeriodoAdmision`
+    Curriculo: str
+    # Major code of the self-reported intended major.
+    MajorInscrito: Optional[str]
+    # Minor code of the self-reported intended minor.
+    MinorInscrito: Optional[str]
+    # Title code of the self-reported intended title.
+    TituloInscrito: Optional[str]
+    # Not really sure what this is.
+    # Seems to be `None`.
+    Codigo: Optional[str]
+    # Career
+    # Should be 'INGENIERÍA CIVIL' (mind the Unicode accent)
+    Carrera: str
+    # Semester in which the student joined the university.
+    # For example, '2012-2' for the second semester of 2012.
+    PeriodoAdmision: str
+
+    # Average student grades
+    # Since this is somewhat sensitive data and we don't use it, it's best to ignore it
+    # PPA: Decimal
+
+    # Student status
+    # Regular students have 'REGULAR' status.
+    # Not useful for us, and it may even be sensitive data, so it's best to ignore it
+    # Estado: str
+
+
+class CursoHecho(BaseModel):
+    Sigla: str
+    Nombre: str
+    Creditos: int
+    # Approval status of the course.
+    # Codified as a string, with different strings representing different statuses.
+    # For example, '12' seems to be "approved".
+    # TODO: Find out all the codes.
+    Estado: str
+    # When was the course taken.
+    # E.g. "2020-2" for the second semester of the year 2020
+    Periodo: str
+    # Not sure, but probably whether the course is catedra or lab.
+    # Seems to be `None`
+    TipoCurso: Optional[str]
+    # Academic unit, probably.
+    # Seems to be `None`
+    UnidadAcademica: Optional[str]
+
+
 async def get_majors() -> list[Major]:
     """
     Obtain a global list of all majors.
@@ -208,6 +262,16 @@ async def get_curriculum_for_spec(study_spec: PlanEstudios) -> list[BloqueMalla]
 
 
 async def get_equivalencies(course_code: str, study_spec: PlanEstudios) -> list[Curso]:
+    """
+    Get all courses that are equivalent to the given course in the context of the given
+    study spec.
+
+    Note that equivalencies are not commutative.
+    In particular, this method is intended only to be called on courses of a study plan.
+    If a curriculum block specifies 'FIS1514', it may also accept its equivalents.
+    For example, 'FIS1514' has 3 equivalencies, including 'ICE1514'.
+    However, 'ICE1514' has zero equivalencies.
+    """
     return parse_obj_as(
         list[Curso],
         zeep.helpers.serialize_object(  # type: ignore
@@ -224,6 +288,12 @@ async def get_equivalencies(course_code: str, study_spec: PlanEstudios) -> list[
 
 
 async def get_requirements(course_code: str, study_spec: PlanEstudios) -> list[Curso]:
+    """
+    Get the requirements of the given course in the context of the given study spec.
+    Note that these requirements are broken, as real Banner requirements are
+    represented as a logical expression and not as a list.
+    These requirements are only a heuristic.
+    """
     return parse_obj_as(
         list[Curso],
         zeep.helpers.serialize_object(  # type: ignore
@@ -242,6 +312,11 @@ async def get_requirements(course_code: str, study_spec: PlanEstudios) -> list[C
 async def get_restrictions(
     course_code: str, study_spec: PlanEstudios
 ) -> list[Restriccion]:
+    """
+    Get the basic SIDING restriccions as a list.
+    This is actually broken, Banner restrictions are represented as a logical
+    expression and not as a list.
+    """
     return parse_obj_as(
         list[Restriccion],
         zeep.helpers.serialize_object(  # type: ignore
@@ -258,6 +333,9 @@ async def get_restrictions(
 
 
 async def get_predefined_list(list_code: str) -> list[Curso]:
+    """
+    Get a global named list of courses.
+    """
     return parse_obj_as(
         list[Curso],
         zeep.helpers.serialize_object(  # type: ignore
@@ -267,9 +345,35 @@ async def get_predefined_list(list_code: str) -> list[Curso]:
     )
 
 
+async def get_student_info(rut: str) -> InfoEstudiante:
+    """
+    Get the information associated with the given student, by RUT.
+    The RUT must be in the format "011222333-K", the same format used by CAS.
+    """
+    return parse_obj_as(
+        InfoEstudiante,
+        zeep.helpers.serialize_object(  # type: ignore
+            await soap_client.service.getInfoEstudiante(rut),
+            dict,
+        ),
+    )
+
+
+async def get_student_done_courses(rut: str) -> list[CursoHecho]:
+    """
+    Get the information associated with the given student, by RUT.
+    The RUT must be in the format "011222333-K", the same format used by CAS.
+    """
+    return parse_obj_as(
+        list[CursoHecho],
+        zeep.helpers.serialize_object(  # type: ignore
+            await soap_client.service.getCursosHechos(rut),
+            dict,
+        ),
+    )
+
+
 # Missing student endpoints:
-# getInfoEstudiante
-# getCursosHechos
 # getOfertaMajor
 # getOfertaMinor
 # getOfertaTitulo

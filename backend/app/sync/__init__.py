@@ -3,14 +3,12 @@ Update local database with an official but ugly source.
 Currently using unofficial sources until we get better API access.
 """
 
+from ..user.auth import UserKey
+from ..user.info import StudentInfo
 from pydantic import parse_raw_as
 from ..plan.plan import PseudoCourse
 from prisma import Json
-from .siding.translate import (
-    fetch_curriculum_from_siding,
-    fetch_recommended_courses_from_siding,
-    load_siding_offer_to_database,
-)
+from .siding import translate as siding
 from ..plan.validation.curriculum.tree import Curriculum, CurriculumSpec
 from ..plan.courseinfo import clear_course_info_cache, course_info
 from . import buscacursos_dl
@@ -33,7 +31,7 @@ async def run_upstream_sync():
     # Currently we have no official source
     await buscacursos_dl.fetch_to_database()
     # Fetch major, minor and title offer to database
-    await load_siding_offer_to_database()
+    await siding.load_siding_offer_to_database()
     # Recache course info
     clear_course_info_cache()
     await course_info()
@@ -49,7 +47,7 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
     db_curr = await DbCurriculum.prisma().find_unique(
         where={
             "cyear_major_minor_title": {
-                "cyear": spec.cyear,
+                "cyear": str(spec.cyear),
                 "major": spec.major or "",
                 "minor": spec.minor or "",
                 "title": spec.title or "",
@@ -58,7 +56,7 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
     )
     if db_curr is None:
         courseinfo = await course_info()
-        curr = await fetch_curriculum_from_siding(courseinfo, spec)
+        curr = await siding.fetch_curriculum(courseinfo, spec)
         await DbCurriculum.prisma().query_raw(
             """
             INSERT INTO "Curriculum"
@@ -88,7 +86,7 @@ async def get_recommended_plan(spec: CurriculumSpec) -> list[list[PseudoCourse]]
     db_plan = await DbPlanRecommendation.prisma().find_unique(
         where={
             "cyear_major_minor_title": {
-                "cyear": spec.cyear,
+                "cyear": str(spec.cyear),
                 "major": spec.major or "",
                 "minor": spec.minor or "",
                 "title": spec.title or "",
@@ -97,7 +95,7 @@ async def get_recommended_plan(spec: CurriculumSpec) -> list[list[PseudoCourse]]
     )
     if db_plan is None:
         courseinfo = await course_info()
-        plan = await fetch_recommended_courses_from_siding(courseinfo, spec)
+        plan = await siding.fetch_recommended_courses(courseinfo, spec)
         await DbPlanRecommendation.prisma().query_raw(
             """
             INSERT INTO "PlanRecommendation"
@@ -115,3 +113,20 @@ async def get_recommended_plan(spec: CurriculumSpec) -> list[list[PseudoCourse]]
         return plan
     else:
         return parse_raw_as(list[list[PseudoCourse]], db_plan.recommended_plan)
+
+
+async def fetch_student_info(user: UserKey) -> StudentInfo:
+    """
+    Get the basic student info associated with the given RUT.
+    Note that the resulting information may be sensitive.
+    """
+    return await siding.fetch_student_info(user.rut)
+
+
+async def fetch_student_previous_courses(
+    user: UserKey, info: StudentInfo
+) -> list[list[PseudoCourse]]:
+    """
+    Get the courses that a student has done previously.
+    """
+    return await siding.fetch_student_previous_courses(user.rut, info)

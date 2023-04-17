@@ -1,11 +1,14 @@
 from typing import Optional
-from ..auth import UserData
+
+from fastapi import HTTPException
+from ..user.auth import UserKey
 from ..sync import get_recommended_plan
 from .validation.courses.logic import And, Expr, Or, ReqCourse
-from .validation.curriculum.tree import CurriculumSpec
+from .validation.curriculum.tree import CurriculumSpec, Cyear
 from .plan import EquivalenceId, Level, PseudoCourse, ValidatablePlan
 from .courseinfo import CourseInfo, course_info
 from .validation.validate import quick_validate_dependencies
+from .. import sync
 
 
 class CurriculumRecommender:
@@ -173,26 +176,56 @@ def _try_add_course_group(
     return "added"
 
 
-async def generate_empty_plan(user: Optional[UserData] = None) -> ValidatablePlan:
+async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan:
     """
+    MUST BE CALLED WITH AUTHORIZATION
+
     Generate an empty plan with optional user context.
     If no user context is available, uses the latest curriculum version.
 
     All plans are born from this function (or deserialized from plans that were born
     from this function, except for manually crafted plans).
     """
-    # TODO: Use user context when available
     # TODO: Support empty major/minor/title selection
+    classes: list[list[PseudoCourse]]
+    next_semester: int
+    curriculum: CurriculumSpec
+    if user is None:
+        classes = []
+        next_semester = 0
+        curriculum = CurriculumSpec(
+            cyear=Cyear.LATEST,
+            major="M170",
+            minor="N776",
+            title="40082",
+        )
+    else:
+        info = await sync.fetch_student_info(user)
+        previous = await sync.fetch_student_previous_courses(user, info)
+        cyear = Cyear.from_str(info.cyear)
+        if cyear is None:
+            # HTTP error 501: Unimplemented
+            # The frontend could recognize this code and show a nice error message
+            # maybe?
+            raise HTTPException(
+                status_code=501, detail="Your curriculum version is unsupported"
+            )
+        classes = previous
+        next_semester = len(previous)
+        curriculum = CurriculumSpec(
+            cyear=cyear,
+            major=info.reported_major,
+            minor=info.reported_minor,
+            title=info.reported_title,
+        )
     return ValidatablePlan(
-        classes=[],
-        next_semester=0,
+        classes=classes,
+        next_semester=next_semester,
         level=Level.PREGRADO,
         school="Ingenieria",
         program=None,
         career="Ingenieria",
-        curriculum=CurriculumSpec(
-            cyear=CurriculumSpec.LATEST_CYEAR, major="M170", minor="N776", title="40082"
-        ),
+        curriculum=curriculum,
     )
 
 

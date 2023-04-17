@@ -42,16 +42,46 @@ class Curriculum(BaseModel):
     nodes: list[Node]
 
 
+class Cyear(BaseModel, frozen=True):
+    """
+    A curriculum version, constrained to whatever curriculum versions we support.
+    Whenever something depends on the version of the curriculum, it should match
+    exhaustively on the `__root__` field (using Python's `match` statement).
+    This allows the linter to pinpoint all places that need to be updated whenever a
+    new curriculum version is added.
+    """
+
+    __root__: Literal["C2020"]
+
+    LATEST: ClassVar["Cyear"]
+
+    @staticmethod
+    def from_str(cyear: str) -> Optional["Cyear"]:
+        if cyear == "C2020":
+            return Cyear(__root__=cyear)
+        else:
+            return None
+
+    def __str__(self) -> str:
+        """
+        Intended for communication with untyped systems like SIDING or the database.
+        To switch based on the curriculum version, use `__root__` directly, which
+        preserves type information.
+        """
+        return self.__root__
+
+
+Cyear.LATEST = Cyear(__root__="C2020")
+
+
 class CurriculumSpec(BaseModel, frozen=True):
     """
     Represents a curriculum specification.
     This specification should uniquely specify a curriculum.
     """
 
-    LATEST_CYEAR: ClassVar[Literal["C2020"]] = "C2020"
-
     # Curriculum year.
-    cyear: Literal["C2020"]
+    cyear: Cyear
     # Major code.
     major: Optional[str]
     # Minor code.

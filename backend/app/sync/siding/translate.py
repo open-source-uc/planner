@@ -3,6 +3,8 @@ Transform the Siding format into something usable.
 """
 
 from typing import Optional
+
+from ...user.info import StudentInfo
 from ...plan.courseinfo import CourseInfo, add_equivalence
 from ...plan.plan import ConcreteId, EquivalenceId, PseudoCourse
 from ...plan.validation.curriculum.solve import DEBUG_SOLVE
@@ -44,6 +46,21 @@ def _decode_curriculum_versions(input: Optional[StringArray]) -> list[str]:
     return output
 
 
+def _decode_period(period: str) -> tuple[int, int]:
+    """
+    Transform a string like "2020-2" to (2020, 2).
+    """
+    [year, sem] = period.split("-")
+    return (int(year), int(sem))
+
+
+def _semesters_elapsed(start: tuple[int, int], end: tuple[int, int]) -> int:
+    """
+    Calculate the difference between two periods as a signed number of semesters.
+    """
+    return (end[0] - start[0]) * 2 + (end[1] - start[1])
+
+
 async def _fetch_raw_blocks(
     courseinfo: CourseInfo, spec: CurriculumSpec
 ) -> list[BloqueMalla]:
@@ -52,7 +69,7 @@ async def _fetch_raw_blocks(
         raise Exception("blank major/minor/titles are not supported yet")
     raw_blocks = await client.get_curriculum_for_spec(
         PlanEstudios(
-            CodCurriculum=spec.cyear,
+            CodCurriculum=str(spec.cyear),
             CodMajor=spec.major,
             CodMinor=spec.minor,
             CodTitulo=spec.title,
@@ -93,9 +110,11 @@ async def _fetch_raw_blocks(
     return raw_blocks
 
 
-async def fetch_curriculum_from_siding(
-    courseinfo: CourseInfo, spec: CurriculumSpec
-) -> Curriculum:
+async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curriculum:
+    """
+    Call into the SIDING webservice and get the curriculum definition for a given spec.
+    """
+
     print(f"fetching curriculum from siding for spec {spec}")
 
     raw_blocks = await _fetch_raw_blocks(courseinfo, spec)
@@ -132,48 +151,47 @@ async def fetch_curriculum_from_siding(
 
     # Apply OFG transformation (merge all OFGs into a single 50-credit block, and only
     # allow up to 10 credits of 5-credit sports courses)
-    if spec.cyear == "C2020":
-        ofg_course = None
-        for i in reversed(range(len(blocks))):
-            block = blocks[i]
-            if isinstance(block, CourseList) and block.equivalence_code == "!L1":
-                if ofg_course is None:
-                    ofg_course = block
-                else:
-                    ofg_course.cap += block.cap
-                blocks.pop(i)
-        if ofg_course is not None:
-            non_5_credits = ofg_course.copy(
-                update={
-                    "codes": list(
-                        filter(
-                            lambda c: courseinfo.course(c).credits != 5,
-                            ofg_course.codes,
-                        )
-                    ),
-                }
-            )
-            yes_5_credits = ofg_course.copy(
-                update={
-                    "codes": list(
-                        filter(
-                            lambda c: courseinfo.course(c).credits == 5,
-                            ofg_course.codes,
-                        )
-                    ),
-                    "cap": 10,
-                }
-            )
-            blocks.append(
-                Block(
-                    superblock=ofg_course.superblock,
-                    name=ofg_course.name,
-                    cap=ofg_course.cap,
-                    children=[non_5_credits, yes_5_credits],
+    match spec.cyear.__root__:
+        case "C2020":
+            ofg_course = None
+            for i in reversed(range(len(blocks))):
+                block = blocks[i]
+                if isinstance(block, CourseList) and block.equivalence_code == "!L1":
+                    if ofg_course is None:
+                        ofg_course = block
+                    else:
+                        ofg_course.cap += block.cap
+                    blocks.pop(i)
+            if ofg_course is not None:
+                non_5_credits = ofg_course.copy(
+                    update={
+                        "codes": list(
+                            filter(
+                                lambda c: courseinfo.course(c).credits != 5,
+                                ofg_course.codes,
+                            )
+                        ),
+                    }
                 )
-            )
-    else:
-        raise Exception(f"unsupported curriculum year '{spec.cyear}'")
+                yes_5_credits = ofg_course.copy(
+                    update={
+                        "codes": list(
+                            filter(
+                                lambda c: courseinfo.course(c).credits == 5,
+                                ofg_course.codes,
+                            )
+                        ),
+                        "cap": 10,
+                    }
+                )
+                blocks.append(
+                    Block(
+                        superblock=ofg_course.superblock,
+                        name=ofg_course.name,
+                        cap=ofg_course.cap,
+                        children=[non_5_credits, yes_5_credits],
+                    )
+                )
 
     # TODO: Apply title transformation (130 credits must be exclusive to the title, the
     # rest can be shared)
@@ -185,10 +203,14 @@ async def fetch_curriculum_from_siding(
     return Curriculum(nodes=blocks)
 
 
-async def fetch_recommended_courses_from_siding(
+async def fetch_recommended_courses(
     courseinfo: CourseInfo,
     spec: CurriculumSpec,
 ) -> list[list[PseudoCourse]]:
+    """
+    Call into the SIDING webservice and get the recommended courses for a given spec.
+    """
+
     print(f"fetching recommended courses from siding for spec {spec}")
 
     # Fetch raw curriculum blocks for the given cyear-major-minor-title combination
@@ -237,7 +259,7 @@ async def fetch_recommended_courses_from_siding(
 
 async def load_siding_offer_to_database():
     """
-    Fetch majors, minors and titles.
+    Call into the SIDING webservice and fetch majors, minors and titles.
     """
 
     print("loading major/minor/title offer to database...")
@@ -303,3 +325,39 @@ async def load_siding_offer_to_database():
                         "minor": minor.CodMinor,
                     }
                 )
+
+
+async def fetch_student_info(rut: str) -> StudentInfo:
+    """
+    MUST BE CALLED WITH AUTHORIZATION
+
+    Request the basic student information for a given RUT from SIDING.
+    """
+    raw = await client.get_student_info(rut)
+    return StudentInfo(
+        full_name=raw.Nombre,
+        cyear=raw.Curriculo,
+        admission=_decode_period(raw.PeriodoAdmision),
+        reported_major=raw.MajorInscrito,
+        reported_minor=raw.MinorInscrito,
+        reported_title=raw.TituloInscrito,
+    )
+
+
+async def fetch_student_previous_courses(
+    rut: str, info: StudentInfo
+) -> list[list[PseudoCourse]]:
+    """
+    MUST BE CALLED WITH AUTHORIZATION
+
+    Make a request to SIDING to find out the courses that the given student has passed.
+    """
+
+    raw = await client.get_student_done_courses(rut)
+    semesters: list[list[PseudoCourse]] = []
+    for c in raw:
+        sem = _semesters_elapsed(info.admission, _decode_period(c.Periodo))
+        while len(semesters) <= sem:
+            semesters.append([])
+        semesters[sem].append(ConcreteId(code=c.Sigla))
+    return semesters

@@ -1,3 +1,4 @@
+from .user.info import StudentInfo
 from .plan.validation.diagnostic import FlatValidationResult
 from .plan.validation.validate import diagnose_plan
 from .plan.plan import ValidatablePlan
@@ -23,8 +24,8 @@ from prisma.models import (
     Minor as DbMinor,
     Title as DbTitle,
 )
-from .auth import require_authentication, login_cas, UserData
-from .sync import run_upstream_sync
+from .user.auth import require_authentication, login_cas, UserKey
+from . import sync
 from .plan.courseinfo import clear_course_info_cache, course_info
 from typing import Optional, Union
 from pydantic import BaseModel
@@ -65,7 +66,7 @@ async def startup():
         courseinfo = await course_info()
     # Sync courses if database is empty
     if len(courseinfo.courses) == 0:
-        await run_upstream_sync()
+        await sync.run_upstream_sync()
         await course_info()
 
 
@@ -96,12 +97,22 @@ async def authenticate(next: Optional[str] = None, ticket: Optional[str] = None)
 
 
 @app.get("/auth/check")
-async def check_auth(user_data: UserData = Depends(require_authentication)):
+async def check_auth(user_data: UserKey = Depends(require_authentication)):
     """
     Request succeeds if authentication was successful.
     Otherwise, the request fails with 401 Unauthorized.
     """
     return {"message": "Authenticated"}
+
+
+@app.get("/student/info", response_model=StudentInfo)
+async def get_student_info(user_data: UserKey = Depends(require_authentication)):
+    """
+    Get the student info for the currently logged in user.
+    Requires authentication (!)
+    This forwards a request to the SIDING service.
+    """
+    return sync.fetch_student_info(user_data)
 
 
 # TODO: This HTTP method should not be GET, as it has side-effects.
@@ -113,7 +124,7 @@ async def sync_courses():
     """
     Initiate a synchronization of the internal database from external sources.
     """
-    await run_upstream_sync()
+    await sync.run_upstream_sync()
     return {
         "message": "Course database updated",
     }
@@ -215,7 +226,7 @@ async def rebuild_validation_rules():
 
 
 @app.get("/plan/empty_for", response_model=ValidatablePlan)
-async def empty_plan_for_user(user_data: UserData = Depends(require_authentication)):
+async def empty_plan_for_user(user_data: UserKey = Depends(require_authentication)):
     """
     Generate an empty plan using the current user as context.
     For example, the created plan includes all passed courses, uses the curriculum
@@ -258,7 +269,7 @@ async def generate_plan(passed: ValidatablePlan):
 async def save_plan(
     name: str,
     plan: ValidatablePlan,
-    user_data: UserData = Depends(require_authentication),
+    user_data: UserKey = Depends(require_authentication),
 ) -> PlanView:
     """
     Save a plan with the given name in the storage of the current user.
@@ -269,7 +280,7 @@ async def save_plan(
 
 @app.get("/plan/storage", response_model=list[LowDetailPlanView])
 async def read_plans(
-    user_data: UserData = Depends(require_authentication),
+    user_data: UserKey = Depends(require_authentication),
 ) -> list[LowDetailPlanView]:
     """
     Fetches an overview of all the plans in the storage of the current user.
@@ -282,7 +293,7 @@ async def read_plans(
 
 @app.get("/plan/storage/details", response_model=PlanView)
 async def read_plan(
-    plan_id: str, user_data: UserData = Depends(require_authentication)
+    plan_id: str, user_data: UserKey = Depends(require_authentication)
 ) -> PlanView:
     """
     Fetch the plan details for a given plan id.
@@ -295,7 +306,7 @@ async def read_plan(
 async def update_plan(
     plan_id: str,
     new_plan: ValidatablePlan,
-    user_data: UserData = Depends(require_authentication),
+    user_data: UserKey = Depends(require_authentication),
 ) -> PlanView:
     """
     Modifies the courses of a plan by id.
@@ -312,7 +323,7 @@ async def update_plan_metadata(
     plan_id: str,
     set_name: Union[str, None] = None,
     set_favorite: Union[bool, None] = None,
-    user_data: UserData = Depends(require_authentication),
+    user_data: UserKey = Depends(require_authentication),
 ) -> PlanView:
     """
     Modifies the metadata of a plan (currently only `name` or `is_favorite`).
@@ -332,7 +343,7 @@ async def update_plan_metadata(
 @app.delete("/plan/storage", response_model=PlanView)
 async def delete_plan(
     plan_id: str,
-    user_data: UserData = Depends(require_authentication),
+    user_data: UserKey = Depends(require_authentication),
 ) -> PlanView:
     """
     Deletes a plan by ID.

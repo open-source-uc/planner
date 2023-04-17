@@ -9,6 +9,7 @@ import type { LowDetailPlanView } from '../models/LowDetailPlanView';
 import type { Major } from '../models/Major';
 import type { Minor } from '../models/Minor';
 import type { PlanView } from '../models/PlanView';
+import type { StudentInfo } from '../models/StudentInfo';
 import type { Title } from '../models/Title';
 import type { ValidatablePlan } from '../models/ValidatablePlan';
 
@@ -78,6 +79,21 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/auth/check',
+        });
+    }
+
+    /**
+     * Get Student Info
+     * Get the student info for the currently logged in user.
+     * Requires authentication (!)
+     * This forwards a request to the SIDING service.
+     * @returns StudentInfo Successful Response
+     * @throws ApiError
+     */
+    public static getStudentInfo(): CancelablePromise<StudentInfo> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/student/info',
         });
     }
 
