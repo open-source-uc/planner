@@ -58,7 +58,10 @@ def _semesters_elapsed(start: tuple[int, int], end: tuple[int, int]) -> int:
     """
     Calculate the difference between two periods as a signed number of semesters.
     """
-    return (end[0] - start[0]) * 2 + (end[1] - start[1])
+    # Clamp to [1, 2] to handle TAV (semester 3, which should be treated as semester 2)
+    s_sem = min(2, max(1, start[1]))
+    e_sem = min(2, max(1, end[1]))
+    return (end[0] - start[0]) * 2 + (e_sem - s_sem)
 
 
 async def _fetch_raw_blocks(
