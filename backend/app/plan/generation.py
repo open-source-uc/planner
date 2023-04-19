@@ -31,14 +31,10 @@ def _is_course_necessary(
     required: ConcreteId,
     passed_classes: list[list[PseudoCourse]],
     consumed: list[set[str]],
-    allow_modifying_passed_classes: bool,
 ) -> bool:
     """
     Check if the student must still take the required course, even if they already took
     all `passed_classes` courses.
-    If `allow_modifying_passed_classes` is `True`, this function may modify the passed
-    classes if the student has a free equivalence in their passed classes, and this
-    equivalence can be narrowed to match the concrete requirement.
     """
     for sem_i in range(len(passed_classes)):
         passed_sem = passed_classes[sem_i]
@@ -48,21 +44,9 @@ def _is_course_necessary(
                 continue
             if isinstance(passed, EquivalenceId):
                 # Required is concrete but passed is equivalence
-                # If the equivalence contains the concrete course, narrow
-                # the equivalence
-                if allow_modifying_passed_classes:
-                    passed_equiv = courseinfo.try_equiv(passed.code)
-                    if (
-                        passed_equiv is not None
-                        and required.code in passed_equiv.courses
-                    ):
-                        # TODO: This could generate duplicate courses in edge cases
-                        # Maybe do something about it
-                        passed_sem[i] = ConcreteId(
-                            code=required.code, equivalence=passed
-                        )
-                        consumed[sem_i].add(passed.code)
-                        return False
+                # For now, just ignore it
+                # Anyway, passed courses should all be concrete (right?)
+                pass
             else:
                 # Both are concrete
                 # Only redundant if they match exactly
@@ -123,13 +107,10 @@ def _compute_courses_to_pass(
     courseinfo: CourseInfo,
     required_classes: list[list[PseudoCourse]],
     passed_classes: list[list[PseudoCourse]],
-    allow_modifying_passed_classes: bool,
 ):
     """
     Given a recommended plan and a plan that is considered as "passed", add classes
     after the last semester to match the recommended plan.
-    May modify the `passed_classes` if it contains equivalences (in order to make them
-    concrete and match the recommended classes).
     """
 
     consumed: list[set[str]] = [set() for _sem in passed_classes]
@@ -150,7 +131,6 @@ def _compute_courses_to_pass(
                     required,
                     passed_classes,
                     consumed,
-                    allow_modifying_passed_classes,
                 ):
                     to_pass.append(required)
     return to_pass
@@ -350,11 +330,9 @@ async def generate_recommended_plan(passed: ValidatablePlan):
     recommended = await CurriculumRecommender.recommend(courseinfo, passed.curriculum)
 
     # Flat list of all curriculum courses left to pass
-    plan = passed.copy(deep=True)
-    courses_to_pass = _compute_courses_to_pass(
-        courseinfo, recommended, plan.classes, True
-    )
+    courses_to_pass = _compute_courses_to_pass(courseinfo, recommended, passed.classes)
 
+    plan = passed.copy(deep=True)
     plan.classes.append([])
 
     # Precompute corequirements for courses
