@@ -112,7 +112,7 @@ async def get_student_info(user: UserKey = Depends(require_authentication)):
     Requires authentication (!)
     This forwards a request to the SIDING service.
     """
-    return sync.get_student_data(user)
+    return await sync.get_student_data(user)
 
 
 # TODO: This HTTP method should not be GET, as it has side-effects.
