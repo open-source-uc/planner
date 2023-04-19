@@ -317,7 +317,7 @@ async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan
         cyear = Cyear.from_str(student.info.cyear)
         if cyear is None:
             # HTTP error 501: Unimplemented
-            # The frontend could recognize this code and show a nice error message
+            # TODO: The frontend could recognize this code and show a nice error message
             # maybe?
             raise HTTPException(
                 status_code=501, detail="Your curriculum version is unsupported"
