@@ -146,8 +146,6 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
         else:
             raise Exception("siding api returned invalid curriculum block")
         creds = raw_block.Creditos
-        # if creds is None:
-        #     creds = 0
         course = CourseList(
             name=raw_block.Nombre,
             cap=creds,
