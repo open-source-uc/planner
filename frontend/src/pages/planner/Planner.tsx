@@ -5,6 +5,7 @@ import ControlTopBar from './ControlTopBar'
 import MyDialog from '../../components/Dialog'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
+import { Listbox } from '@headlessui/react'
 import { Major, Minor, Title, DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
 
 type PseudoCourse = ConcreteId | EquivalenceId
@@ -39,10 +40,13 @@ const Planner = (): JSX.Element => {
   const [error, setError] = useState<String | null>(null)
   const params = useParams()
 
-  async function getDefaultPlan (): Promise<void> {
+  async function getDefaultPlan (ValidatablePlan?: ValidatablePlan): Promise<void> {
     console.log('getting Basic Plan...')
     // TODO: Use current user to generate plan if logged in
-    const response: ValidatablePlan = await DefaultService.generatePlan(await DefaultService.emptyGuestPlan())
+    if (ValidatablePlan === undefined) {
+      ValidatablePlan = await DefaultService.emptyGuestPlan()
+    }
+    const response: ValidatablePlan = await DefaultService.generatePlan(ValidatablePlan)
     await getCourseDetails(response.classes.flat()).catch(err => {
       setValidationResult({
         diagnostics: [{
@@ -71,6 +75,7 @@ const Planner = (): JSX.Element => {
     console.log('getting Plan by Id...')
     try {
       const response: PlanView = await DefaultService.readPlan(id)
+      setCurriculumData(await loadCurriculumsData(response.validatable_plan.curriculum.cyear, response.validatable_plan.curriculum.major))
       setPlan(response)
       await getCourseDetails(response.validatable_plan.classes.flat()).catch(err => {
         setValidationResult({
@@ -232,18 +237,18 @@ const Planner = (): JSX.Element => {
   useEffect(() => {
     if (!loading && plan != null) {
       // dont validate if the classes are rearranging the same semester at previous validation
-      let changed = plan.validatable_plan.classes.length !== previousClasses.current.length
-      if (!changed) {
+      let classes_changed = plan.validatable_plan.classes.length !== previousClasses.current.length
+      if (!classes_changed) {
         for (let idx = 0; idx < plan.validatable_plan.classes.length; idx++) {
           const cur = [...plan.validatable_plan.classes[idx]].sort((a, b) => a.code.localeCompare(b.code))
           const prev = [...previousClasses.current[idx]].sort((a, b) => a.code.localeCompare(b.code))
           if (JSON.stringify(cur) !== JSON.stringify(prev)) {
-            changed = true
+            classes_changed = true
             break
           }
         }
       }
-      if (changed) {
+      if (classes_changed) {
         validate(plan.validatable_plan).catch(err => {
           setValidationResult({
             diagnostics: [{
@@ -253,6 +258,8 @@ const Planner = (): JSX.Element => {
             course_superblocks: {}
           })
         })
+      }
+
       }
     }
   }, [loading, plan])
@@ -319,16 +326,106 @@ const Planner = (): JSX.Element => {
     }
     setIsModalOpen(false)
   }
-
+  function selectMajor (major: Major): void {
+    setPlan((prev) => {
+      return {
+        ...prev,
+        validatable_plan: {
+          ...prev.validatable_plan,
+          curriculum: {
+            ...prev.validatable_plan.curriculum,
+            major: major.code
+          }
+        }
+      }
+    })
+  }
+  function selectMinor (minor: Minor): void {
+    setPlan((prev) => {
+      return {
+        ...prev,
+        validatable_plan: {
+          ...prev.validatable_plan,
+          curriculum: {
+            ...prev.validatable_plan.curriculum,
+            minor: minor.code
+          }
+        }
+      }
+    })
+  }
+  function selectTitle (title: Title): void {
+    setPlan((prev) => {
+      return {
+        ...prev,
+        validatable_plan: {
+          ...prev.validatable_plan,
+          curriculum: {
+            ...prev.validatable_plan.curriculum,
+            title: title.code
+          }
+        }
+      }
+    })
+  }
   return (
     <div className={`w-full h-full p-3 flex flex-grow overflow-hidden flex-row ${validating ? 'cursor-wait' : ''}`}>
       <MyDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={async (selection?: string) => await closeModal(selection)}/>
       {(!loading && error === null) && <>
         <div className={'flex flex-col w-5/6 flex-grow'}>
           <ul className={'w-full mb-3 mt-2 relative'}>
-            <li className={'inline text-md ml-3 mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Major:</div> {plan?.validatable_plan.curriculum.major}</li>
-            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div> {plan?.validatable_plan.curriculum.minor}</li>
-            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div> {plan?.validatable_plan.curriculum.title}</li>
+            <li className={'inline text-md ml-3 mr-5 font-semibold'}>
+              <div className={'text-sm inline mr-1 font-normal'}>Major:</div>
+              <Listbox value={curriculumData.majors[plan?.validatable_plan.curriculum.major]} onChange={selectMajor}>
+                <Listbox.Button>{curriculumData.majors[plan?.validatable_plan.curriculum.major].name}</Listbox.Button>
+                <Listbox.Options>
+                  {Object.keys(curriculumData.majors).map((key) => {
+                    return (
+                      <Listbox.Option
+                        key={key}
+                        value={curriculumData.majors[key]}
+                      >
+                        {curriculumData.majors[key].name}
+                      </Listbox.Option>
+                    )
+                  })}
+                </Listbox.Options>
+              </Listbox>
+            </li>
+            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div>
+              <Listbox value={curriculumData.minors[plan?.validatable_plan.curriculum.minor]} onChange={selectMinor}>
+                <Listbox.Button>{curriculumData.minors[plan?.validatable_plan.curriculum.minor].name}</Listbox.Button>
+                <Listbox.Options>
+                  {Object.keys(curriculumData.minors).map((key) => {
+                    return (
+                      <Listbox.Option
+                        key={key}
+                        value={curriculumData.minors[key]}
+                      >
+                        {curriculumData.minors[key].name}
+                      </Listbox.Option>
+                    )
+                  })}
+                </Listbox.Options>
+              </Listbox>
+            </li>
+            <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div>
+              <Listbox value={curriculumData.titles[plan?.validatable_plan.curriculum.title]} onChange={selectTitle}>
+                <Listbox.Button>{curriculumData.titles[plan?.validatable_plan.curriculum.title].name}</Listbox.Button>
+                <Listbox.Options>
+                  {Object.keys(curriculumData.titles).map((key) => {
+                    return (
+                      <Listbox.Option
+                        key={key}
+                        value={curriculumData.titles[key]}
+                      >
+                        {curriculumData.titles[key].name}
+                      </Listbox.Option>
+                    )
+                  })}
+                </Listbox.Options>
+              </Listbox>
+            </li>
             {plan != null && 'id' in plan && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {plan.name}</li>}
           </ul>
           <ControlTopBar
