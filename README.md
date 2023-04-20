@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <a href=# name="readme-top"><img src="https://github.com/open-source-uc/planner/blob/open-sourcing/docs/img/demo_gif.gif" width="200px" alt="banner"></a>
+  <a href=# name="readme-top"><img src="https://github.com/open-source-uc/planner/blob/open-sourcing/docs/img/demo_gif.gif" width="700px" alt="banner"></a>
 </h1>
 
 <h4 align="center">Proyecto Planner</h4>
