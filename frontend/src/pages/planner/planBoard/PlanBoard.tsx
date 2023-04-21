@@ -1,6 +1,4 @@
 import { useState } from 'react'
-import { DndProvider } from 'react-dnd'
-import { HTML5Backend } from 'react-dnd-html5-backend'
 import SemesterColumn from './SemesterColumn'
 import CourseCard from './CourseCard'
 import { ValidatablePlan, Course, FlatValidationResult } from '../../../client'
@@ -72,7 +70,6 @@ const PlanBoard = ({ classesGrid, classesDetails, setPlan, openModal, addCourse,
     })
   }
   return (
-    <DndProvider backend={HTML5Backend}>
       <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap rtl-grid flex-grow ${validating === true ? 'pointer-events-none' : ''}`}>
         {classesGrid.map((classes: PseudoCourseId[], semester: number) => (
             <SemesterColumn
@@ -112,7 +109,6 @@ const PlanBoard = ({ classesGrid, classesDetails, setPlan, openModal, addCourse,
           />
         </>}
       </div>
-    </DndProvider>
   )
 }
 

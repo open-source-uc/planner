@@ -6,6 +6,8 @@ import MyDialog from '../../components/Dialog'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
 import { Listbox } from '@headlessui/react'
+import { DndProvider } from 'react-dnd'
+import { HTML5Backend } from 'react-dnd-html5-backend'
 import { Major, Minor, Title, DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
 
 export type PseudoCourseId = ConcreteId | EquivalenceId
@@ -50,6 +52,7 @@ const Planner = (): JSX.Element => {
       ValidatablePlan = await DefaultService.emptyGuestPlan()
     }
     const response: ValidatablePlan = await DefaultService.generatePlan(ValidatablePlan)
+    console.log(response)
     await getCourseDetails(response.classes.flat()).catch(err => {
       setValidationResult({
         diagnostics: [{
@@ -61,15 +64,6 @@ const Planner = (): JSX.Element => {
     })
     setCurriculumData(await loadCurriculumsData(response.curriculum.cyear, response.curriculum.major))
     setValidatablePlan(response)
-    await validate(response).catch(err => {
-      setValidationResult({
-        diagnostics: [{
-          is_warning: false,
-          message: `Error interno: ${String(err)}`
-        }],
-        course_superblocks: {}
-      })
-    })
     console.log('data loaded')
   }
 
@@ -81,15 +75,6 @@ const Planner = (): JSX.Element => {
       setValidatablePlan(response.validatable_plan)
       setPlanName(response.name)
       await getCourseDetails(response.validatable_plan.classes.flat()).catch(err => {
-        setValidationResult({
-          diagnostics: [{
-            is_warning: false,
-            message: `Error interno: ${String(err)}`
-          }],
-          course_superblocks: {}
-        })
-      })
-      await validate(response.validatable_plan).catch(err => {
         setValidationResult({
           diagnostics: [{
             is_warning: false,
@@ -280,8 +265,13 @@ const Planner = (): JSX.Element => {
     setIsModalOpen(false)
   }
 
+  function reset (): void {
+    setPlannerStatus(PlannerStatus.LOADING)
+    setValidatablePlan(null)
+  }
+
   function selectMajor (major: Major): void {
-    setPlannerStatus(PlannerStatus.VALIDATING)
+    setPlannerStatus(PlannerStatus.LOADING)
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = prev.curriculum
@@ -291,7 +281,7 @@ const Planner = (): JSX.Element => {
   }
 
   function selectMinor (minor: Minor): void {
-    setPlannerStatus(PlannerStatus.VALIDATING)
+    setPlannerStatus(PlannerStatus.LOADING)
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = prev.curriculum
@@ -301,7 +291,7 @@ const Planner = (): JSX.Element => {
   }
 
   function selectTitle (title: Title): void {
-    setPlannerStatus(PlannerStatus.VALIDATING)
+    setPlannerStatus(PlannerStatus.LOADING)
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = prev.curriculum
@@ -311,27 +301,43 @@ const Planner = (): JSX.Element => {
   }
 
   useEffect(() => {
-    async function fetchData (): Promise<void> {
-      setPlannerStatus(PlannerStatus.LOADING)
-      try {
-        if (params?.plannerId != null) {
-          await getPlanById(params.plannerId)
-        } else {
-          await getDefaultPlan()
-        }
-      } catch (error) {
-        setError('Hubo un error al cargar el planner')
-        console.error(error)
-        setPlannerStatus(PlannerStatus.ERROR)
-      }
-    }
-    void fetchData()
+    setPlannerStatus(PlannerStatus.LOADING)
   }, [])
 
   useEffect(() => {
-    if (plannerStatus !== 'LOADING' && validatablePlan != null) {
+    if (plannerStatus === 'LOADING') {
+      async function fetchData (): Promise<void> {
+        try {
+          if (params?.plannerId != null) {
+            await getPlanById(params.plannerId)
+          } else {
+            await getDefaultPlan(validatablePlan ?? undefined)
+          }
+        } catch (error) {
+          setError('Hubo un error al cargar el planner')
+          console.error(error)
+          setPlannerStatus(PlannerStatus.ERROR)
+        }
+      }
+      void fetchData()
+    } else if (plannerStatus === 'VALIDATING' && validatablePlan != null) {
+      validate(validatablePlan).catch(err => {
+        setValidationResult({
+          diagnostics: [{
+            is_warning: false,
+            message: `Error interno: ${String(err)}`
+          }],
+          course_superblocks: {}
+        })
+      })
+    }
+  }, [plannerStatus])
+
+  useEffect(() => {
+    if (validatablePlan != null) {
       // dont validate if the classes are rearranging the same semester at previous validation
-      let classesChanged = validatablePlan.classes.length !== previousClasses.current.length
+      let classesChanged = true
+      // let classesChanged = validatablePlan.classes.length !== previousClasses.current.length
       if (!classesChanged) {
         for (let idx = 0; idx < validatablePlan.classes.length; idx++) {
           const cur = [...validatablePlan.classes[idx]].sort((a, b) => a.code.localeCompare(b.code))
@@ -343,18 +349,10 @@ const Planner = (): JSX.Element => {
         }
       }
       if (classesChanged) {
-        validate(validatablePlan).catch(err => {
-          setValidationResult({
-            diagnostics: [{
-              is_warning: false,
-              message: `Error interno: ${String(err)}`
-            }],
-            course_superblocks: {}
-          })
-        })
+        setPlannerStatus(PlannerStatus.VALIDATING)
       }
     }
-  }, [plannerStatus, validatablePlan])
+  }, [validatablePlan])
 
   return (
     <div className={`w-full h-full p-3 flex flex-grow overflow-hidden flex-row ${(plannerStatus !== 'ERROR' && plannerStatus !== 'READY') ? 'cursor-wait' : ''}`}>
@@ -391,16 +389,16 @@ const Planner = (): JSX.Element => {
                 </Listbox>
               </li>
               <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div>
-                <Listbox value={curriculumData.minors[validatablePlan.curriculum.minor ?? '']} onChange={selectMinor}>
-                  <Listbox.Button>{curriculumData.minors[validatablePlan.curriculum.minor ?? ''].name}</Listbox.Button>
+                <Listbox value={curriculumData.majors[validatablePlan.curriculum.major ?? '']} onChange={selectMinor}>
+                  <Listbox.Button>{curriculumData.majors[validatablePlan.curriculum.major ?? ''].name}</Listbox.Button>
                   <Listbox.Options>
-                    {Object.keys(curriculumData.minors).map((key) => {
+                    {Object.keys(curriculumData.majors).map((key) => {
                       return (
                         <Listbox.Option
                           key={key}
-                          value={curriculumData.minors[key]}
+                          value={curriculumData.majors[key]}
                         >
-                          {curriculumData.minors[key].name}
+                          {curriculumData.majors[key].name}
                         </Listbox.Option>
                       )
                     })}
@@ -428,10 +426,11 @@ const Planner = (): JSX.Element => {
             </ul>
           }
           <ControlTopBar
-            reset={getDefaultPlan}
+            reset={reset}
             save={savePlan}
             validating={plannerStatus !== 'READY'}
           />
+          <DndProvider backend={HTML5Backend}>
           <PlanBoard
             classesGrid={validatablePlan?.classes ?? []}
             classesDetails={courseDetails}
@@ -441,6 +440,7 @@ const Planner = (): JSX.Element => {
             validating={plannerStatus !== 'READY'}
             validationResult={validationResult}
           />
+          </DndProvider>
         </div>
         <ErrorTray diagnostics={validationResult?.diagnostics ?? []} validating={plannerStatus === 'VALIDATING'}/>
         </>}
