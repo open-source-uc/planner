@@ -11,7 +11,7 @@
   <a href="#Descripción">Descripción</a> •
   <a href="#Uso">Uso</a> •
   <a href="#Contribuir">Contribuir</a> •
-  <a href="#Creditos">Creditos</a>
+  <a href="#Licencia">Licencia</a>
 </p>
 
 <h4 align="center">
@@ -46,8 +46,10 @@ La información detallada sobre cómo contribuir se puede encontrar en [contribu
 
 ### Bug Reports & Feature Requests
 
-
 ### Mantenedores
 
-
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
+
+## Licencia
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./license.md)
