@@ -11,6 +11,7 @@
   <a href="#Descripción">Descripción</a> •
   <a href="#Uso">Uso</a> •
   <a href="#Contribuir">Contribuir</a> •
+  <a href="#Equipo">Equipo</a> •
   <a href="#Licencia">Licencia</a>
 </p>
 
@@ -25,8 +26,6 @@
 Este es el hogar para el desarrollo del nuevo Planner de Ingeniería UC, hecho por estudiantes para estudiantes.
 
 Tras varios años en ideación, este proyecto se lanzó como [una propuesta conjunta](https://drive.google.com/file/d/1IxAJ8cCzDkayPwnju5kgc2oKc7g9fvwf/view) entre la Consejería Académica de Ingeniería y Open Source UC, con el propósito de reemplazar el [actual planner de Ingeniería](https://planner.ing.puc.cl/). La propuesta, tras ser aprobada por la Escuela de Ingeniería, dió comienzo al proyecto en modalidad de marcha blanca. A principios del 2023, y con un MVP listo, la Dirección de Pregrado oficialmente aprobó la continuación del desarrollo del proyecto.
-
-<p align="right">(<a href="#readme-top">volver arriba</a>)</p>
 
 ## Uso
 
@@ -51,18 +50,18 @@ La información detallada sobre cómo contribuir se puede encontrar en [contribu
 
 ### Bug Reports & Feature Requests
 
-### Mantenedores
-
-- [@shantifabri](https://github.com/shantifabri)
-- [@negamartin](https://github.com/negamartin)
-- [@Diegothx](https://github.com/Diegothx)
-- [@fagiannoni](https://github.com/fagiannoni)
-- [@agucova](https://github.com/agucova)
-
 La app aún está en una etapa muy temprana del desarrollo por lo que podrían haber cosas que no funcionan correctamente o difieren de la documentación, por lo que cualquier lector siéntase libre a colaborar :rocket:. Toda ayuda es bienvenida :)
 
-<p align="right">(<a href="#readme-top">volver arriba</a>)</p>
+## Equipo
+
+- [@shantifabri](https://github.com/shantifabri) - Coordinación / Frontend
+- [@Diegothx](https://github.com/Diegothx) - Frontend
+- [@negamartin](https://github.com/negamartin) - Backend
+- [@fagiannoni](https://github.com/fagiannoni) - Backend
+- [@agucova](https://github.com/agucova) - Asesoramiento
 
 ## Licencia
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./license.md)
+
+<p align="right">(<a href="#readme-top">volver arriba</a>)</p>
