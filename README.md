@@ -1,14 +1,12 @@
 <h1 align="center">
   <br>
-  <a href=# name="readme-top"><img src="https://github.com/open-source-uc/planner/blob/open-sourcing/docs/img/demo_gif.gif" width="700px" alt="banner"></a>
+  <a href=# name="readme-top">Proyecto Planner</a>
 </h1>
-
-<h4 align="center">Proyecto Planner</h4>
 
 <p align="center">
      <!-- Badges Here -->
 </p>
-      
+
 <p align="center">
   <a href="#Descripción">Descripción</a> •
   <a href="#Uso">Uso</a> •
@@ -16,22 +14,29 @@
   <a href="#Creditos">Creditos</a>
 </p>
 
+<h4 align="center">
+  <a href=# name="readme-top"><img src="https://github.com/open-source-uc/planner/blob/open-sourcing/docs/img/demo_gif.gif" width="700px" alt="banner"></a>
+</h4>
+
 ---
 
 ## Descripción
 
-Proyecto Planner Ingenieria UC.
+Nuevo Planner de Ingeniería UC, para estudiantes por estudiantes.
+
+Este es un proyecto impulsado por estudiantes de Ingeniería UC pensado en reemplazar el [actual planner de Ingeniería](https://planner.ing.puc.cl/). Después de algunos años siendo una idea y muchas reuniones, en Abril de 2022 se presentó una propuesta formal, con la cuál se logró comenzar a desarrollar el proyecto en Diciembre de ese año en modo marcha blanca. A principios del 2023, y con un MVP listo, la Dirección de Pregrado oficialmente aprobó la continuación del desarrollo del proyecto.
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
 
 ## Uso
 
-Para correr el proyecto se puede usar el devcontainer directo en VSCode, con acciones para correr el backend, frontend y servidor CAS mock.
+Para correr el proyecto se puede usar el devcontainer directo en VSCode, con acciones para correr el backend, frontend y servidor CAS mock. Existen tareas para reiniciar o migrar la base de datos y otras de utilidad.
 
 IMPORTANTE: Es necesario agregar manualmente la contrasena de Siding (no disponible en este repo) al `.env` para que se carguen las mallas.
 
-## Contribuir
+<p align="right">(<a href="#readme-top">volver arriba</a>)</p>
 
+## Contribuir
 
 ### Workflow
 
@@ -42,9 +47,7 @@ La información detallada sobre cómo contribuir se puede encontrar en [contribu
 ### Bug Reports & Feature Requests
 
 
-
 ### Mantenedores
-
 
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
