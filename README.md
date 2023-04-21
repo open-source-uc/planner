@@ -53,13 +53,13 @@ La información detallada sobre cómo contribuir se puede encontrar en [contribu
 
 ### Mantenedores
 
-La app aún está en una etapa muy temprana del desarrollo por lo que podrían haber cosas que no funcionan correctamente o difieren de la documentación, por lo que cualquier lector siéntase libre a colaborar :rocket:. Toda ayuda es bienvenida :)
+- [@shantifabri](https://github.com/shantifabri)
+- [@negamartin](https://github.com/negamartin)
+- [@Diegothx](https://github.com/Diegothx)
+- [@fagiannoni](https://github.com/fagiannoni)
+- [@agucova](https://github.com/agucova)
 
-- @shantifabri
-- @negamartin
-- @Diegothx
-- @fagiannoni
-- @agucova
+La app aún está en una etapa muy temprana del desarrollo por lo que podrían haber cosas que no funcionan correctamente o difieren de la documentación, por lo que cualquier lector siéntase libre a colaborar :rocket:. Toda ayuda es bienvenida :)
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
 
