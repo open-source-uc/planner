@@ -15,7 +15,7 @@
 </p>
 
 <h4 align="center">
-  <a href=# name="readme-top"><img src="https://github.com/open-source-uc/planner/blob/open-sourcing/docs/img/demo_gif.gif" width="700px" alt="banner"></a>
+  <a href=# name="readme-top"><img src="./docs/img/demo_gif.gif" width="700px" alt="banner"></a>
 </h4>
 
 ---
