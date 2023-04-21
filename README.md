@@ -16,15 +16,15 @@
 
 <h4 align="center">
   <a href=# name="readme-top"><img src="./docs/img/demo_gif.gif" width="700px" alt="banner"></a>
-</h4>
+</Es>
 
 ---
 
 ## Descripción
 
-Nuevo Planner de Ingeniería UC, para estudiantes por estudiantes.
+Este es el hogar para el desarrollo del nuevo Planner de Ingeniería UC, hecho por estudiantes para estudiantes.
 
-Este es un proyecto impulsado por estudiantes de Ingeniería UC pensado en reemplazar el [actual planner de Ingeniería](https://planner.ing.puc.cl/). Después de algunos años siendo una idea y muchas reuniones, en Abril de 2022 se presentó una propuesta formal, con la cuál se logró comenzar a desarrollar el proyecto en Diciembre de ese año en modo marcha blanca. A principios del 2023, y con un MVP listo, la Dirección de Pregrado oficialmente aprobó la continuación del desarrollo del proyecto.
+Tras varios años en ideación, este proyecto se lanzó como [una propuesta conjunta](https://drive.google.com/file/d/1IxAJ8cCzDkayPwnju5kgc2oKc7g9fvwf/view) entre la Consejería Académica de Ingeniería y Open Source UC, con el propósito de reemplazar el [actual planner de Ingeniería](https://planner.ing.puc.cl/). La propuesta, tras ser aprobada por la Escuela de Ingeniería, dió comienzo al proyecto en modalidad de marcha blanca. A principios del 2023, y con un MVP listo, la Dirección de Pregrado oficialmente aprobó la continuación del desarrollo del proyecto.
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
 
