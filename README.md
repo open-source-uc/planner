@@ -32,7 +32,7 @@ Este es un proyecto impulsado por estudiantes de Ingeniería UC pensado en reemp
 
 La forma óptima de correr el proyecto, sin tener que instalar todas las dependencias, es utilizar el devcontainer directo en VSCode, con acciones para correr el backend, frontend y servidor CAS mock. Existen tareas para reiniciar o migrar la base de datos y otras de utilidad.
 
-### Pasos
+### Pasos sugeridos
 1. Teniendo Docker instalado, al abrir el proyecto en VSCode la extensión [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) debería reconocer la carpeta `.devcontainer` presente en el repo y aparece un _pop up_ entregando la opción de "Reabrir en el contenedor".
 2. Se deben crear los archivos `.env` para las variables de entorno a partir de los `.env.example` y reemplazar los valores según corresponda.
 - Es **necesario** agregar manualmente la contrasena de Siding (no disponible en este repo por temas de seguridad) al `.env` del backend para que se carguen las mallas y otros datos de la API de SIDING.
