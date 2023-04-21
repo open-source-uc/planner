@@ -30,9 +30,14 @@ Este es un proyecto impulsado por estudiantes de Ingeniería UC pensado en reemp
 
 ## Uso
 
-Para correr el proyecto se puede usar el devcontainer directo en VSCode, con acciones para correr el backend, frontend y servidor CAS mock. Existen tareas para reiniciar o migrar la base de datos y otras de utilidad.
+La forma óptima de correr el proyecto, sin tener que instalar todas las dependencias, es utilizar el devcontainer directo en VSCode, con acciones para correr el backend, frontend y servidor CAS mock. Existen tareas para reiniciar o migrar la base de datos y otras de utilidad.
 
-IMPORTANTE: Es necesario agregar manualmente la contrasena de Siding (no disponible en este repo) al `.env` para que se carguen las mallas.
+### Pasos
+1. Teniendo Docker instalado, al abrir el proyecto en VSCode la extensión [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) debería reconocer la carpeta `.devcontainer` presente en el repo y aparece un _pop up_ entregando la opción de "Reabrir en el contenedor".
+2. Se deben crear los archivos `.env` para las variables de entorno a partir de los `.env.example` y reemplazar los valores según corresponda.
+- Es **necesario** agregar manualmente la contrasena de Siding (no disponible en este repo por temas de seguridad) al `.env` del backend para que se carguen las mallas y otros datos de la API de SIDING.
+3. Al correr el comando `Tasks: Run Task` en VSCode se abren una serie de tareas útiles como: instalar dependencias del backend, dependencias del frontend, crear migraciones en la db, reiniciar la db, etc.
+4. En la sección "Run and Debug" de VSCode aparecerán acciones para correr cada servicio de la app por separado, o todos al mismo tiempo (`Launch all 🚀`).
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
 
@@ -47,6 +52,14 @@ La información detallada sobre cómo contribuir se puede encontrar en [contribu
 ### Bug Reports & Feature Requests
 
 ### Mantenedores
+
+La app aún está en una etapa muy temprana del desarrollo por lo que podrían haber cosas que no funcionan correctamente o difieren de la documentación, por lo que cualquier lector siéntase libre a colaborar :rocket:. Toda ayuda es bienvenida :)
+
+- @shantifabri
+- @negamartin
+- @Diegothx
+- @fagiannoni
+- @agucova
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
 
