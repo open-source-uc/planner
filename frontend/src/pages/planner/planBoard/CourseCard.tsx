@@ -3,7 +3,6 @@ import { useDrag, useDrop } from 'react-dnd'
 import { Course } from '../../../client'
 import editWhiteIcon from '../../../assets/editWhite.svg'
 import editBlackIcon from '../../../assets/editBlack.svg'
-
 interface CourseCardProps {
   cardData: { name: string, code: string, credits?: number, semester: number, is_concrete?: boolean }
   isDragging: Function

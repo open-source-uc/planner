@@ -27,6 +27,14 @@ enum PlannerStatus {
   ERROR = 'ERROR',
   READY = 'READY',
 }
+const findCourseSuperblock = (validationResults: FlatValidationResult | null, code: string): string | null => {
+  if (validationResults == null) return null
+  for (const c in validationResults.course_superblocks) {
+    if (c === code) return validationResults.course_superblocks[c].normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(' ', '').split(' ')[0]
+  }
+  return null
+}
+
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
@@ -41,6 +49,7 @@ const Planner = (): JSX.Element => {
   const [validationResult, setValidationResult] = useState<FlatValidationResult | null>(null)
   const [error, setError] = useState<String | null>(null)
 
+  const previousCurriculum = useRef({})
   const previousClasses = useRef<PseudoCourseId[][]>([[]])
 
   const params = useParams()
@@ -62,6 +71,7 @@ const Planner = (): JSX.Element => {
         course_superblocks: {}
       })
     })
+    previousCurriculum.current = { major: response.curriculum.major, minor: response.curriculum.minor, title: response.curriculum.title }
     setCurriculumData(await loadCurriculumsData(response.curriculum.cyear, response.curriculum.major))
     setValidatablePlan(response)
     console.log('data loaded')
@@ -72,6 +82,7 @@ const Planner = (): JSX.Element => {
     try {
       const response: PlanView = await DefaultService.readPlan(id)
       setCurriculumData(await loadCurriculumsData(response.validatable_plan.curriculum.cyear, response.validatable_plan.curriculum.major))
+      previousCurriculum.current = { major: response.validatable_plan.curriculum.major, minor: response.validatable_plan.curriculum.minor, title: response.validatable_plan.curriculum.title }
       setValidatablePlan(response.validatable_plan)
       setPlanName(response.name)
       await getCourseDetails(response.validatable_plan.classes.flat()).catch(err => {
@@ -87,6 +98,7 @@ const Planner = (): JSX.Element => {
       alert(err)
       window.location.href = '/planner'
     }
+
     console.log('data loaded')
   }
 
@@ -271,17 +283,25 @@ const Planner = (): JSX.Element => {
   }
 
   function selectMajor (major: Major): void {
-    setPlannerStatus(PlannerStatus.LOADING)
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = prev.curriculum
+      const newClasses = prev.classes
+      newClasses.forEach((sem, idx) => {
+        newClasses[idx] = sem.filter((c) => {
+          if (findCourseSuperblock(validationResult, c.code) !== 'Major') {
+            return c
+          }
+          return false
+        })
+      })
+      console.log(newClasses)
       newCurriculum.major = major.code
       return { ...prev, curriculum: newCurriculum }
     })
   }
 
   function selectMinor (minor: Minor): void {
-    setPlannerStatus(PlannerStatus.LOADING)
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = prev.curriculum
@@ -291,7 +311,6 @@ const Planner = (): JSX.Element => {
   }
 
   function selectTitle (title: Title): void {
-    setPlannerStatus(PlannerStatus.LOADING)
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = prev.curriculum
@@ -335,21 +354,29 @@ const Planner = (): JSX.Element => {
 
   useEffect(() => {
     if (validatablePlan != null) {
-      // dont validate if the classes are rearranging the same semester at previous validation
-      let classesChanged = true
-      // let classesChanged = validatablePlan.classes.length !== previousClasses.current.length
-      if (!classesChanged) {
-        for (let idx = 0; idx < validatablePlan.classes.length; idx++) {
-          const cur = [...validatablePlan.classes[idx]].sort((a, b) => a.code.localeCompare(b.code))
-          const prev = [...previousClasses.current[idx]].sort((a, b) => a.code.localeCompare(b.code))
-          if (JSON.stringify(cur) !== JSON.stringify(prev)) {
-            classesChanged = true
-            break
+      const { major, minor, title } = validatablePlan.curriculum
+      const curriculumChanged =
+        major !== previousCurriculum.current.major ||
+        minor !== previousCurriculum.current.minor ||
+        title !== previousCurriculum.current.title
+      if (curriculumChanged) {
+        setPlannerStatus(PlannerStatus.LOADING)
+      } else {
+        // dont validate if the classes are rearranging the same semester at previous validation
+        let classesChanged = validatablePlan.classes.length !== previousClasses.current.length
+        if (!classesChanged) {
+          for (let idx = 0; idx < validatablePlan.classes.length; idx++) {
+            const cur = [...validatablePlan.classes[idx]].sort((a, b) => a.code.localeCompare(b.code))
+            const prev = [...previousClasses.current[idx]].sort((a, b) => a.code.localeCompare(b.code))
+            if (JSON.stringify(cur) !== JSON.stringify(prev)) {
+              classesChanged = true
+              break
+            }
           }
         }
-      }
-      if (classesChanged) {
-        setPlannerStatus(PlannerStatus.VALIDATING)
+        if (classesChanged) {
+          setPlannerStatus(PlannerStatus.VALIDATING)
+        }
       }
     }
   }, [validatablePlan])
@@ -431,15 +458,15 @@ const Planner = (): JSX.Element => {
             validating={plannerStatus !== 'READY'}
           />
           <DndProvider backend={HTML5Backend}>
-          <PlanBoard
-            classesGrid={validatablePlan?.classes ?? []}
-            classesDetails={courseDetails}
-            setPlan={setValidatablePlan}
-            openModal={openModal}
-            addCourse={addCourse}
-            validating={plannerStatus !== 'READY'}
-            validationResult={validationResult}
-          />
+            <PlanBoard
+              classesGrid={validatablePlan?.classes ?? []}
+              classesDetails={courseDetails}
+              setPlan={setValidatablePlan}
+              openModal={openModal}
+              addCourse={addCourse}
+              validating={plannerStatus !== 'READY'}
+              validationResult={validationResult}
+            />
           </DndProvider>
         </div>
         <ErrorTray diagnostics={validationResult?.diagnostics ?? []} validating={plannerStatus === 'VALIDATING'}/>
