@@ -58,7 +58,7 @@ La app aún está en una etapa muy temprana del desarrollo por lo que podrían h
 - [@Diegothx](https://github.com/Diegothx) - Frontend
 - [@negamartin](https://github.com/negamartin) - Backend
 - [@fagiannoni](https://github.com/fagiannoni) - Backend
-- [@agucova](https://github.com/agucova) - Asesoramiento
+- [@agucova](https://github.com/agucova) - Apoyo Backend/Frontend
 
 ## Licencia
 
