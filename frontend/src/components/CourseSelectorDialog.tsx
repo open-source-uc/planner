@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Dialog } from '@headlessui/react'
 import { DefaultService, Equivalence, Course } from '../client'
 
-const MyDialog = ({ equivalence, open, onClose }: { equivalence?: Equivalence, open: boolean, onClose: Function }): JSX.Element => {
+const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Equivalence, open: boolean, onClose: Function }): JSX.Element => {
   const [courses, setCourses] = useState<Course[]>([])
   const [offset, setOffset] = useState(10)
   const [selectedCourse, setSelectedCourse] = useState<string>()
@@ -70,4 +70,4 @@ const MyDialog = ({ equivalence, open, onClose }: { equivalence?: Equivalence, o
   )
 }
 
-export default MyDialog
+export default CourseSelectorDialog

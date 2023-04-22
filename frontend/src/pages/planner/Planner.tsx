@@ -2,13 +2,15 @@ import { Spinner } from '../../components/Spinner'
 import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
-import MyDialog from '../../components/Dialog'
+import CourseSelectorDialog from '../../components/CourseSelectorDialog'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
 import { Listbox } from '@headlessui/react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { Major, Minor, Title, DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
+import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
+import { toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 export type PseudoCourseId = ConcreteId | EquivalenceId
 export type PseudoCourseDetail = Course | Equivalence
@@ -35,6 +37,10 @@ const findCourseSuperblock = (validationResults: FlatValidationResult | null, co
   return null
 }
 
+const isApiError = (err: any): err is ApiError => {
+  return err.status !== undefined
+}
+
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
@@ -49,57 +55,83 @@ const Planner = (): JSX.Element => {
   const [validationResult, setValidationResult] = useState<FlatValidationResult | null>(null)
   const [error, setError] = useState<String | null>(null)
 
-  const previousCurriculum = useRef({})
+  const previousCurriculum = useRef<{ major: String, minor: String, title: String }>({ major: '', minor: '', title: '' })
   const previousClasses = useRef<PseudoCourseId[][]>([[]])
 
   const params = useParams()
 
-  async function getDefaultPlan (ValidatablePlan?: ValidatablePlan): Promise<void> {
-    console.log('getting Basic Plan...')
-    // TODO: Use current user to generate plan if logged in
-    if (ValidatablePlan === undefined) {
-      ValidatablePlan = await DefaultService.emptyGuestPlan()
+  function handleErrors (err: unknown): void {
+    console.log(err)
+    setPlannerStatus(PlannerStatus.ERROR)
+    if (isApiError(err)) {
+      switch (err.status) {
+        case 401:
+          console.log('token invalid or expired, loading re-login page')
+          toast.error('Token invalido. Redireccionando a pagina de inicio...')
+          break
+        case 403:
+          toast.warn('No tienes permisos para realizar esa accion')
+          break
+        case 404:
+          setError('El planner al que estas intentando acceder no existe o no es de tu propiedad')
+          break
+        case 500:
+          setError(err.message)
+          break
+        default:
+          console.log(err.status)
+          setError('error desconocido')
+          break
+      }
+    } else {
+      setError('error desconocido')
     }
-    const response: ValidatablePlan = await DefaultService.generatePlan(ValidatablePlan)
-    console.log(response)
-    await getCourseDetails(response.classes.flat()).catch(err => {
-      setValidationResult({
-        diagnostics: [{
-          is_warning: false,
-          message: `Error interno: ${String(err)}`
-        }],
-        course_superblocks: {}
-      })
-    })
-    previousCurriculum.current = { major: response.curriculum.major, minor: response.curriculum.minor, title: response.curriculum.title }
-    setCurriculumData(await loadCurriculumsData(response.curriculum.cyear, response.curriculum.major))
-    setValidatablePlan(response)
-    console.log('data loaded')
+  }
+
+  async function getDefaultPlan (ValidatablePlan?: ValidatablePlan): Promise<void> {
+    try {
+      console.log('getting Basic Plan...')
+      // TODO: Use current user to generate plan if logged in
+      if (ValidatablePlan === undefined) {
+        ValidatablePlan = await DefaultService.emptyGuestPlan()
+      }
+      // TODO: Use current user to generate plan if logged in
+      const response: ValidatablePlan = await DefaultService.generatePlan(ValidatablePlan)
+      await Promise.all([
+        getCourseDetails(response.classes.flat()),
+        loadCurriculumsData(response.curriculum.cyear, response.curriculum.major)
+      ])
+      previousCurriculum.current = {
+        major: response.curriculum.major ?? '',
+        minor: response.curriculum.minor ?? '',
+        title: response.curriculum.title ?? ''
+      }
+      setValidatablePlan(response)
+      console.log('data loaded')
+    } catch (err) {
+      handleErrors(err)
+    }
   }
 
   async function getPlanById (id: string): Promise<void> {
-    console.log('getting Plan by Id...')
     try {
+      console.log('getting Plan by Id...')
       const response: PlanView = await DefaultService.readPlan(id)
-      setCurriculumData(await loadCurriculumsData(response.validatable_plan.curriculum.cyear, response.validatable_plan.curriculum.major))
-      previousCurriculum.current = { major: response.validatable_plan.curriculum.major, minor: response.validatable_plan.curriculum.minor, title: response.validatable_plan.curriculum.title }
+      await Promise.all([
+        getCourseDetails(response.validatable_plan.classes.flat()),
+        loadCurriculumsData(response.validatable_plan.curriculum.cyear, response.validatable_plan.curriculum.major)
+      ])
       setValidatablePlan(response.validatable_plan)
       setPlanName(response.name)
-      await getCourseDetails(response.validatable_plan.classes.flat()).catch(err => {
-        setValidationResult({
-          diagnostics: [{
-            is_warning: false,
-            message: `Error interno: ${String(err)}`
-          }],
-          course_superblocks: {}
-        })
-      })
+      previousCurriculum.current = {
+        major: response.validatable_plan.curriculum.major ?? '',
+        minor: response.validatable_plan.curriculum.minor ?? '',
+        title: response.validatable_plan.curriculum.title ?? ''
+      }
+      console.log('data loaded')
     } catch (err) {
-      alert(err)
-      window.location.href = '/planner'
+      handleErrors(err)
     }
-
-    console.log('data loaded')
   }
 
   async function getCourseDetails (courses: PseudoCourseId[]): Promise<void> {
@@ -109,25 +141,32 @@ const Planner = (): JSX.Element => {
     for (const courseid of courses) {
       if (courseid.is_concrete === true) { coursesCodes.push(courseid.code) } else { equivalenceCodes.push(courseid.code) }
     }
-    let responseEquivalenceDetails: Equivalence[] = []
-    let responseCourseDetails: Course[] = []
-    if (coursesCodes.length > 0) responseCourseDetails = await DefaultService.getCourseDetails(coursesCodes)
-    if (equivalenceCodes.length > 0) responseEquivalenceDetails = await DefaultService.getEquivalenceDetails(equivalenceCodes)
-    // transform response to dict with key code:
-    const dict = [...responseCourseDetails, ...responseEquivalenceDetails].reduce((acc: { [code: string]: PseudoCourseDetail }, curr: PseudoCourseDetail) => {
-      acc[curr.code] = curr
-      return acc
-    }, {})
-    setCourseDetails((prev) => { return { ...prev, ...dict } })
+    try {
+      const promises = []
+      if (coursesCodes.length > 0) promises.push(DefaultService.getCourseDetails(coursesCodes))
+      if (equivalenceCodes.length > 0) promises.push(DefaultService.getEquivalenceDetails(equivalenceCodes))
+      const courseDetails = await Promise.all(promises)
+      const dict = courseDetails.flat().reduce((acc: { [code: string]: Course | Equivalence }, curr: Course | Equivalence) => {
+        acc[curr.code] = curr
+        return acc
+      }, {})
+      setCourseDetails((prev) => { return { ...prev, ...dict } })
+    } catch (err) {
+      handleErrors(err)
+    }
   }
 
   async function validate (validatablePlan: ValidatablePlan): Promise<void> {
-    const response = await DefaultService.validatePlan(validatablePlan)
-    setValidationResult(response)
-    setPlannerStatus(PlannerStatus.READY)
-    // Es necesario hacer una copia profunda del plan para comparar, pues si se copia el objeto entero
-    // entonces la copia es modificada junto al objeto original. Lo ideal seria usar una librearia para esto en el futuro
-    previousClasses.current = JSON.parse(JSON.stringify(validatablePlan.classes))
+    try {
+      const response = await DefaultService.validatePlan(validatablePlan)
+      setValidationResult(response)
+      setPlannerStatus(PlannerStatus.READY)
+      // Es necesario hacer una copia profunda del plan para comparar, pues si se copia el objeto entero
+      // entonces la copia es modificada junto al objeto original. Lo ideal seria usar una librearia para esto en el futuro
+      previousClasses.current = JSON.parse(JSON.stringify(validatablePlan.classes))
+    } catch (err) {
+      handleErrors(err)
+    }
   }
 
   async function savePlan (): Promise<void> {
@@ -141,7 +180,7 @@ const Planner = (): JSX.Element => {
         await DefaultService.updatePlan(params.plannerId, validatablePlan)
         alert('Plan actualizado exitosamente.')
       } catch (err) {
-        alert(err)
+        handleErrors(err)
       }
       setPlannerStatus(PlannerStatus.READY)
     } else {
@@ -153,7 +192,7 @@ const Planner = (): JSX.Element => {
         alert('Plan guardado exitosamente.')
         window.location.href = `/planner/${res.id}`
       } catch (err) {
-        alert(err)
+        handleErrors(err)
       }
     }
     setPlannerStatus(PlannerStatus.READY)
@@ -187,11 +226,11 @@ const Planner = (): JSX.Element => {
         return { ...prev, classes: newClasses }
       })
     } catch (err) {
-      alert(err)
+      handleErrors(err)
     }
   }
 
-  async function loadCurriculumsData (cYear: string, cMajor?: string): Promise<CurriculumData> {
+  async function loadCurriculumsData (cYear: string, cMajor?: string): Promise<void> {
     const [majors, minors, titles] = await Promise.all([
       DefaultService.getMajors(cYear),
       DefaultService.getMinors(cYear, cMajor),
@@ -211,7 +250,7 @@ const Planner = (): JSX.Element => {
         return dict
       }, {})
     }
-    return curriculumData
+    setCurriculumData(curriculumData)
   }
 
   async function openModal (equivalence: Equivalence | EquivalenceId, semester: number, index: number): Promise<void> {
@@ -262,7 +301,7 @@ const Planner = (): JSX.Element => {
           } else {
             // To-DO: handle when credis exced necesary
             // General logic: if there are not other courses with the same code then it dosnt matters
-            // If there are other course with the same code, and exact same creddits that this card exceed, delete the other
+            // If there are other course with the same code, and exact same credits that this card exceed, delete the other
 
             // On other way, one should decresed credits of other course with the same code
             // Problem In this part: if i exceed by 5 and have a course of 4 and 10, what do i do
@@ -356,9 +395,9 @@ const Planner = (): JSX.Element => {
     if (validatablePlan != null) {
       const { major, minor, title } = validatablePlan.curriculum
       const curriculumChanged =
-        major !== previousCurriculum.current.major ||
-        minor !== previousCurriculum.current.minor ||
-        title !== previousCurriculum.current.title
+          major !== previousCurriculum.current.major ||
+          minor !== previousCurriculum.current.minor ||
+          title !== previousCurriculum.current.title
       if (curriculumChanged) {
         setPlannerStatus(PlannerStatus.LOADING)
       } else {
@@ -383,7 +422,7 @@ const Planner = (): JSX.Element => {
 
   return (
     <div className={`w-full h-full p-3 flex flex-grow overflow-hidden flex-row ${(plannerStatus !== 'ERROR' && plannerStatus !== 'READY') ? 'cursor-wait' : ''}`}>
-      <MyDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={async (selection?: string) => await closeModal(selection)}/>
+      <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={async (selection?: string) => await closeModal(selection)}/>
       {plannerStatus === 'LOADING' && (
         <Spinner message='Cargando planificación...' />
       )}
