@@ -3,7 +3,10 @@ import Planner from './pages/planner/Planner'
 import Layout from './layout/Layout'
 import UserPage from './pages/user/UserPage'
 import Logout from './pages/Logout'
-
+import Error403 from './pages/errors/Error403'
+import Error404 from './pages/errors/Error404'
+import { DefaultService, ApiError } from './client'
+import { toast } from 'react-toastify'
 import {
   createReactRouter,
   createRouteConfig
@@ -18,16 +21,24 @@ const homeRoute = rootRoute.createRoute({
   component: Home
 })
 
-function authenticateRoute (): void {
-  const token = localStorage.getItem('access-token')
-  if (token == null) {
-    throw new Error('Not authenticated')
+async function authenticateRoute (): Promise<void> {
+  await DefaultService.checkAuth()
+}
+
+function onAuthenticationError (err: ApiError): void {
+  if (err.status === 401) {
+    console.log('token invalid or expired, loading re-login page')
+    toast.error('Token invalido. Redireccionando a pagina de inicio...')
+  }
+  if (err.status === 403) {
+    window.location.href = '/403'
   }
 }
 
-function onAuthenticationError (): void {
-  window.location.href = `${import.meta.env.VITE_BASE_API_URL as string}/auth/login`
-}
+const error403 = rootRoute.createRoute({
+  path: '/403',
+  component: Error403
+})
 
 const userPageRoute = rootRoute.createRoute({
   path: '/user',
@@ -37,18 +48,19 @@ const userPageRoute = rootRoute.createRoute({
 })
 
 const newPlannerRoute = rootRoute.createRoute({
-  path: '/planner/',
+  path: '/planner/new',
   component: Planner,
   loader: () => ({
     plannerId: null
   })
 })
 
-const getPlannerRoute = newPlannerRoute.createRoute({
-  path: '$plannerId',
+const getPlannerRoute = rootRoute.createRoute({
+  path: '/planner/$plannerId',
   loader: async ({ params }) => ({
     plannerId: params.plannerId
   }),
+  component: Planner,
   beforeLoad: authenticateRoute,
   onLoadError: onAuthenticationError
 })
@@ -58,7 +70,12 @@ const logoutRoute = rootRoute.createRoute({
   component: Logout
 })
 
-const routeConfig = rootRoute.addChildren([homeRoute, userPageRoute, newPlannerRoute.addChildren([getPlannerRoute]), logoutRoute])
+const error404 = rootRoute.createRoute({
+  path: '*',
+  component: Error404
+})
+
+const routeConfig = rootRoute.addChildren([homeRoute, userPageRoute, error403, newPlannerRoute, getPlannerRoute, logoutRoute, error404])
 
 export const router = createReactRouter({
   routeConfig
