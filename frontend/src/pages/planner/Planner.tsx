@@ -46,6 +46,9 @@ const Planner = (): JSX.Element => {
         case 403:
           toast.warn('No tienes permisos para realizar esa accion')
           break
+        case 404:
+          setError('El planner al que estas intentando acceder no existe o no es de tu propiedad')
+          break
         case 500:
           setError(err.message)
           break

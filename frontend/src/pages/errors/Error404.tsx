@@ -1,5 +1,5 @@
 
-const Error403 = (): JSX.Element => {
+const Error404 = (): JSX.Element => {
   return (
         <div className="max-w-3xl mx-auto mt-8 prose center">
             <h1 className='text-center font-medium'>404- Pagina no encontrada</h1>
@@ -7,4 +7,4 @@ const Error403 = (): JSX.Element => {
   )
 }
 
-export default Error403
+export default Error404
