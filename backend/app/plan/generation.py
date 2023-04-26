@@ -288,9 +288,9 @@ async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan
         next_semester = 0
         curriculum = CurriculumSpec(
             cyear=LATEST_CYEAR,
-            major="M170",
-            minor="N776",
-            title="40082",
+            major=None,
+            minor=None,
+            title=None,
         )
     else:
         student = await sync.get_student_data(user)
