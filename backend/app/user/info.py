@@ -15,6 +15,8 @@ class StudentInfo(BaseModel):
     # Note that this is represented as a `str` rather than a `Cyear`.
     # This means that the user's curriculum may potentially not be supported!
     cyear: str
+    # Whether the curriculum version has a matching supported version or not.
+    is_cyear_supported: bool
     # The year and semester of admission.
     # E.g `(2021, 1)` for the first semester of the year 2021
     admission: tuple[int, int]

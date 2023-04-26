@@ -26,6 +26,7 @@ from ...plan.validation.curriculum.tree import (
     Curriculum,
     CourseList,
     CurriculumSpec,
+    Cyear,
     Node,
 )
 
@@ -346,6 +347,7 @@ async def fetch_student_info(rut: str) -> StudentInfo:
     return StudentInfo(
         full_name=raw.Nombre,
         cyear=raw.Curriculo,
+        is_cyear_supported=Cyear.from_str(raw.Curriculo) is not None,
         admission=_decode_period(raw.PeriodoAdmision),
         reported_major=raw.MajorInscrito,
         reported_minor=raw.MinorInscrito,
