@@ -24,6 +24,19 @@ class UnassignedWarn(DiagnosticWarn):
         return f"El curso {self.code} no cuenta para tu avance curricular"
 
 
+class MustSelectCurriculumErr(DiagnosticErr):
+    has_major: bool
+    has_minor: bool
+
+    def message(self):
+        missing: list[str] = []
+        if not self.has_major:
+            missing.append("major")
+        if not self.has_minor:
+            missing.append("minor")
+        return f"Falta seleccionar {' y '.join(missing)}"
+
+
 def _diagnose_block(out: ValidationResult, node: SolvedNode):
     if node.flow >= node.cap:
         return
@@ -54,6 +67,15 @@ def diagnose_curriculum(
     plan: ValidatablePlan,
     out: ValidationResult,
 ):
+    # Produce a warning if no major/minor is selected
+    if plan.curriculum.major is None or plan.curriculum.minor is None:
+        out.add(
+            MustSelectCurriculumErr(
+                has_major=plan.curriculum.major is not None,
+                has_minor=plan.curriculum.minor is not None,
+            )
+        )
+
     # Build a set of courses from the plan
     taken_courses: list[PseudoCourse] = []
     for sem in plan.classes:

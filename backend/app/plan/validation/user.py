@@ -23,19 +23,6 @@ class MismatchedCyearErr(DiagnosticErr):
         )
 
 
-class MustSelectCurriculumErr(DiagnosticErr):
-    has_major: bool
-    has_minor: bool
-
-    def message(self):
-        missing: list[str] = []
-        if not self.has_major:
-            missing.append("major")
-        if not self.has_minor:
-            missing.append("minor")
-        return f"Falta seleccionar {' y '.join(missing)}"
-
-
 class MismatchedCurriculumSelectionWarn(DiagnosticWarn):
     wrong_major: bool
     wrong_minor: bool
@@ -70,14 +57,6 @@ def validate_against_owner(
     if str(plan.curriculum.cyear) != user_ctx.info.cyear:
         out.add(
             MismatchedCyearErr(plan=plan.curriculum.cyear, user=user_ctx.info.cyear)
-        )
-
-    if plan.curriculum.major is None or plan.curriculum.minor is None:
-        out.add(
-            MustSelectCurriculumErr(
-                has_major=plan.curriculum.major is not None,
-                has_minor=plan.curriculum.minor is not None,
-            )
         )
 
     mismatch = MismatchedCurriculumSelectionWarn(
