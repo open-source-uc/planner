@@ -2,23 +2,16 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { Cyear } from './Cyear';
+
 /**
  * Represents a curriculum specification.
  * This specification should uniquely specify a curriculum.
  */
 export type CurriculumSpec = {
-    cyear: CurriculumSpec.cyear;
+    cyear: Cyear;
     major?: string;
     minor?: string;
     title?: string;
 };
-
-export namespace CurriculumSpec {
-
-    export enum cyear {
-        C2020 = 'C2020',
-    }
-
-
-}
 

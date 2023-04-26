@@ -28,6 +28,11 @@ Proyecto Planner Ingenieria UC.
 
 Para correr el proyecto se puede usar el devcontainer directo en VSCode, con acciones para correr el backend, frontend y servidor CAS mock.
 
+Acciones manuales necesarias para correr el proyecto:
+
+- Copiar `/backend/.env.example` a `/backend/.env`, modificando las variables que corresponden.
+- Copiar `/data/cas-mock-users.json.example` a `/data/cas-mock-users.json`, opcionalmente agregando RUTs validos.
+
 IMPORTANTE: Es necesario agregar manualmente la contrasena de Siding (no disponible en este repo) al `.env` para que se carguen las mallas.
 
 ## Contribuir
