@@ -364,8 +364,10 @@ async def fetch_student_previous_courses(
 
     raw = await client.get_student_done_courses(rut)
     semesters: list[list[PseudoCourse]] = []
+    # Make sure semester 1 is always odd, adding an empty semester if necessary
+    start_period = (info.admission[0], 1)
     for c in raw:
-        sem = _semesters_elapsed(info.admission, _decode_period(c.Periodo))
+        sem = _semesters_elapsed(start_period, _decode_period(c.Periodo))
         while len(semesters) <= sem:
             semesters.append([])
         semesters[sem].append(ConcreteId(code=c.Sigla))
