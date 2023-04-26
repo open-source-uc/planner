@@ -2,7 +2,7 @@ from abc import ABC
 from dataclasses import dataclass
 from ..diagnostic import DiagnosticErr, DiagnosticWarn, ValidationResult
 from ...plan import EquivalenceId, PseudoCourse, ValidatablePlan
-from ...courseinfo import CourseInfo
+from ...courseinfo import CourseDetails, CourseInfo
 from .logic import (
     Atom,
     BaseOp,
@@ -97,7 +97,7 @@ class PlanContext:
 
                 inst = self.classes[course.code]
                 self.diagnose(out, inst, course.deps)
-                self.check_semestrality(out, inst, course.semestrality)
+                self.check_availability(out, inst, course)
                 sem_credits += course.credits
 
             self.check_max_credits(out, semester=sem, credits=sem_credits)
@@ -105,16 +105,18 @@ class PlanContext:
         if ambiguous_codes:
             out.add(AmbiguousCoursesErr(codes=ambiguous_codes))
 
-    def check_semestrality(
+    def check_availability(
         self,
         out: ValidationResult,
         inst: CourseInstance,
-        semestrality: tuple[bool, bool, bool],
+        details: CourseDetails,
     ):
-        # TODO: check for TAV semester
-        # TODO: what about students that joined in an even semester?
-        if not semestrality[inst.semester % 2]:
-            out.add(SemestralityWarn(code=inst.course.code, semester=inst.semester))
+        if details.is_available:
+            # TODO: check for TAV semester
+            if not details.semestrality[inst.semester % 2]:
+                out.add(SemestralityWarn(code=inst.course.code, semester=inst.semester))
+        else:
+            out.add(CourseUnavailableWarn(code=inst.course.code))
 
     def check_max_credits(self, out: ValidationResult, semester: int, credits: int):
         if max_creds_err := SemesterErrHandler.check_error(
@@ -304,6 +306,19 @@ class SemestralityWarn(DiagnosticWarn):
         if self.semester % 2 == 0:
             return "primeros"
         return "segundos"
+
+
+class CourseUnavailableWarn(DiagnosticWarn):
+    code: str
+
+    def course_code(self) -> Optional[str]:
+        return self.code
+
+    def message(self) -> str:
+        return (
+            f"El curso {self.code} no se ha dictado en mucho tiempo y probablemente"
+            + " no se siga dictando"
+        )
 
 
 class AmbiguousCoursesErr(DiagnosticErr):
