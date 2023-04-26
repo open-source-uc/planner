@@ -207,7 +207,7 @@ const Planner = (): JSX.Element => {
   }, [])
 
   useEffect(() => {
-    if (status === 'validating' && plan !== null) {
+    if ((status === 'validating' || status === 'ready') && plan !== null) {
       // dont validate if the classes are rearranging the same semester at previous validation
       let changed = plan.validatable_plan.classes.length !== previousClasses.current.length
       if (!changed) {
@@ -216,11 +216,12 @@ const Planner = (): JSX.Element => {
           const prev = [...previousClasses.current[idx]].sort((a, b) => a.code.localeCompare(b.code))
           if (JSON.stringify(cur) !== JSON.stringify(prev)) {
             changed = true
-            setStatus('ready')
             break
           }
         }
-      } else {
+      }
+      if (changed) {
+        setStatus('validating')
         validate(plan.validatable_plan).catch(err => {
           setValidationResult({
             diagnostics: [{
