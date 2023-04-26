@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     siding_password: SecretStr = Field(...)
 
     # Time to expire cached student information in seconds.
-    student_info_expire: float = 30
+    student_info_expire: float = 1800
 
 
 # Load settings and allow global app access to them
