@@ -9,6 +9,7 @@ import { Listbox } from '@headlessui/react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
+import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -59,6 +60,7 @@ const Planner = (): JSX.Element => {
   const previousClasses = useRef<PseudoCourseId[][]>([[]])
 
   const params = useParams()
+  const authState = useAuth()
 
   function handleErrors (err: unknown): void {
     console.log(err)
@@ -93,13 +95,13 @@ const Planner = (): JSX.Element => {
       console.log('getting Basic Plan...')
       // TODO: Use current user to generate plan if logged in
       if (ValidatablePlan === undefined) {
-        ValidatablePlan = await DefaultService.emptyGuestPlan()
+        ValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
       }
       // TODO: Use current user to generate plan if logged in
       const response: ValidatablePlan = await DefaultService.generatePlan(ValidatablePlan)
       await Promise.all([
         getCourseDetails(response.classes.flat()),
-        loadCurriculumsData(response.curriculum.cyear, response.curriculum.major)
+        loadCurriculumsData(response.curriculum.cyear.raw, response.curriculum.major)
       ])
       previousCurriculum.current = {
         major: response.curriculum.major ?? '',
@@ -119,7 +121,7 @@ const Planner = (): JSX.Element => {
       const response: PlanView = await DefaultService.readPlan(id)
       await Promise.all([
         getCourseDetails(response.validatable_plan.classes.flat()),
-        loadCurriculumsData(response.validatable_plan.curriculum.cyear, response.validatable_plan.curriculum.major)
+        loadCurriculumsData(response.validatable_plan.curriculum.cyear.raw, response.validatable_plan.curriculum.major)
       ])
       setValidatablePlan(response.validatable_plan)
       setPlanName(response.name)
@@ -158,7 +160,7 @@ const Planner = (): JSX.Element => {
 
   async function validate (validatablePlan: ValidatablePlan): Promise<void> {
     try {
-      const response = await DefaultService.validatePlan(validatablePlan)
+      const response = authState?.user == null ? await DefaultService.validateGuestPlan(validatablePlan) : await DefaultService.validatePlanForUser(validatablePlan)
       setValidationResult(response)
       setPlannerStatus(PlannerStatus.READY)
       // Es necesario hacer una copia profunda del plan para comparar, pues si se copia el objeto entero
@@ -274,28 +276,34 @@ const Planner = (): JSX.Element => {
         }
       }
       setPlannerStatus(PlannerStatus.VALIDATING)
-      const response = await DefaultService.getCourseDetails([selection])
-      setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
+      const details = (await DefaultService.getCourseDetails([selection]))[0]
+      setCourseDetails((prev) => { return { ...prev, [details.code]: details } })
       setValidatablePlan((prev) => {
         if (prev == null) return prev
         const newClasses = [...prev.classes]
         newClasses[modalData.semester] = [...prev.classes[modalData.semester]]
-        let newEquivalence: EquivalenceId | undefined
-        if ('credits' in pastClass) {
-          newEquivalence = pastClass
-        } else newEquivalence = pastClass.equivalence
+        const oldEquivalence = 'credits' in pastClass ? pastClass : pastClass.equivalence
+
         newClasses[modalData.semester][modalData.index] = {
           is_concrete: true,
           code: selection,
-          equivalence: newEquivalence
+          equivalence: oldEquivalence
         }
-        if (newEquivalence !== undefined && newEquivalence.credits !== response[0].credits) {
-          if (newEquivalence.credits > response[0].credits) {
-            newClasses[modalData.semester].splice(modalData.index + 1, 0,
+        if (oldEquivalence !== undefined && oldEquivalence.credits !== details.credits) {
+          if (oldEquivalence.credits > details.credits) {
+            newClasses[modalData.semester].splice(modalData.index, 1,
+              {
+                is_concrete: true,
+                code: selection,
+                equivalence: {
+                  ...oldEquivalence,
+                  credits: details.credits
+                }
+              },
               {
                 is_concrete: false,
-                code: newEquivalence.code,
-                credits: newEquivalence.credits - response[0].credits
+                code: oldEquivalence.code,
+                credits: oldEquivalence.credits - details.credits
               }
             )
           } else {
@@ -307,7 +315,37 @@ const Planner = (): JSX.Element => {
             // Problem In this part: if i exceed by 5 and have a course of 4 and 10, what do i do
             // option 1: delete the course with 4 and decresed the one of 10 by 1
             // option 2: decresed the one of 10 to 5
-            console.log('help')
+
+            // Partial solution: just consume anything we find
+            const semester = newClasses[modalData.semester]
+            let extra = details.credits - oldEquivalence.credits
+            for (let i = semester.length; i-- > 0;) {
+              const equiv = semester[i]
+              if ('credits' in equiv && equiv.code === oldEquivalence.code) {
+                if (equiv.credits <= extra) {
+                  // Consume this equivalence entirely
+                  semester.splice(modalData.index, 1)
+                  extra -= equiv.credits
+                } else {
+                  // Consume part of this equivalence
+                  equiv.credits -= extra
+                  extra = 0
+                }
+              }
+            }
+
+            // Increase the credits of the equivalence
+            // We might not have found all the missing credits, but that's ok
+            newClasses[modalData.semester].splice(modalData.index, 1,
+              {
+                is_concrete: true,
+                code: selection,
+                equivalence: {
+                  ...oldEquivalence,
+                  credits: details.credits
+                }
+              }
+            )
           }
         }
         return { ...prev, classes: newClasses }
@@ -399,7 +437,7 @@ const Planner = (): JSX.Element => {
           minor !== previousCurriculum.current.minor ||
           title !== previousCurriculum.current.title
       if (curriculumChanged) {
-        setPlannerStatus(PlannerStatus.LOADING)
+        setPlannerStatus(PlannerStatus.VALIDATING)
       } else {
         // dont validate if the classes are rearranging the same semester at previous validation
         let classesChanged = validatablePlan.classes.length !== previousClasses.current.length
@@ -438,8 +476,8 @@ const Planner = (): JSX.Element => {
             <ul className={'w-full mb-3 mt-2 relative'}>
               <li className={'inline text-md ml-3 mr-5 font-semibold'}>
                 <div className={'text-sm inline mr-1 font-normal'}>Major:</div>
-                <Listbox value={curriculumData.majors[validatablePlan.curriculum.major ?? '']} onChange={selectMajor}>
-                  <Listbox.Button>{curriculumData.majors[validatablePlan.curriculum.major ?? ''].name}</Listbox.Button>
+                <Listbox value={validatablePlan.curriculum.major !== undefined && validatablePlan.curriculum.major !== null ? curriculumData.majors[validatablePlan.curriculum.major] : 'None'} onChange={selectMajor}>
+                  <Listbox.Button>{validatablePlan.curriculum.major !== undefined && validatablePlan.curriculum.major !== null ? curriculumData.majors[validatablePlan.curriculum.major].name : 'None'}</Listbox.Button>
                   <Listbox.Options>
                     {Object.keys(curriculumData.majors).map((key) => {
                       return (
@@ -455,16 +493,16 @@ const Planner = (): JSX.Element => {
                 </Listbox>
               </li>
               <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div>
-                <Listbox value={curriculumData.majors[validatablePlan.curriculum.major ?? '']} onChange={selectMinor}>
-                  <Listbox.Button>{curriculumData.majors[validatablePlan.curriculum.major ?? ''].name}</Listbox.Button>
+                <Listbox value={validatablePlan.curriculum.minor !== undefined && validatablePlan.curriculum.minor !== null ? curriculumData.minors[validatablePlan.curriculum.minor] : {}} onChange={selectMinor}>
+                  <Listbox.Button>{validatablePlan.curriculum.minor !== undefined && validatablePlan.curriculum.minor !== null ? curriculumData.minors[validatablePlan.curriculum.minor].name : 'None'}</Listbox.Button>
                   <Listbox.Options>
-                    {Object.keys(curriculumData.majors).map((key) => {
+                    {Object.keys(curriculumData.minors).map((key) => {
                       return (
                         <Listbox.Option
                           key={key}
-                          value={curriculumData.majors[key]}
+                          value={curriculumData.minors[key]}
                         >
-                          {curriculumData.majors[key].name}
+                          {curriculumData.minors[key].name}
                         </Listbox.Option>
                       )
                     })}
@@ -472,8 +510,8 @@ const Planner = (): JSX.Element => {
                 </Listbox>
               </li>
               <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div>
-                <Listbox value={curriculumData.titles[validatablePlan.curriculum.title ?? '']} onChange={selectTitle}>
-                  <Listbox.Button>{curriculumData.titles[validatablePlan.curriculum.title ?? ''].name}</Listbox.Button>
+                <Listbox value={validatablePlan.curriculum.title !== undefined && validatablePlan.curriculum.title !== null ? curriculumData.titles[validatablePlan.curriculum.title] : {}} onChange={selectTitle}>
+                  <Listbox.Button>{validatablePlan.curriculum.title !== undefined && validatablePlan.curriculum.title !== null ? curriculumData.titles[validatablePlan.curriculum.title].name : 'None'}</Listbox.Button>
                   <Listbox.Options>
                     {Object.keys(curriculumData.titles).map((key) => {
                       return (

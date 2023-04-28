@@ -1,32 +1,28 @@
 
 # Detalles importantes sobre la API SOAP de Siding
 
+## Overview
+
+La API de Siding es un webservice SOAP.
+En primer lugar, esto significa que la interfaz esta definida en buena parte por un archivo `.wsdl`,
+actualmente disponible en https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1.wsdl.
+
+Tomar en cuenta que el `_test1` probablemente significa que el URL cambiara en algun momento.
+
+Para hacer que el servicio sea robusto, descargue un snapshot de este archivo y esta embeddeado en
+el planner mismo.
+En un futuro, seria bueno comparar la copia hardcodeada con la copia remota, para detectar cambios en
+la API remota.
+
 ## Correcciones al spec `.wsdl`
 
 El archivo `.wsdl` tal como es proveido no funciona con otro cliente que no sea `SoapClient` de PHP.
 
-En particular, hay dos problemas con el `.wsdl` original:
+Actualmente, solo hay 1 problema, que en teoria esta en proceso de ser arreglado:
 
 - Se hace referencia a un tipo `stringArray` que no se define.
 
 No soy experto en WSDL, pero este tipo es compatible con algo como lo siguiente:
-
-```xml
-<xsd:complexType name="stringArray">
-    <xsd:all>
-        <xsd:element name="strings" type="tns:stringsList" maxOccurs="1" minOccurs="1">
-        </xsd:element>
-    </xsd:all>
-</xsd:complexType>
-
-<xsd:complexType name="stringsList">
-    <xsd:sequence>
-        <xsd:element name="string" type="xsd:string" maxOccurs="unbounded"
-            minOccurs="0">
-        </xsd:element>
-    </xsd:sequence>
-</xsd:complexType>
-```
 
 - El atributo `location` del servicio esta mal definido, le falta un `/`:
 
@@ -41,6 +37,8 @@ Arreglado:
 ```xml
 <soap:address location="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/" />
 ```
+
+Mientras no se hagan estos arreglos remotamente no se puede comparar la version local con la version remota.
 
 ## Observaciones de la API
 
