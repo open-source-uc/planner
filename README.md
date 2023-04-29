@@ -35,8 +35,9 @@ La forma óptima de correr el proyecto, sin tener que instalar todas las depende
 1. Teniendo Docker instalado, al abrir el proyecto en VSCode la extensión [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) debería reconocer la carpeta `.devcontainer` presente en el repo y aparece un _pop up_ entregando la opción de "Reabrir en el contenedor".
 2. Se deben crear los archivos `.env` para las variables de entorno a partir de los `.env.example` y reemplazar los valores según corresponda.
 - Es **necesario** agregar manualmente la contrasena de Siding (no disponible en este repo por temas de seguridad) al `.env` del backend para que se carguen las mallas y otros datos de la API de SIDING.
-3. Al correr el comando `Tasks: Run Task` en VSCode se abren una serie de tareas útiles como: instalar dependencias del backend, dependencias del frontend, crear migraciones en la db, reiniciar la db, etc.
-4. En la sección "Run and Debug" de VSCode aparecerán acciones para correr cada servicio de la app por separado, o todos al mismo tiempo (`Launch all 🚀`).
+3. También se debe agregar `cas-mock-users.json` a partir del archivo `.json.example`.
+4. Al correr el comando `Tasks: Run Task` en VSCode se abren una serie de tareas útiles como: instalar dependencias del backend, dependencias del frontend, crear migraciones en la db, reiniciar la db, etc.
+5. En la sección "Run and Debug" de VSCode aparecerán acciones para correr cada servicio de la app por separado, o todos al mismo tiempo (`Launch all 🚀`).
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
 

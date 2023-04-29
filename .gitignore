@@ -279,3 +279,6 @@ $RECYCLE.BIN/
 # End of https://www.toptal.com/developers/gitignore/api/linux,macos,windows,visualstudiocode,react,python
 
 .eslintcache
+
+# Dummy CAS database
+/data/cas-mock-users.json

@@ -2,6 +2,9 @@
 Transform the Siding format into something usable.
 """
 
+from typing import Optional
+
+from ...user.info import StudentInfo
 from ...plan.courseinfo import CourseInfo, add_equivalence
 from ...plan.plan import ConcreteId, EquivalenceId, PseudoCourse
 from ...plan.validation.curriculum.solve import DEBUG_SOLVE
@@ -9,6 +12,7 @@ from . import client
 from .client import (
     BloqueMalla,
     PlanEstudios,
+    StringArray,
 )
 from prisma.models import (
     Major as DbMajor,
@@ -22,22 +26,61 @@ from ...plan.validation.curriculum.tree import (
     Curriculum,
     CourseList,
     CurriculumSpec,
+    Cyear,
     Node,
 )
+
+
+def _decode_curriculum_versions(input: Optional[StringArray]) -> list[str]:
+    """
+    SIDING returns lists of cyear codes (e.g. ["C2013", "C2020"]) as a convoluted
+    `stringArray` type that is currently empty for some reason.
+    Transform this type into a more manageable `list[str]`.
+    """
+    if input is None:
+        # Why are curriculum versions empty??
+        # TODO: Figure out why and remove this code
+        return ["C2020"]
+    output: list[str] = []
+    for string in input.strings.string:
+        output.append(string)
+    return output
+
+
+def _decode_period(period: str) -> tuple[int, int]:
+    """
+    Transform a string like "2020-2" to (2020, 2).
+    """
+    [year, sem] = period.split("-")
+    return (int(year), int(sem))
+
+
+def _semesters_elapsed(start: tuple[int, int], end: tuple[int, int]) -> int:
+    """
+    Calculate the difference between two periods as a signed number of semesters.
+    """
+    # Clamp to [1, 2] to handle TAV (semester 3, which should be treated as semester 2)
+    s_sem = min(2, max(1, start[1]))
+    e_sem = min(2, max(1, end[1]))
+    return (end[0] - start[0]) * 2 + (e_sem - s_sem)
 
 
 async def _fetch_raw_blocks(
     courseinfo: CourseInfo, spec: CurriculumSpec
 ) -> list[BloqueMalla]:
+    """
+    NOTE: Blank major/minors raise an error.
+    """
+
     # Fetch raw curriculum blocks for the given cyear-major-minor-title combination
-    if spec.major is None or spec.minor is None or spec.title is None:
-        raise Exception("blank major/minor/titles are not supported yet")
+    if spec.major is None or spec.minor is None:
+        raise Exception("blank major/minor is not supported")
     raw_blocks = await client.get_curriculum_for_spec(
         PlanEstudios(
-            CodCurriculum=spec.cyear,
+            CodCurriculum=str(spec.cyear),
             CodMajor=spec.major,
             CodMinor=spec.minor,
-            CodTitulo=spec.title,
+            CodTitulo=spec.title or "",
         )
     )
 
@@ -75,9 +118,13 @@ async def _fetch_raw_blocks(
     return raw_blocks
 
 
-async def fetch_curriculum_from_siding(
-    courseinfo: CourseInfo, spec: CurriculumSpec
-) -> Curriculum:
+async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curriculum:
+    """
+    Call into the SIDING webservice and get the curriculum definition for a given spec.
+
+    NOTE: Blank major/minors raise an error.
+    """
+
     print(f"fetching curriculum from siding for spec {spec}")
 
     raw_blocks = await _fetch_raw_blocks(courseinfo, spec)
@@ -100,8 +147,6 @@ async def fetch_curriculum_from_siding(
         else:
             raise Exception("siding api returned invalid curriculum block")
         creds = raw_block.Creditos
-        if creds is None:
-            creds = 0
         course = CourseList(
             name=raw_block.Nombre,
             cap=creds,
@@ -114,48 +159,47 @@ async def fetch_curriculum_from_siding(
 
     # Apply OFG transformation (merge all OFGs into a single 50-credit block, and only
     # allow up to 10 credits of 5-credit sports courses)
-    if spec.cyear == "C2020":
-        ofg_course = None
-        for i in reversed(range(len(blocks))):
-            block = blocks[i]
-            if isinstance(block, CourseList) and block.equivalence_code == "!L1":
-                if ofg_course is None:
-                    ofg_course = block
-                else:
-                    ofg_course.cap += block.cap
-                blocks.pop(i)
-        if ofg_course is not None:
-            non_5_credits = ofg_course.copy(
-                update={
-                    "codes": list(
-                        filter(
-                            lambda c: courseinfo.course(c).credits != 5,
-                            ofg_course.codes,
-                        )
-                    ),
-                }
-            )
-            yes_5_credits = ofg_course.copy(
-                update={
-                    "codes": list(
-                        filter(
-                            lambda c: courseinfo.course(c).credits == 5,
-                            ofg_course.codes,
-                        )
-                    ),
-                    "cap": 10,
-                }
-            )
-            blocks.append(
-                Block(
-                    superblock=ofg_course.superblock,
-                    name=ofg_course.name,
-                    cap=ofg_course.cap,
-                    children=[non_5_credits, yes_5_credits],
+    match spec.cyear.raw:
+        case "C2020":
+            ofg_course = None
+            for i in reversed(range(len(blocks))):
+                block = blocks[i]
+                if isinstance(block, CourseList) and block.equivalence_code == "!L1":
+                    if ofg_course is None:
+                        ofg_course = block
+                    else:
+                        ofg_course.cap += block.cap
+                    blocks.pop(i)
+            if ofg_course is not None:
+                non_5_credits = ofg_course.copy(
+                    update={
+                        "codes": list(
+                            filter(
+                                lambda c: courseinfo.course(c).credits != 5,
+                                ofg_course.codes,
+                            )
+                        ),
+                    }
                 )
-            )
-    else:
-        raise Exception(f"unsupported curriculum year '{spec.cyear}'")
+                yes_5_credits = ofg_course.copy(
+                    update={
+                        "codes": list(
+                            filter(
+                                lambda c: courseinfo.course(c).credits == 5,
+                                ofg_course.codes,
+                            )
+                        ),
+                        "cap": 10,
+                    }
+                )
+                blocks.append(
+                    Block(
+                        superblock=ofg_course.superblock,
+                        name=ofg_course.name,
+                        cap=ofg_course.cap,
+                        children=[non_5_credits, yes_5_credits],
+                    )
+                )
 
     # TODO: Apply title transformation (130 credits must be exclusive to the title, the
     # rest can be shared)
@@ -167,10 +211,16 @@ async def fetch_curriculum_from_siding(
     return Curriculum(nodes=blocks)
 
 
-async def fetch_recommended_courses_from_siding(
+async def fetch_recommended_courses(
     courseinfo: CourseInfo,
     spec: CurriculumSpec,
 ) -> list[list[PseudoCourse]]:
+    """
+    Call into the SIDING webservice and get the recommended courses for a given spec.
+
+    NOTE: Blank major/minors raise an error.
+    """
+
     print(f"fetching recommended courses from siding for spec {spec}")
 
     # Fetch raw curriculum blocks for the given cyear-major-minor-title combination
@@ -217,9 +267,9 @@ async def fetch_recommended_courses_from_siding(
     return semesters
 
 
-async def load_offer_to_database():
+async def load_siding_offer_to_database():
     """
-    Fetch majors, minors and titles.
+    Call into the SIDING webservice and fetch majors, minors and titles.
     """
 
     print("loading major/minor/title offer to database...")
@@ -233,7 +283,7 @@ async def load_offer_to_database():
     print("  loading majors")
     majors = await client.get_majors()
     for major in majors:
-        for cyear in major.Curriculum.strings.string:
+        for cyear in _decode_curriculum_versions(major.Curriculum):
             await DbMajor.prisma().create(
                 data={
                     "cyear": cyear,
@@ -246,7 +296,7 @@ async def load_offer_to_database():
     print("  loading minors")
     minors = await client.get_minors()
     for minor in minors:
-        for cyear in minor.Curriculum.strings.string:
+        for cyear in _decode_curriculum_versions(minor.Curriculum):
             await DbMinor.prisma().create(
                 data={
                     "cyear": cyear,
@@ -260,7 +310,7 @@ async def load_offer_to_database():
     print("  loading titles")
     titles = await client.get_titles()
     for title in titles:
-        for cyear in title.Curriculum.strings.string:
+        for cyear in _decode_curriculum_versions(title.Curriculum):
             await DbTitle.prisma().create(
                 data={
                     "cyear": cyear,
@@ -274,9 +324,9 @@ async def load_offer_to_database():
     print("  loading major-minor associations")
     for major in majors:
         assoc_minors = await client.get_minors_for_major(major.CodMajor)
-        for cyear in major.Curriculum.strings.string:
+        for cyear in _decode_curriculum_versions(major.Curriculum):
             for minor in assoc_minors:
-                if cyear not in minor.Curriculum.strings.string:
+                if cyear not in _decode_curriculum_versions(minor.Curriculum):
                     continue
                 await DbMajorMinor.prisma().create(
                     data={
@@ -285,3 +335,42 @@ async def load_offer_to_database():
                         "minor": minor.CodMinor,
                     }
                 )
+
+
+async def fetch_student_info(rut: str) -> StudentInfo:
+    """
+    MUST BE CALLED WITH AUTHORIZATION
+
+    Request the basic student information for a given RUT from SIDING.
+    """
+    raw = await client.get_student_info(rut)
+    return StudentInfo(
+        full_name=raw.Nombre,
+        cyear=raw.Curriculo,
+        is_cyear_supported=Cyear.from_str(raw.Curriculo) is not None,
+        admission=_decode_period(raw.PeriodoAdmision),
+        reported_major=raw.MajorInscrito,
+        reported_minor=raw.MinorInscrito,
+        reported_title=raw.TituloInscrito,
+    )
+
+
+async def fetch_student_previous_courses(
+    rut: str, info: StudentInfo
+) -> list[list[PseudoCourse]]:
+    """
+    MUST BE CALLED WITH AUTHORIZATION
+
+    Make a request to SIDING to find out the courses that the given student has passed.
+    """
+
+    raw = await client.get_student_done_courses(rut)
+    semesters: list[list[PseudoCourse]] = []
+    # Make sure semester 1 is always odd, adding an empty semester if necessary
+    start_period = (info.admission[0], 1)
+    for c in raw:
+        sem = _semesters_elapsed(start_period, _decode_period(c.Periodo))
+        while len(semesters) <= sem:
+            semesters.append([])
+        semesters[sem].append(ConcreteId(code=c.Sigla))
+    return semesters
