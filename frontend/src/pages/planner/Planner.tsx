@@ -4,8 +4,8 @@ import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
 import CourseSelectorDialog from '../../components/CourseSelectorDialog'
 import { useParams } from '@tanstack/react-router'
-import { useState, useEffect, useRef } from 'react'
-import { Listbox } from '@headlessui/react'
+import { Fragment, useState, useEffect, useRef } from 'react'
+import { Listbox, Transition } from '@headlessui/react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
@@ -23,6 +23,16 @@ interface CurriculumData {
   minors: { [code: string]: Minor }
   titles: { [code: string]: Title }
 }
+
+interface CurriculumSelectorProps {
+  planName: String
+  curriculumData: CurriculumData
+  validatablePlan: ValidatablePlan
+  selectMajor: Function
+  selectMinor: Function
+  selectTitle: Function
+}
+
 enum PlannerStatus {
   LOADING = 'LOADING',
   VALIDATING = 'VALIDATING',
@@ -30,6 +40,7 @@ enum PlannerStatus {
   ERROR = 'ERROR',
   READY = 'READY',
 }
+
 const findCourseSuperblock = (validationResults: FlatValidationResult | null, code: string): string | null => {
   if (validationResults == null) return null
   for (const c in validationResults.course_superblocks) {
@@ -40,6 +51,168 @@ const findCourseSuperblock = (validationResults: FlatValidationResult | null, co
 
 const isApiError = (err: any): err is ApiError => {
   return err.status !== undefined
+}
+
+const CurriculumSelector = ({
+  planName,
+  curriculumData,
+  validatablePlan,
+  selectMajor,
+  selectMinor,
+  selectTitle
+}: CurriculumSelectorProps): JSX.Element => {
+  return (
+    <ul className={'w-full mb-3 mt-2 relative'}>
+      <li className={'inline text-md ml-3 mr-5 font-semibold'}>
+        <div className={'text-sm inline mr-1 font-normal'}>Major:</div>
+        <Listbox value={validatablePlan.curriculum.major !== undefined && validatablePlan.curriculum.major !== null ? curriculumData.majors[validatablePlan.curriculum.major] : {}} onChange={() => selectMajor}>
+          <Listbox.Button className="pl-1 pr-10 text-left ">
+            <span className="truncate">{validatablePlan.curriculum.major !== undefined && validatablePlan.curriculum.major !== null ? curriculumData.majors[validatablePlan.curriculum.major].name : 'Por elegir'}</span>
+            <span className="pl-3"> v </span>
+          </Listbox.Button>
+          <Transition
+            as={Fragment}
+            leave="transition ease-in duration-100"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <Listbox.Options className="curriculumOptions"style={{ zIndex: 1 }}>
+              {Object.keys(curriculumData.majors).map((key) => (
+                <Listbox.Option
+                  className={({ active }) =>
+                    `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                      active ? 'bg-amber-100 text-amber-900' : 'text-gray-900'
+                    }`
+                  }key={key}
+                  value={curriculumData.majors[key]}
+                >
+                  {({ selected }) => (
+                    <>
+                      <span
+                        className={`block truncate ${
+                          selected ? 'font-medium' : 'font-normal'
+                        }`}
+                      >
+                        {curriculumData.majors[key].name}
+                      </span>
+                      {selected
+                        ? (
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600">
+                          *
+                        </span>
+                          )
+                        : null}
+                    </>
+                  )}
+                </Listbox.Option>
+              ))}
+            </Listbox.Options>
+          </Transition>
+        </Listbox>
+      </li>
+      <li className={'inline text-md mr-5 font-semibold'}>
+        <div className={'text-sm inline mr-1 font-normal'}>Minor:</div>
+        <Listbox
+          value={validatablePlan.curriculum.minor !== undefined && validatablePlan.curriculum.minor !== null ? curriculumData.minors[validatablePlan.curriculum.minor] : {}}
+          onChange={() => selectMinor}>
+          <Listbox.Button className="pl-1 pr-10 text-left ">
+            <span className="truncate">{validatablePlan.curriculum.minor !== undefined && validatablePlan.curriculum.minor !== null ? curriculumData.minors[validatablePlan.curriculum.minor].name : 'Por elegir'}</span>
+            <span className="pl-3">
+              v
+            </span>
+          </Listbox.Button>
+          <Transition
+            as={Fragment}
+            leave="transition ease-in duration-100"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <Listbox.Options className="curriculumOptions"style={{ zIndex: 1 }}>
+              {Object.keys(curriculumData.minors).map((key) => (
+                <Listbox.Option
+                  className={({ active }) =>
+                    `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                      active ? 'bg-amber-100 text-amber-900' : 'text-gray-900'
+                    }`
+                  }key={key}
+                  value={curriculumData.minors[key]}
+                >
+                  {({ selected }) => (
+                    <>
+                      <span
+                        className={`block truncate ${
+                          selected ? 'font-medium' : 'font-normal'
+                        }`}
+                      >
+                        {curriculumData.minors[key].name}
+                      </span>
+                      {selected
+                        ? (
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600">
+                          *
+                        </span>
+                          )
+                        : null}
+                    </>
+                  )}
+                </Listbox.Option>
+              ))}
+            </Listbox.Options>
+          </Transition>
+        </Listbox>
+      </li>
+      <li className={'inline text-md mr-5 font-semibold'}>
+        <div className={'text-sm inline mr-1 font-normal'}>Titulo:</div>
+        <Listbox value={validatablePlan.curriculum.title !== undefined && validatablePlan.curriculum.title !== null ? curriculumData.titles[validatablePlan.curriculum.title] : {}} onChange={() => selectTitle}>
+          <Listbox.Button className="pl-1 pr-10 text-left ">
+            <span className="truncate">{validatablePlan.curriculum.title !== undefined && validatablePlan.curriculum.title !== null ? curriculumData.titles[validatablePlan.curriculum.title].name : 'Por elegir'}</span>
+            <span className="pl-3">
+              v
+            </span>
+          </Listbox.Button>
+          <Transition
+            as={Fragment}
+            leave="transition ease-in duration-100"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <Listbox.Options className="curriculumOptions"style={{ zIndex: 1 }}>
+              {Object.keys(curriculumData.titles).map((key) => (
+                <Listbox.Option
+                  className={({ active }) =>
+                    `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                      active ? 'bg-amber-100 text-amber-900' : 'text-gray-900'
+                    }`
+                  }key={key}
+                  value={curriculumData.titles[key]}
+                >
+                  {({ selected }) => (
+                    <>
+                      <span
+                        className={`block truncate ${
+                          selected ? 'font-medium' : 'font-normal'
+                        }`}
+                      >
+                        {curriculumData.titles[key].name}
+                      </span>
+                      {selected
+                        ? (
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600">
+                          *
+                        </span>
+                          )
+                        : null}
+                    </>
+                  )}
+                </Listbox.Option>
+              ))}
+            </Listbox.Options>
+          </Transition>
+        </Listbox>
+      </li>
+      {planName !== '' && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {planName}</li>}
+    </ul>
+  )
 }
 
 /**
@@ -56,7 +229,7 @@ const Planner = (): JSX.Element => {
   const [validationResult, setValidationResult] = useState<FlatValidationResult | null>(null)
   const [error, setError] = useState<String | null>(null)
 
-  const previousCurriculum = useRef<{ major: String, minor: String, title: String }>({ major: '', minor: '', title: '' })
+  const previousCurriculum = useRef<{ major: String | undefined, minor: String | undefined, title: String | undefined }>({ major: '', minor: '', title: '' })
   const previousClasses = useRef<PseudoCourseId[][]>([[]])
 
   const params = useParams()
@@ -101,13 +274,9 @@ const Planner = (): JSX.Element => {
       const response: ValidatablePlan = await DefaultService.generatePlan(ValidatablePlan)
       await Promise.all([
         getCourseDetails(response.classes.flat()),
-        loadCurriculumsData(response.curriculum.cyear.raw, response.curriculum.major)
+        loadCurriculumsData(response.curriculum.cyear.raw, response.curriculum.major),
+        validate(response)
       ])
-      previousCurriculum.current = {
-        major: response.curriculum.major ?? '',
-        minor: response.curriculum.minor ?? '',
-        title: response.curriculum.title ?? ''
-      }
       setValidatablePlan(response)
       console.log('data loaded')
     } catch (err) {
@@ -121,15 +290,11 @@ const Planner = (): JSX.Element => {
       const response: PlanView = await DefaultService.readPlan(id)
       await Promise.all([
         getCourseDetails(response.validatable_plan.classes.flat()),
-        loadCurriculumsData(response.validatable_plan.curriculum.cyear.raw, response.validatable_plan.curriculum.major)
+        loadCurriculumsData(response.validatable_plan.curriculum.cyear.raw, response.validatable_plan.curriculum.major),
+        validate(response.validatable_plan)
       ])
       setValidatablePlan(response.validatable_plan)
       setPlanName(response.name)
-      previousCurriculum.current = {
-        major: response.validatable_plan.curriculum.major ?? '',
-        minor: response.validatable_plan.curriculum.minor ?? '',
-        title: response.validatable_plan.curriculum.title ?? ''
-      }
       console.log('data loaded')
     } catch (err) {
       handleErrors(err)
@@ -161,6 +326,11 @@ const Planner = (): JSX.Element => {
   async function validate (validatablePlan: ValidatablePlan): Promise<void> {
     try {
       const response = authState?.user == null ? await DefaultService.validateGuestPlan(validatablePlan) : await DefaultService.validatePlanForUser(validatablePlan)
+      previousCurriculum.current = {
+        major: validatablePlan.curriculum.major,
+        minor: validatablePlan.curriculum.minor,
+        title: validatablePlan.curriculum.title
+      }
       setValidationResult(response)
       setPlannerStatus(PlannerStatus.READY)
       // Es necesario hacer una copia profunda del plan para comparar, pues si se copia el objeto entero
@@ -437,7 +607,7 @@ const Planner = (): JSX.Element => {
           minor !== previousCurriculum.current.minor ||
           title !== previousCurriculum.current.title
       if (curriculumChanged) {
-        setPlannerStatus(PlannerStatus.VALIDATING)
+        setPlannerStatus(PlannerStatus.LOADING)
       } else {
         // dont validate if the classes are rearranging the same semester at previous validation
         let classesChanged = validatablePlan.classes.length !== previousClasses.current.length
@@ -472,63 +642,15 @@ const Planner = (): JSX.Element => {
 
       {plannerStatus !== 'LOADING' && plannerStatus !== 'ERROR' && <>
         <div className={'flex flex-col w-5/6 flex-grow'}>
-          {curriculumData !== null && validatablePlan !== null &&
-            <ul className={'w-full mb-3 mt-2 relative'}>
-              <li className={'inline text-md ml-3 mr-5 font-semibold'}>
-                <div className={'text-sm inline mr-1 font-normal'}>Major:</div>
-                <Listbox value={validatablePlan.curriculum.major !== undefined && validatablePlan.curriculum.major !== null ? curriculumData.majors[validatablePlan.curriculum.major] : 'None'} onChange={selectMajor}>
-                  <Listbox.Button>{validatablePlan.curriculum.major !== undefined && validatablePlan.curriculum.major !== null ? curriculumData.majors[validatablePlan.curriculum.major].name : 'None'}</Listbox.Button>
-                  <Listbox.Options>
-                    {Object.keys(curriculumData.majors).map((key) => {
-                      return (
-                        <Listbox.Option
-                          key={key}
-                          value={curriculumData.majors[key]}
-                        >
-                          {curriculumData.majors[key].name}
-                        </Listbox.Option>
-                      )
-                    })}
-                  </Listbox.Options>
-                </Listbox>
-              </li>
-              <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Minor:</div>
-                <Listbox value={validatablePlan.curriculum.minor !== undefined && validatablePlan.curriculum.minor !== null ? curriculumData.minors[validatablePlan.curriculum.minor] : {}} onChange={selectMinor}>
-                  <Listbox.Button>{validatablePlan.curriculum.minor !== undefined && validatablePlan.curriculum.minor !== null ? curriculumData.minors[validatablePlan.curriculum.minor].name : 'None'}</Listbox.Button>
-                  <Listbox.Options>
-                    {Object.keys(curriculumData.minors).map((key) => {
-                      return (
-                        <Listbox.Option
-                          key={key}
-                          value={curriculumData.minors[key]}
-                        >
-                          {curriculumData.minors[key].name}
-                        </Listbox.Option>
-                      )
-                    })}
-                  </Listbox.Options>
-                </Listbox>
-              </li>
-              <li className={'inline text-md mr-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Titulo:</div>
-                <Listbox value={validatablePlan.curriculum.title !== undefined && validatablePlan.curriculum.title !== null ? curriculumData.titles[validatablePlan.curriculum.title] : {}} onChange={selectTitle}>
-                  <Listbox.Button>{validatablePlan.curriculum.title !== undefined && validatablePlan.curriculum.title !== null ? curriculumData.titles[validatablePlan.curriculum.title].name : 'None'}</Listbox.Button>
-                  <Listbox.Options>
-                    {Object.keys(curriculumData.titles).map((key) => {
-                      return (
-                        <Listbox.Option
-                          key={key}
-                          value={curriculumData.titles[key]}
-                        >
-                          {curriculumData.titles[key].name}
-                        </Listbox.Option>
-                      )
-                    })}
-                  </Listbox.Options>
-                </Listbox>
-              </li>
-              {planName !== '' && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {planName}</li>}
-            </ul>
-          }
+          {curriculumData != null && validatablePlan != null &&
+            <CurriculumSelector
+              planName={planName}
+              curriculumData={curriculumData}
+              validatablePlan={validatablePlan}
+              selectMajor={selectMajor}
+              selectMinor={selectMinor}
+              selectTitle={selectTitle}
+            />}
           <ControlTopBar
             reset={reset}
             save={savePlan}
