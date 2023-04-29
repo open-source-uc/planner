@@ -269,14 +269,11 @@ const Planner = (): JSX.Element => {
       if (ValidatablePlan === undefined) {
         ValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
       }
-      // if last semester of ValidatablePlan is empty, remove it
-      if (ValidatablePlan.classes.length !== 0 && ValidatablePlan.classes[ValidatablePlan.classes.length - 1].length === 0) {
+      // truncate the validatablePlan to the last not empty semester
+      while (ValidatablePlan.classes.length > 0 && ValidatablePlan.classes[ValidatablePlan.classes.length - 1].length === 0) {
         ValidatablePlan.classes.pop()
       }
-      console.log(ValidatablePlan)
-      // TODO: Use current user to generate plan if logged in
       const response: ValidatablePlan = await DefaultService.generatePlan(ValidatablePlan)
-      console.log(response)
       await Promise.all([
         getCourseDetails(response.classes.flat()),
         loadCurriculumsData(response.curriculum.cyear.raw, response.curriculum.major),
@@ -450,7 +447,6 @@ const Planner = (): JSX.Element => {
           return
         }
       }
-      setPlannerStatus(PlannerStatus.VALIDATING)
       const details = (await DefaultService.getCourseDetails([selection]))[0]
       setCourseDetails((prev) => { return { ...prev, [details.code]: details } })
       setValidatablePlan((prev) => {
@@ -525,6 +521,7 @@ const Planner = (): JSX.Element => {
         }
         return { ...prev, classes: newClasses }
       })
+      setPlannerStatus(PlannerStatus.VALIDATING)
     }
     setIsModalOpen(false)
   }
@@ -534,11 +531,18 @@ const Planner = (): JSX.Element => {
     setValidatablePlan(null)
   }
 
-  function selectMajor (major: Major): void {
+  async function selectMajor (major: Major): Promise<void> {
+    const newMinors = await DefaultService.getMinors(major.cyear, major.code)
+    const isValidMinor = validatablePlan?.curriculum.minor === null || validatablePlan?.curriculum.minor === undefined || validatablePlan?.curriculum.minor in newMinors
+    console.log(validatablePlan)
+    console.log(validatablePlan?.curriculum.minor)
+    console.log(isValidMinor)
     setValidatablePlan((prev) => {
       if (prev == null) return prev
+
       const newCurriculum = prev.curriculum
       const newClasses = prev.classes
+      newCurriculum.major = major.code
       newClasses.forEach((sem, idx) => {
         newClasses[idx] = sem.filter((c) => {
           if (findCourseSuperblock(validationResult, c.code) !== 'Major') {
@@ -547,8 +551,18 @@ const Planner = (): JSX.Element => {
           return false
         })
       })
-      console.log(newClasses)
-      newCurriculum.major = major.code
+      if (!isValidMinor) {
+        newCurriculum.minor = undefined
+        newClasses.forEach((sem, idx) => {
+          newClasses[idx] = sem.filter((c) => {
+            if (findCourseSuperblock(validationResult, c.code) !== 'Minor') {
+              return c
+            }
+            return false
+          })
+        })
+      }
+      console.log(newCurriculum)
       return { ...prev, curriculum: newCurriculum }
     })
   }
@@ -557,7 +571,16 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = prev.curriculum
+      const newClasses = prev.classes
       newCurriculum.minor = minor.code
+      newClasses.forEach((sem, idx) => {
+        newClasses[idx] = sem.filter((c) => {
+          if (findCourseSuperblock(validationResult, c.code) !== 'Minor') {
+            return c
+          }
+          return false
+        })
+      })
       return { ...prev, curriculum: newCurriculum }
     })
   }
@@ -566,7 +589,16 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = prev.curriculum
+      const newClasses = prev.classes
       newCurriculum.title = title.code
+      newClasses.forEach((sem, idx) => {
+        newClasses[idx] = sem.filter((c) => {
+          if (findCourseSuperblock(validationResult, c.code) !== 'Title') {
+            return c
+          }
+          return false
+        })
+      })
       return { ...prev, curriculum: newCurriculum }
     })
   }
