@@ -3,6 +3,7 @@ import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
 import CourseSelectorDialog from '../../components/CourseSelectorDialog'
+import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
 import { Fragment, useState, useEffect, useRef } from 'react'
 import { Listbox, Transition } from '@headlessui/react'
@@ -228,6 +229,7 @@ const Planner = (): JSX.Element => {
   const [plannerStatus, setPlannerStatus] = useState<PlannerStatus>(PlannerStatus.LOADING)
   const [validationResult, setValidationResult] = useState<FlatValidationResult | null>(null)
   const [error, setError] = useState<String | null>(null)
+  const [popUpAlert, setPopUpAlert] = useState<{ title: string, major: string, desc: string, isOpen: boolean }>({ title: '', major: '', desc: '', isOpen: false })
 
   const previousCurriculum = useRef<{ major: String | undefined, minor: String | undefined, title: String | undefined }>({ major: '', minor: '', title: '' })
   const previousClasses = useRef<PseudoCourseId[][]>([[]])
@@ -242,7 +244,9 @@ const Planner = (): JSX.Element => {
       switch (err.status) {
         case 401:
           console.log('token invalid or expired, loading re-login page')
-          toast.error('Token invalido. Redireccionando a pagina de inicio...')
+          toast.error('Token invalido. Redireccionando a pagina de inicio...', {
+            toastId: 'ERROR401'
+          })
           break
         case 403:
           toast.warn('No tienes permisos para realizar esa accion')
@@ -352,7 +356,7 @@ const Planner = (): JSX.Element => {
       setPlannerStatus(PlannerStatus.VALIDATING)
       try {
         await DefaultService.updatePlan(params.plannerId, validatablePlan)
-        alert('Plan actualizado exitosamente.')
+        toast.success('Plan actualizado exitosamente.')
       } catch (err) {
         handleErrors(err)
       }
@@ -363,8 +367,10 @@ const Planner = (): JSX.Element => {
       setPlannerStatus(PlannerStatus.VALIDATING)
       try {
         const res = await DefaultService.savePlan(planName, validatablePlan)
-        alert('Plan guardado exitosamente.')
-        window.location.href = `/planner/${res.id}`
+        toast.success('Plan guardado exitosamente, redireccionando...', {
+          toastId: 'newPlanSaved',
+          data: { planId: res.id }
+        })
       } catch (err) {
         handleErrors(err)
       }
@@ -531,15 +537,36 @@ const Planner = (): JSX.Element => {
     setValidatablePlan(null)
   }
 
-  async function selectMajor (major: Major): Promise<void> {
+  async function checkMinorForNewMajor (major: Major): Promise<void> {
     const newMinors = await DefaultService.getMinors(major.cyear, major.code)
     const isValidMinor = validatablePlan?.curriculum.minor === null || validatablePlan?.curriculum.minor === undefined || newMinors.some(m => m.code === validatablePlan?.curriculum.minor)
+    if (!isValidMinor) {
+      setPopUpAlert({
+        title: 'Minor incompatible',
+        desc: 'Advertencia: La selección del nuevo major no es compatible con el minor actual. Continuar con esta selección requerirá cambiar el minor. ¿Desea continuar y eliminar su minor?',
+        major: major.code,
+        isOpen: true
+      })
+      console.log(popUpAlert)
+    } else {
+      await selectMajor(major.code, true)
+    }
+  }
+
+  async function handlePopUpAlert (isCanceled: boolean): Promise<void> {
+    const major = popUpAlert.major
+    setPopUpAlert({ title: '', desc: '', major: '', isOpen: false })
+    if (!isCanceled) {
+      await selectMajor(major, false)
+    }
+  }
+  async function selectMajor (majorCode: string, isMinorValid: boolean): Promise<void> {
     setValidatablePlan((prev) => {
       if (prev == null) return prev
 
       const newCurriculum = prev.curriculum
       const newClasses = prev.classes
-      newCurriculum.major = major.code
+      newCurriculum.major = majorCode
       newClasses.forEach((sem, idx) => {
         if (idx >= prev.next_semester) {
           newClasses[idx] = sem.filter((c) => {
@@ -550,7 +577,7 @@ const Planner = (): JSX.Element => {
           })
         }
       })
-      if (!isValidMinor) {
+      if (!isMinorValid) {
         newCurriculum.minor = undefined
         newClasses.forEach((sem, idx) => {
           if (idx >= prev.next_semester) {
@@ -677,6 +704,7 @@ const Planner = (): JSX.Element => {
   return (
     <div className={`w-full h-full p-3 flex flex-grow overflow-hidden flex-row ${(plannerStatus !== 'ERROR' && plannerStatus !== 'READY') ? 'cursor-wait' : ''}`}>
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={async (selection?: string) => await closeModal(selection)}/>
+      <AlertModal title={popUpAlert.title} desc={popUpAlert.desc} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}/>
       {plannerStatus === 'LOADING' && (
         <Spinner message='Cargando planificación...' />
       )}
@@ -693,7 +721,7 @@ const Planner = (): JSX.Element => {
               planName={planName}
               curriculumData={curriculumData}
               validatablePlan={validatablePlan}
-              selectMajor={selectMajor}
+              selectMajor={checkMinorForNewMajor}
               selectMinor={selectMinor}
               selectTitle={selectTitle}
             />}
