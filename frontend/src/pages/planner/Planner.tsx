@@ -391,7 +391,6 @@ const Planner = (): JSX.Element => {
         return
       }
     }
-    setPlannerStatus(PlannerStatus.VALIDATING)
     try {
       const response = await DefaultService.getCourseDetails([courseCode])
       setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
@@ -554,11 +553,12 @@ const Planner = (): JSX.Element => {
 
   async function handlePopUpAlert (isCanceled: boolean): Promise<void> {
     const major = popUpAlert.major
-    setPopUpAlert({ title: '', desc: '', major: '', isOpen: false })
+    setPopUpAlert({ ...popUpAlert, isOpen: false })
     if (!isCanceled) {
       await selectMajor(major, false)
     }
   }
+
   async function selectMajor (majorCode: string, isMinorValid: boolean): Promise<void> {
     setValidatablePlan((prev) => {
       if (prev == null) return prev
@@ -589,7 +589,6 @@ const Planner = (): JSX.Element => {
           }
         })
       }
-      console.log(newCurriculum)
       return { ...prev, curriculum: newCurriculum }
     })
   }

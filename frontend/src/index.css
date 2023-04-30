@@ -50,9 +50,12 @@
   }
 
   .btn{
-    @apply font-semibold py-1 px-4 rounded;
+    @apply font-semibold py-2 px-4 rounded;
     @apply  text-white;
     background-color: #3D4451;
+  }
+  .btn:hover {
+    background-color: #2C353F;
   }
 
   .btn-blue::hover {

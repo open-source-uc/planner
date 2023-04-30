@@ -133,13 +133,13 @@ const Card = ({ courseBlock, cardData, hasEquivalence, openSelector, remCourse, 
       </div>
       <div className='absolute bottom-2 left-2 text-[0.5rem] opacity-75'>{cardData.credits} créd.</div>
       {hasError && <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-300 opacity-90"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-400"></span>
-        </span> }
-        {!hasError && hasWarning && <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-90"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-400"></span>
-        </span> }
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-300 opacity-90"></span>
+        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-400"></span>
+      </span> }
+      {!hasError && hasWarning && <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-90"></span>
+        <span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-400"></span>
+      </span> }
   </div>
   )
 }

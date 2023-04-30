@@ -69,6 +69,7 @@ const PlanBoard = ({ classesGrid, classesDetails, setPlan, openModal, addCourse,
       return { ...prev, classes: newClasses }
     })
   }
+
   return (
       <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap rtl-grid flex-grow ${validating === true ? 'pointer-events-none' : ''}`}>
         {classesGrid.map((classes: PseudoCourseId[], semester: number) => (
