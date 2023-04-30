@@ -543,11 +543,10 @@ const Planner = (): JSX.Element => {
     if (!isValidMinor) {
       setPopUpAlert({
         title: 'Minor incompatible',
-        desc: 'Advertencia: La selección del nuevo major no es compatible con el minor actual. Continuar con esta selección requerirá cambiar el minor. ¿Desea continuar y eliminar su minor?',
+        desc: 'Advertencia: La selección del nuevo major no es compatible con el minor actual. Continuar con esta selección requerirá eliminar el minor actual. ¿Desea continuar y eliminar su minor?',
         major: major.code,
         isOpen: true
       })
-      console.log(popUpAlert)
     } else {
       await selectMajor(major.code, true)
     }
