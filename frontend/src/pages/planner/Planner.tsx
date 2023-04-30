@@ -533,10 +533,7 @@ const Planner = (): JSX.Element => {
 
   async function selectMajor (major: Major): Promise<void> {
     const newMinors = await DefaultService.getMinors(major.cyear, major.code)
-    const isValidMinor = validatablePlan?.curriculum.minor === null || validatablePlan?.curriculum.minor === undefined || validatablePlan?.curriculum.minor in newMinors
-    console.log(validatablePlan)
-    console.log(validatablePlan?.curriculum.minor)
-    console.log(isValidMinor)
+    const isValidMinor = validatablePlan?.curriculum.minor === null || validatablePlan?.curriculum.minor === undefined || newMinors.some(m => m.code === validatablePlan?.curriculum.minor)
     setValidatablePlan((prev) => {
       if (prev == null) return prev
 
@@ -544,22 +541,26 @@ const Planner = (): JSX.Element => {
       const newClasses = prev.classes
       newCurriculum.major = major.code
       newClasses.forEach((sem, idx) => {
-        newClasses[idx] = sem.filter((c) => {
-          if (findCourseSuperblock(validationResult, c.code) !== 'Major') {
-            return c
-          }
-          return false
-        })
-      })
-      if (!isValidMinor) {
-        newCurriculum.minor = undefined
-        newClasses.forEach((sem, idx) => {
+        if (idx >= prev.next_semester) {
           newClasses[idx] = sem.filter((c) => {
-            if (findCourseSuperblock(validationResult, c.code) !== 'Minor') {
+            if (findCourseSuperblock(validationResult, c.code) !== 'Major') {
               return c
             }
             return false
           })
+        }
+      })
+      if (!isValidMinor) {
+        newCurriculum.minor = undefined
+        newClasses.forEach((sem, idx) => {
+          if (idx >= prev.next_semester) {
+            newClasses[idx] = sem.filter((c) => {
+              if (findCourseSuperblock(validationResult, c.code) !== 'Minor') {
+                return c
+              }
+              return false
+            })
+          }
         })
       }
       console.log(newCurriculum)
@@ -574,12 +575,14 @@ const Planner = (): JSX.Element => {
       const newClasses = prev.classes
       newCurriculum.minor = minor.code
       newClasses.forEach((sem, idx) => {
-        newClasses[idx] = sem.filter((c) => {
-          if (findCourseSuperblock(validationResult, c.code) !== 'Minor') {
-            return c
-          }
-          return false
-        })
+        if (idx >= prev.next_semester) {
+          newClasses[idx] = sem.filter((c) => {
+            if (findCourseSuperblock(validationResult, c.code) !== 'Minor') {
+              return c
+            }
+            return false
+          })
+        }
       })
       return { ...prev, curriculum: newCurriculum }
     })
@@ -592,12 +595,14 @@ const Planner = (): JSX.Element => {
       const newClasses = prev.classes
       newCurriculum.title = title.code
       newClasses.forEach((sem, idx) => {
-        newClasses[idx] = sem.filter((c) => {
-          if (findCourseSuperblock(validationResult, c.code) !== 'Title') {
-            return c
-          }
-          return false
-        })
+        if (idx >= prev.next_semester) {
+          newClasses[idx] = sem.filter((c) => {
+            if (findCourseSuperblock(validationResult, c.code) !== 'Title') {
+              return c
+            }
+            return false
+          })
+        }
       })
       return { ...prev, curriculum: newCurriculum }
     })
@@ -612,7 +617,11 @@ const Planner = (): JSX.Element => {
       async function fetchData (): Promise<void> {
         try {
           if (params?.plannerId != null) {
-            await getPlanById(params.plannerId)
+            if (validatablePlan !== null) {
+              await getDefaultPlan(validatablePlan)
+            } else {
+              await getPlanById(params.plannerId)
+            }
           } else {
             await getDefaultPlan(validatablePlan ?? undefined)
           }

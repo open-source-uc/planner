@@ -13,7 +13,7 @@
     @apply w-full mb-3 mt-2 relative;
   }
   .curriculumSelector .selectorElement{
-    @apply inline-block ml-3 mr-5 font-semibold;
+    @apply inline-block ml-3 font-semibold;
   }
   .curriculumSelector .selectorElement .selectorName{
     @apply text-sm inline mr-1 font-normal;
