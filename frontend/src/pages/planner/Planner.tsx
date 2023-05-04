@@ -18,7 +18,7 @@ import 'react-toastify/dist/ReactToastify.css'
 export type PseudoCourseId = ConcreteId | EquivalenceId
 export type PseudoCourseDetail = Course | Equivalence
 
-type ModalData = { equivalence: Equivalence, semester: number, index: number } | undefined
+type ModalData = { equivalence: Equivalence, selector: boolean, semester: number, index: number } | undefined
 
 interface CurriculumData {
   majors: { [code: string]: Major }
@@ -221,7 +221,7 @@ const CurriculumSelector = ({
  */
 const Planner = (): JSX.Element => {
   const [planName, setPlanName] = useState<string>('')
-  const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null>(null)
+  const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null | undefined>(null)
   const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course | Equivalence }>({})
   const [curriculumData, setCurriculumData] = useState<CurriculumData | null>(null)
   const [modalData, setModalData] = useState<ModalData>()
@@ -307,6 +307,24 @@ const Planner = (): JSX.Element => {
     }
   }
 
+  async function fetchData (): Promise<void> {
+    try {
+      if (params?.plannerId != null) {
+        if (validatablePlan !== null) {
+          await getDefaultPlan(validatablePlan)
+        } else {
+          await getPlanById(params.plannerId)
+        }
+      } else {
+        await getDefaultPlan(validatablePlan ?? undefined)
+      }
+    } catch (error) {
+      setError('Hubo un error al cargar el planner')
+      console.error(error)
+      setPlannerStatus(PlannerStatus.ERROR)
+    }
+  }
+
   async function getCourseDetails (courses: PseudoCourseId[]): Promise<void> {
     console.log('getting Courses Details...')
     const coursesCodes = []
@@ -382,31 +400,18 @@ const Planner = (): JSX.Element => {
     if (validatablePlan == null) {
       return
     }
-    const courseCodeRaw = prompt('Sigla del curso?')
-    if (courseCodeRaw == null || courseCodeRaw === '') return
-    const courseCode = courseCodeRaw.toUpperCase()
-    for (const existingCourse of validatablePlan?.classes.flat()) {
-      if (existingCourse.code === courseCode) {
-        alert(`${courseCode} ya se encuentra en el plan, seleccione otro curso por favor`)
-        return
-      }
-    }
-    try {
-      const response = await DefaultService.getCourseDetails([courseCode])
-      setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
-      setValidatablePlan((prev) => {
-        if (prev == null) return prev
-        const newClasses = [...prev.classes]
-        newClasses[semIdx] = [...prev.classes[semIdx]]
-        newClasses[semIdx].push({
-          is_concrete: true,
-          code: response[0].code
-        })
-        return { ...prev, classes: newClasses }
-      })
-    } catch (err) {
-      handleErrors(err)
-    }
+    setModalData({
+      equivalence: {
+        code: '',
+        name: 'Curso extra: ',
+        is_homogeneous: true,
+        courses: []
+      },
+      selector: true,
+      semester: semIdx,
+      index: -1
+    })
+    setIsModalOpen(true)
   }
 
   async function loadCurriculumsData (cYear: string, cMajor?: string): Promise<void> {
@@ -434,10 +439,10 @@ const Planner = (): JSX.Element => {
 
   async function openModal (equivalence: Equivalence | EquivalenceId, semester: number, index: number): Promise<void> {
     if ('courses' in equivalence) {
-      setModalData({ equivalence, semester, index })
+      setModalData({ equivalence, selector: false, semester, index })
     } else {
       const response = await DefaultService.getEquivalenceDetails([equivalence.code])
-      setModalData({ equivalence: response[0], semester, index })
+      setModalData({ equivalence: response[0], selector: false, semester, index })
     }
     setIsModalOpen(true)
   }
@@ -532,8 +537,8 @@ const Planner = (): JSX.Element => {
   }
 
   function reset (): void {
+    setValidatablePlan(undefined)
     setPlannerStatus(PlannerStatus.LOADING)
-    setValidatablePlan(null)
   }
 
   async function checkMinorForNewMajor (major: Major): Promise<void> {
@@ -639,23 +644,6 @@ const Planner = (): JSX.Element => {
 
   useEffect(() => {
     if (plannerStatus === 'LOADING') {
-      async function fetchData (): Promise<void> {
-        try {
-          if (params?.plannerId != null) {
-            if (validatablePlan !== null) {
-              await getDefaultPlan(validatablePlan)
-            } else {
-              await getPlanById(params.plannerId)
-            }
-          } else {
-            await getDefaultPlan(validatablePlan ?? undefined)
-          }
-        } catch (error) {
-          setError('Hubo un error al cargar el planner')
-          console.error(error)
-          setPlannerStatus(PlannerStatus.ERROR)
-        }
-      }
       void fetchData()
     } else if (plannerStatus === 'VALIDATING' && validatablePlan != null) {
       validate(validatablePlan).catch(err => {
