@@ -8,8 +8,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   const [selectedCourse, setSelectedCourse] = useState<string>()
   const [filter, setFilter] = useState({
     name: '',
-    code: '',
-    credits: -1,
+    credits: '',
     school: ''
   })
 
@@ -21,10 +20,19 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   }
 
   async function handleSearch (): Promise<void> {
-    const response = await DefaultService.searchCourses(filter.name, filter.credits, filter.school)
+    const crd = filter.credits === '' ? undefined : parseInt(filter.credits)
+    const response = await DefaultService.searchCourses(filter.name, crd, filter.school)
     const codeFilter = response.map(course => course.code)
-    console.log(response)
-    setCourses(courses.filter(course => course.code in codeFilter))
+    if (codeFilter.length === 0) {
+      setCourses([])
+      return
+    }
+    if (equivalence?.courses.length === 0) {
+      const response = await DefaultService.getCourseDetails(codeFilter)
+      setCourses(response)
+    } else {
+      setCourses(courses.filter(course => course.code in codeFilter))
+    }
   }
 
   const handleScroll: React.EventHandler<React.SyntheticEvent<HTMLTableSectionElement>> = event => {
@@ -71,13 +79,9 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
               </Dialog.Title>
                 {(equivalence.courses.length === 0 || equivalence.courses.length >= 30) &&
                   <div className="grid border-2 p-4 py-3 rounded border-gray-600 border-solid gap-2 grid-cols-5 my-3">
-                    <div className="col-span-3 grid  grid-cols-3">
-                      <label className="col-span-1 my-auto" htmlFor="nameFilter">Nombre: </label>
-                      <input className="col-span-2 rounded py-1" type="text" id="nameFilter" value={filter.name} onChange={e => setFilter({ ...filter, name: e.target.value })} />
-                    </div>
-                    <div className="col-span-2">
-                      <label htmlFor="codeFilter">Sigla: </label>
-                      <input className="rounded py-1" type="text" id="codeFilter" value={filter.code} onChange={e => setFilter({ ...filter, code: e.target.value })} />
+                    <div className="col-span-5 grid  grid-cols-5">
+                      <label className="col-span-1 my-auto" htmlFor="nameFilter">Nombre o Sigla: </label>
+                      <input className="col-span-3 rounded py-1" type="text" id="nameFilter" value={filter.name} onChange={e => setFilter({ ...filter, name: e.target.value })} />
                     </div>
                     <div className="col-span-3 grid  grid-cols-3">
                       <label className="col-span-1 my-auto" htmlFor="schoolFilter">Unidad academica: </label>
@@ -85,16 +89,16 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                     </div>
                     <div className="col-span-2">
                       <label htmlFor="creditsFilter">Creditos: </label>
-                      <select className="rounded py-1" id="creditsFilter" value={filter.credits} onChange={e => setFilter({ ...filter, credits: parseInt(e.target.value) })}>
-                        <option value={-1}>-</option>
-                        <option value={5}>5</option>
-                        <option value={10}>10</option>
-                        <option value={15}>15</option>
-                        <option value={30}>30</option>
+                      <select className="rounded py-1" id="creditsFilter" value={filter.credits} onChange={e => setFilter({ ...filter, credits: e.target.value })}>
+                        <option value={''}>-</option>
+                        <option value={'5'}>5</option>
+                        <option value={'10'}>10</option>
+                        <option value={'15'}>15</option>
+                        <option value={'30'}>30</option>
                       </select>
                     </div>
                     <div className='flex justify-end col-span-2 col-end-6'>
-                      <button className="btn mr-2" onClick={() => setFilter({ name: '', code: '', credits: -1, school: '' })}>Limpiar Filtros</button>
+                      <button className="btn mr-2" onClick={() => setFilter({ name: '', credits: '', school: '' })}>Limpiar Filtros</button>
                       <button className="btn" onClick={async () => await handleSearch()}>Buscar</button>
                     </div>
                   </div>
@@ -124,7 +128,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                   </tr>
                 ))}</tbody>
               </table>
-              <div className='right-0'>{courses.length} - {equivalence.courses.length}</div>
+              <div className='right-0'>{courses.length} - {equivalence.courses.length !== 0 ? equivalence.courses.length : courses.length}</div>
               <div className='float-right mx-2 '>
                 <button className="btn mr-2" onClick={() => onClose()}>Cancelar</button>
                 <button className="btn " onClick={() => onClose(selectedCourse)}>Guardar</button>
