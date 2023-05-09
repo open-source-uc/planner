@@ -2,7 +2,7 @@ import { Spinner } from '../../components/Spinner'
 import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
-import CourseSelectorDialog from '../../components/CourseSelectorDialog'
+import CourseSelectorDialog from './CourseSelectorDialog'
 import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
 import { Fragment, useState, useEffect, useRef } from 'react'
@@ -18,7 +18,7 @@ import 'react-toastify/dist/ReactToastify.css'
 export type PseudoCourseId = ConcreteId | EquivalenceId
 export type PseudoCourseDetail = Course | Equivalence
 
-type ModalData = { equivalence: Equivalence, selector: boolean, semester: number, index: number } | undefined
+type ModalData = { equivalence: Equivalence | undefined, selector: boolean, semester: number, index: number } | undefined
 
 interface CurriculumData {
   majors: { [code: string]: Major }
@@ -367,7 +367,7 @@ const Planner = (): JSX.Element => {
 
   async function savePlan (): Promise<void> {
     if (validatablePlan == null) {
-      alert('No se ha generado un plan aun')
+      toast.error('No se ha generado un plan aun')
       return
     }
     if (params?.plannerId != null) {
@@ -401,15 +401,10 @@ const Planner = (): JSX.Element => {
       return
     }
     setModalData({
-      equivalence: {
-        code: '',
-        name: 'Curso extra: ',
-        is_homogeneous: true,
-        courses: []
-      },
+      equivalence: undefined,
       selector: true,
       semester: semIdx,
-      index: -1
+      index: validatablePlan.classes[semIdx].length
     })
     setIsModalOpen(true)
   }
@@ -450,10 +445,10 @@ const Planner = (): JSX.Element => {
   async function closeModal (selection?: string): Promise<void> {
     if (selection != null && modalData !== undefined && validatablePlan != null) {
       const pastClass = validatablePlan.classes[modalData.semester][modalData.index]
-      if (selection === pastClass.code) { setIsModalOpen(false); return }
-      for (const existingCourse of validatablePlan.classes.flat()) {
+      if (pastClass !== undefined && selection === pastClass.code) { setIsModalOpen(false); return }
+      for (const existingCourse of validatablePlan.classes[modalData.semester].flat()) {
         if (existingCourse.code === selection) {
-          alert(`${selection} ya se encuentra en el plan, seleccione otro curso por favor`)
+          toast.error(`${selection} ya se encuentra en este semestre, seleccione otro curso por favor`)
           return
         }
       }
@@ -463,6 +458,17 @@ const Planner = (): JSX.Element => {
         if (prev == null) return prev
         const newClasses = [...prev.classes]
         newClasses[modalData.semester] = [...prev.classes[modalData.semester]]
+
+        if (modalData.equivalence === undefined) {
+          newClasses[modalData.semester][modalData.index] = {
+            is_concrete: true,
+            code: selection,
+            equivalence: undefined
+          }
+          console.log(newClasses)
+          return { ...prev, classes: newClasses }
+        }
+
         const oldEquivalence = 'credits' in pastClass ? pastClass : pastClass.equivalence
 
         newClasses[modalData.semester][modalData.index] = {
@@ -643,9 +649,11 @@ const Planner = (): JSX.Element => {
   }, [])
 
   useEffect(() => {
+    console.log(plannerStatus)
     if (plannerStatus === 'LOADING') {
       void fetchData()
     } else if (plannerStatus === 'VALIDATING' && validatablePlan != null) {
+      console.log('a')
       validate(validatablePlan).catch(err => {
         setValidationResult({
           diagnostics: [{
