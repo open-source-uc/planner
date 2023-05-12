@@ -9,6 +9,25 @@
 }
 
 @layer components {
+  .curriculumSelector {
+    @apply w-full mb-3 mt-2 relative;
+  }
+  .curriculumSelector .selectorElement{
+    @apply inline-block ml-3 font-semibold;
+  }
+  .curriculumSelector .selectorElement .selectorName{
+    @apply text-sm inline mr-1 font-normal;
+  }
+  .curriculumSelector .selectorElement .selectorButton{
+    @apply text-base pl-1 pr-10 text-left;
+  }
+  .curriculumSelector .selectorElement .curriculumOptions {
+    @apply absolute mt-1 max-h-96 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm;
+  }
+  .curriculumSelector .selectorElement .curriculumOptions .curriculumOption{
+    @apply relative cursor-default select-none py-1.5 pl-8 pr-4 ;
+  }
+
   .card {
     background-color: #D8D8D8;
     height: 90px;
@@ -31,9 +50,12 @@
   }
 
   .btn{
-    @apply font-semibold py-1 px-4 rounded;
+    @apply font-semibold py-2 px-4 rounded;
     @apply  text-white;
     background-color: #3D4451;
+  }
+  .btn:hover {
+    background-color: #2C353F;
   }
 
   .btn-blue::hover {
