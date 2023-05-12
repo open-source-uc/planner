@@ -115,24 +115,32 @@ def _compute_courses_to_pass(
 
     consumed: list[set[str]] = [set() for _sem in passed_classes]
     to_pass: list[PseudoCourse] = []
+    # TODO: Prioritize by superblocks (e.g. 1.title 2.major 3.minor ...)
+    #       Even further, reuse the main curriculum solver since all curriculum quirks
+    #       should still apply here
+    # first, compute all concrete courses
     for required_sem in required_classes:
         for required in required_sem:
-            if isinstance(required, ConcreteId) and required.equivalence is not None:
-                required = required.equivalence
+            if isinstance(required, ConcreteId):
+                if required.equivalence is not None:
+                    required = required.equivalence
+                else:
+                    if _is_course_necessary(
+                        courseinfo,
+                        required,
+                        passed_classes,
+                        consumed,
+                    ):
+                        to_pass.append(required)
+    # second, compute all equivalences
+    for required_sem in required_classes:
+        for required in required_sem:
             if isinstance(required, EquivalenceId):
                 need_to_pass = _is_equiv_necessary(
                     courseinfo, required, passed_classes, consumed
                 )
                 if need_to_pass is not None:
                     to_pass.append(need_to_pass)
-            else:
-                if _is_course_necessary(
-                    courseinfo,
-                    required,
-                    passed_classes,
-                    consumed,
-                ):
-                    to_pass.append(required)
     return to_pass
 
 
