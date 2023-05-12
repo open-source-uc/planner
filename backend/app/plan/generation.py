@@ -115,7 +115,9 @@ def _compute_courses_to_pass(
 
     consumed: list[set[str]] = [set() for _sem in passed_classes]
     to_pass: list[PseudoCourse] = []
-    # TODO: prioritize by superblocks (e.g. 1.title 2.major 3.minor ...)
+    # TODO: Prioritize by superblocks (e.g. 1.title 2.major 3.minor ...)
+    #       Even further, reuse the main curriculum solver since all curriculum quirks
+    #       should still apply here
     # first, compute all concrete courses
     for required_sem in required_classes:
         for required in required_sem:
