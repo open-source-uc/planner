@@ -197,7 +197,7 @@ def _get_credits(courseinfo: CourseInfo, courseid: PseudoCourse) -> int:
 
 def _determine_coreq_components(
     courseinfo: CourseInfo, courses_to_pass: list[PseudoCourse]
-) -> dict[str, list[PseudoCourse]]:
+) -> dict[PseudoCourse, list[PseudoCourse]]:
     """
     Determine which courses have to be taken together because they are
     mutual corequirements.
@@ -209,8 +209,8 @@ def _determine_coreq_components(
         coreqs.append(_get_corequirements(courseinfo, courseid))
 
     # Start off with each course in its own connected component
-    coreq_components: dict[str, list[PseudoCourse]] = {
-        courseid.code: [courseid] for courseid in courses_to_pass
+    coreq_components: dict[PseudoCourse, list[PseudoCourse]] = {
+        courseid: [courseid] for courseid in courses_to_pass
     }
 
     # Determine which pairs of courses are corequirements of each other
@@ -223,11 +223,11 @@ def _determine_coreq_components(
                 # `course1` and `course2` are mutual corequirements, they must be taken
                 # together
                 # Merge the connected components
-                dst = coreq_components[course1.code]
-                src = coreq_components[course2.code]
+                dst = coreq_components[course1]
+                src = coreq_components[course2]
                 dst.extend(src)
                 for c in src:
-                    coreq_components[c.code] = dst
+                    coreq_components[c] = dst
 
     return coreq_components
 
@@ -357,7 +357,7 @@ async def generate_recommended_plan(passed: ValidatablePlan):
         could_use_more_credits = False
         some_requirements_missing = False
         for try_course in courses_to_pass:
-            course_group = coreq_components[try_course.code]
+            course_group = coreq_components[try_course]
 
             status = _try_add_course_group(
                 courseinfo, plan, courses_to_pass, credits, course_group
