@@ -112,8 +112,8 @@ export class DefaultService {
 
     /**
      * Search Courses
-     * Fetches a list of courses that match the given name (including code),
-     * credits, and school.
+     * Fetches a list of courses that match the given name (or code),
+     * credits and school.
      * @param name
      * @param credits
      * @param school
@@ -165,19 +165,29 @@ export class DefaultService {
 
     /**
      * Get Equivalence Details
-     * For a list of equivalence codes, fetch a corresponding list of equivalence details.
+     * For a list of equivalence codes, fetch a corresponding list of equivalence details
+     * with the `courses` attribute filtered.
      * @param codes
+     * @param filterName
+     * @param filterCredits
+     * @param filterSchool
      * @returns Equivalence Successful Response
      * @throws ApiError
      */
     public static getEquivalenceDetails(
         codes: Array<string>,
+        filterName?: string,
+        filterCredits?: number,
+        filterSchool?: string,
     ): CancelablePromise<Array<Equivalence>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/equivalences',
             query: {
                 'codes': codes,
+                'filter_name': filterName,
+                'filter_credits': filterCredits,
+                'filter_school': filterSchool,
             },
             errors: {
                 422: `Validation Error`,

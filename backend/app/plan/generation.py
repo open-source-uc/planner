@@ -115,24 +115,32 @@ def _compute_courses_to_pass(
 
     consumed: list[set[str]] = [set() for _sem in passed_classes]
     to_pass: list[PseudoCourse] = []
+    # TODO: Prioritize by superblocks (e.g. 1.title 2.major 3.minor ...)
+    #       Even further, reuse the main curriculum solver since all curriculum quirks
+    #       should still apply here
+    # first, compute all concrete courses
     for required_sem in required_classes:
         for required in required_sem:
-            if isinstance(required, ConcreteId) and required.equivalence is not None:
-                required = required.equivalence
+            if isinstance(required, ConcreteId):
+                if required.equivalence is not None:
+                    required = required.equivalence
+                else:
+                    if _is_course_necessary(
+                        courseinfo,
+                        required,
+                        passed_classes,
+                        consumed,
+                    ):
+                        to_pass.append(required)
+    # second, compute all equivalences
+    for required_sem in required_classes:
+        for required in required_sem:
             if isinstance(required, EquivalenceId):
                 need_to_pass = _is_equiv_necessary(
                     courseinfo, required, passed_classes, consumed
                 )
                 if need_to_pass is not None:
                     to_pass.append(need_to_pass)
-            else:
-                if _is_course_necessary(
-                    courseinfo,
-                    required,
-                    passed_classes,
-                    consumed,
-                ):
-                    to_pass.append(required)
     return to_pass
 
 
@@ -189,7 +197,7 @@ def _get_credits(courseinfo: CourseInfo, courseid: PseudoCourse) -> int:
 
 def _determine_coreq_components(
     courseinfo: CourseInfo, courses_to_pass: list[PseudoCourse]
-) -> dict[str, list[PseudoCourse]]:
+) -> dict[PseudoCourse, list[PseudoCourse]]:
     """
     Determine which courses have to be taken together because they are
     mutual corequirements.
@@ -201,8 +209,8 @@ def _determine_coreq_components(
         coreqs.append(_get_corequirements(courseinfo, courseid))
 
     # Start off with each course in its own connected component
-    coreq_components: dict[str, list[PseudoCourse]] = {
-        courseid.code: [courseid] for courseid in courses_to_pass
+    coreq_components: dict[PseudoCourse, list[PseudoCourse]] = {
+        courseid: [courseid] for courseid in courses_to_pass
     }
 
     # Determine which pairs of courses are corequirements of each other
@@ -215,11 +223,11 @@ def _determine_coreq_components(
                 # `course1` and `course2` are mutual corequirements, they must be taken
                 # together
                 # Merge the connected components
-                dst = coreq_components[course1.code]
-                src = coreq_components[course2.code]
+                dst = coreq_components[course1]
+                src = coreq_components[course2]
                 dst.extend(src)
                 for c in src:
-                    coreq_components[c.code] = dst
+                    coreq_components[c] = dst
 
     return coreq_components
 
@@ -349,7 +357,7 @@ async def generate_recommended_plan(passed: ValidatablePlan):
         could_use_more_credits = False
         some_requirements_missing = False
         for try_course in courses_to_pass:
-            course_group = coreq_components[try_course.code]
+            course_group = coreq_components[try_course]
 
             status = _try_add_course_group(
                 courseinfo, plan, courses_to_pass, credits, course_group

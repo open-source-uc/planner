@@ -24,6 +24,7 @@ from prisma.models import (
     Minor as DbMinor,
     Title as DbTitle,
 )
+from prisma.types import CourseWhereInput, CourseWhereInputRecursive2
 from .user.auth import require_authentication, login_cas, UserKey
 from . import sync
 from .plan.courseinfo import clear_course_info_cache, course_info
@@ -134,6 +135,33 @@ class CourseOverview(BaseModel):
     code: str
     name: str
     credits: int
+    school: str
+
+
+def _get_course_filter(
+    name: Optional[str] = None,
+    credits: Optional[int] = None,
+    school: Optional[str] = None,
+):
+    filter = CourseWhereInput()
+    if name is not None:
+        name_parts: list[CourseWhereInputRecursive2] = list(
+            map(
+                lambda name_part: {
+                    "name": {"contains": name_part, "mode": "insensitive"}
+                },
+                name.split(),
+            )
+        )
+        filter["OR"] = [
+            {"code": {"contains": name, "mode": "insensitive"}},
+            {"AND": name_parts},
+        ]
+    if credits is not None:
+        filter["credits"] = credits
+    if school is not None:
+        filter["school"] = {"contains": school, "mode": "insensitive"}
+    return filter
 
 
 @app.get("/courses/search", response_model=list[CourseOverview])
@@ -143,41 +171,11 @@ async def search_courses(
     school: Optional[str] = None,
 ):
     """
-    Fetches a list of courses that match the given name (including code),
-    credits, and school.
+    Fetches a list of courses that match the given name (or code),
+    credits and school.
     """
-    conditions: list[str] = []
-    params: list[Union[str, int]] = []
-
-    # TODO: Implement proper text search using `tsquery` or similar.
-
-    if name is not None:
-        name_parts = name.split()
-        name_pattern = "%" + "%".join(name_parts) + "%"
-        conditions.append(
-            f"(code ILIKE ${len(params) + 1} OR name ILIKE ${len(params) + 1})"
-        )
-        params.append(name_pattern)
-
-    if credits is not None:
-        conditions.append(f"credits = ${len(params) + 1}")
-        params.append(credits)
-
-    if school is not None:
-        conditions.append(f"school ILIKE '%' || ${len(params) + 1} || '%'")
-        params.append(school)
-
-    if not conditions:
-        return await prisma.course.find_many(take=50)
-
-    query = f"""
-        SELECT code, name, credits, school FROM "Course"
-        WHERE {" AND ".join(conditions)}
-        LIMIT 50
-    """
-
-    results: list[DbCourse] = await prisma.query_raw(query, *params)
-    return results
+    filter = _get_course_filter(name=name, credits=credits, school=school)
+    return await DbCourse.prisma().find_many(where=filter, take=50)
 
 
 @app.get("/courses", response_model=list[DbCourse])
@@ -196,18 +194,46 @@ async def get_course_details(codes: list[str] = Query()) -> list[DbCourse]:
     return courses
 
 
+async def _filter_courses(
+    courses: list[str],
+    name: Optional[str] = None,
+    credits: Optional[int] = None,
+    school: Optional[str] = None,
+):
+    filter = _get_course_filter(name=name, credits=credits, school=school)
+    filtered: list[str] = []
+    for course in courses:
+        filter["code"] = course
+        approved_by_filter = await DbCourse.prisma().count(where=filter) > 0
+        if approved_by_filter:
+            filtered.append(course)
+    return filtered
+
+
 @app.get("/equivalences", response_model=list[DbEquivalence])
-async def get_equivalence_details(codes: list[str] = Query()) -> list[DbEquivalence]:
+async def get_equivalence_details(
+    codes: list[str] = Query(),
+    filter_name: Optional[str] = None,
+    filter_credits: Optional[int] = None,
+    filter_school: Optional[str] = None,
+) -> list[DbEquivalence]:
     """
-    For a list of equivalence codes, fetch a corresponding list of equivalence details.
+    For a list of equivalence codes, fetch a corresponding list of equivalence details
+    with the `courses` attribute filtered.
     """
     equivs: list[DbEquivalence] = []
     for code in codes:
         equiv = await DbEquivalence.prisma().find_unique(where={"code": code})
         if equiv is None:
             raise HTTPException(
-                status_code=404, detail=f"Equivalence '{equiv}' not found"
+                status_code=404, detail=f"Equivalence '{code}' not found"
             )
+        equiv.courses = await _filter_courses(
+            courses=equiv.courses,
+            name=filter_name,
+            credits=filter_credits,
+            school=filter_school,
+        )
         equivs.append(equiv)
     return equivs
 
