@@ -221,7 +221,7 @@ const CurriculumSelector = ({
  */
 const Planner = (): JSX.Element => {
   const [planName, setPlanName] = useState<string>('')
-  const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null | undefined>(null)
+  const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null >(null)
   const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course | Equivalence }>({})
   const [curriculumData, setCurriculumData] = useState<CurriculumData | null>(null)
   const [modalData, setModalData] = useState<ModalData>()
@@ -327,14 +327,13 @@ const Planner = (): JSX.Element => {
 
   async function getCourseDetails (courses: PseudoCourseId[]): Promise<void> {
     console.log('getting Courses Details...')
-    const coursesCodes = []
-    const equivalenceCodes = []
-    for (const courseid of courses) {
-      if (courseid.is_concrete === true) { coursesCodes.push(courseid.code) } else { equivalenceCodes.push(courseid.code) }
-    }
+    const allCodes = courses.map((courseid) => courseid.code)
+    const uniqueCodes = Array.from(new Set(allCodes))
+    const courseCodes = uniqueCodes.filter((code) => courses.find((course) => course.code === code && course.is_concrete))
+    const equivalenceCodes = uniqueCodes.filter((code) => courses.find((course) => course.code === code && course.is_concrete !== true))
     try {
       const promises = []
-      if (coursesCodes.length > 0) promises.push(DefaultService.getCourseDetails(coursesCodes))
+      if (courseCodes.length > 0) promises.push(DefaultService.getCourseDetails(courseCodes))
       if (equivalenceCodes.length > 0) promises.push(DefaultService.getEquivalenceDetails(equivalenceCodes))
       const courseDetails = await Promise.all(promises)
       const dict = courseDetails.flat().reduce((acc: { [code: string]: Course | Equivalence }, curr: Course | Equivalence) => {
@@ -543,7 +542,7 @@ const Planner = (): JSX.Element => {
   }
 
   function reset (): void {
-    setValidatablePlan(undefined)
+    // setValidatablePlan(undefined)
     setPlannerStatus(PlannerStatus.LOADING)
   }
 
@@ -726,7 +725,7 @@ const Planner = (): JSX.Element => {
           />
           <DndProvider backend={HTML5Backend}>
             <PlanBoard
-              classesGrid={validatablePlan?.classes ?? []}
+              classesGrid={validatablePlan?.classes ?? null}
               classesDetails={courseDetails}
               setPlan={setValidatablePlan}
               openModal={openModal}

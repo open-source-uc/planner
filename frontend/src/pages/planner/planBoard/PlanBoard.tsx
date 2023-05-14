@@ -5,7 +5,7 @@ import { ValidatablePlan, Course, FlatValidationResult } from '../../../client'
 import { PseudoCourseId, PseudoCourseDetail } from '../Planner'
 
 interface PlanBoardProps {
-  classesGrid: PseudoCourseId[][]
+  classesGrid: PseudoCourseId[][] | null
   classesDetails: { [code: string]: PseudoCourseDetail }
   setPlan: Function
   openModal: Function
@@ -72,43 +72,48 @@ const PlanBoard = ({ classesGrid, classesDetails, setPlan, openModal, addCourse,
 
   return (
       <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap rtl-grid flex-grow ${validating === true ? 'pointer-events-none' : ''}`}>
-        {classesGrid.map((classes: PseudoCourseId[], semester: number) => (
-            <SemesterColumn
-              key={semester}
-              semester={semester + 1}
-              addEnd={(dragCourse: Course & { semester: number }) => moveCourse(semester, dragCourse, classes.length)}
-            >
-              {classes?.map((course: PseudoCourseId, index: number) => (
-                <CourseCard
-                  key={index.toString() + course.code}
-                  cardData={{ ...course, semester, ...classesDetails[course.code] }}
-                  isDragging={(e: boolean) => setIsDragging(e)}
-                  handleMove={(dragCourse: Course & { semester: number }) => moveCourse(semester, dragCourse, index)}
-                  remCourse={() => remCourse(semester, course.code)}
-                  courseBlock={findCourseSuperblock(validationResult, course.code)}
-                  openSelector={() => { if ('credits' in course) openModal(course, semester, index); else openModal(course.equivalence, semester, index) }}
-                  hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
-                  hasError={validationResult?.diagnostics?.find((e) => e.course_code === course.code && !e.is_warning) != null}
-                  hasWarning={validationResult?.diagnostics?.find((e) => e.course_code === course.code && e.is_warning) != null}
-                />
-              ))}
-              {!isDragging && <div className="h-10 mx-2 bg-slate-300 card">
-              <button key="+" className="w-full" onClick={() => addCourse(semester)}>+</button>
-              </div>}
-            </SemesterColumn>
-        ))}
-        {isDragging && <>
-          <SemesterColumn
-            key={classesGrid.length }
-            semester={classesGrid.length + 1}
-            addEnd={(dragCourse: Course & { semester: number }) => moveCourse(classesGrid.length, dragCourse, 0)}
-          />
-          <SemesterColumn
-            key={classesGrid.length + 1}
-            semester={classesGrid.length + 2}
-            addEnd={(dragCourse: Course & { semester: number }) => moveCourse(classesGrid.length + 1, dragCourse, 0)}
-          />
-        </>}
+        {classesGrid === null
+          ? <h1>elija plan</h1>
+          : <>
+            {classesGrid.map((classes: PseudoCourseId[], semester: number) => (
+                <SemesterColumn
+                  key={semester}
+                  semester={semester + 1}
+                  addEnd={(dragCourse: Course & { semester: number }) => moveCourse(semester, dragCourse, classes.length)}
+                >
+                  {classes?.map((course: PseudoCourseId, index: number) => (
+                    <CourseCard
+                      key={index.toString() + course.code}
+                      cardData={{ ...course, semester, ...classesDetails[course.code] }}
+                      isDragging={(e: boolean) => setIsDragging(e)}
+                      handleMove={(dragCourse: Course & { semester: number }) => moveCourse(semester, dragCourse, index)}
+                      remCourse={() => remCourse(semester, course.code)}
+                      courseBlock={findCourseSuperblock(validationResult, course.code)}
+                      openSelector={() => { if ('credits' in course) openModal(course, semester, index); else openModal(course.equivalence, semester, index) }}
+                      hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
+                      hasError={validationResult?.diagnostics?.find((e) => e.course_code === course.code && !e.is_warning) != null}
+                      hasWarning={validationResult?.diagnostics?.find((e) => e.course_code === course.code && e.is_warning) != null}
+                    />
+                  ))}
+                  {!isDragging && <div className="h-10 mx-2 bg-slate-300 card">
+                  <button key="+" className="w-full" onClick={() => addCourse(semester)}>+</button>
+                  </div>}
+                </SemesterColumn>
+            ))}
+            {isDragging && <>
+              <SemesterColumn
+                key={classesGrid.length }
+                semester={classesGrid.length + 1}
+                addEnd={(dragCourse: Course & { semester: number }) => moveCourse(classesGrid.length, dragCourse, 0)}
+              />
+              <SemesterColumn
+                key={classesGrid.length + 1}
+                semester={classesGrid.length + 2}
+                addEnd={(dragCourse: Course & { semester: number }) => moveCourse(classesGrid.length + 1, dragCourse, 0)}
+              />
+            </>}
+            </>
+        }
       </div>
   )
 }
