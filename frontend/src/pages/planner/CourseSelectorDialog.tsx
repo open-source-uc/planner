@@ -1,6 +1,6 @@
 import { useState, useEffect, Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
-import { DefaultService, Equivalence, CourseOverview } from '../../client'
+import { DefaultService, Equivalence, CourseOverview, CancelablePromise } from '../../client'
 import { Spinner } from '../../components/Spinner'
 
 // 'Acad Inter de Filosofía': Escuela que sale en buscacursos pero no tiene cursos  (ta raro)
@@ -17,6 +17,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     credits: '',
     school: ''
   })
+  const [promiseInstance, setPromiseInstance] = useState<CancelablePromise<any> | null>(null)
 
   async function resetFilters (): Promise<void> {
     setFilter({
@@ -26,23 +27,21 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     })
     setOffset(0)
     if (equivalence !== undefined && open) {
-      setLoadingCoursesData(true)
-      const response = await DefaultService.getCourseDetails(equivalence.courses.slice(0, 10))
-      const dict = response.flat().reduce((acc: { [code: string]: CourseOverview }, curr: CourseOverview) => {
-        acc[curr.code] = curr
-        return acc
-      }, {})
-      setLoadedCourses(dict)
-      setLoadingCoursesData(false)
+      setFilteredCodes(equivalence.courses)
     } else {
-      setLoadedCourses({})
+      setFilteredCodes([])
     }
   }
 
   async function getCourseDetails (coursesCodes: string[], offset: number): Promise<void> {
     if (coursesCodes.length === 0 || loadingCoursesData || offset >= coursesCodes.length) return
     setLoadingCoursesData(true)
-    const response = await DefaultService.getCourseDetails(coursesCodes.slice(offset, offset + 10))
+
+    const promise = DefaultService.getCourseDetails(coursesCodes.slice(offset, offset + 10))
+    setPromiseInstance(promise)
+    const response = await promise
+    setPromiseInstance(null)
+
     const dict = response.reduce((acc: { [code: string]: CourseOverview }, curr: CourseOverview) => {
       acc[curr.code] = curr
       return acc
@@ -55,17 +54,30 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   async function handleSearch (): Promise<void> {
     setLoadingCoursesData(true)
     const crd = filter.credits === '' ? undefined : parseInt(filter.credits)
-    let response = []
     if (equivalence === undefined) {
-      response = await DefaultService.searchCourses(filter.name, crd, filter.school)
+      const promise = DefaultService.searchCourses(filter.name, crd, filter.school)
+      setPromiseInstance(promise)
+      const response = await promise
+      setPromiseInstance(null)
       const dict = response.reduce((acc: { [code: string]: CourseOverview }, curr: CourseOverview) => {
         acc[curr.code] = curr
         return acc
       }, {})
+      setFilteredCodes(response.reduce((acc: string[], curr: CourseOverview) => {
+        acc.push(curr.code)
+        return acc
+      }, []))
       setLoadedCourses(dict)
       setLoadingCoursesData(false)
     } else {
-      response = await DefaultService.getEquivalenceDetails([equivalence.code], filter.name, crd, filter.school)
+      const promise = DefaultService.getEquivalenceDetails([equivalence.code], filter.name, crd, filter.school)
+      setPromiseInstance(promise)
+      const response = await promise
+      setPromiseInstance(null)
+      const showCoursesCount = Object.keys(loadedCourses).filter(key => response[0].courses.includes(key)).length
+      if (showCoursesCount < response[0].courses.length && showCoursesCount < 10) {
+        await getCourseDetails(response[0].courses, 0).catch(err => console.log(err))
+      }
       setFilteredCodes(response[0].courses)
       setLoadingCoursesData(false)
     }
@@ -80,7 +92,11 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   }
 
   useEffect(() => {
-    if (!open) { void resetFilters() } else if (equivalence !== undefined) {
+    if (!open) {
+      if (promiseInstance != null) { promiseInstance.cancel(); setPromiseInstance(null); setLoadingCoursesData(false) }
+      void resetFilters()
+      setLoadedCourses({})
+    } else if (equivalence !== undefined) {
       setFilteredCodes(equivalence.courses)
       getCourseDetails(equivalence.courses, offset).catch(err => console.log(err))
     }
@@ -132,7 +148,9 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                       <label htmlFor=" creditsFilter">Creditos: </label>
                       <select className="rounded py-1" id="creditsFilter" value={filter.credits} onChange={e => setFilter({ ...filter, credits: e.target.value })}>
                         <option value={''}>-</option>
+                        <option value={'4'}>4</option>
                         <option value={'5'}>5</option>
+                        <option value={'6'}>6</option>
                         <option value={'10'}>10</option>
                         <option value={'15'}>15</option>
                         <option value={'30'}>30</option>
@@ -144,18 +162,18 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                     </div>
                   </div>
                 }
-              <table className="text-left table-auto mb-3 p-3  w-full box-border">
+              <table className="text-left table-fixed mb-3 p-3  w-full box-border">
                 <thead className="items-center justify-between">
-                  <tr className="border-b-2 border-slate-500 flex w-full">
+                  <tr className="border-b-2 border-slate-500 block w-full">
                     <th className="w-8"></th>
                     <th className="w-20">Sigla</th>
                     <th className="w-96">Nombre</th>
                     <th className="w-8">Crd</th>
                     <th className="w-52">Escuela</th>
-                    <th className="w-6"></th>
+                    <th className="w-8"></th>
                   </tr>
                 </thead>
-                <tbody onScroll={handleScroll} className="bg-white relative rounded-b flex flex-col items-center justify-between overflow-y-scroll h-72 pt-2">
+                <tbody onScroll={handleScroll} className="bg-white relative rounded-b block flex-col items-center justify-between overflow-y-scroll h-72 pt-2">
                 {filteredCodes.map((code: string) => (code in loadedCourses) && (
                   <tr key={code} className="flex mb-3">
                     <td className="w-8">
@@ -175,7 +193,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                 )}
                 </tbody>
               </table>
-              <div className='right-0'>{Object.keys(loadedCourses).length} - {filteredCodes.length}</div>
+              <div className='right-0'>{Object.keys(loadedCourses).filter(key => filteredCodes.includes(key)).length} - {filteredCodes.length}</div>
               <div className='float-right mx-2 '>
                 <button className="btn mr-2" onClick={() => onClose()}>Cancelar</button>
                 <button className="btn " onClick={() => onClose(selectedCourse)}>Guardar</button>
