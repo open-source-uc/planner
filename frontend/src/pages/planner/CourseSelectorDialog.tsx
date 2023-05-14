@@ -26,6 +26,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       school: ''
     })
     setOffset(0)
+    if (promiseInstance != null) promiseInstance.cancel()
     if (equivalence !== undefined && open) {
       setFilteredCodes(equivalence.courses)
     } else {
@@ -54,6 +55,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   async function handleSearch (): Promise<void> {
     setLoadingCoursesData(true)
     const crd = filter.credits === '' ? undefined : parseInt(filter.credits)
+    if (promiseInstance != null) promiseInstance.cancel()
     if (equivalence === undefined) {
       const promise = DefaultService.searchCourses(filter.name, crd, filter.school)
       setPromiseInstance(promise)
@@ -173,24 +175,22 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                     <th className="w-8"></th>
                   </tr>
                 </thead>
-                <tbody onScroll={handleScroll} className="bg-white relative rounded-b block flex-col items-center justify-between overflow-y-scroll h-72 pt-2">
-                {filteredCodes.map((code: string) => (code in loadedCourses) && (
-                  <tr key={code} className="flex mb-3">
-                    <td className="w-8">
-                      <input className='ml-1' id={code} type="radio" name="status" value={code} onChange={e => setSelectedCourse(e.target.value)}/>
-                    </td>
-                    <td className='w-20'>{code}</td>
-                    <td className='w-96'>{loadedCourses[code].name}</td>
-                    <td className='w-8'>{loadedCourses[code].credits}</td>
-                    <td className='w-52'>{loadedCourses[code].school}</td>
-                    <th className="w-8"></th>
-                  </tr>
-                ))}
-                {loadingCoursesData && (
-                  <tr>
-                    <td className="bg-white flex absolute top-0 left-0 bottom-0 right-0"> <Spinner message='Cargando cursos...' /></td>
-                  </tr>
-                )}
+                <tbody onScroll={handleScroll} className="bg-white relative rounded-b block flex-col items-center justify-between overflow-y-scroll h-72 w-full">
+                    { loadingCoursesData &&
+                    <div className="fixed pr-10" style={{ height: 'inherit', width: 'inherit' }}><div className="bg-white w-full h-full flex "> <Spinner message='Cargando cursos...' /></div></div>
+                    }
+                    {filteredCodes.map((code: string) => (code in loadedCourses) && (
+                      <tr key={code} className="flex mt-3">
+                        <td className="w-8">
+                          <input className='ml-1' id={code} type="radio" name="status" value={code} onChange={e => setSelectedCourse(e.target.value)}/>
+                        </td>
+                        <td className='w-20'>{code}</td>
+                        <td className='w-96'>{loadedCourses[code].name}</td>
+                        <td className='w-8'>{loadedCourses[code].credits}</td>
+                        <td className='w-52'>{loadedCourses[code].school}</td>
+                        <th className="w-8"></th>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
               <div className='right-0'>{Object.keys(loadedCourses).filter(key => filteredCodes.includes(key)).length} - {filteredCodes.length}</div>
