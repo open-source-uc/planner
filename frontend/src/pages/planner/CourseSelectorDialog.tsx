@@ -19,7 +19,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   })
   const [promiseInstance, setPromiseInstance] = useState<CancelablePromise<any> | null>(null)
 
-  async function resetFilters (): Promise<void> {
+  function resetFilters (): void {
     setFilter({
       name: '',
       credits: '',
@@ -118,7 +118,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
         >
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
         </Transition.Child>
-      <div className="fixed inset-0 overflow-y-auto ">
+      <div className="fixed inset-0 overflow-y-auto">
         <div className="flex items-center min-h-screen justify-center p-4 text-center">
             <Transition.Child
               as={Fragment}
@@ -129,12 +129,12 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
               leaveFrom="opacity-100 translate-y-0 sm:scale-100"
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
-            <Dialog.Panel className="w-11/12 px-5 py-6 bg-slate-100 border-slate-300 overflow-y-hidden max-w-4xl transform  rounded-2xl border-2 text-left align-middle shadow-xl transition-all">
-              <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
+            <Dialog.Panel className="w-11/12 px-5 py-6 bg-slate-100 border-slate-300 overflow-hidden max-w-4xl transform  rounded-2xl border-2 text-left align-middle shadow-xl transition-all">
+              <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900  mb-3">
                 {equivalence !== undefined ? equivalence.name : 'Curso Extra'}
               </Dialog.Title>
                 {(equivalence === undefined || equivalence.courses.length >= 30) &&
-                  <div className="grid border-2 p-4 py-3 rounded bg-slate-100 border-slate-500 border-solid gap-2 grid-cols-5 my-3">
+                  <div className="grid border-2 p-4 py-3 rounded bg-slate-100 border-slate-500 border-solid gap-2 grid-cols-5">
                     <div className="col-span-5 grid  grid-cols-5">
                       <label className="col-span-1 my-auto" htmlFor="nameFilter">Nombre o Sigla: </label>
                       <input className="col-span-4 rounded py-1" type="text" id="nameFilter" value={filter.name} onChange={e => setFilter({ ...filter, name: e.target.value })} />
@@ -159,14 +159,24 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                       </select>
                     </div>
                     <div className='flex justify-end col-span-2 col-end-6'>
-                      <button className="btn mr-2" onClick={async () => await resetFilters()}>Limpiar Filtros</button>
-                      <button className="btn" onClick={async () => await handleSearch()}>Buscar</button>
+                      <button
+                        className="btn mr-2"
+                        onClick={() => resetFilters()}>
+                          Limpiar Filtros
+                      </button>
+                      <button className="btn" onClick={() => {
+                        try {
+                          void handleSearch()
+                        } catch (err) {
+                          console.log(err)
+                        }
+                      }}>Buscar</button>
                     </div>
                   </div>
                 }
               <table className="text-left table-fixed mb-3 p-3  w-full box-border">
-                <thead className="items-center justify-between">
-                  <tr className="border-b-2 border-slate-500 block w-full">
+                <thead className="items-center justify-between mx-3">
+                  <tr className="border-b-2 border-slate-500 block w-full px-3">
                     <th className="w-8"></th>
                     <th className="w-20">Sigla</th>
                     <th className="w-96">Nombre</th>
@@ -177,12 +187,12 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                 </thead>
                 <tbody onScroll={handleScroll} className="bg-white relative rounded-b block flex-col items-center justify-between overflow-y-scroll h-72 w-full">
                     { loadingCoursesData &&
-                    <div className="fixed pr-10" style={{ height: 'inherit', width: 'inherit' }}><div className="bg-white w-full h-full flex "> <Spinner message='Cargando cursos...' /></div></div>
+                    <tr className="fixed pr-10" style={{ height: 'inherit', width: 'inherit' }}><td className="bg-white w-full h-full flex "> <Spinner message='Cargando cursos...' /></td></tr>
                     }
                     {filteredCodes.map((code: string) => (code in loadedCourses) && (
-                      <tr key={code} className="flex mt-3">
+                      <tr key={code} className="flex mt-3 mx-3">
                         <td className="w-8">
-                          <input className='ml-1' id={code} type="radio" name="status" value={code} onChange={e => setSelectedCourse(e.target.value)}/>
+                          <input className='cursor-pointer' id={code} type="radio" name="status" value={code} onChange={e => setSelectedCourse(e.target.value)}/>
                         </td>
                         <td className='w-20'>{code}</td>
                         <td className='w-96'>{loadedCourses[code].name}</td>
