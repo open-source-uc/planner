@@ -287,8 +287,6 @@ async def generate_recommended_plan(passed: ValidatablePlan):
     # Flat list of all curriculum courses left to pass
     courses_to_pass = _compute_courses_to_pass(courseinfo, curriculum, passed.classes)
 
-    print(f"courses_to_pass: {courses_to_pass}")
-
     plan = passed.copy(deep=True)
     plan.classes.append([])
 

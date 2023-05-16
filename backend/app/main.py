@@ -1,3 +1,4 @@
+from .plan.validation.curriculum.solve import solve_curriculum
 from .user.info import StudentContext
 from .plan.validation.diagnostic import FlatValidationResult
 from .plan.validation.validate import diagnose_plan
@@ -293,6 +294,18 @@ async def validate_plan_for_user(
     """
     user_ctx = await sync.get_student_data(user)
     return (await diagnose_plan(plan, user_ctx)).flatten()
+
+
+@app.post("/plan/curriculum_graph")
+async def get_curriculum_validation_graph(plan: ValidatablePlan) -> str:
+    """
+    Get the curriculum validation graph for a certain plan, in Graphviz DOT format.
+    Useful for debugging and kind of a bonus easter egg.
+    """
+    courseinfo = await course_info()
+    curriculum = await sync.get_curriculum(plan.curriculum)
+    g = solve_curriculum(courseinfo, curriculum, plan.classes)
+    return g.dump_graphviz(plan.classes)
 
 
 @app.post("/plan/generate", response_model=ValidatablePlan)

@@ -127,7 +127,7 @@ class SolvedCurriculum:
             elif isinstance(node.origin, Block):
                 label = f"{node.origin.name or f'b{id}'}"
                 if len(node.origin.fill_with) > 0:
-                    label += f" ({len(node.origin.fill_with)} recommendations)"
+                    label += f"\n({len(node.origin.fill_with)} recommendations)"
             elif isinstance(node.origin, tuple):
                 layer, index = node.origin
                 label = taken[index.semester][index.position].code
