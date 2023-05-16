@@ -58,6 +58,8 @@ class ValidatablePlan(BaseModel):
     curriculum: CurriculumSpec
 
 
+# TODO: Using indices generates "lag" in the block colors in the frontend.
+# Figure out whether we can use random IDs or something.
 class ClassIndex(BaseModel, frozen=True):
     """
     An index of a course instance within a validatable plan.

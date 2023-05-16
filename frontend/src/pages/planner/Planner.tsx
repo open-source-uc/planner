@@ -337,9 +337,9 @@ const Planner = (): JSX.Element => {
       }
       setValidationResult(response)
       setPlannerStatus(PlannerStatus.READY)
-      // Es necesario hacer una copia profunda del plan para comparar, pues si se copia el objeto entero
-      // entonces la copia es modificada junto al objeto original. Lo ideal seria usar una librearia para esto en el futuro
-      previousClasses.current = JSON.parse(JSON.stringify(validatablePlan.classes))
+      // No deberia ser necesario hacer una copia profunda, porque los planes debieran ser inmutables (!) ya que React lo requiere
+      // Al contrario, si se vuelve necesario hacer una copia profunda significa que hay un bug en algun lado porque se estan mutando datos que debieran ser inmutables.
+      previousClasses.current = validatablePlan.classes
     } catch (err) {
       handleErrors(err)
     }
@@ -682,8 +682,9 @@ const Planner = (): JSX.Element => {
         let classesChanged = validatablePlan.classes.length !== previousClasses.current.length
         if (!classesChanged) {
           for (let idx = 0; idx < validatablePlan.classes.length; idx++) {
-            const cur = [...validatablePlan.classes[idx]].sort((a, b) => a.code.localeCompare(b.code))
-            const prev = [...previousClasses.current[idx]].sort((a, b) => a.code.localeCompare(b.code))
+            // Note: because the order of classes within a semester is now meaningful, we need to revalidate if changing the order
+            const cur = validatablePlan.classes[idx]
+            const prev = previousClasses.current[idx]
             if (JSON.stringify(cur) !== JSON.stringify(prev)) {
               classesChanged = true
               break

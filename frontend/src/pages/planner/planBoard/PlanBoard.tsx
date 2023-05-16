@@ -16,6 +16,7 @@ interface PlanBoardProps {
 
 const findCourseSuperblock = (validationResults: FlatValidationResult | null, semester: number, index: number): string | null => {
   if (validationResults == null) return null
+  if (semester >= validationResults.course_superblocks.length || index >= validationResults.course_superblocks[semester].length) return null
   const rawSuperblock = validationResults.course_superblocks[semester][index]
   return rawSuperblock.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(' ', '').split(' ')[0]
 }
@@ -55,6 +56,8 @@ const PlanBoard = ({ classesGrid, classesDetails, setPlan, openModal, addCourse,
         if (semester - prev.classes.length > 0) newClasses.push([])
         newClasses.push([])
       }
+      newClasses[semester] = [...newClasses[semester]]
+      newClasses[drag.semester] = [...newClasses[drag.semester]]
       newClasses[semester].splice(index, 0, prev.classes[drag.semester][dragIndex])
       if (semester === drag.semester && index < dragIndex) {
         newClasses[drag.semester].splice(dragIndex + 1, 1)
