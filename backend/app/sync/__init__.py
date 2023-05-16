@@ -9,8 +9,6 @@ import time
 from ..settings import settings
 from ..user.auth import UserKey
 from ..user.info import StudentContext
-from pydantic import parse_raw_as
-from ..plan.plan import PseudoCourse
 from prisma import Json
 from .siding import translate as siding_translate
 from ..plan.validation.curriculum.tree import Curriculum, CurriculumSpec
@@ -18,10 +16,7 @@ from ..plan.courseinfo import clear_course_info_cache, course_info
 from . import buscacursos_dl
 from prisma.models import (
     Curriculum as DbCurriculum,
-    PlanRecommendation as DbPlanRecommendation,
 )
-import json
-from pydantic.json import pydantic_encoder
 
 
 async def run_upstream_sync():
@@ -83,52 +78,6 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
         return curr
     else:
         return Curriculum.parse_raw(db_curr.curriculum)
-
-
-async def get_recommended_plan(spec: CurriculumSpec) -> list[list[PseudoCourse]]:
-    """
-    Fetch the ideal recommended plan for a given curriculum spec.
-    In other words, transform a cyear-major-minor-title combination into a list of
-    semesters with the ideal course order.
-    Note that currently when there is no major/minor selected, no courses are
-    recommended.
-    Currently, these have to be requested from SIDING, so some caching is performed.
-    """
-
-    # The underlying SIDING webservice does not support empty major/minor selections
-    if spec.major is None or spec.minor is None:
-        return []
-
-    db_plan = await DbPlanRecommendation.prisma().find_unique(
-        where={
-            "cyear_major_minor_title": {
-                "cyear": str(spec.cyear),
-                "major": spec.major or "",
-                "minor": spec.minor or "",
-                "title": spec.title or "",
-            }
-        }
-    )
-    if db_plan is None:
-        courseinfo = await course_info()
-        plan = await siding_translate.fetch_recommended_courses(courseinfo, spec)
-        await DbPlanRecommendation.prisma().query_raw(
-            """
-            INSERT INTO "PlanRecommendation"
-                (cyear, major, minor, title, recommended_plan)
-            VALUES($1, $2, $3, $4, $5)
-            ON CONFLICT (cyear, major, minor, title)
-            DO UPDATE SET recommended_plan = $5
-            """,
-            str(spec.cyear),
-            spec.major or "",
-            spec.minor or "",
-            spec.title or "",
-            Json(json.dumps(plan, default=pydantic_encoder)),
-        )
-        return plan
-    else:
-        return parse_raw_as(list[list[PseudoCourse]], db_plan.recommended_plan)
 
 
 _student_context_cache: OrderedDict[str, tuple[StudentContext, float]] = OrderedDict()

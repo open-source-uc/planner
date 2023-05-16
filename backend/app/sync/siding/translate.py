@@ -7,7 +7,6 @@ from typing import Optional
 from ...user.info import StudentInfo
 from ...plan.courseinfo import CourseInfo, add_equivalence
 from ...plan.course import ConcreteId, EquivalenceId, PseudoCourse
-from ...plan.validation.curriculum.solve import DEBUG_SOLVE
 from . import client, curriculum_rules
 from .client import (
     BloqueMalla,
@@ -200,62 +199,6 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
     _patch_capacities(curriculum.root)
 
     return curriculum
-
-
-async def fetch_recommended_courses(
-    courseinfo: CourseInfo,
-    spec: CurriculumSpec,
-) -> list[list[PseudoCourse]]:
-    """
-    Call into the SIDING webservice and get the recommended courses for a given spec.
-
-    NOTE: Blank major/minors raise an error.
-    """
-
-    print(f"fetching recommended courses from siding for spec {spec}")
-
-    # Fetch raw curriculum blocks for the given cyear-major-minor-title combination
-    raw_blocks = await _fetch_raw_blocks(courseinfo, spec)
-
-    # Courses belonging to these superblocks will be skipped
-    skip_superblocks = [
-        "Requisitos adicionales para obtener el grado de "
-        "Licenciado en Ciencias de la Ingeniería",
-        "Requisitos adicionales para obtener el Título Profesional",
-    ]
-
-    # Transform into a list of lists of pseudocourse ids
-    semesters: list[list[PseudoCourse]] = []
-    for raw_block in raw_blocks:
-        if raw_block.BloqueAcademico in skip_superblocks:
-            continue
-        if raw_block.CodLista is not None:
-            representative_course = EquivalenceId(
-                code=f"!{raw_block.CodLista}", credits=raw_block.Creditos
-            )
-        elif raw_block.CodSigla is not None:
-            if raw_block.Equivalencias is not None and raw_block.Equivalencias.Cursos:
-                representative_course = ConcreteId(
-                    code=raw_block.CodSigla,
-                    equivalence=EquivalenceId(
-                        code=f"?{raw_block.CodSigla}", credits=raw_block.Creditos
-                    ),
-                )
-            else:
-                representative_course = ConcreteId(code=raw_block.CodSigla)
-        else:
-            raise Exception("invalid siding curriculum block")
-        semester_number = raw_block.SemestreBloque
-        semester_idx = semester_number - 1  # We use 0-based indices here
-        while len(semesters) <= semester_idx:
-            semesters.append([])
-        semesters[semester_idx].append(representative_course)
-        if DEBUG_SOLVE:
-            print(
-                f"selected course {representative_course} for block {raw_block.Nombre}"
-            )
-
-    return semesters
 
 
 async def load_siding_offer_to_database():
