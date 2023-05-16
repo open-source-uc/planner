@@ -6,7 +6,7 @@ within a block and respecting exclusivity rules.
 from typing import Optional
 
 from ...plan import ClassIndex
-from ...course import PseudoCourse
+from ...course import ConcreteId, PseudoCourse
 
 from ...courseinfo import CourseInfo
 from .tree import Leaf, Curriculum, Block
@@ -189,8 +189,6 @@ def _build_visit(g: SolvedCurriculum, taken: TakenCourses, block: Block) -> int:
     if isinstance(block, Leaf):
         # A list of courses
         # TODO: Prioritize edges just like SIDING
-        # TODO: Prioritize edges to concrete courses if they are children of an
-        #   equivalence that matches the current block
 
         # For performance, iterate through the taken courses or through the accepted
         # codes, whichever is shorter
@@ -231,6 +229,12 @@ def _build_graph(
     taken = TakenCourses(flat=[], mapped={})
     for sem_i, sem in enumerate(taken_semesters):
         for i, c in sorted(enumerate(sem)):
+            if isinstance(c, ConcreteId) and c.equivalence is not None:
+                # TODO: Right now we are forcing concretized equivalences to count as
+                #   the equivalence instead of as the concrete course
+                #   Instead, we could count them as concrete courses, but give priority
+                #   to the corresponding equivalences
+                c = c.equivalence
             creds = courseinfo.get_credits(c)
             if creds is None:
                 continue
