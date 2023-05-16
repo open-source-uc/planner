@@ -142,6 +142,7 @@ def _get_course_filter(
     name: Optional[str] = None,
     credits: Optional[int] = None,
     school: Optional[str] = None,
+    code_whitelist: Optional[list[str]] = None,
 ):
     filter = CourseWhereInput()
     if name is not None:
@@ -161,6 +162,10 @@ def _get_course_filter(
         filter["credits"] = credits
     if school is not None:
         filter["school"] = {"contains": school, "mode": "insensitive"}
+    if code_whitelist is not None:
+        filter["code"] = {
+            "in": code_whitelist,
+        }
     return filter
 
 
@@ -199,15 +204,12 @@ async def _filter_courses(
     name: Optional[str] = None,
     credits: Optional[int] = None,
     school: Optional[str] = None,
-):
-    filter = _get_course_filter(name=name, credits=credits, school=school)
-    filtered: list[str] = []
-    for course in courses:
-        filter["code"] = course
-        approved_by_filter = await DbCourse.prisma().count(where=filter) > 0
-        if approved_by_filter:
-            filtered.append(course)
-    return filtered
+) -> list[str]:
+    filter = _get_course_filter(
+        name=name, credits=credits, school=school, code_whitelist=courses
+    )
+    filtered: list[DbCourse] = await DbCourse.prisma().find_many(where=filter, take=50)
+    return list(map(lambda c: c.code, filtered))
 
 
 @app.get("/equivalences", response_model=list[DbEquivalence])
