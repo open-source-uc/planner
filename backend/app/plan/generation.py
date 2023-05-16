@@ -5,7 +5,14 @@ from ..user.auth import UserKey
 from ..sync import get_recommended_plan
 from .validation.courses.logic import And, Expr, Or, ReqCourse
 from .validation.curriculum.tree import LATEST_CYEAR, CurriculumSpec, Cyear
-from .plan import ConcreteId, EquivalenceId, Level, PseudoCourse, ValidatablePlan
+from .plan import (
+    ClassIndex,
+    ConcreteId,
+    EquivalenceId,
+    Level,
+    PseudoCourse,
+    ValidatablePlan,
+)
 from .courseinfo import CourseInfo, course_info
 from .validation.validate import quick_validate_dependencies
 from .. import sync
@@ -259,12 +266,11 @@ def _try_add_course_group(
         semester.append(course)
 
     # Check the dependencies for each course
-    for course in course_group:
+    for i, course in enumerate(course_group):
         if courseinfo.try_course(course.code) is None:
             continue
-        if not quick_validate_dependencies(
-            courseinfo, plan, len(plan.classes) - 1, course
-        ):
+        index = ClassIndex(semester=len(plan.classes) - 1, position=original_length + i)
+        if not quick_validate_dependencies(courseinfo, plan, index, course):
             # Requirements are not met
             # Undo changes and cancel
             while len(semester) > original_length:

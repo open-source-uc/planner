@@ -80,11 +80,11 @@ class CourseInfo:
     def try_equiv(self, code: str) -> Optional[EquivDetails]:
         return self.equivs.get(code)
 
-    def course(self, code: str) -> CourseDetails:
-        return self.courses[code]
-
-    def equiv(self, code: str) -> EquivDetails:
-        return self.equivs[code]
+    def is_course_available(self, code: str) -> bool:
+        info = self.try_course(code)
+        if info is None:
+            return False
+        return info.is_available
 
 
 _course_info_cache: Optional[CourseInfo] = None

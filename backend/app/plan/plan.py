@@ -82,3 +82,14 @@ class ValidatablePlan(BaseModel):
     # The curriculum that the user wants to pursue
     # Validate the plan against this curriculum
     curriculum: CurriculumSpec
+
+
+class ClassIndex(BaseModel, frozen=True):
+    """
+    An index of a course instance within a validatable plan.
+    """
+
+    # The semester where the course is located.
+    semester: int
+    # The index of the course within the semester.
+    position: int

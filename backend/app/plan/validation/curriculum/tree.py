@@ -6,40 +6,58 @@ from pydantic import BaseModel
 from typing import Literal, Optional, Union
 
 
-class Block(BaseModel):
-    superblock: str
+class Combination(BaseModel):
+    # The name of this block.
+    # If this block is missing credits, this name will be used to report.
     name: Optional[str] = None
-    exclusive: Optional[bool] = None
-    cap: Optional[int] = None
-    children: list["Node"]
-
-
-class CourseList(BaseModel):
-    # The academic block that this course list belongs to.
-    superblock: str
-    # The human-readable name of this course list.
-    name: Optional[str] = None
-    # The amount of credits that this course list expects to be filled with.
+    # What is the maximum amount of credits that this node can support.
     cap: int
-    # The machine code for this course list.
-    # The "id" of this course list.
-    equivalence_code: Optional[str]
-    # List of concrete courses that fulfill this equivalence.
-    codes: list[str]
-    # TODO: Give this value meaning.
-    # In order to do this, first we have to figure out how Seguimiento Curricular
-    # actually works.
-    priority: int
+    # Children nodes that supply flow to this block.
+    children: list["Block"]
 
 
-Node = Union[Block, CourseList]
+class Leaf(BaseModel):
+    # The name of this leaf.
+    name: Optional[str] = None
+    # What is the maximum amount of credits that this leaf can provide.
+    cap: int
+    # A set of course codes that comprise this leaf.
+    # The value of the dictionary is the *maximum* amount of credits that each course
+    # can provide.
+    # In most cases, it should be the amount of credits that the course has.
+    # However, there are edge cases where a course can count twice (eg. selecciones
+    # deportivas). In these cases, the limit could be twice the amount of credits.
+    codes: dict[str, int]
+    # Course nodes are deduplicated by their codes.
+    # However, this behavior can be controlled by the `layer` property.
+    # Course nodes with different `layer` values will not be deduplicated.
+    # Useful to model the title exclusive-credit requirements.
+    # The default layer is just an empty string.
+    layer: str = ""
+    # Original code for this leaf (either an equivalence code or a course code).
+    original_code: Optional[str] = None
 
 
-Block.update_forward_refs()
+Block = Union[Combination, Leaf]
+
+
+Combination.update_forward_refs()
 
 
 class Curriculum(BaseModel):
-    nodes: list[Node]
+    """
+    A specific curriculum definition, not associated to any particular student.
+    This class could be represented as a graph, but it would have *a lot* of nodes (at
+    least one for every possible course in the curriculum definition).
+    Instead, we store a representation of the curriculum that is optimized for quickly
+    building a graph for a particular (curriculum, user) pair.
+    """
+
+    root: Combination
+
+    @staticmethod
+    def empty() -> "Curriculum":
+        return Curriculum(root=Combination(cap=0, children=[]))
 
 
 class Cyear(BaseModel, frozen=True):
@@ -75,7 +93,8 @@ LATEST_CYEAR = Cyear(raw="C2020")
 class CurriculumSpec(BaseModel, frozen=True):
     """
     Represents a curriculum specification.
-    This specification should uniquely specify a curriculum.
+    This specification should uniquely identify a curriculum, although it contains no
+    information about the curriculum itself.
     """
 
     # Curriculum year.

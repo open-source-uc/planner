@@ -8,7 +8,7 @@ from ...user.info import StudentInfo
 from ...plan.courseinfo import CourseInfo, add_equivalence
 from ...plan.plan import ConcreteId, EquivalenceId, PseudoCourse
 from ...plan.validation.curriculum.solve import DEBUG_SOLVE
-from . import client
+from . import client, curriculum_rules
 from .client import (
     BloqueMalla,
     PlanEstudios,
@@ -22,12 +22,12 @@ from prisma.models import (
     Equivalence as DbEquivalence,
 )
 from ...plan.validation.curriculum.tree import (
-    Block,
+    Combination,
     Curriculum,
-    CourseList,
     CurriculumSpec,
     Cyear,
-    Node,
+    Block,
+    Leaf,
 )
 
 
@@ -41,10 +41,7 @@ def _decode_curriculum_versions(input: Optional[StringArray]) -> list[str]:
         # Why are curriculum versions empty??
         # TODO: Figure out why and remove this code
         return ["C2020"]
-    output: list[str] = []
-    for string in input.strings.string:
-        output.append(string)
-    return output
+    return input.strings.string
 
 
 def _decode_period(period: str) -> tuple[int, int]:
@@ -118,6 +115,17 @@ async def _fetch_raw_blocks(
     return raw_blocks
 
 
+def _patch_capacities(block: Block):
+    if isinstance(block, Combination):
+        for child in block.children:
+            _patch_capacities(child)
+        if block.cap == -1:
+            c = 0
+            for child in block.children:
+                c += child.cap
+            block.cap = c
+
+
 async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curriculum:
     """
     Call into the SIDING webservice and get the curriculum definition for a given spec.
@@ -129,86 +137,64 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
 
     raw_blocks = await _fetch_raw_blocks(courseinfo, spec)
 
-    # Transform into standard blocks
-    blocks: list[Node] = []
-    for i, raw_block in enumerate(raw_blocks):
+    # Group into superblocks
+    superblocks: dict[str, list[Block]] = {}
+    for raw_block in raw_blocks:
         if raw_block.CodLista is not None:
             # Predefined list
-            equiv_code = f"!{raw_block.CodLista}"
-            codes = courseinfo.equiv(equiv_code).courses
+            og_code = f"!{raw_block.CodLista}"
+            info = courseinfo.try_equiv(og_code)
+            assert info is not None
+            codes = info.courses
         elif raw_block.CodSigla is not None:
             # Course codes
             if raw_block.Equivalencias is None:
+                og_code = raw_block.CodSigla
                 codes = [raw_block.CodSigla]
-                equiv_code = None
             else:
-                equiv_code = f"?{raw_block.CodSigla}"
-                codes = courseinfo.equiv(equiv_code).courses
+                og_code = f"?{raw_block.CodSigla}"
+                info = courseinfo.try_equiv(og_code)
+                assert info is not None
+                codes = info.courses
         else:
             raise Exception("siding api returned invalid curriculum block")
         creds = raw_block.Creditos
-        course = CourseList(
-            name=raw_block.Nombre,
-            cap=creds,
-            codes=codes,
-            priority=i,
-            superblock=raw_block.BloqueAcademico,
-            equivalence_code=equiv_code,
+        if creds == 0:
+            # 0-credit courses get a single ghost credit
+            creds = 1
+        codes_dict = {}
+        for code in codes:
+            info = courseinfo.try_course(code)
+            if info is not None:
+                course_creds = info.credits
+                if course_creds == 0:
+                    course_creds = 1
+                codes_dict[info.code] = course_creds
+        superblock = superblocks.setdefault(raw_block.BloqueAcademico, [])
+        superblock.append(
+            Leaf(
+                name=raw_block.Nombre,
+                cap=creds,
+                codes=codes_dict,
+                original_code=og_code,
+            )
         )
-        blocks.append(course)
 
-    # Apply OFG transformation (merge all OFGs into a single 50-credit block, and only
-    # allow up to 10 credits of 5-credit sports courses)
-    match spec.cyear.raw:
-        case "C2020":
-            ofg_course = None
-            for i in reversed(range(len(blocks))):
-                block = blocks[i]
-                if isinstance(block, CourseList) and block.equivalence_code == "!L1":
-                    if ofg_course is None:
-                        ofg_course = block
-                    else:
-                        ofg_course.cap += block.cap
-                    blocks.pop(i)
-            if ofg_course is not None:
-                non_5_credits = ofg_course.copy(
-                    update={
-                        "codes": list(
-                            filter(
-                                lambda c: courseinfo.course(c).credits != 5,
-                                ofg_course.codes,
-                            )
-                        ),
-                    }
-                )
-                yes_5_credits = ofg_course.copy(
-                    update={
-                        "codes": list(
-                            filter(
-                                lambda c: courseinfo.course(c).credits == 5,
-                                ofg_course.codes,
-                            )
-                        ),
-                        "cap": 10,
-                    }
-                )
-                blocks.append(
-                    Block(
-                        superblock=ofg_course.superblock,
-                        name=ofg_course.name,
-                        cap=ofg_course.cap,
-                        children=[non_5_credits, yes_5_credits],
-                    )
-                )
+    # Transform into a somewhat valid curriculum
+    root = Combination(cap=-1, children=[])
+    for superblock_name, leaves in superblocks.items():
+        root.children.append(Combination(name=superblock_name, cap=-1, children=leaves))
+    curriculum = Curriculum(root=root)
 
-    # TODO: Apply title transformation (130 credits must be exclusive to the title, the
-    # rest can be shared)
+    # Apply custom cyear-dependent transformations
+    curriculum = await curriculum_rules.apply_curriculum_rules(
+        courseinfo, spec, curriculum
+    )
 
-    # Sort by number of satisfying courses
-    # TODO: Figure out proper validation order, or if flow has to be used.
-    blocks.sort(key=lambda b: len(b.codes) if isinstance(b, CourseList) else 1e6)
+    # Patch any `-1` capacities to be the sum of child capacities
+    _patch_capacities(curriculum.root)
 
-    return Curriculum(nodes=blocks)
+    return curriculum
 
 
 async def fetch_recommended_courses(

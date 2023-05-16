@@ -43,12 +43,10 @@ enum PlannerStatus {
   READY = 'READY',
 }
 
-const findCourseSuperblock = (validationResults: FlatValidationResult | null, code: string): string | null => {
+const findCourseSuperblock = (validationResults: FlatValidationResult | null, semester: number, index: number): string | null => {
   if (validationResults == null) return null
-  for (const c in validationResults.course_superblocks) {
-    if (c === code) return validationResults.course_superblocks[c].normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(' ', '').split(' ')[0]
-  }
-  return null
+  const rawSuperblock = validationResults.course_superblocks[semester][index]
+  return rawSuperblock.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(' ', '').split(' ')[0]
 }
 
 const isApiError = (err: any): err is ApiError => {
@@ -568,8 +566,8 @@ const Planner = (): JSX.Element => {
       newCurriculum.major = majorCode
       newClasses.forEach((sem, idx) => {
         if (idx >= prev.next_semester) {
-          newClasses[idx] = sem.filter((c) => {
-            if (findCourseSuperblock(validationResult, c.code) !== 'Major') {
+          newClasses[idx] = sem.filter((c, i) => {
+            if (findCourseSuperblock(validationResult, idx, i) !== 'Major') {
               return c
             }
             return false
@@ -580,8 +578,8 @@ const Planner = (): JSX.Element => {
         newCurriculum.minor = undefined
         newClasses.forEach((sem, idx) => {
           if (idx >= prev.next_semester) {
-            newClasses[idx] = sem.filter((c) => {
-              if (findCourseSuperblock(validationResult, c.code) !== 'Minor') {
+            newClasses[idx] = sem.filter((c, i) => {
+              if (findCourseSuperblock(validationResult, idx, i) !== 'Minor') {
                 return c
               }
               return false
@@ -601,8 +599,8 @@ const Planner = (): JSX.Element => {
       newCurriculum.minor = minor.code
       newClasses.forEach((sem, idx) => {
         if (idx >= prev.next_semester) {
-          newClasses[idx] = sem.filter((c) => {
-            if (findCourseSuperblock(validationResult, c.code) !== 'Minor') {
+          newClasses[idx] = sem.filter((c, i) => {
+            if (findCourseSuperblock(validationResult, idx, i) !== 'Minor') {
               return c
             }
             return false
@@ -621,8 +619,8 @@ const Planner = (): JSX.Element => {
       newCurriculum.title = title.code
       newClasses.forEach((sem, idx) => {
         if (idx >= prev.next_semester) {
-          newClasses[idx] = sem.filter((c) => {
-            if (findCourseSuperblock(validationResult, c.code) !== 'Title') {
+          newClasses[idx] = sem.filter((c, i) => {
+            if (findCourseSuperblock(validationResult, idx, i) !== 'Title') {
               return c
             }
             return false
@@ -664,7 +662,7 @@ const Planner = (): JSX.Element => {
             is_warning: false,
             message: `Error interno: ${String(err)}`
           }],
-          course_superblocks: {}
+          course_superblocks: validatablePlan.classes.map(sem => sem.map(c => ''))
         })
       })
     }
