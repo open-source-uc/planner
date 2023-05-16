@@ -223,8 +223,6 @@ async def get_equivalence_details(
     For a list of equivalence codes, fetch a corresponding list of equivalence details
     with the `courses` attribute filtered.
     """
-    # TODO: Optimize this function
-    # It is very slow for big equivalences like `!L1`
     equivs: list[DbEquivalence] = []
     for code in codes:
         equiv = await DbEquivalence.prisma().find_unique(where={"code": code})

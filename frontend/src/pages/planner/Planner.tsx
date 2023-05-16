@@ -307,15 +307,15 @@ const Planner = (): JSX.Element => {
 
   async function getCourseDetails (courses: PseudoCourseId[]): Promise<void> {
     console.log('getting Courses Details...')
-    const coursesCodes = []
-    const equivalenceCodes = []
+    const coursesCodes = new Set<string>()
+    const equivalenceCodes = new Set<string>()
     for (const courseid of courses) {
-      if (courseid.is_concrete === true) { coursesCodes.push(courseid.code) } else { equivalenceCodes.push(courseid.code) }
+      if (courseid.is_concrete === true) { coursesCodes.add(courseid.code) } else { equivalenceCodes.add(courseid.code) }
     }
     try {
       const promises = []
-      if (coursesCodes.length > 0) promises.push(DefaultService.getCourseDetails(coursesCodes))
-      if (equivalenceCodes.length > 0) promises.push(DefaultService.getEquivalenceDetails(equivalenceCodes))
+      if (coursesCodes.size > 0) promises.push(DefaultService.getCourseDetails(Array.from(coursesCodes)))
+      if (equivalenceCodes.size > 0) promises.push(DefaultService.getEquivalenceDetails(Array.from(equivalenceCodes)))
       const courseDetails = await Promise.all(promises)
       const dict = courseDetails.flat().reduce((acc: { [code: string]: Course | Equivalence }, curr: Course | Equivalence) => {
         acc[curr.code] = curr
