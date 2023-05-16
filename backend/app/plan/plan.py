@@ -33,13 +33,6 @@ class ValidatablePlan(BaseModel):
     # Eventually, we will have to roll our own migration system if we allow
     # ValidatablePlans to be exportable/importable.
 
-    # TODO: Warn when the real user context does not match the context in
-    # `ValidatablePlan`.
-    # For example, when exporting/importing is implemented, a user with `C2020` could
-    # import a plan made by a `C2021` user, and the context would not match.
-    # In this case, the correct approach is to warn the user that the plan was made for
-    # `C2021`, and to automatically correct the context.
-
     # Classes per semester.
     classes: list[list[PseudoCourse]]
     # The first semester to validate.

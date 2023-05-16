@@ -235,7 +235,6 @@ async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan
     All plans are born from this function (or deserialized from plans that were born
     from this function, except for manually crafted plans).
     """
-    # TODO: Support empty major/minor/title selection
     classes: list[list[PseudoCourse]]
     next_semester: int
     curriculum: CurriculumSpec
