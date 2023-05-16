@@ -209,7 +209,7 @@ async def _filter_courses(
     filter = _get_course_filter(
         name=name, credits=credits, school=school, code_whitelist=courses
     )
-    filtered: list[DbCourse] = await DbCourse.prisma().find_many(where=filter, take=50)
+    filtered: list[DbCourse] = await DbCourse.prisma().find_many(where=filter)
     return list(map(lambda c: c.code, filtered))
 
 
