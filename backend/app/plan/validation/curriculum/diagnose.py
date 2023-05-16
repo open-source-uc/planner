@@ -40,17 +40,20 @@ def _diagnose_block(out: ValidationResult, g: SolvedCurriculum, id: int, name: s
     node = g.nodes[id]
     if node.flow() >= node.cap():
         return False
+    my_name = None
     if isinstance(node.origin, Block) and node.origin.name is not None:
+        my_name = node.origin.name
+    if my_name is not None:
         if name != "":
             name += " -> "
-        name += node.origin.name
+        name += my_name
     diagnosed = False
     for edge in node.incoming:
         if edge.cap == 0:
             continue
         subdiagnosed = _diagnose_block(out, g, edge.src, name)
         diagnosed = diagnosed or subdiagnosed
-    if not diagnosed:
+    if not diagnosed and (my_name is not None or id == g.root):
         if name == "":
             name = "?"
         out.add(CurriculumErr(missing=name))
