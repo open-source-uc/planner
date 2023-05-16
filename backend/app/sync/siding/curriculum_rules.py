@@ -72,6 +72,92 @@ def _merge_ofgs(curriculum: Curriculum):
             )
 
 
+def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum):
+    # Los ramos de seleccion deportiva pueden contar hasta 2 veces (la misma sigla!)
+    # Los ramos de seleccion deportiva se definen segun SIDING como los ramos DPT que
+    # comienzan con "Seleccion"
+    for superblock in curriculum.root.children:
+        if not isinstance(superblock, Combination):
+            continue
+        for block in superblock.children:
+            if (
+                isinstance(block, Leaf)
+                and len(block.fill_with) > 0
+                and block.fill_with[0][1].code == "!L1"
+            ):
+                for code in block.codes.keys():
+                    if not code.startswith("DPT"):
+                        continue
+                    info = courseinfo.try_course(code)
+                    if info is None:
+                        continue
+                    if (
+                        info.name.startswith("Seleccion ")
+                        or info.name.startswith("Selección ")
+                    ):
+                        block.codes[code] = 2
+
+
+def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
+    # https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/formacion_gral/alumno_2020/index.phtml
+    # En el bloque de OFG hay algunos cursos de 5 creditos que en conjunto pueden
+    # contribuir a lo mas 10 creditos:
+    # - DPT (deportivos)
+    # - RII (ingles)
+    # - CAR (CARA)
+    # - OFG plan antiguo (MEB158, MEB166 y MEB174)
+    # TODO: Que significa esta linea:
+    #   "Además, es válido para avance curricular de OFG máximo 1 curso optativo en
+    #   ciencias (10 cr.) de una lista de cursos Optativos de Ciencia, o su equivalente,
+    #   definida por el Comité Curricular de la Escuela de Ingeniería."
+
+    def is_limited(courseinfo: CourseInfo, code: str):
+        info = courseinfo.try_course(code)
+        if info is None:
+            return False
+        if info.credits != 5:
+            return False
+        return (
+            code.startswith("DPT")
+            or code.startswith("RII")
+            or code.startswith("CAR")
+            or code == "MEB158"
+            or code == "MEB166"
+            or code == "MEB174"
+        )
+
+    for superblock in curriculum.root.children:
+        if not isinstance(superblock, Combination):
+            continue
+        for block_i, block in enumerate(superblock.children):
+            if (
+                isinstance(block, Leaf)
+                and len(block.fill_with) > 0
+                and block.fill_with[0][1].code == "!L1"
+            ):
+                # Segregar los cursos de 5 creditos que cumplan los requisitos
+                limited = {}
+                unlimited = {}
+                for code, mult in block.codes.items():
+                    if is_limited(courseinfo, code):
+                        limited[code] = mult
+                    else:
+                        unlimited[code] = mult
+                # Separar el bloque en 2
+                limited_block = Leaf(cap=10, codes=limited)
+                unlimited_block = Leaf(cap=block.cap, codes=unlimited)
+                block = Combination(
+                    name=block.name,
+                    cap=block.cap,
+                    fill_with=block.fill_with,
+                    children=[
+                        limited_block,
+                        unlimited_block,
+                    ],
+                )
+                superblock.children[block_i] = block
+
+
 async def apply_curriculum_rules(
     courseinfo: CourseInfo, spec: CurriculumSpec, curriculum: Curriculum
 ) -> Curriculum:
@@ -80,10 +166,10 @@ async def apply_curriculum_rules(
 
     match spec.cyear.raw:
         case "C2020":
+            # NOTE: El orden en que se llaman estas funciones es importante
             _merge_ofgs(curriculum)
-            # TODO: Cuentan como maximo 2 ramos DPT de 5 creditos distintos como OFG
-            # TODO: Los ramos de seleccion deportiva pueden contar 2 veces la misma
-            #   sigla
+            _allow_selection_duplication(courseinfo, curriculum)
+            _limit_ofg10(courseinfo, curriculum)
             # TODO: El titulo tiene que tener 130 creditos exclusivos
             #   Recordar incluir los optativos (ramos de ing nivel 3000) y IPres
             pass
