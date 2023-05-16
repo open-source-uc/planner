@@ -91,9 +91,8 @@ def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum)
                     info = courseinfo.try_course(code)
                     if info is None:
                         continue
-                    if (
-                        info.name.startswith("Seleccion ")
-                        or info.name.startswith("Selección ")
+                    if info.name.startswith("Seleccion ") or info.name.startswith(
+                        "Selección "
                     ):
                         block.codes[code] = 2
 
