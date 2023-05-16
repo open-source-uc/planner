@@ -6,7 +6,7 @@ within a block and respecting exclusivity rules.
 from typing import Optional
 
 from ...plan import ClassIndex
-from ...course import EquivalenceId, PseudoCourse
+from ...course import PseudoCourse
 
 from ...courseinfo import CourseInfo
 from .tree import Leaf, Curriculum, Block
@@ -54,9 +54,24 @@ class Node:
 
 @dataclass
 class TakenCourse:
+    # The courseid of the course.
     course: PseudoCourse
+    # The amount of credits of the course.
+    # Must correspond to `course`.
     credits: int
+    # Where in the plan was this course taken.
     index: ClassIndex
+    # Flattened index indicating where along the plan this course was taken.
+    flat_index: int
+    # `0` if this course is unique (by code) in the plan.
+    # Otherwise, increments by one per every repetition.
+    repeat_index: int
+
+
+@dataclass
+class TakenCourses:
+    flat: list[TakenCourse]
+    mapped: dict[str, list[TakenCourse]]
 
 
 class SolvedCurriculum:
@@ -99,19 +114,19 @@ class SolvedCurriculum:
         self.edges.append(edge_fw)
         self.edges.append(edge_rev)
 
-    def add_course(self, layer_id: str, taken: list[TakenCourse], idx: int) -> int:
+    def add_course(self, layer_id: str, taken: TakenCourses, c: TakenCourse) -> int:
         layer: list[Optional[int]]
         if layer_id in self.courses:
             layer = self.courses[layer_id]
         else:
-            layer = [None for _c in taken]
+            layer = [None for _c in taken.flat]
             self.courses[layer_id] = layer
-        id = layer[idx]
+        id = layer[c.flat_index]
         if id is not None:
             return id
-        id = self.add(Node(origin=(layer_id, taken[idx].index)))
-        layer[idx] = id
-        self.connect(self.source, id, taken[idx].credits)
+        id = self.add(Node(origin=(layer_id, c.index)))
+        layer[c.flat_index] = id
+        self.connect(self.source, id, c.credits)
         return id
 
     def dump_graphviz(self, taken: list[list[PseudoCourse]]) -> str:  # noqa: C901
@@ -158,26 +173,43 @@ class SolvedCurriculum:
         return out
 
 
-def _build_visit(g: SolvedCurriculum, taken: list[TakenCourse], block: Block) -> int:
+def _connect_course(
+    g: SolvedCurriculum, block: Leaf, taken: TakenCourses, c: TakenCourse, superid: int
+):
+    max_multiplicity = block.codes[c.course.code]
+    if max_multiplicity is not None and c.repeat_index >= max_multiplicity:
+        # Cannot connect to more than `max_multiplicity` courses at once
+        return
+    subid = g.add_course(block.layer, taken, c)
+    g.connect(subid, superid, c.credits)
+
+
+def _build_visit(g: SolvedCurriculum, taken: TakenCourses, block: Block) -> int:
     superid = g.add(Node(origin=block))
     if isinstance(block, Leaf):
         # A list of courses
-        for i, c in enumerate(taken):
-            # TODO: Limit courses to count just once (or maybe twice)
-            # TODO: Prioritize edges just like SIDING
-            if c.course.code in block.codes:
-                subid = g.add_course(block.layer, taken, i)
-                g.connect(subid, superid, block.codes[c.course.code])
-            elif (
-                isinstance(c.course, EquivalenceId)
-                and c.course.code == block.original_code
-            ):
-                subid = g.add_course(block.layer, taken, i)
-                g.connect(
-                    subid,
-                    superid,
-                    c.course.credits,
-                )
+        # TODO: Prioritize edges just like SIDING
+        # TODO: Prioritize edges to concrete courses if they are children of an
+        #   equivalence that matches the current block
+
+        # For performance, iterate through the taken courses or through the accepted
+        # codes, whichever is shorter
+        if len(block.codes) < len(taken.flat):
+            # There is a small amount of courses in this block
+            # Iterate through this list, in taken order
+            minitaken: list[TakenCourse] = []
+            for code in block.codes:
+                if code in taken.mapped:
+                    minitaken.extend(taken.mapped[code])
+            minitaken.sort(key=lambda c: c.flat_index)
+            for c in minitaken:
+                _connect_course(g, block, taken, c, superid)
+        else:
+            # There are way too many codes in this block
+            # Iterate through taken courses instead
+            for c in taken.flat:
+                if c.course.code in block.codes:
+                    _connect_course(g, block, taken, c, superid)
     else:
         # A combination of blocks
         for c in block.children:
@@ -196,7 +228,7 @@ def _build_graph(
     solvable graph that represents this curriculum.
     """
 
-    taken: list[TakenCourse] = []
+    taken = TakenCourses(flat=[], mapped={})
     for sem_i, sem in enumerate(taken_semesters):
         for i, c in sorted(enumerate(sem)):
             creds = courseinfo.get_credits(c)
@@ -208,13 +240,16 @@ def _build_graph(
                 # The curriculum definition must correspondingly also consider
                 # 0-credit courses to have 1 ghost credit
                 creds = 1
-            taken.append(
-                TakenCourse(
-                    course=c,
-                    credits=creds,
-                    index=ClassIndex(semester=sem_i, position=i),
-                )
+            repetitions = taken.mapped.setdefault(c.code, [])
+            c = TakenCourse(
+                course=c,
+                credits=creds,
+                index=ClassIndex(semester=sem_i, position=i),
+                flat_index=len(taken.flat),
+                repeat_index=len(repetitions),
             )
+            repetitions.append(c)
+            taken.flat.append(c)
 
     g = SolvedCurriculum()
     g.root = _build_visit(g, taken, curriculum.root)

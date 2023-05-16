@@ -31,20 +31,17 @@ class Combination(BaseBlock):
 
 class Leaf(BaseBlock):
     # A set of course codes that comprise this leaf.
-    # The value of the dictionary is the *maximum* amount of credits that each course
-    # can provide.
-    # In most cases, it should be the amount of credits that the course has.
-    # However, there are edge cases where a course can count twice (eg. selecciones
-    # deportivas). In these cases, the limit could be twice the amount of credits.
-    codes: dict[str, int]
+    # The value of the dictionary is the maximum amount of repetitions allowed to still
+    # count as valid credits.
+    # In most cases this should be `1`, but for example equivalences should count
+    # unlimited times (`None`), and selecciones deportivas can count twice.
+    codes: dict[str, Optional[int]]
     # Course nodes are deduplicated by their codes.
     # However, this behavior can be controlled by the `layer` property.
     # Course nodes with different `layer` values will not be deduplicated.
     # Useful to model the title exclusive-credit requirements.
     # The default layer is just an empty string.
     layer: str = ""
-    # Original code for this leaf (either an equivalence code or a course code).
-    original_code: Optional[str] = None
 
 
 Block = Union[Combination, Leaf]

@@ -142,21 +142,21 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
     for raw_block in raw_blocks:
         if raw_block.CodSigla is not None and raw_block.Equivalencias is None:
             # Concrete course
-            og_code = raw_block.CodSigla
-            recommended = ConcreteId(code=og_code)
-            codes = [og_code]
+            code = raw_block.CodSigla
+            recommended = ConcreteId(code=code)
+            codes = [code]
         else:
             # Equivalence
             if raw_block.CodLista is not None:
                 # List equivalence
-                og_code = f"!{raw_block.CodLista}"
+                code = f"!{raw_block.CodLista}"
             elif raw_block.CodSigla is not None and raw_block.Equivalencias is not None:
-                og_code = f"?{raw_block.CodSigla}"
+                code = f"?{raw_block.CodSigla}"
             else:
                 raise Exception("siding api returned invalid curriculum block")
-            recommended = EquivalenceId(code=og_code, credits=raw_block.Creditos)
+            recommended = EquivalenceId(code=code, credits=raw_block.Creditos)
             # Fetch equivalence data
-            info = courseinfo.try_equiv(og_code)
+            info = courseinfo.try_equiv(code)
             assert info is not None
             codes = info.courses
             if info.is_homogeneous and len(codes) >= 1:
@@ -166,13 +166,9 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
             # 0-credit courses get a single ghost credit
             creds = 1
         codes_dict = {}
+        codes_dict[code] = None
         for code in codes:
-            info = courseinfo.try_course(code)
-            if info is not None:
-                course_creds = info.credits
-                if course_creds == 0:
-                    course_creds = 1
-                codes_dict[info.code] = course_creds
+            codes_dict[code] = 1
         recommended_priority = raw_block.SemestreBloque * 10 + raw_block.OrdenSemestre
         superblock = superblocks.setdefault(raw_block.BloqueAcademico, [])
         superblock.append(
@@ -180,7 +176,6 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
                 name=raw_block.Nombre,
                 cap=creds,
                 codes=codes_dict,
-                original_code=og_code,
                 fill_with=[
                     (
                         recommended_priority,

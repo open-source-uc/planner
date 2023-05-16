@@ -46,13 +46,13 @@ def _merge_ofgs(curriculum: Curriculum):
         for block in superblock.children:
             if not isinstance(block, Leaf):
                 continue
-            if block.original_code == "!L1":
+            if len(block.fill_with) > 0 and block.fill_with[0][1].code == "!L1":
                 l1_blocks.append(block)
         if len(l1_blocks) > 0:
             superblock.children = list(
                 filter(
                     lambda block: not (
-                        isinstance(block, Leaf) and block.original_code == "!L1"
+                        isinstance(block, Leaf) and block.fill_with[0][1].code == "!L1"
                     ),
                     superblock.children,
                 )
@@ -68,7 +68,6 @@ def _merge_ofgs(curriculum: Curriculum):
                     cap=total_cap,
                     fill_with=fill_with,
                     codes=l1_blocks[0].codes,
-                    original_code="!L1",
                 )
             )
 
