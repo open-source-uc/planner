@@ -6,7 +6,7 @@ from typing import Optional
 
 from ...user.info import StudentInfo
 from ...plan.courseinfo import CourseInfo, add_equivalence
-from ...plan.plan import ConcreteId, EquivalenceId, PseudoCourse
+from ...plan.course import ConcreteId, EquivalenceId, PseudoCourse
 from ...plan.validation.curriculum.solve import DEBUG_SOLVE
 from . import client, curriculum_rules
 from .client import (
@@ -140,24 +140,27 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
     # Group into superblocks
     superblocks: dict[str, list[Block]] = {}
     for raw_block in raw_blocks:
-        if raw_block.CodLista is not None:
-            # Predefined list
-            og_code = f"!{raw_block.CodLista}"
+        if raw_block.CodSigla is not None and raw_block.Equivalencias is None:
+            # Concrete course
+            og_code = raw_block.CodSigla
+            recommended = ConcreteId(code=og_code)
+            codes = [og_code]
+        else:
+            # Equivalence
+            if raw_block.CodLista is not None:
+                # List equivalence
+                og_code = f"!{raw_block.CodLista}"
+            elif raw_block.CodSigla is not None and raw_block.Equivalencias is not None:
+                og_code = f"?{raw_block.CodSigla}"
+            else:
+                raise Exception("siding api returned invalid curriculum block")
+            recommended = EquivalenceId(code=og_code, credits=raw_block.Creditos)
+            # Fetch equivalence data
             info = courseinfo.try_equiv(og_code)
             assert info is not None
             codes = info.courses
-        elif raw_block.CodSigla is not None:
-            # Course codes
-            if raw_block.Equivalencias is None:
-                og_code = raw_block.CodSigla
-                codes = [raw_block.CodSigla]
-            else:
-                og_code = f"?{raw_block.CodSigla}"
-                info = courseinfo.try_equiv(og_code)
-                assert info is not None
-                codes = info.courses
-        else:
-            raise Exception("siding api returned invalid curriculum block")
+            if info.is_homogeneous and len(codes) >= 1:
+                recommended = ConcreteId(code=codes[0], equivalence=recommended)
         creds = raw_block.Creditos
         if creds == 0:
             # 0-credit courses get a single ghost credit
@@ -170,6 +173,7 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
                 if course_creds == 0:
                     course_creds = 1
                 codes_dict[info.code] = course_creds
+        recommended_priority = raw_block.SemestreBloque * 10 + raw_block.OrdenSemestre
         superblock = superblocks.setdefault(raw_block.BloqueAcademico, [])
         superblock.append(
             Leaf(
@@ -177,6 +181,12 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
                 cap=creds,
                 codes=codes_dict,
                 original_code=og_code,
+                fill_with=[
+                    (
+                        recommended_priority,
+                        recommended,
+                    )
+                ],
             )
         )
 

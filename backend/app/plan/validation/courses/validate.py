@@ -1,7 +1,9 @@
 from abc import ABC
 from dataclasses import dataclass
+
+from ...course import EquivalenceId
 from ..diagnostic import DiagnosticErr, DiagnosticWarn, ValidationResult
-from ...plan import ClassIndex, EquivalenceId, PseudoCourse, ValidatablePlan
+from ...plan import ClassIndex, PseudoCourse, ValidatablePlan
 from ...courseinfo import CourseDetails, CourseInfo
 from .logic import (
     Atom,
@@ -73,14 +75,7 @@ class PlanContext:
                         course, index=ClassIndex(semester=sem, position=i)
                     )
                 # Accumulate credits
-                if isinstance(course, EquivalenceId):
-                    creds += course.credits
-                else:
-                    # TODO: Double-check that credits always accumulate, even for
-                    # duplicate courses
-                    info = courseinfo.try_course(course.code)
-                    if info is not None:
-                        creds += info.credits
+                creds += courseinfo.get_credits(course) or 0
             acc_credits.append(creds)
         self.courseinfo = courseinfo
         self.classes = classes
@@ -97,11 +92,7 @@ class PlanContext:
                 if isinstance(courseid, EquivalenceId):
                     equiv = self.courseinfo.try_equiv(courseid.code)
                     if equiv is None:
-                        out.add(
-                            UnknownCourseErr(
-                                code=courseid.code, index=index
-                            )
-                        )
+                        out.add(UnknownCourseErr(code=courseid.code, index=index))
                         continue
                     elif equiv.is_homogeneous and len(equiv.courses) >= 1:
                         code = equiv.courses[0]

@@ -5,7 +5,8 @@ within a block and respecting exclusivity rules.
 
 from typing import Optional
 
-from ...plan import ClassIndex, EquivalenceId, PseudoCourse
+from ...plan import ClassIndex
+from ...course import EquivalenceId, PseudoCourse
 
 from ...courseinfo import CourseInfo
 from .tree import Leaf, Curriculum, Block
@@ -125,6 +126,8 @@ class SolvedCurriculum:
                 label = "Root"
             elif isinstance(node.origin, Block):
                 label = f"{node.origin.name or f'b{id}'}"
+                if len(node.origin.fill_with) > 0:
+                    label += f" ({len(node.origin.fill_with)} recommendations)"
             elif isinstance(node.origin, tuple):
                 layer, index = node.origin
                 label = taken[index.semester][index.position].code
@@ -196,20 +199,15 @@ def _build_graph(
     taken: list[TakenCourse] = []
     for sem_i, sem in enumerate(taken_semesters):
         for i, c in sorted(enumerate(sem)):
-            if isinstance(c, EquivalenceId):
-                creds = c.credits
-            else:
-                info = courseinfo.try_course(c.code)
-                if info is not None:
-                    creds = info.credits
-                    if creds == 0:
-                        # Assign 1 ghost credit to 0-credit courses
-                        # Kind of a hack, but works pretty well
-                        # The curriculum definition must correspondingly also consider
-                        # 0-credit courses to have 1 ghost credit
-                        creds = 1
-                else:
-                    continue
+            creds = courseinfo.get_credits(c)
+            if creds is None:
+                continue
+            if creds == 0:
+                # Assign 1 ghost credit to 0-credit courses
+                # Kind of a hack, but works pretty well
+                # The curriculum definition must correspondingly also consider
+                # 0-credit courses to have 1 ghost credit
+                creds = 1
             taken.append(
                 TakenCourse(
                     course=c,
@@ -305,5 +303,4 @@ def solve_curriculum(
             raise Exception(
                 f"flow solution produced invalid split-flow: {g.dump_graphviz(taken)}"
             )
-    print(f"solved curriculum: {g.dump_graphviz(taken)}")
     return g

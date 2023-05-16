@@ -1,154 +1,99 @@
 from typing import Literal, Optional
+from .validation.curriculum.solve import SolvedCurriculum, solve_curriculum
 
 from fastapi import HTTPException
 from ..user.auth import UserKey
-from ..sync import get_recommended_plan
+from ..sync import get_curriculum
 from .validation.courses.logic import And, Expr, Or, ReqCourse
-from .validation.curriculum.tree import LATEST_CYEAR, CurriculumSpec, Cyear
+from .validation.curriculum.tree import (
+    LATEST_CYEAR,
+    Block,
+    Curriculum,
+    CurriculumSpec,
+    Cyear,
+)
 from .plan import (
     ClassIndex,
-    ConcreteId,
-    EquivalenceId,
     Level,
     PseudoCourse,
     ValidatablePlan,
 )
+from .course import EquivalenceId
 from .courseinfo import CourseInfo, course_info
 from .validation.validate import quick_validate_dependencies
 from .. import sync
 
-
-class CurriculumRecommender:
-    """
-    Encapsulates all the recommendation logic.
-    Scalable and extensible for future curriculum recommendation strategies.
-    """
-
-    CREDITS_PER_SEMESTER = 50
-
-    @classmethod
-    async def recommend(
-        cls, courseinfo: CourseInfo, curr: CurriculumSpec
-    ) -> list[list[PseudoCourse]]:
-        return await get_recommended_plan(curr)
+MAX_CREDITS_PER_SEMESTER = 50
 
 
-def _is_course_necessary(
+def _extract_recommendations(
     courseinfo: CourseInfo,
-    required: ConcreteId,
-    passed_classes: list[list[PseudoCourse]],
-    consumed: list[set[str]],
-) -> bool:
+    to_pass: list[tuple[int, PseudoCourse]],
+    g: SolvedCurriculum,
+    id: int,
+):
     """
-    Check if the student must still take the required course, even if they already took
-    all `passed_classes` courses.
+    Recursively visit the curriculum blocks, looking for missing credits.
+    If missing credits are found, `to_pass` is filled with the corresponding
+    recommended courses in the `fill_with` fields.
     """
-    for sem_i in range(len(passed_classes)):
-        passed_sem = passed_classes[sem_i]
-        for i in range(len(passed_sem)):
-            passed = passed_sem[i]
-            if passed.code in consumed[sem_i]:
+    node = g.nodes[id]
+    missing = node.cap() - node.flow()
+    if missing <= 0:
+        return
+    if isinstance(node.origin, Block):
+        for priority, course in node.origin.fill_with:
+            # Get the amount of credits for this pseudocourse
+            creds = courseinfo.get_credits(course)
+            if creds is None:
                 continue
-            if isinstance(passed, EquivalenceId):
-                # Required is concrete but passed is equivalence
-                # For now, just ignore it
-                # Anyway, passed courses should all be concrete (right?)
-                pass
-            else:
-                # Both are concrete
-                # Only redundant if they match exactly
-                if passed.code == required.code:
-                    consumed[sem_i].add(passed.code)
-                    return False
-    return True
-
-
-def _is_equiv_necessary(
-    courseinfo: CourseInfo,
-    required: EquivalenceId,
-    passed_classes: list[list[PseudoCourse]],
-    consumed: list[set[str]],
-) -> Optional[EquivalenceId]:
-    """
-    Check if the student must still take the required equivalence, even if they already
-    took all passed classes.
-    Returns the exact equivalence that the student must pass.
-    For example, if the student needs to pass 10 credits of Fundamentos but already
-    took 6, this function would return a smaller equivalence of Fundamentos of only 4
-    credits.
-    """
-    missing_creds = required.credits
-    for sem_i in range(len(passed_classes)):
-        if missing_creds <= 0:
-            break
-        for passed in passed_classes[sem_i]:
-            if missing_creds <= 0:
+            if creds == 0:
+                creds = 1
+            # Limit credits if `course` is an equivalence
+            if creds > missing and isinstance(course, EquivalenceId):
+                course = EquivalenceId(code=course.code, credits=missing)
+                creds = missing
+            # Add this course to the courses to pass, and reduce the missing credits
+            to_pass.append((priority, course))
+            missing -= creds
+            if missing <= 0:
                 break
-            if passed.code in consumed[sem_i]:
-                continue
-            if isinstance(passed, EquivalenceId):
-                # Both are equivalences
-                # Discount credits only if equivalences are identical
-                if passed.code == required.code:
-                    missing_creds -= passed.credits
-                    consumed[sem_i].add(passed.code)
-            else:
-                # Required is equivalence but passed is concrete
-                # Discount credits only if concrete is part of equivalence
-                required_equiv = courseinfo.try_equiv(required.code)
-                passed_info = courseinfo.try_course(passed.code)
-                if (
-                    required_equiv is not None
-                    and passed_info is not None
-                    and passed.code in required_equiv.courses
-                ):
-                    missing_creds -= passed_info.credits
-                    consumed[sem_i].add(passed.code)
-    if missing_creds > 0:
-        return EquivalenceId(code=required.code, credits=missing_creds)
-    else:
-        return None
+        if len(node.origin.fill_with) > 0:
+            # Stop the search at the first nonempty `fill_with`
+            # Remember that every path from root to leaf should have at most 1 node
+            # with courses in `fill_with`
+            return
+    # Recursively extract recommendations from child nodes
+    for edge in node.incoming:
+        if edge.cap == 0:
+            continue
+        _extract_recommendations(courseinfo, to_pass, g, edge.src)
 
 
 def _compute_courses_to_pass(
     courseinfo: CourseInfo,
-    required_classes: list[list[PseudoCourse]],
+    curriculum: Curriculum,
     passed_classes: list[list[PseudoCourse]],
-):
+) -> list[PseudoCourse]:
     """
-    Given a recommended plan and a plan that is considered as "passed", add classes
-    after the last semester to match the recommended plan.
+    Given a curriculum with recommendations, and a plan that is considered as "passed",
+    add classes after the last semester to match the recommended plan.
     """
 
-    consumed: list[set[str]] = [set() for _sem in passed_classes]
-    to_pass: list[PseudoCourse] = []
-    # TODO: Prioritize by superblocks (e.g. 1.title 2.major 3.minor ...)
-    #       Even further, reuse the main curriculum solver since all curriculum quirks
-    #       should still apply here
-    # first, compute all concrete courses
-    for required_sem in required_classes:
-        for required in required_sem:
-            if isinstance(required, ConcreteId):
-                if required.equivalence is not None:
-                    required = required.equivalence
-                else:
-                    if _is_course_necessary(
-                        courseinfo,
-                        required,
-                        passed_classes,
-                        consumed,
-                    ):
-                        to_pass.append(required)
-    # second, compute all equivalences
-    for required_sem in required_classes:
-        for required in required_sem:
-            if isinstance(required, EquivalenceId):
-                need_to_pass = _is_equiv_necessary(
-                    courseinfo, required, passed_classes, consumed
-                )
-                if need_to_pass is not None:
-                    to_pass.append(need_to_pass)
-    return to_pass
+    # Determine which curriculum blocks have not been passed yet
+    g = solve_curriculum(courseinfo, curriculum, passed_classes)
+
+    # A list of courses associated to a priority
+    # The priority indicates if the course should be taken early or late in the
+    # student's career plan
+    to_pass: list[tuple[int, PseudoCourse]] = []
+    _extract_recommendations(courseinfo, to_pass, g, g.root)
+
+    # Order recommendations by priority, from soonest to latest
+    to_pass.sort(key=lambda priority_course: priority_course[0])
+
+    # Remove priority information, since it is redundant with the order of the list
+    return list(map(lambda priority_course: priority_course[1], to_pass))
 
 
 def _find_corequirements(out: list[str], expr: Expr):
@@ -193,13 +138,10 @@ def _is_course_in_list_of_codes(
 
 
 def _get_credits(courseinfo: CourseInfo, courseid: PseudoCourse) -> int:
-    if isinstance(courseid, EquivalenceId):
-        return courseid.credits
-    else:
-        info = courseinfo.try_course(courseid.code)
-        if info is None:
-            return 0
-        return info.credits
+    creds = courseinfo.get_credits(courseid)
+    if creds is None:
+        creds = 0
+    return creds
 
 
 def _determine_coreq_components(
@@ -256,7 +198,7 @@ def _try_add_course_group(
     group_credits = sum(map(lambda c: _get_credits(courseinfo, c), course_group))
 
     # Bail if there is not enough space in this semester
-    if current_credits + group_credits > CurriculumRecommender.CREDITS_PER_SEMESTER:
+    if current_credits + group_credits > MAX_CREDITS_PER_SEMESTER:
         return "credits"
 
     # Temporarily add to plan
@@ -341,10 +283,12 @@ async def generate_recommended_plan(passed: ValidatablePlan):
     lead to the user getting the title in whatever major-minor-career they chose.
     """
     courseinfo = await course_info()
-    recommended = await CurriculumRecommender.recommend(courseinfo, passed.curriculum)
+    curriculum = await get_curriculum(passed.curriculum)
 
     # Flat list of all curriculum courses left to pass
-    courses_to_pass = _compute_courses_to_pass(courseinfo, recommended, passed.classes)
+    courses_to_pass = _compute_courses_to_pass(courseinfo, curriculum, passed.classes)
+
+    print(f"courses_to_pass: {courses_to_pass}")
 
     plan = passed.copy(deep=True)
     plan.classes.append([])

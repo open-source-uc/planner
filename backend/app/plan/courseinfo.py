@@ -4,6 +4,7 @@ Cache course info from the database in memory, for easy access.
 
 from dataclasses import dataclass
 from typing import Optional
+from .course import EquivalenceId, PseudoCourse
 import pydantic
 from .validation.courses.logic import Expr
 from prisma.models import Course, Equivalence
@@ -85,6 +86,15 @@ class CourseInfo:
         if info is None:
             return False
         return info.is_available
+
+    def get_credits(self, course: PseudoCourse) -> Optional[int]:
+        if isinstance(course, EquivalenceId):
+            return course.credits
+        else:
+            info = self.try_course(course.code)
+            if info is None:
+                return None
+            return info.credits
 
 
 _course_info_cache: Optional[CourseInfo] = None

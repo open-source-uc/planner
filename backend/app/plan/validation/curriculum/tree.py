@@ -2,25 +2,34 @@
 Models a flow network in the context of curriculums.
 """
 
+from ...course import PseudoCourse
 from pydantic import BaseModel
 from typing import Literal, Optional, Union
 
 
-class Combination(BaseModel):
+class BaseBlock(BaseModel):
     # The name of this block.
     # If this block is missing credits, this name will be used to report.
     name: Optional[str] = None
     # What is the maximum amount of credits that this node can support.
     cap: int
+    # If missing credits for this block, fill with the given courses.
+    # Contains a priority (lower is sooner) and a course.
+    # Courses should be sorted from latest to soonest (from high priority number to low
+    # priority number).
+    #
+    # NOTE: There should be exactly 1 node with a `fill_with` attribute in every path
+    # from root to leaf.
+    # If this is not respected, some arbitrary node in the path will be chosen.
+    fill_with: list[tuple[int, PseudoCourse]] = []
+
+
+class Combination(BaseBlock):
     # Children nodes that supply flow to this block.
     children: list["Block"]
 
 
-class Leaf(BaseModel):
-    # The name of this leaf.
-    name: Optional[str] = None
-    # What is the maximum amount of credits that this leaf can provide.
-    cap: int
+class Leaf(BaseBlock):
     # A set of course codes that comprise this leaf.
     # The value of the dictionary is the *maximum* amount of credits that each course
     # can provide.

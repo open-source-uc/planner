@@ -10,6 +10,7 @@ Cuando aparezca una nueva version del curriculum con reglas especificas, este co
 el que habra que tocar.
 """
 
+from ...plan.plan import PseudoCourse
 from ...plan.validation.curriculum.tree import (
     Combination,
     Curriculum,
@@ -41,26 +42,35 @@ def _merge_ofgs(curriculum: Curriculum):
     for superblock in curriculum.root.children:
         if not isinstance(superblock, Combination):
             continue
-        l1_creds = 0
-        l1_block = None
+        l1_blocks: list[Leaf] = []
         for block in superblock.children:
             if not isinstance(block, Leaf):
                 continue
             if block.original_code == "!L1":
-                l1_creds += block.cap
-                l1_block = block
-        if l1_block is not None:
+                l1_blocks.append(block)
+        if len(l1_blocks) > 0:
             superblock.children = list(
                 filter(
                     lambda block: not (
-                        isinstance(block, Leaf)
-                        and block.original_code == "!L1"
-                        and block is not l1_block
+                        isinstance(block, Leaf) and block.original_code == "!L1"
                     ),
                     superblock.children,
                 )
             )
-            l1_block.cap = l1_creds
+            total_cap = sum(map(lambda block: block.cap, l1_blocks))
+            fill_with: list[tuple[int, PseudoCourse]] = []
+            for block in l1_blocks:
+                fill_with.extend(block.fill_with)
+            fill_with.sort(key=lambda priority_course: priority_course[0], reverse=True)
+            superblock.children.append(
+                Leaf(
+                    name=l1_blocks[0].name,
+                    cap=total_cap,
+                    fill_with=fill_with,
+                    codes=l1_blocks[0].codes,
+                    original_code="!L1",
+                )
+            )
 
 
 async def apply_curriculum_rules(
@@ -68,10 +78,10 @@ async def apply_curriculum_rules(
 ) -> Curriculum:
 
     _skip_extras(curriculum)
-    _merge_ofgs(curriculum)
 
     match spec.cyear.raw:
         case "C2020":
+            _merge_ofgs(curriculum)
             # TODO: Cuentan como maximo 2 ramos DPT de 5 creditos distintos como OFG
             # TODO: Los ramos de seleccion deportiva pueden contar 2 veces la misma
             #   sigla
