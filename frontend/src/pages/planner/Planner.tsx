@@ -14,6 +14,7 @@ import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import down_arrow from '../../assets/down_arrow.svg'
 import 'react-toastify/dist/ReactToastify.css'
+import DebugGraph from '../../components/DebugGraph'
 
 export type PseudoCourseId = ConcreteId | EquivalenceId
 export type PseudoCourseDetail = Course | Equivalence
@@ -700,6 +701,7 @@ const Planner = (): JSX.Element => {
 
   return (
     <div className={`w-full h-full p-3 flex flex-grow overflow-hidden flex-row ${(plannerStatus !== 'ERROR' && plannerStatus !== 'READY') ? 'cursor-wait' : ''}`}>
+      <DebugGraph validatablePlan={validatablePlan} />
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={async (selection?: string) => await closeModal(selection)}/>
       <AlertModal title={popUpAlert.title} desc={popUpAlert.desc} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}/>
       {plannerStatus === 'LOADING' && (
