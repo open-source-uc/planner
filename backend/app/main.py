@@ -56,16 +56,7 @@ app.add_middleware(
 async def startup():
     await prisma.connect()
     # Prime course info cache
-    try:
-        courseinfo = await course_info()
-    except Exception:
-        # HACK: Previously, JSON was stored incorrectly in the database.
-        # This JSON cannot be loaded correctly with the proper way of handling JSON.
-        # Therefore, this hack attempts to rebuild courses from scratch if the data is
-        # invalid.
-        # TODO: Remove this hack once everybody updates the code
-        await DbCourse.prisma().delete_many()
-        courseinfo = await course_info()
+    courseinfo = await course_info()
     # Sync courses if database is empty
     if len(courseinfo.courses) == 0:
         await sync.run_upstream_sync()
