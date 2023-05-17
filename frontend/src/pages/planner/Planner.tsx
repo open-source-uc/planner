@@ -72,7 +72,7 @@ const CurriculumSelector = ({
         <div className={'selectorName'}>Major:</div>
         <Listbox value={validatablePlan.curriculum.major !== undefined && validatablePlan.curriculum.major !== null ? curriculumData.majors[validatablePlan.curriculum.major] : {}} onChange={(m) => selectMajor(m)}>
           <Listbox.Button className={'selectorButton'}>
-            <span className="inline truncate">{validatablePlan.curriculum.major !== undefined && validatablePlan.curriculum.major !== null ? curriculumData.majors[validatablePlan.curriculum.major].name : 'Por elegir'}</span>
+            <span className="inline truncate">{validatablePlan.curriculum.major !== undefined && validatablePlan.curriculum.major !== null ? curriculumData.majors[validatablePlan.curriculum.major]?.name : 'Por elegir'}</span>
             <img className="inline" src={down_arrow} alt="Seleccionar Major" />
           </Listbox.Button>
           <Transition
@@ -121,7 +121,7 @@ const CurriculumSelector = ({
           value={validatablePlan.curriculum.minor !== undefined && validatablePlan.curriculum.minor !== null ? curriculumData.minors[validatablePlan.curriculum.minor] : {}}
           onChange={(m) => selectMinor(m)}>
           <Listbox.Button className={'selectorButton'}>
-            <span className="inline truncate">{validatablePlan.curriculum.minor !== undefined && validatablePlan.curriculum.minor !== null ? curriculumData.minors[validatablePlan.curriculum.minor].name : 'Por elegir'}</span>
+            <span className="inline truncate">{validatablePlan.curriculum.minor !== undefined && validatablePlan.curriculum.minor !== null ? curriculumData.minors[validatablePlan.curriculum.minor]?.name : 'Por elegir'}</span>
             <img className="inline" src={down_arrow} alt="Seleccionar Minor" />
           </Listbox.Button>
           <Transition
@@ -168,7 +168,7 @@ const CurriculumSelector = ({
         <div className={'selectorName'}>Titulo:</div>
         <Listbox value={validatablePlan.curriculum.title !== undefined && validatablePlan.curriculum.title !== null ? curriculumData.titles[validatablePlan.curriculum.title] : {}} onChange={(t) => selectTitle(t)}>
           <Listbox.Button className="selectorButton">
-            <span className="inline truncate">{validatablePlan.curriculum.title !== undefined && validatablePlan.curriculum.title !== null ? curriculumData.titles[validatablePlan.curriculum.title].name : 'Por elegir'}</span>
+            <span className="inline truncate">{validatablePlan.curriculum.title !== undefined && validatablePlan.curriculum.title !== null ? curriculumData.titles[validatablePlan.curriculum.title]?.name : 'Por elegir'}</span>
             <img className="inline" src={down_arrow} alt="Seleccionar Titulo" />
           </Listbox.Button>
           <Transition
@@ -409,6 +409,7 @@ const Planner = (): JSX.Element => {
     }
   }
 
+  // THIS IS GIVING NOTHING ///
   async function loadCurriculumsData (cYear: string, cMajor?: string): Promise<void> {
     const [majors, minors, titles] = await Promise.all([
       DefaultService.getMajors(cYear),
