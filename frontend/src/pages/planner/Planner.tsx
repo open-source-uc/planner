@@ -395,7 +395,7 @@ const Planner = (): JSX.Element => {
     setPlannerStatus(PlannerStatus.READY)
   }
 
-  async function addCourse (semIdx: number): Promise<void> {
+  function addCourse (semIdx: number): void {
     if (validatablePlan == null) {
       return
     }
@@ -453,31 +453,25 @@ const Planner = (): JSX.Element => {
       }
       const details = (await DefaultService.getCourseDetails([selection]))[0]
       setCourseDetails((prev) => { return { ...prev, [details.code]: details } })
-      setValidatablePlan((prev) => {
-        if (prev == null) return prev
-        const newClasses = [...prev.classes]
-        newClasses[modalData.semester] = [...prev.classes[modalData.semester]]
 
-        if (modalData.equivalence === undefined) {
-          newClasses[modalData.semester][modalData.index] = {
-            is_concrete: true,
-            code: selection,
-            equivalence: undefined
-          }
-          console.log(newClasses)
-          return { ...prev, classes: newClasses }
+      const newValidatablePlan = validatablePlan
+      if (modalData.equivalence === undefined) {
+        newValidatablePlan.classes[modalData.semester][modalData.index] = {
+          is_concrete: true,
+          code: selection,
+          equivalence: undefined
         }
-
+      } else {
         const oldEquivalence = 'credits' in pastClass ? pastClass : pastClass.equivalence
 
-        newClasses[modalData.semester][modalData.index] = {
+        newValidatablePlan.classes[modalData.semester][modalData.index] = {
           is_concrete: true,
           code: selection,
           equivalence: oldEquivalence
         }
         if (oldEquivalence !== undefined && oldEquivalence.credits !== details.credits) {
           if (oldEquivalence.credits > details.credits) {
-            newClasses[modalData.semester].splice(modalData.index, 1,
+            newValidatablePlan.classes[modalData.semester].splice(modalData.index, 1,
               {
                 is_concrete: true,
                 code: selection,
@@ -503,7 +497,7 @@ const Planner = (): JSX.Element => {
             // option 2: decresed the one of 10 to 5
 
             // Partial solution: just consume anything we find
-            const semester = newClasses[modalData.semester]
+            const semester = newValidatablePlan.classes[modalData.semester]
             let extra = details.credits - oldEquivalence.credits
             for (let i = semester.length; i-- > 0;) {
               const equiv = semester[i]
@@ -522,7 +516,7 @@ const Planner = (): JSX.Element => {
 
             // Increase the credits of the equivalence
             // We might not have found all the missing credits, but that's ok
-            newClasses[modalData.semester].splice(modalData.index, 1,
+            newValidatablePlan.classes[modalData.semester].splice(modalData.index, 1,
               {
                 is_concrete: true,
                 code: selection,
@@ -534,15 +528,14 @@ const Planner = (): JSX.Element => {
             )
           }
         }
-        return { ...prev, classes: newClasses }
-      })
+      }
+      setValidatablePlan(newValidatablePlan)
       setPlannerStatus(PlannerStatus.VALIDATING)
     }
     setIsModalOpen(false)
   }
 
   function reset (): void {
-    // setValidatablePlan(undefined)
     setPlannerStatus(PlannerStatus.LOADING)
   }
 
@@ -652,7 +645,6 @@ const Planner = (): JSX.Element => {
     if (plannerStatus === 'LOADING') {
       void fetchData()
     } else if (plannerStatus === 'VALIDATING' && validatablePlan != null) {
-      console.log('a')
       validate(validatablePlan).catch(err => {
         setValidationResult({
           diagnostics: [{
@@ -693,7 +685,6 @@ const Planner = (): JSX.Element => {
       }
     }
   }, [validatablePlan])
-
   return (
     <div className={`w-full h-full p-3 flex flex-grow overflow-hidden flex-row ${(plannerStatus !== 'ERROR' && plannerStatus !== 'READY') ? 'cursor-wait' : ''}`}>
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={async (selection?: string) => await closeModal(selection)}/>
@@ -727,7 +718,10 @@ const Planner = (): JSX.Element => {
             <PlanBoard
               classesGrid={validatablePlan?.classes ?? null}
               classesDetails={courseDetails}
-              setPlan={setValidatablePlan}
+              setClassesGrid={(newGrid: PseudoCourseId[][]) => setValidatablePlan(prev => {
+                if (prev === null) return prev
+                return { ...prev, classes: newGrid }
+              })}
               openModal={openModal}
               addCourse={addCourse}
               validating={plannerStatus !== 'READY'}

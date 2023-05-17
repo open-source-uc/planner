@@ -146,9 +146,9 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                         {schoolOptions.map(school => <option key={school} value={school}>{school}</option>)}
                       </select>
                     </div>
-                    <div className="col-span-1 col-end-6 ">
-                      <label htmlFor=" creditsFilter">Creditos: </label>
-                      <select className="rounded py-1" id="creditsFilter" value={filter.credits} onChange={e => setFilter({ ...filter, credits: e.target.value })}>
+                    <div className="col-span-1 grid grid-cols-2">
+                      <label className="col-span-1 my-auto" htmlFor="creditsFilter">Creditos: </label>
+                      <select className="col-span-1 col-end-3 rounded py-1" id="creditsFilter" value={filter.credits} onChange={e => setFilter({ ...filter, credits: e.target.value })}>
                         <option value={''}>-</option>
                         <option value={'4'}>4</option>
                         <option value={'5'}>5</option>
@@ -158,7 +158,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                         <option value={'30'}>30</option>
                       </select>
                     </div>
-                    <div className='flex justify-end col-span-2 col-end-6'>
+                    <div className='flex justify-end col-span-2 col-end-6 '>
                       <button
                         className="btn mr-2"
                         onClick={() => resetFilters()}>
