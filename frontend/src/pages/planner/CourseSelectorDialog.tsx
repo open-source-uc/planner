@@ -10,13 +10,12 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   const [loadedCourses, setLoadedCourses] = useState<{ [code: string]: CourseOverview }>({})
   const [filteredCodes, setFilteredCodes] = useState<string[]>([])
   const [loadingCoursesData, setLoadingCoursesData] = useState(false)
-  const [offset, setOffset] = useState(0)
   const [selectedCourse, setSelectedCourse] = useState<string>()
-  const [filter, setFilter] = useState({
+  const [filter, setFilter] = useState(() => ({
     name: '',
     credits: '',
     school: ''
-  })
+  }))
   const [promiseInstance, setPromiseInstance] = useState<CancelablePromise<any> | null>(null)
 
   function resetFilters (): void {
@@ -25,8 +24,10 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       credits: '',
       school: ''
     })
-    setOffset(0)
-    if (promiseInstance != null) promiseInstance.cancel()
+    if (promiseInstance != null) {
+      promiseInstance.cancel()
+      setPromiseInstance(null)
+    }
     if (equivalence !== undefined && open) {
       setFilteredCodes(equivalence.courses)
     } else {
@@ -34,11 +35,11 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     }
   }
 
-  async function getCourseDetails (coursesCodes: string[], offset: number): Promise<void> {
-    if (coursesCodes.length === 0 || loadingCoursesData || offset >= coursesCodes.length) return
+  async function getCourseDetails (coursesCodes: string[]): Promise<void> {
+    if (coursesCodes.length === 0 || loadingCoursesData) return
     setLoadingCoursesData(true)
 
-    const promise = DefaultService.getCourseDetails(coursesCodes.slice(offset, offset + 10))
+    const promise = DefaultService.getCourseDetails(coursesCodes)
     setPromiseInstance(promise)
     const response = await promise
     setPromiseInstance(null)
@@ -48,7 +49,6 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       return acc
     }, {})
     setLoadedCourses((prev) => { return { ...prev, ...dict } })
-    setOffset(offset + 10)
     setLoadingCoursesData(false)
   }
 
@@ -78,7 +78,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       setPromiseInstance(null)
       const showCoursesCount = Object.keys(loadedCourses).filter(key => response[0].courses.includes(key)).length
       if (showCoursesCount < response[0].courses.length && showCoursesCount < 10) {
-        await getCourseDetails(response[0].courses, 0).catch(err => console.log(err))
+        await getCourseDetails(response[0].courses.splice(0, 20)).catch(err => console.log(err))
       }
       setFilteredCodes(response[0].courses)
       setLoadingCoursesData(false)
@@ -89,7 +89,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     if (!open) return
     const { scrollTop, scrollHeight, clientHeight } = event.currentTarget
     if (scrollTop + clientHeight === scrollHeight && equivalence !== undefined) {
-      getCourseDetails(filteredCodes, offset).catch(err => console.log(err))
+      getCourseDetails(filteredCodes.filter((code) => !Object.keys(loadedCourses).includes(code)).splice(0, 20)).catch(err => console.log(err))
     }
   }
 
@@ -100,7 +100,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       setLoadedCourses({})
     } else if (equivalence !== undefined) {
       setFilteredCodes(equivalence.courses)
-      getCourseDetails(equivalence.courses, offset).catch(err => console.log(err))
+      getCourseDetails(equivalence.courses.slice(0, 20)).catch(err => console.log(err))
     }
   }, [open])
 
@@ -153,8 +153,10 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                         <option value={'4'}>4</option>
                         <option value={'5'}>5</option>
                         <option value={'6'}>6</option>
+                        <option value={'8'}>8</option>
                         <option value={'10'}>10</option>
                         <option value={'15'}>15</option>
+                        <option value={'20'}>20</option>
                         <option value={'30'}>30</option>
                       </select>
                     </div>
@@ -189,15 +191,15 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                     { loadingCoursesData &&
                     <tr className="fixed pr-10" style={{ height: 'inherit', width: 'inherit' }}><td className="bg-white w-full h-full flex "> <Spinner message='Cargando cursos...' /></td></tr>
                     }
-                    {filteredCodes.map((code: string) => (code in loadedCourses) && (
+                    {Object.entries(loadedCourses).filter(([key, course]) => filteredCodes.includes(key)).map(([code, course]) => (
                       <tr key={code} className="flex mt-3 mx-3">
                         <td className="w-8">
                           <input className='cursor-pointer' id={code} type="radio" name="status" value={code} onChange={e => setSelectedCourse(e.target.value)}/>
                         </td>
                         <td className='w-20'>{code}</td>
-                        <td className='w-96'>{loadedCourses[code].name}</td>
-                        <td className='w-8'>{loadedCourses[code].credits}</td>
-                        <td className='w-52'>{loadedCourses[code].school}</td>
+                        <td className='w-96'>{course.name}</td>
+                        <td className='w-8'>{course.credits}</td>
+                        <td className='w-52'>{course.school}</td>
                         <th className="w-8"></th>
                       </tr>
                     ))}
