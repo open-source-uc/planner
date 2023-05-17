@@ -1,3 +1,4 @@
+from .plan.validation.curriculum.solve import solve_curriculum
 from .user.info import StudentContext
 from .plan.validation.diagnostic import FlatValidationResult
 from .plan.validation.validate import diagnose_plan
@@ -55,16 +56,7 @@ app.add_middleware(
 async def startup():
     await prisma.connect()
     # Prime course info cache
-    try:
-        courseinfo = await course_info()
-    except Exception:
-        # HACK: Previously, JSON was stored incorrectly in the database.
-        # This JSON cannot be loaded correctly with the proper way of handling JSON.
-        # Therefore, this hack attempts to rebuild courses from scratch if the data is
-        # invalid.
-        # TODO: Remove this hack once everybody updates the code
-        await DbCourse.prisma().delete_many()
-        courseinfo = await course_info()
+    courseinfo = await course_info()
     # Sync courses if database is empty
     if len(courseinfo.courses) == 0:
         await sync.run_upstream_sync()
@@ -142,6 +134,7 @@ def _get_course_filter(
     name: Optional[str] = None,
     credits: Optional[int] = None,
     school: Optional[str] = None,
+    code_whitelist: Optional[list[str]] = None,
 ):
     filter = CourseWhereInput()
     if name is not None:
@@ -161,6 +154,10 @@ def _get_course_filter(
         filter["credits"] = credits
     if school is not None:
         filter["school"] = {"contains": school, "mode": "insensitive"}
+    if code_whitelist is not None:
+        filter["code"] = {
+            "in": code_whitelist,
+        }
     return filter
 
 
@@ -199,15 +196,12 @@ async def _filter_courses(
     name: Optional[str] = None,
     credits: Optional[int] = None,
     school: Optional[str] = None,
-):
-    filter = _get_course_filter(name=name, credits=credits, school=school)
-    filtered: list[str] = []
-    for course in courses:
-        filter["code"] = course
-        approved_by_filter = await DbCourse.prisma().count(where=filter) > 0
-        if approved_by_filter:
-            filtered.append(course)
-    return filtered
+) -> list[str]:
+    filter = _get_course_filter(
+        name=name, credits=credits, school=school, code_whitelist=courses
+    )
+    filtered: list[DbCourse] = await DbCourse.prisma().find_many(where=filter)
+    return list(map(lambda c: c.code, filtered))
 
 
 @app.get("/equivalences", response_model=list[DbEquivalence])
@@ -296,6 +290,18 @@ async def validate_plan_for_user(
     """
     user_ctx = await sync.get_student_data(user)
     return (await diagnose_plan(plan, user_ctx)).flatten()
+
+
+@app.post("/plan/curriculum_graph")
+async def get_curriculum_validation_graph(plan: ValidatablePlan) -> str:
+    """
+    Get the curriculum validation graph for a certain plan, in Graphviz DOT format.
+    Useful for debugging and kind of a bonus easter egg.
+    """
+    courseinfo = await course_info()
+    curriculum = await sync.get_curriculum(plan.curriculum)
+    g = solve_curriculum(courseinfo, curriculum, plan.classes)
+    return g.dump_graphviz(plan.classes)
 
 
 @app.post("/plan/generate", response_model=ValidatablePlan)

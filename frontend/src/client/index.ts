@@ -6,6 +6,7 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
+export type { ClassIndex } from './models/ClassIndex';
 export type { ConcreteId } from './models/ConcreteId';
 export type { Course } from './models/Course';
 export type { CourseOverview } from './models/CourseOverview';

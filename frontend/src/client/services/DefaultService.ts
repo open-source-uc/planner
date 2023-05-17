@@ -284,6 +284,28 @@ export class DefaultService {
     }
 
     /**
+     * Get Curriculum Validation Graph
+     * Get the curriculum validation graph for a certain plan, in Graphviz DOT format.
+     * Useful for debugging and kind of a bonus easter egg.
+     * @param requestBody
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static getCurriculumValidationGraph(
+        requestBody: ValidatablePlan,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/plan/curriculum_graph',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
      * Generate Plan
      * From a base plan, generate a new plan that should lead the user to earn their title
      * of choice.

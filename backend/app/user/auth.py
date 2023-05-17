@@ -107,9 +107,13 @@ async def login_cas(next: Optional[str] = None, ticket: Optional[str] = None):
         attributes: Any
         _pgtiou: Any
         try:
-            user, attributes, _pgtiou = cas_client.verify_ticket(
+            (
+                user,
+                attributes,
+                _pgtiou,
+            ) = cas_client.verify_ticket(  # pyright: ignore[reportUnknownMemberType]
                 ticket
-            )  # pyright: reportUnknownMemberType = false
+            )
         except Exception:
             traceback.print_exc()
             return HTTPException(status_code=502, detail="Error verifying CAS ticket")
@@ -133,7 +137,9 @@ async def login_cas(next: Optional[str] = None, ticket: Optional[str] = None):
     else:
         # User wants to authenticate
         # Redirect to authentication page
-        cas_login_url: Any = cas_client.get_login_url()
+        cas_login_url: Any = (
+            cas_client.get_login_url()  # pyright: ignore[reportUnknownMemberType]
+        )
         if not isinstance(cas_login_url, str):
             return HTTPException(
                 status_code=500, detail="CAS redirection URL not found"

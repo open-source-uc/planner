@@ -1,7 +1,9 @@
 from abc import ABC
 from dataclasses import dataclass
+
+from ...course import EquivalenceId
 from ..diagnostic import DiagnosticErr, DiagnosticWarn, ValidationResult
-from ...plan import EquivalenceId, PseudoCourse, ValidatablePlan
+from ...plan import ClassIndex, PseudoCourse, ValidatablePlan
 from ...courseinfo import CourseDetails, CourseInfo
 from .logic import (
     Atom,
@@ -24,10 +26,11 @@ from .simplify import simplify
 class CourseInstance:
     """
     An instance of a course, with a student and semester associated with it.
+    In particular, the course index is a (semester, index within semester) pair.
     """
 
     course: PseudoCourse
-    semester: int
+    index: ClassIndex
 
 
 class PlanContext:
@@ -56,22 +59,23 @@ class PlanContext:
         for sem in range(len(plan.classes)):
             creds = acc_credits[-1]
             # Iterate over classes in this semester
-            for course in plan.classes[sem]:
+            for i, course in enumerate(plan.classes[sem]):
                 # Add this class to the map
                 code = course.code
                 if isinstance(course, EquivalenceId):
-                    equiv = courseinfo.equiv(course.code)
-                    if equiv.is_homogeneous and len(equiv.courses) >= 1:
+                    equiv = courseinfo.try_equiv(course.code)
+                    if (
+                        equiv is not None
+                        and equiv.is_homogeneous
+                        and len(equiv.courses) >= 1
+                    ):
                         code = equiv.courses[0]
                 if code not in classes:
-                    classes[code] = CourseInstance(course, sem)
+                    classes[code] = CourseInstance(
+                        course, index=ClassIndex(semester=sem, position=i)
+                    )
                 # Accumulate credits
-                if isinstance(course, EquivalenceId):
-                    creds += course.credits
-                else:
-                    # TODO: Credits only accumulate if they count towards the
-                    # curriculum!!
-                    creds += courseinfo.course(course.code).credits
+                creds += courseinfo.get_credits(course) or 0
             acc_credits.append(creds)
         self.courseinfo = courseinfo
         self.classes = classes
@@ -83,17 +87,26 @@ class PlanContext:
         for sem in range(self.plan.next_semester, len(self.plan.classes)):
             sem_credits: int = 0
 
-            for courseid in self.plan.classes[sem]:
+            for i, courseid in enumerate(self.plan.classes[sem]):
+                index = ClassIndex(semester=sem, position=i)
                 if isinstance(courseid, EquivalenceId):
-                    equiv = self.courseinfo.equiv(courseid.code)
-                    if equiv.is_homogeneous and len(equiv.courses) >= 1:
-                        course = self.courseinfo.course(equiv.courses[0])
+                    equiv = self.courseinfo.try_equiv(courseid.code)
+                    if equiv is None:
+                        out.add(UnknownCourseErr(code=courseid.code, index=index))
+                        continue
+                    elif equiv.is_homogeneous and len(equiv.courses) >= 1:
+                        code = equiv.courses[0]
                     else:
                         ambiguous_codes.append(courseid.code)
                         sem_credits += courseid.credits
                         continue
                 else:
-                    course = self.courseinfo.course(courseid.code)
+                    code = courseid.code
+
+                course = self.courseinfo.try_course(code)
+                if course is None:
+                    out.add(UnknownCourseErr(code=code, index=index))
+                    continue
 
                 inst = self.classes[course.code]
                 self.diagnose(out, inst, course.deps)
@@ -113,10 +126,10 @@ class PlanContext:
     ):
         if details.is_available:
             # TODO: check for TAV semester
-            if not details.semestrality[inst.semester % 2]:
-                out.add(SemestralityWarn(code=inst.course.code, semester=inst.semester))
+            if not details.semestrality[inst.index.semester % 2]:
+                out.add(SemestralityWarn(code=inst.course.code, index=inst.index))
         else:
-            out.add(CourseUnavailableWarn(code=inst.course.code))
+            out.add(CourseUnavailableWarn(code=inst.course.code, index=inst.index))
 
     def check_max_credits(self, out: ValidationResult, semester: int, credits: int):
         if max_creds_err := SemesterErrHandler.check_error(
@@ -140,7 +153,7 @@ class PlanContext:
                 or isinstance(atom, (ReqSchool, ReqProgram, ReqCareer))
                 or (
                     isinstance(atom, ReqCourse)
-                    and not self.courseinfo.course(atom.code).is_available
+                    and not self.courseinfo.is_course_available(atom.code)
                 ),
             )
         )
@@ -159,7 +172,9 @@ class PlanContext:
         if isinstance(missing, Const):
             missing = simplify(fold_atoms(self, inst, expr, lambda atom, sat: sat))
         # Show this expression
-        out.add(RequirementErr(code=inst.course.code, missing=missing))
+        out.add(
+            RequirementErr(code=inst.course.code, index=inst.index, missing=missing)
+        )
 
 
 def is_satisfied(ctx: PlanContext, cl: CourseInstance, expr: Expr) -> bool:
@@ -172,7 +187,7 @@ def is_satisfied(ctx: PlanContext, cl: CourseInstance, expr: Expr) -> bool:
             ok = expr.op(ok, is_satisfied(ctx, cl, child))
         return ok
     if isinstance(expr, MinCredits):
-        return ctx.approved_credits[cl.semester] >= expr.min_credits
+        return ctx.approved_credits[cl.index.semester] >= expr.min_credits
     if isinstance(expr, ReqLevel):
         if ctx.plan.level is None:
             # TODO: Does everybody have a level?
@@ -191,9 +206,9 @@ def is_satisfied(ctx: PlanContext, cl: CourseInstance, expr: Expr) -> bool:
             return False
         req_cl = ctx.classes[expr.code]
         if expr.coreq:
-            return req_cl.semester <= cl.semester
+            return req_cl.index.semester <= cl.index.semester
         else:
-            return req_cl.semester < cl.semester
+            return req_cl.index.semester < cl.index.semester
     # assert isinstance(expr, Const)
     return expr.value
 
@@ -259,42 +274,12 @@ def strip_satisfied(
         return expr
 
 
-def is_course_known(courseinfo: CourseInfo, courseid: PseudoCourse) -> bool:
-    if isinstance(courseid, EquivalenceId):
-        return courseinfo.try_equiv(courseid.code) is not None
-    else:
-        return courseinfo.try_course(courseid.code) is not None
-
-
-def sanitize_plan(courseinfo: CourseInfo, out: ValidationResult, plan: ValidatablePlan):
-    unknown = False
-    for semester in plan.classes:
-        for courseid in semester:
-            if not is_course_known(courseinfo, courseid):
-                unknown = True
-
-    if unknown:
-        copy = plan.copy()
-        copy.classes = []
-        for semester in plan.classes:
-            new_sem: list[PseudoCourse] = []
-            for courseid in semester:
-                if is_course_known(courseinfo, courseid):
-                    new_sem.append(courseid)
-                else:
-                    out.add(UnknownCourseErr(code=courseid.code))
-            copy.classes.append(new_sem)
-        return copy
-    else:
-        return plan
-
-
 class SemestralityWarn(DiagnosticWarn):
+    index: ClassIndex
     code: str
-    semester: int
 
-    def course_code(self) -> Optional[str]:
-        return self.code
+    def course_index(self) -> Optional[ClassIndex]:
+        return self.index
 
     def message(self) -> str:
         return (
@@ -303,16 +288,17 @@ class SemestralityWarn(DiagnosticWarn):
         )
 
     def semester_type(self):
-        if self.semester % 2 == 0:
+        if self.index.semester % 2 == 0:
             return "primeros"
         return "segundos"
 
 
 class CourseUnavailableWarn(DiagnosticWarn):
+    index: ClassIndex
     code: str
 
-    def course_code(self) -> Optional[str]:
-        return self.code
+    def course_index(self) -> Optional[ClassIndex]:
+        return self.index
 
     def message(self) -> str:
         return (
@@ -335,9 +321,10 @@ class AmbiguousCoursesErr(DiagnosticErr):
 
 class CourseErr(DiagnosticErr, ABC):
     code: str
+    index: ClassIndex
 
-    def course_code(self) -> Optional[str]:
-        return self.code
+    def course_index(self) -> Optional[ClassIndex]:
+        return self.index
 
 
 class UnknownCourseErr(CourseErr):

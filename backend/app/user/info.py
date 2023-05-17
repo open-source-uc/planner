@@ -4,7 +4,7 @@ Definitions of basic student information.
 
 
 from typing import Optional
-from ..plan.plan import PseudoCourse
+from ..plan.course import PseudoCourse
 from pydantic import BaseModel
 
 
