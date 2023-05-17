@@ -6,7 +6,8 @@ import type { Cyear } from './Cyear';
 
 /**
  * Represents a curriculum specification.
- * This specification should uniquely specify a curriculum.
+ * This specification should uniquely identify a curriculum, although it contains no
+ * information about the curriculum itself.
  */
 export type CurriculumSpec = {
     cyear: Cyear;

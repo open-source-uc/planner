@@ -14,6 +14,7 @@ import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import down_arrow from '../../assets/down_arrow.svg'
 import 'react-toastify/dist/ReactToastify.css'
+import DebugGraph from '../../components/DebugGraph'
 
 export type PseudoCourseId = ConcreteId | EquivalenceId
 export type PseudoCourseDetail = Course | Equivalence
@@ -43,12 +44,10 @@ enum PlannerStatus {
   READY = 'READY',
 }
 
-const findCourseSuperblock = (validationResults: FlatValidationResult | null, code: string): string | null => {
+const findCourseSuperblock = (validationResults: FlatValidationResult | null, semester: number, index: number): string | null => {
   if (validationResults == null) return null
-  for (const c in validationResults.course_superblocks) {
-    if (c === code) return validationResults.course_superblocks[c].normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(' ', '').split(' ')[0]
-  }
-  return null
+  const rawSuperblock = validationResults.course_superblocks[semester][index]
+  return rawSuperblock.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(' ', '').split(' ')[0]
 }
 
 const isApiError = (err: any): err is ApiError => {
@@ -309,15 +308,15 @@ const Planner = (): JSX.Element => {
 
   async function getCourseDetails (courses: PseudoCourseId[]): Promise<void> {
     console.log('getting Courses Details...')
-    const coursesCodes = []
-    const equivalenceCodes = []
+    const coursesCodes = new Set<string>()
+    const equivalenceCodes = new Set<string>()
     for (const courseid of courses) {
-      if (courseid.is_concrete === true) { coursesCodes.push(courseid.code) } else { equivalenceCodes.push(courseid.code) }
+      if (courseid.is_concrete === true) { coursesCodes.add(courseid.code) } else { equivalenceCodes.add(courseid.code) }
     }
     try {
       const promises = []
-      if (coursesCodes.length > 0) promises.push(DefaultService.getCourseDetails(coursesCodes))
-      if (equivalenceCodes.length > 0) promises.push(DefaultService.getEquivalenceDetails(equivalenceCodes))
+      if (coursesCodes.size > 0) promises.push(DefaultService.getCourseDetails(Array.from(coursesCodes)))
+      if (equivalenceCodes.size > 0) promises.push(DefaultService.getEquivalenceDetails(Array.from(equivalenceCodes)))
       const courseDetails = await Promise.all(promises)
       const dict = courseDetails.flat().reduce((acc: { [code: string]: Course | Equivalence }, curr: Course | Equivalence) => {
         acc[curr.code] = curr
@@ -339,9 +338,9 @@ const Planner = (): JSX.Element => {
       }
       setValidationResult(response)
       setPlannerStatus(PlannerStatus.READY)
-      // Es necesario hacer una copia profunda del plan para comparar, pues si se copia el objeto entero
-      // entonces la copia es modificada junto al objeto original. Lo ideal seria usar una librearia para esto en el futuro
-      previousClasses.current = JSON.parse(JSON.stringify(validatablePlan.classes))
+      // No deberia ser necesario hacer una copia profunda, porque los planes debieran ser inmutables (!) ya que React lo requiere
+      // Al contrario, si se vuelve necesario hacer una copia profunda significa que hay un bug en algun lado porque se estan mutando datos que debieran ser inmutables.
+      previousClasses.current = validatablePlan.classes
     } catch (err) {
       handleErrors(err)
     }
@@ -568,8 +567,8 @@ const Planner = (): JSX.Element => {
       newCurriculum.major = majorCode
       newClasses.forEach((sem, idx) => {
         if (idx >= prev.next_semester) {
-          newClasses[idx] = sem.filter((c) => {
-            if (findCourseSuperblock(validationResult, c.code) !== 'Major') {
+          newClasses[idx] = sem.filter((c, i) => {
+            if (findCourseSuperblock(validationResult, idx, i) !== 'Major') {
               return c
             }
             return false
@@ -580,8 +579,8 @@ const Planner = (): JSX.Element => {
         newCurriculum.minor = undefined
         newClasses.forEach((sem, idx) => {
           if (idx >= prev.next_semester) {
-            newClasses[idx] = sem.filter((c) => {
-              if (findCourseSuperblock(validationResult, c.code) !== 'Minor') {
+            newClasses[idx] = sem.filter((c, i) => {
+              if (findCourseSuperblock(validationResult, idx, i) !== 'Minor') {
                 return c
               }
               return false
@@ -601,8 +600,8 @@ const Planner = (): JSX.Element => {
       newCurriculum.minor = minor.code
       newClasses.forEach((sem, idx) => {
         if (idx >= prev.next_semester) {
-          newClasses[idx] = sem.filter((c) => {
-            if (findCourseSuperblock(validationResult, c.code) !== 'Minor') {
+          newClasses[idx] = sem.filter((c, i) => {
+            if (findCourseSuperblock(validationResult, idx, i) !== 'Minor') {
               return c
             }
             return false
@@ -621,8 +620,8 @@ const Planner = (): JSX.Element => {
       newCurriculum.title = title.code
       newClasses.forEach((sem, idx) => {
         if (idx >= prev.next_semester) {
-          newClasses[idx] = sem.filter((c) => {
-            if (findCourseSuperblock(validationResult, c.code) !== 'Title') {
+          newClasses[idx] = sem.filter((c, i) => {
+            if (findCourseSuperblock(validationResult, idx, i) !== 'Title') {
               return c
             }
             return false
@@ -664,7 +663,7 @@ const Planner = (): JSX.Element => {
             is_warning: false,
             message: `Error interno: ${String(err)}`
           }],
-          course_superblocks: {}
+          course_superblocks: validatablePlan.classes.map(sem => sem.map(c => ''))
         })
       })
     }
@@ -684,8 +683,9 @@ const Planner = (): JSX.Element => {
         let classesChanged = validatablePlan.classes.length !== previousClasses.current.length
         if (!classesChanged) {
           for (let idx = 0; idx < validatablePlan.classes.length; idx++) {
-            const cur = [...validatablePlan.classes[idx]].sort((a, b) => a.code.localeCompare(b.code))
-            const prev = [...previousClasses.current[idx]].sort((a, b) => a.code.localeCompare(b.code))
+            // Note: because the order of classes within a semester is now meaningful, we need to revalidate if changing the order
+            const cur = validatablePlan.classes[idx]
+            const prev = previousClasses.current[idx]
             if (JSON.stringify(cur) !== JSON.stringify(prev)) {
               classesChanged = true
               break
@@ -701,6 +701,7 @@ const Planner = (): JSX.Element => {
 
   return (
     <div className={`w-full h-full p-3 flex flex-grow overflow-hidden flex-row ${(plannerStatus !== 'ERROR' && plannerStatus !== 'READY') ? 'cursor-wait' : ''}`}>
+      <DebugGraph validatablePlan={validatablePlan} />
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={async (selection?: string) => await closeModal(selection)}/>
       <AlertModal title={popUpAlert.title} desc={popUpAlert.desc} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}/>
       {plannerStatus === 'LOADING' && (

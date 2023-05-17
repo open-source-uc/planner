@@ -3,13 +3,14 @@ Fill the slots of a curriculum with courses, making sure that there is no overla
 within a block and respecting exclusivity rules.
 """
 
-from typing import Optional, Union
+from typing import Optional
 
-from ...plan import EquivalenceId, PseudoCourse
+from ...plan import ClassIndex
+from ...course import ConcreteId, PseudoCourse
 
 from ...courseinfo import CourseInfo
-from .tree import CourseList, Curriculum, Node
-from dataclasses import dataclass
+from .tree import Leaf, Curriculum, Block
+from dataclasses import dataclass, field
 
 
 # Print debug messages when solving a curriculum.
@@ -17,221 +18,328 @@ DEBUG_SOLVE = False
 
 
 @dataclass
-class SolvedBlock:
-    # Name of the block or subblock.
-    name: Optional[str]
-    # Capacity of the block or subblock.
-    # By default, nodes (blocks or subblocks) have their capacity set as the sum of the
-    # capacities of their children, but capacity can also be set manually (eg. only 10
-    # credits of 5-credit-DPT courses)
+class Edge:
     cap: int
-    # How much capacity is satisfied.
-    # If `flow == cap`, then the node is entirely satisfied.
     flow: int
-    # Whether the node is a simple `and` node.
-    # This happens when the capacity is exactly the sum of the capacities of the nodes'
-    # children.
-    is_and: bool
-    # The name of the superblock (bloque academico) that this block is a member of.
-    superblock: str
-    # The child nodes connected to this node.
-    children: list["SolvedNode"]
-
-    def __repr__(self):
-        children: list[str] = []
-        for child in self.children:
-            children.append(f"{child}")
-        childrenstr = f": {', '.join(children)}" if children else ""
-        return f"({self.name}[{self.flow}/{self.cap}]{childrenstr})"
+    src: int
+    dst: int
+    rev: int
+    cost: int = 0
 
 
 @dataclass
-class SolvedCourse:
-    # Name of this equivalency.
-    name: Optional[str]
-    # Course codes.
-    codes: list[str]
-    # The code of the equivalence that satisfies this block, if any.
-    equiv_code: Optional[str]
-    # Maximum sum of credits that could potentially be achieved.
-    cap: int
-    # How many credits are actually taken.
-    flow: int
-    # The name of the superblock (bloque academico) that this course is a member of.
-    superblock: str
-    # Whether this course is exclusive or not.
-    # Each taken course can only count towards 1 exclusive requirement.
-    # However, it can also count toward any amount of non-exclusive requirements.
-    exclusive: bool
+class Node:
+    # Either:
+    # - A curriculum `Block`
+    # - A course, with a layer id `str`, a semester index and a position within that
+    #   semester.
+    # - No origin (eg. the virtual sink node)
+    origin: Block | tuple[str, ClassIndex] | None = None
+    outgoing: list[Edge] = field(default_factory=list)
+    incoming: list[Edge] = field(default_factory=list)
 
-    def __repr__(self):
-        if len(self.codes) == 1:
-            course = self.codes[0]
-        elif len(self.codes) <= 5:
-            course = f"[{', '.join(self.codes)}]"
-        else:
-            course = f"[{len(self.codes)} courses]"
-        if self.flow < self.cap or self.cap != 10:
-            credits = f"[{self.flow}/{self.cap}]"
-        else:
-            credits = ""
-        return f"{course}{credits}"
+    def flow(self) -> int:
+        f = 0
+        for edge in self.outgoing:
+            if edge.flow >= 0:
+                f += edge.flow
+        return f
 
-
-SolvedNode = Union[SolvedBlock, SolvedCourse]
+    def cap(self) -> int:
+        c = 0
+        for edge in self.outgoing:
+            c += edge.cap
+        return c
 
 
 @dataclass
+class TakenCourse:
+    # The courseid of the course.
+    course: PseudoCourse
+    # The amount of credits of the course.
+    # Must correspond to `course`.
+    credits: int
+    # Where in the plan was this course taken.
+    index: ClassIndex
+    # Flattened index indicating where along the plan this course was taken.
+    flat_index: int
+    # `0` if this course is unique (by code) in the plan.
+    # Otherwise, increments by one per every repetition.
+    repeat_index: int
+
+
+@dataclass
+class TakenCourses:
+    flat: list[TakenCourse]
+    mapped: dict[str, list[TakenCourse]]
+
+
 class SolvedCurriculum:
-    blocks: list[SolvedNode]
-    course_assignments: dict[str, SolvedCourse]
-    unassigned_codes: list[str]
+    # List of nodes.
+    # The ID of each node is its index in this list.
+    nodes: list[Node]
+    # Flat list of edges.
+    edges: list[Edge]
+    # The id of the universal source
+    source: int
+    # The id of the universal sink
+    sink: int
+    # The root curriculum.
+    root: int
+    # A dictionary from layer ids to a (list of node ids for each course).
+    courses: dict[str, list[Optional[int]]]
 
+    def __init__(self):
+        self.nodes = [Node(), Node()]
+        self.edges = []
+        self.source = 0
+        self.sink = 1
+        self.root = 1
+        self.courses = {}
 
-def _calc_taken_courses(
-    done_courses: list[PseudoCourse], courseinfo: CourseInfo
-) -> dict[str, int]:
-    taken_courses: dict[str, int] = {}
-    for courseid in done_courses:
-        max_creds = None
-        if isinstance(courseid, EquivalenceId):
-            creds = courseid.credits
+    def add(self, node: Node) -> int:
+        id = len(self.nodes)
+        self.nodes.append(node)
+        return id
+
+    def connect(self, src_id: int, dst_id: int, cap: int):
+        src = self.nodes[src_id]
+        dst = self.nodes[dst_id]
+        edge_fw = Edge(cap=cap, flow=0, src=src_id, dst=dst_id, rev=len(dst.outgoing))
+        edge_rev = Edge(cap=0, flow=0, src=dst_id, dst=src_id, rev=len(src.outgoing))
+        src.outgoing.append(edge_fw)
+        dst.incoming.append(edge_fw)
+        dst.outgoing.append(edge_rev)
+        src.incoming.append(edge_rev)
+        self.edges.append(edge_fw)
+        self.edges.append(edge_rev)
+
+    def add_course(self, layer_id: str, taken: TakenCourses, c: TakenCourse) -> int:
+        layer: list[Optional[int]]
+        if layer_id in self.courses:
+            layer = self.courses[layer_id]
         else:
-            creds = courseinfo.course(courseid.code).credits
+            layer = [None for _c in taken.flat]
+            self.courses[layer_id] = layer
+        id = layer[c.flat_index]
+        if id is not None:
+            return id
+        id = self.add(Node(origin=(layer_id, c.index)))
+        layer[c.flat_index] = id
+        self.connect(self.source, id, c.credits)
+        return id
+
+    def dump_graphviz(self, taken: list[list[PseudoCourse]]) -> str:  # noqa: C901
+        """
+        Dump the graph representation as a Graphviz DOT file.
+        """
+        out = "digraph {\n"
+        for id, node in enumerate(self.nodes):
+            if id == self.source or id == self.sink:
+                continue
+            elif id == self.root:
+                label = "Root"
+            elif isinstance(node.origin, Block):
+                label = f"{node.origin.name or f'b{id}'}"
+                if len(node.origin.fill_with) > 0:
+                    label += f"\n({len(node.origin.fill_with)} recommendations)"
+            elif isinstance(node.origin, tuple):
+                layer, index = node.origin
+                label = taken[index.semester][index.position].code
+                if layer != "":
+                    label = f"{label}({layer})"
+            else:
+                label = f"v{id}"
+            fountain = 0
+            for edge in node.outgoing:
+                if edge.dst == self.sink:
+                    fountain -= edge.cap
+            for edge in node.incoming:
+                if edge.src == self.source:
+                    fountain += edge.cap
+            if fountain > 0:
+                label += f" +{fountain}"
+            elif fountain < 0:
+                label += f" {fountain}"
+            out += f'  v{id} [label="{label}"];\n'
+        for edge in self.edges:
+            if edge.cap == 0 or edge.src == self.source or edge.dst == self.sink:
+                continue
+            attrs = f'label="{edge.flow}/{edge.cap}"'
+            if edge.flow == 0:
+                attrs += " style=dotted"
+            out += f"  v{edge.src} -> v{edge.dst} [{attrs}];\n"
+        out += "}"
+        return out
+
+
+def _connect_course(
+    g: SolvedCurriculum, block: Leaf, taken: TakenCourses, c: TakenCourse, superid: int
+):
+    max_multiplicity = block.codes[c.course.code]
+    if max_multiplicity is not None and c.repeat_index >= max_multiplicity:
+        # Cannot connect to more than `max_multiplicity` courses at once
+        return
+    subid = g.add_course(block.layer, taken, c)
+    g.connect(subid, superid, c.credits)
+
+
+def _build_visit(g: SolvedCurriculum, taken: TakenCourses, block: Block) -> int:
+    superid = g.add(Node(origin=block))
+    if isinstance(block, Leaf):
+        # A list of courses
+        # TODO: Prioritize edges just like SIDING
+
+        # For performance, iterate through the taken courses or through the accepted
+        # codes, whichever is shorter
+        if len(block.codes) < len(taken.flat):
+            # There is a small amount of courses in this block
+            # Iterate through this list, in taken order
+            minitaken: list[TakenCourse] = []
+            for code in block.codes:
+                if code in taken.mapped:
+                    minitaken.extend(taken.mapped[code])
+            minitaken.sort(key=lambda c: c.flat_index)
+            for c in minitaken:
+                _connect_course(g, block, taken, c, superid)
+        else:
+            # There are way too many codes in this block
+            # Iterate through taken courses instead
+            for c in taken.flat:
+                if c.course.code in block.codes:
+                    _connect_course(g, block, taken, c, superid)
+    else:
+        # A combination of blocks
+        for c in block.children:
+            subid = _build_visit(g, taken, c)
+            g.connect(subid, superid, c.cap)
+    return superid
+
+
+def _build_graph(
+    courseinfo: CourseInfo,
+    curriculum: Curriculum,
+    taken_semesters: list[list[PseudoCourse]],
+) -> SolvedCurriculum:
+    """
+    Take a curriculum prototype and a specific set of taken courses, and build a
+    solvable graph that represents this curriculum.
+    """
+
+    taken = TakenCourses(flat=[], mapped={})
+    for sem_i, sem in enumerate(taken_semesters):
+        for i, c in sorted(enumerate(sem)):
+            if isinstance(c, ConcreteId) and c.equivalence is not None:
+                # TODO: Right now we are forcing concretized equivalences to count as
+                #   the equivalence instead of as the concrete course
+                #   Instead, we could count them as concrete courses, but give priority
+                #   to the corresponding equivalences
+                c = c.equivalence
+            creds = courseinfo.get_credits(c)
+            if creds is None:
+                continue
             if creds == 0:
-                # To allow for zero-credit courses to still be validated, a single
-                # phantom credit is given to zero-credit courses
+                # Assign 1 ghost credit to 0-credit courses
+                # Kind of a hack, but works pretty well
+                # The curriculum definition must correspondingly also consider
+                # 0-credit courses to have 1 ghost credit
                 creds = 1
-            # TODO: Cursos de seleccion deportiva se pueden tomar 2 veces y
-            # contar para el avance curricular
-            max_creds = creds
-        new_creds = taken_courses.get(courseid.code, 0) + creds
-        if max_creds and new_creds > max_creds:
-            new_creds = max_creds
-        taken_courses[courseid.code] = new_creds
-    return taken_courses
-
-
-class CurriculumSolver:
-    taken_courses: dict[str, int]
-    curriculum: Curriculum
-    courseinfo: CourseInfo
-
-    course_assignments: dict[str, SolvedCourse]
-
-    def __init__(
-        self,
-        curriculum: Curriculum,
-        courseinfo: CourseInfo,
-        done_courses: list[PseudoCourse],
-    ):
-        self.taken_courses = _calc_taken_courses(done_courses, courseinfo)
-        self.curriculum = curriculum
-        self.courseinfo = courseinfo
-        self.course_assignments = {}
-
-    def walk(self, node: Node, exclusive: bool) -> SolvedNode:
-        if isinstance(node, CourseList):
-            return SolvedCourse(
-                name=node.name,
-                codes=node.codes,
-                equiv_code=node.equivalence_code,
-                cap=node.cap,
-                flow=0,
-                exclusive=exclusive,
-                superblock=node.superblock,
+            repetitions = taken.mapped.setdefault(c.code, [])
+            c = TakenCourse(
+                course=c,
+                credits=creds,
+                index=ClassIndex(semester=sem_i, position=i),
+                flat_index=len(taken.flat),
+                repeat_index=len(repetitions),
             )
-        else:
-            if node.exclusive is not None:
-                exclusive = node.exclusive
-            solved_children: list[SolvedNode] = []
-            is_and = True
-            cap = 0
-            for child in node.children:
-                solved_child = self.walk(child, exclusive)
-                cap += solved_child.cap
-                solved_children.append(solved_child)
-            if node.cap is not None:
-                if node.cap != cap:
-                    is_and = False
-                cap = node.cap
-            return SolvedBlock(
-                name=node.name,
-                cap=cap,
-                flow=0,
-                children=solved_children,
-                is_and=is_and,
-                superblock=node.superblock,
-            )
+            repetitions.append(c)
+            taken.flat.append(c)
 
-    def try_assign_course(self, node: SolvedCourse, course_code: str) -> int:
-        if course_code not in self.taken_courses:
-            # Course not taken by student
-            return 0
-        if node.exclusive and course_code in self.course_assignments:
-            # Course already assigned to another block
-            return 0
-        subflow = self.taken_courses[course_code]
-        node.flow += subflow
-        if node.exclusive:
-            self.course_assignments[course_code] = node
-            if DEBUG_SOLVE:
-                print(f"course {course_code} assigned to {node.name}")
-        return subflow
+    g = SolvedCurriculum()
+    g.root = _build_visit(g, taken, curriculum.root)
+    g.connect(g.root, g.sink, curriculum.root.cap)
+    return g
 
-    def assign(self, node: SolvedNode, flow_cap: Optional[int]):
-        node_cap = node.cap
-        if node_cap == 0:
-            node_cap = 1
-        if flow_cap is None or node_cap < flow_cap:
-            flow_cap = node_cap
-        if isinstance(node, SolvedBlock):
-            for child in node.children:
-                self.assign(child, flow_cap)
-                node.flow += child.flow
-                flow_cap -= child.flow
-        else:
-            if flow_cap > 0 and node.equiv_code is not None:
-                flow_cap -= self.try_assign_course(node, node.equiv_code)
-            for course_code in node.codes:
-                if flow_cap <= 0:
-                    # No more courses are needed
-                    break
-                # Try to assign this course to the current block
-                flow_cap -= self.try_assign_course(node, course_code)
-            if DEBUG_SOLVE and flow_cap > 0:
-                codes = (
-                    f"{len(node.codes)} courses"
-                    if len(node.codes) > 10
-                    else " ".join(node.codes)
-                )
-                print(f"node {node.name} with courses {codes} left unsatisfied")
 
-    def solve(self) -> SolvedCurriculum:
-        solved: list[SolvedNode] = []
-        for block in self.curriculum.nodes:
-            solved_block = self.walk(block, True)
-            solved.append(solved_block)
-        for block in solved:
-            self.assign(block, None)
+INFINITY: int = 10**18
 
-        unassigned: list[str] = []
-        for course in self.taken_courses.keys():
-            if course not in self.course_assignments:
-                unassigned.append(course)
-                if DEBUG_SOLVE:
-                    print(f"course {course} left unassigned")
 
-        return SolvedCurriculum(
-            blocks=solved,
-            course_assignments=self.course_assignments,
-            unassigned_codes=unassigned,
-        )
+def _compute_shortest_path(
+    g: SolvedCurriculum, src: int, dst: int
+) -> Optional[list[Edge]]:
+    # Bellman-Ford
+    n = len(g.nodes)
+    costs = [INFINITY for _i in range(n)]
+    costs[src] = 0
+    parent: list[Optional[Edge]] = [None for _i in range(n)]
+    for _stage in range(n - 1):
+        stop = True
+        for edge in g.edges:
+            if edge.flow < edge.cap and costs[edge.src] < INFINITY:
+                new_cost = costs[edge.src] + edge.cost
+                if new_cost < costs[edge.dst]:
+                    costs[edge.dst] = new_cost
+                    parent[edge.dst] = edge
+                    stop = False
+        if stop:
+            break
+
+    # Extract path (in reversed order, but who cares)
+    if costs[dst] >= INFINITY:
+        return None
+    path: list[Edge] = []
+    cur = dst
+    while True:
+        edge = parent[cur]
+        if edge is None:
+            break
+        path.append(edge)
+        cur = edge.src
+    return path
+
+
+def _solve_graph(g: SolvedCurriculum):
+    # Iteratively improve flow
+    while True:
+        # Find shortest path from source to sink
+        path = _compute_shortest_path(g, g.source, g.sink)
+        if path is None:
+            break
+
+        # Find the maximum flow that can go through the path
+        flow = INFINITY
+        for edge in path:
+            s = edge.cap - edge.flow
+            if s < flow:
+                flow = s
+
+        # Apply flow to path
+        for edge in path:
+            edge.flow += flow
+            g.nodes[edge.dst].outgoing[edge.rev].flow -= flow
 
 
 def solve_curriculum(
-    courseinfo: CourseInfo,
-    curriculum: Curriculum,
-    taken_courses: list[PseudoCourse],
+    courseinfo: CourseInfo, curriculum: Curriculum, taken: list[list[PseudoCourse]]
 ) -> SolvedCurriculum:
-    return CurriculumSolver(curriculum, courseinfo, taken_courses).solve()
+    # Take the curriculum blueprint, and produce a graph for this student
+    g = _build_graph(courseinfo, curriculum, taken)
+    # Solve the flow problem on the produced graph
+    _solve_graph(g)
+    # Make sure that there is no split flow (ie. there is no course that splits its
+    # outgoing flow between two blocks)
+    # TODO: Do something about this edge case
+    #   Solving this problem is NP-complete, but it is such an edge case that we can
+    #   probably get away by trying all possible paths the split flow could take.
+    for i, node in enumerate(g.nodes):
+        if i == g.source:
+            continue
+        nonzero = 0
+        for edge in node.outgoing:
+            if edge.flow > 0:
+                nonzero += 1
+        if nonzero > 1:
+            raise Exception(
+                f"flow solution produced invalid split-flow: {g.dump_graphviz(taken)}"
+            )
+    return g

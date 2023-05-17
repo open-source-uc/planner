@@ -8,6 +8,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   const [selectedCourse, setSelectedCourse] = useState<string>()
 
   async function getCourseDetails (coursesCodes: string[]): Promise<void> {
+    if (coursesCodes.length === 0) return
     const response = await DefaultService.getCourseDetails(coursesCodes)
     // response = response.filter(course => course.semestrality_first || course.semestrality_second)
     setCourses([...courses, ...response])

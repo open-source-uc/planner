@@ -14,12 +14,11 @@ interface PlanBoardProps {
   validationResult: FlatValidationResult | null
 }
 
-const findCourseSuperblock = (validationResults: FlatValidationResult | null, code: string): string | null => {
+const findCourseSuperblock = (validationResults: FlatValidationResult | null, semester: number, index: number): string | null => {
   if (validationResults == null) return null
-  for (const c in validationResults.course_superblocks) {
-    if (c === code) return validationResults.course_superblocks[c].normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(' ', '').split(' ')[0]
-  }
-  return null
+  if (semester >= validationResults.course_superblocks.length || index >= validationResults.course_superblocks[semester].length) return null
+  const rawSuperblock = validationResults.course_superblocks[semester][index]
+  return rawSuperblock.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(' ', '').split(' ')[0]
 }
 
 /**
@@ -57,6 +56,8 @@ const PlanBoard = ({ classesGrid, classesDetails, setPlan, openModal, addCourse,
         if (semester - prev.classes.length > 0) newClasses.push([])
         newClasses.push([])
       }
+      newClasses[semester] = [...newClasses[semester]]
+      newClasses[drag.semester] = [...newClasses[drag.semester]]
       newClasses[semester].splice(index, 0, prev.classes[drag.semester][dragIndex])
       if (semester === drag.semester && index < dragIndex) {
         newClasses[drag.semester].splice(dragIndex + 1, 1)
@@ -85,11 +86,11 @@ const PlanBoard = ({ classesGrid, classesDetails, setPlan, openModal, addCourse,
                   isDragging={(e: boolean) => setIsDragging(e)}
                   handleMove={(dragCourse: Course & { semester: number }) => moveCourse(semester, dragCourse, index)}
                   remCourse={() => remCourse(semester, course.code)}
-                  courseBlock={findCourseSuperblock(validationResult, course.code)}
+                  courseBlock={findCourseSuperblock(validationResult, semester, index)}
                   openSelector={() => { if ('credits' in course) openModal(course, semester, index); else openModal(course.equivalence, semester, index) }}
                   hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
-                  hasError={validationResult?.diagnostics?.find((e) => e.course_code === course.code && !e.is_warning) != null}
-                  hasWarning={validationResult?.diagnostics?.find((e) => e.course_code === course.code && e.is_warning) != null}
+                  hasError={validationResult?.diagnostics?.find((e) => e.course_index?.semester === semester && e.course_index?.position === index && !e.is_warning) != null}
+                  hasWarning={validationResult?.diagnostics?.find((e) => e.course_index?.semester === semester && e.course_index?.position === index && e.is_warning) != null}
                 />
               ))}
               {!isDragging && <div className="h-10 mx-2 bg-slate-300 card">

@@ -104,13 +104,3 @@ model Curriculum {
 
   @@unique([cyear, major, minor, title])
 }
-
-model PlanRecommendation {
-  cyear            String
-  major            String
-  minor            String
-  title            String
-  recommended_plan Json
-
-  @@unique([cyear, major, minor, title])
-}

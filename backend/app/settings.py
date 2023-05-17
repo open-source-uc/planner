@@ -8,7 +8,7 @@ from pydantic import BaseSettings, Field, SecretStr
 #   environment variable), so then we would have to make sure that the 2 ways of
 #   loading the `.env` never diverge.
 # - Another solution is this hack, but it is ugly.
-from .database import prisma  # pyright: reportUnusedImport = false, # noqa: F401
+from .database import prisma  # pyright: ignore[reportUnusedImport], # noqa: F401
 
 
 class Settings(BaseSettings):
