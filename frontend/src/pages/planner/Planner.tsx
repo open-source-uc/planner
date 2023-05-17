@@ -408,6 +408,55 @@ const Planner = (): JSX.Element => {
     setIsModalOpen(true)
   }
 
+  function remCourse (semIdx: number, code: string): void {
+    if (validatablePlan === null) return
+    let idx = -1
+    for (let i = 0; i < validatablePlan.classes[semIdx].length; i++) {
+      if (validatablePlan.classes[semIdx][i].code === code) {
+        idx = i
+        break
+      }
+    }
+    if (idx === -1) return
+    setValidatablePlan(prev => {
+      if (prev === null) return prev
+      const newClases = prev.classes
+      newClases[semIdx].splice(idx, 1)
+      while (newClases[newClases.length - 1].length === 0) {
+        newClases.pop()
+      }
+      return { ...prev, classes: newClases }
+    })
+  }
+
+  function moveCourse (drag: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }, semester: number, index: number): void {
+    if (validatablePlan === null) {
+      return
+    }
+    setValidatablePlan(prev => {
+      if (prev === null) return prev
+      if (drag.is_concrete === true && semester !== drag.semester && semester < prev.classes.length && prev.classes[semester].map(course => course.code).includes(drag.code)) {
+        toast.error('No se puede tener dos ramos iguales en un mismo semestre')
+        return prev
+      }
+      const newClassesGrid = prev.classes
+      if (semester - newClassesGrid.length >= 0) {
+        if (semester - newClassesGrid.length > 0) newClassesGrid.push([])
+        newClassesGrid.push([])
+      }
+      newClassesGrid[semester].splice(index, 0, newClassesGrid[drag.semester][drag.index])
+      if (semester === drag.semester && index < drag.index) {
+        newClassesGrid[drag.semester].splice(drag.index + 1, 1)
+      } else {
+        newClassesGrid[drag.semester].splice(drag.index, 1)
+      }
+      while (newClassesGrid[newClassesGrid.length - 1].length === 0) {
+        newClassesGrid.pop()
+      }
+      return { ...prev, classes: newClassesGrid }
+    })
+  }
+
   async function loadCurriculumsData (cYear: string, cMajor?: string): Promise<void> {
     const [majors, minors, titles] = await Promise.all([
       DefaultService.getMajors(cYear),
@@ -667,22 +716,7 @@ const Planner = (): JSX.Element => {
       if (curriculumChanged) {
         setPlannerStatus(PlannerStatus.LOADING)
       } else {
-        // dont validate if the classes are rearranging the same semester at previous validation
-        let classesChanged = validatablePlan.classes.length !== previousClasses.current.length
-        if (!classesChanged) {
-          for (let idx = 0; idx < validatablePlan.classes.length; idx++) {
-            // Note: because the order of classes within a semester is now meaningful, we need to revalidate if changing the order
-            const cur = validatablePlan.classes[idx]
-            const prev = previousClasses.current[idx]
-            if (JSON.stringify(cur) !== JSON.stringify(prev)) {
-              classesChanged = true
-              break
-            }
-          }
-        }
-        if (classesChanged) {
-          setPlannerStatus(PlannerStatus.VALIDATING)
-        }
+        setPlannerStatus(PlannerStatus.VALIDATING)
       }
     }
   }, [validatablePlan])
@@ -720,11 +754,9 @@ const Planner = (): JSX.Element => {
             <PlanBoard
               classesGrid={validatablePlan?.classes ?? null}
               classesDetails={courseDetails}
-              setClassesGrid={(newGrid: PseudoCourseId[][]) => setValidatablePlan(prev => {
-                if (prev === null) return prev
-                return { ...prev, classes: newGrid }
-              })}
+              moveCourse={moveCourse}
               openModal={openModal}
+              remCourse={remCourse}
               addCourse={addCourse}
               validating={plannerStatus !== 'READY'}
               validationResult={validationResult}
