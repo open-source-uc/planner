@@ -19,6 +19,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   const [promiseInstance, setPromiseInstance] = useState<CancelablePromise<any> | null>(null)
 
   function resetFilters (): void {
+    setSelectedCourse(undefined)
     setFilter({
       name: '',
       credits: '',
