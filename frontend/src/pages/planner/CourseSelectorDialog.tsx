@@ -37,7 +37,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   }
 
   async function getCourseDetails (coursesCodes: string[]): Promise<void> {
-    if (coursesCodes.length === 0 || loadingCoursesData) return
+    if (coursesCodes.length === 0) return
     setLoadingCoursesData(true)
 
     const promise = DefaultService.getCourseDetails(coursesCodes)
@@ -77,22 +77,25 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       setPromiseInstance(promise)
       const response = await promise
       setPromiseInstance(null)
-      const showCoursesCount = Object.keys(loadedCourses).filter(key => response[0].courses.includes(key)).length
-      if (showCoursesCount < response[0].courses.length && showCoursesCount < 10) {
-        await getCourseDetails(response[0].courses.splice(0, 20)).catch(err => console.log(err))
-      }
       setFilteredCodes(response[0].courses)
       setLoadingCoursesData(false)
     }
   }
 
   const handleScroll: React.EventHandler<React.SyntheticEvent<HTMLTableSectionElement>> = event => {
-    if (!open) return
+    if (!open || loadingCoursesData) return
     const { scrollTop, scrollHeight, clientHeight } = event.currentTarget
     if (scrollTop + clientHeight === scrollHeight && equivalence !== undefined) {
       getCourseDetails(filteredCodes.filter((code) => !Object.keys(loadedCourses).includes(code)).splice(0, 20)).catch(err => console.log(err))
     }
   }
+
+  useEffect(() => {
+    const showCoursesCount = Object.keys(loadedCourses).filter(key => filteredCodes.includes(key)).length
+    if (showCoursesCount < 10 && filteredCodes.length > 0) {
+      getCourseDetails(filteredCodes.filter((code) => !Object.keys(loadedCourses).includes(code)).splice(0, 20)).catch(err => console.log(err))
+    }
+  }, [filteredCodes])
 
   useEffect(() => {
     if (!open) {
@@ -101,7 +104,6 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       setLoadedCourses({})
     } else if (equivalence !== undefined) {
       setFilteredCodes(equivalence.courses)
-      getCourseDetails(equivalence.courses.slice(0, 20)).catch(err => console.log(err))
     }
   }, [open])
 
@@ -189,22 +191,22 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                   </tr>
                 </thead>
                 <tbody onScroll={handleScroll} className="bg-white relative rounded-b block flex-col items-center justify-between overflow-y-scroll h-72 w-full">
-                    { loadingCoursesData &&
-                    <tr className="fixed pr-10" style={{ height: 'inherit', width: 'inherit' }}><td className="bg-white w-full h-full flex "> <Spinner message='Cargando cursos...' /></td></tr>
-                    }
-                    {Object.entries(loadedCourses).filter(([key, course]) => filteredCodes.includes(key)).map(([code, course]) => (
-                      <tr key={code} className="flex mt-3 mx-3">
-                        <td className="w-8">
-                          <input className='cursor-pointer' id={code} type="radio" name="status" value={code} onChange={e => setSelectedCourse(e.target.value)}/>
-                        </td>
-                        <td className='w-20'>{code}</td>
-                        <td className='w-96'>{course.name}</td>
-                        <td className='w-8'>{course.credits}</td>
-                        <td className='w-52'>{course.school}</td>
-                        <th className="w-8"></th>
-                      </tr>
-                    ))}
-                </tbody>
+                  {loadingCoursesData &&
+                  <tr className="fixed pr-10" style={{ height: 'inherit', width: 'inherit' }}><td className="bg-white w-full h-full flex "> <Spinner message='Cargando cursos...' /></td></tr>
+                  }
+                  {Object.entries(loadedCourses).filter(([key, course]) => filteredCodes.includes(key)).map(([code, course]) => (
+                    <tr key={code} className="flex mt-3 mx-3">
+                      <td className="w-8">
+                        <input className='cursor-pointer' id={code} type="radio" name="status" value={code} onChange={e => setSelectedCourse(e.target.value)}/>
+                      </td>
+                      <td className='w-20'>{code}</td>
+                      <td className='w-96'>{course.name}</td>
+                      <td className='w-8'>{course.credits}</td>
+                      <td className='w-52'>{course.school}</td>
+                      <th className="w-8"></th>
+                    </tr>
+                  ))}
+                 </tbody>
               </table>
               <div className='right-0'>{Object.keys(loadedCourses).filter(key => filteredCodes.includes(key)).length} - {filteredCodes.length}</div>
               <div className='float-right mx-2 '>
