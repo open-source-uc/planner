@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import SemesterColumn from './SemesterColumn'
 import CourseCard from './CourseCard'
-import { Course, FlatValidationResult } from '../../../client'
+import { CourseDetails, FlatValidationResult } from '../../../client'
 import { PseudoCourseId, PseudoCourseDetail } from '../Planner'
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -40,14 +40,14 @@ const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCour
                 <SemesterColumn
                   key={semester}
                   semester={semester + 1}
-                  addEnd={(dragCourse: Course & { index: number, semester: number }) => moveCourse(dragCourse, semester, classes.length)}
+                  addEnd={(dragCourse: CourseDetails & { index: number, semester: number }) => moveCourse(dragCourse, semester, classes.length)}
                 >
                   {classes?.map((course: PseudoCourseId, index: number) => (
                     <CourseCard
                       key={index.toString() + course.code}
                       cardData={{ ...course, semester, index, ...classesDetails[course.code] }}
                       isDragging={(e: boolean) => setIsDragging(e)}
-                      handleMove={(dragCourse: Course & { index: number, semester: number }) => moveCourse(dragCourse, semester, index)}
+                      handleMove={(dragCourse: CourseDetails & { index: number, semester: number }) => moveCourse(dragCourse, semester, index)}
                       remCourse={() => remCourse(semester, course.code)}
                       courseBlock={findCourseSuperblock(validationResult, semester, index)}
                       openSelector={() => { if ('credits' in course) openModal(course, semester, index); else openModal(course.equivalence, semester, index) }}
@@ -65,12 +65,12 @@ const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCour
               <SemesterColumn
                 key={classesGrid.length }
                 semester={classesGrid.length + 1}
-                addEnd={(dragCourse: Course & { index: number, semester: number }) => moveCourse(dragCourse, classesGrid.length, 0)}
+                addEnd={(dragCourse: CourseDetails & { index: number, semester: number }) => moveCourse(dragCourse, classesGrid.length, 0)}
               />
               <SemesterColumn
                 key={classesGrid.length + 1}
                 semester={classesGrid.length + 2}
-                addEnd={(dragCourse: Course & { index: number, semester: number }) => moveCourse(dragCourse, classesGrid.length + 1, 0)}
+                addEnd={(dragCourse: CourseDetails & { index: number, semester: number }) => moveCourse(dragCourse, classesGrid.length + 1, 0)}
               />
             </>}
             </>

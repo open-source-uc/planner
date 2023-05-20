@@ -1,12 +1,12 @@
 import { useState, useEffect, Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
-import { DefaultService, Equivalence, CourseOverview, CancelablePromise } from '../../client'
+import { DefaultService, EquivDetails, CourseOverview, CancelablePromise } from '../../client'
 import { Spinner } from '../../components/Spinner'
 
 // 'Acad Inter de Filosofía': Escuela que sale en buscacursos pero no tiene cursos  (ta raro)
 const schoolOptions = ['Actividades Universitarias', 'Actuación', 'Agronomía e Ing. Forestal', 'Antropología', 'Arquitectura', 'Arte', 'Astrofísica', 'Bachillerato', 'CARA', 'Ciencia Política', 'Ciencias Biológicas', 'Ciencias de la...Ingeniería Biológica y Médica', 'Instituto de Éticas Aplicadas', 'Letras', 'Matemáticas', 'Medicina', 'Medicina Veterinaria', 'Música', 'Odontología', 'Psicología', 'Química', 'Química y Farmacia', 'Requisito Idioma', 'Sociología', 'Teología', 'Villarrica', 'Trabajo Social']
 
-const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Equivalence, open: boolean, onClose: Function }): JSX.Element => {
+const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: EquivDetails, open: boolean, onClose: Function }): JSX.Element => {
   const [loadedCourses, setLoadedCourses] = useState<{ [code: string]: CourseOverview }>({})
   const [filteredCodes, setFilteredCodes] = useState<string[]>([])
   const [loadingCoursesData, setLoadingCoursesData] = useState(false)
@@ -57,7 +57,12 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     const crd = filter.credits === '' ? undefined : parseInt(filter.credits)
     if (promiseInstance != null) promiseInstance.cancel()
     if (equivalence === undefined) {
-      const promise = DefaultService.searchCourses(filter.name, crd, filter.school)
+      const promise = DefaultService.searchCourseDetails({
+        text: filter.name,
+        credits: crd,
+        school: filter.school,
+        available: true
+      })
       setPromiseInstance(promise)
       const response = await promise
       setPromiseInstance(null)
@@ -72,15 +77,22 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       setLoadedCourses(dict)
       setLoadingCoursesData(false)
     } else {
-      const promise = DefaultService.getEquivalenceDetails([equivalence.code], filter.name, crd, filter.school)
+      const promise = DefaultService.searchCourseCodes({
+        text: filter.name,
+        credits: crd,
+        school: filter.school,
+        available: true,
+        equiv: equivalence.code
+      })
       setPromiseInstance(promise)
       const response = await promise
       setPromiseInstance(null)
-      const showCoursesCount = Object.keys(loadedCourses).filter(key => response[0].courses.includes(key)).length
-      if (showCoursesCount < response[0].courses.length && showCoursesCount < 10) {
-        await getCourseDetails(response[0].courses.splice(0, 20)).catch(err => console.log(err))
+      const responseCourses = new Set<string>(response)
+      const showCoursesCount = Object.keys(loadedCourses).filter(key => responseCourses.has(key)).length
+      if (showCoursesCount < response.length && showCoursesCount < 10) {
+        await getCourseDetails(response.splice(0, 20)).catch(err => console.log(err))
       }
-      setFilteredCodes(response[0].courses)
+      setFilteredCodes(response)
       setLoadingCoursesData(false)
     }
   }

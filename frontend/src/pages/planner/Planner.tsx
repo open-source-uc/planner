@@ -9,7 +9,7 @@ import { Fragment, useState, useEffect, useRef } from 'react'
 import { Listbox, Transition } from '@headlessui/react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
+import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, CourseDetails, EquivDetails, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import down_arrow from '../../assets/down_arrow.svg'
@@ -17,9 +17,9 @@ import 'react-toastify/dist/ReactToastify.css'
 import DebugGraph from '../../components/DebugGraph'
 
 export type PseudoCourseId = ConcreteId | EquivalenceId
-export type PseudoCourseDetail = Course | Equivalence
+export type PseudoCourseDetail = CourseDetails | EquivDetails
 
-type ModalData = { equivalence: Equivalence | undefined, selector: boolean, semester: number, index: number } | undefined
+type ModalData = { equivalence: EquivDetails | undefined, selector: boolean, semester: number, index: number } | undefined
 
 interface CurriculumData {
   majors: { [code: string]: Major }
@@ -221,7 +221,7 @@ const CurriculumSelector = ({
 const Planner = (): JSX.Element => {
   const [planName, setPlanName] = useState<string>('')
   const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null >(null)
-  const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course | Equivalence }>({})
+  const [courseDetails, setCourseDetails] = useState<{ [code: string]: PseudoCourseDetail }>({})
   const [curriculumData, setCurriculumData] = useState<CurriculumData | null>(null)
   const [modalData, setModalData] = useState<ModalData>()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -336,7 +336,7 @@ const Planner = (): JSX.Element => {
       if (coursesCodes.size > 0) promises.push(DefaultService.getCourseDetails(Array.from(coursesCodes)))
       if (equivalenceCodes.size > 0) promises.push(DefaultService.getEquivalenceDetails(Array.from(equivalenceCodes)))
       const courseDetails = await Promise.all(promises)
-      const dict = courseDetails.flat().reduce((acc: { [code: string]: Course | Equivalence }, curr: Course | Equivalence) => {
+      const dict = courseDetails.flat().reduce((acc: { [code: string]: PseudoCourseDetail }, curr: PseudoCourseDetail) => {
         acc[curr.code] = curr
         return acc
       }, {})
@@ -480,7 +480,7 @@ const Planner = (): JSX.Element => {
     setCurriculumData(curriculumData)
   }
 
-  async function openModal (equivalence: Equivalence | EquivalenceId, semester: number, index: number): Promise<void> {
+  async function openModal (equivalence: EquivDetails | EquivalenceId, semester: number, index: number): Promise<void> {
     if ('courses' in equivalence) {
       setModalData({ equivalence, selector: false, semester, index })
     } else {

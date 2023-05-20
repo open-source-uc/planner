@@ -6,12 +6,12 @@ from dataclasses import dataclass
 from typing import Optional
 from .course import EquivalenceId, PseudoCourse
 import pydantic
+from pydantic import BaseModel
 from .validation.courses.logic import Expr
-from prisma.models import Course, Equivalence
+from prisma.models import Course, Equivalence, EquivalenceCourse
 
 
-@dataclass
-class CourseDetails:
+class CourseDetails(BaseModel):
     code: str
     name: str
     credits: int
@@ -47,8 +47,7 @@ class CourseDetails:
         )
 
 
-@dataclass
-class EquivDetails:
+class EquivDetails(BaseModel):
     code: str
     name: str
     # Indicates whether this equivalence is "homogeneous".
@@ -61,12 +60,18 @@ class EquivDetails:
     courses: list[str]
 
     @staticmethod
-    def from_db(db: Equivalence) -> "EquivDetails":
+    async def from_db(db: Equivalence) -> "EquivDetails":
+        dbcourses = await EquivalenceCourse.prisma().find_many(
+            where={
+                "equiv_code": db.code,
+            }
+        )
+        courses = list(map(lambda ec: ec.course_code, dbcourses))
         return EquivDetails(
             code=db.code,
             name=db.name,
             is_homogeneous=db.is_homogeneous,
-            courses=db.courses,
+            courses=courses,
         )
 
 
@@ -105,24 +110,38 @@ def clear_course_info_cache():
     _course_info_cache = None
 
 
-async def add_equivalence(equiv: Equivalence):
+async def add_equivalence(equiv: EquivDetails):
     print(f"adding equivalence {equiv.code}")
     # Add equivalence to database
     await Equivalence.prisma().query_raw(
         """
-        INSERT INTO "Equivalence" (code, name, is_homogeneous, courses)
-        VALUES($1, $2, $3, $4)
+        INSERT INTO "Equivalence" (code, name, is_homogeneous)
+        VALUES($1, $2, $3)
         ON CONFLICT (code)
-        DO UPDATE SET name = $2, is_homogeneous = $3, courses = $4
+        DO UPDATE SET name = $2, is_homogeneous = $3
         """,
         equiv.code,
         equiv.name,
         equiv.is_homogeneous,
-        equiv.courses,
+    )
+    # Add equivalence courses to database
+    value_tuples: list[str] = []
+    query_args = [equiv.code]
+    for i, code in enumerate(equiv.courses):
+        value_tuples.append(f"($1, ${2+i})")
+        query_args.append(code)
+    await EquivalenceCourse.prisma().query_raw(
+        f"""
+        INSERT INTO "EquivalenceCourse" (equiv_code, course_code)
+        VALUES {','.join(value_tuples)}
+        ON CONFLICT (equiv_code, course_code)
+        DO NOTHING
+        """,
+        *query_args,
     )
     # Update in-memory cache if it was already loaded
     if _course_info_cache:
-        _course_info_cache.equivs[equiv.code] = EquivDetails.from_db(equiv)
+        _course_info_cache.equivs[equiv.code] = equiv
 
 
 async def course_info() -> CourseInfo:
@@ -133,16 +152,16 @@ async def course_info() -> CourseInfo:
         print("  fetching courses from database...")
         all_courses = await Course.prisma().find_many()
         print("  loading courses to memory...")
-        courses = {}
+        courses: dict[str, CourseDetails] = {}
         for course in all_courses:
             # Create course object
             courses[course.code] = CourseDetails.from_db(course)
         print(f"  processed {len(courses)} courses")
         print("  loading equivalences from database...")
         all_equivs = await Equivalence.prisma().find_many()
-        equivs = {}
+        equivs: dict[str, EquivDetails] = {}
         for equiv in all_equivs:
-            equivs[equiv.code] = EquivDetails.from_db(equiv)
+            equivs[equiv.code] = await EquivDetails.from_db(equiv)
         print(f"  processed {len(equivs)} equivalences")
         _course_info_cache = CourseInfo(courses=courses, equivs=equivs)
 

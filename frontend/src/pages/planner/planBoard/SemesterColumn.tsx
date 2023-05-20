@@ -1,6 +1,6 @@
 
 import { useDrop } from 'react-dnd'
-import { Course } from '../../../client'
+import { CourseDetails } from '../../../client'
 
 interface SemesterColumnProps {
   semester: number
@@ -11,7 +11,7 @@ interface SemesterColumnProps {
 const SemesterColumn = ({ semester, addEnd, children }: SemesterColumnProps): JSX.Element => {
   const [dropProps, drop] = useDrop(() => ({
     accept: 'card',
-    drop (course: Course & { semester: number }) {
+    drop (course: CourseDetails & { semester: number }) {
       addEnd(course)
     },
     collect: monitor => ({

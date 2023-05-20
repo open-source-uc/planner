@@ -5,7 +5,7 @@ Transform the Siding format into something usable.
 from typing import Optional
 
 from ...user.info import StudentInfo
-from ...plan.courseinfo import CourseInfo, add_equivalence
+from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
 from ...plan.course import ConcreteId, EquivalenceId, PseudoCourse
 from . import client, curriculum_rules
 from .client import (
@@ -18,7 +18,6 @@ from prisma.models import (
     Minor as DbMinor,
     Title as DbTitle,
     MajorMinor as DbMajorMinor,
-    Equivalence as DbEquivalence,
 )
 from ...plan.validation.curriculum.tree import (
     Combination,
@@ -89,7 +88,7 @@ async def _fetch_raw_blocks(
             raw_courses = await client.get_predefined_list(raw_block.CodLista)
             codes = list(map(lambda c: c.Sigla, raw_courses))
             await add_equivalence(
-                DbEquivalence(
+                EquivDetails(
                     code=code,
                     name=raw_block.Nombre,
                     # TODO: Do some deeper analysis to determine if an equivalency is
@@ -106,7 +105,7 @@ async def _fetch_raw_blocks(
             for equiv in raw_block.Equivalencias.Cursos:
                 codes.append(equiv.Sigla)
             await add_equivalence(
-                DbEquivalence(
+                EquivDetails(
                     code=code, name=raw_block.Nombre, is_homogeneous=True, courses=codes
                 )
             )

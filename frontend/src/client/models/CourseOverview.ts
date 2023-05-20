@@ -7,5 +7,7 @@ export type CourseOverview = {
     name: string;
     credits: number;
     school: string;
+    area?: string;
+    is_available: boolean;
 };
 
