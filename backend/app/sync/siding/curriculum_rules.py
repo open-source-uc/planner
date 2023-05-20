@@ -105,10 +105,6 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
     # - RII (ingles)
     # - CAR (CARA)
     # - OFG plan antiguo (MEB158, MEB166 y MEB174)
-    # TODO: Que significa esta linea:
-    #   "Además, es válido para avance curricular de OFG máximo 1 curso optativo en
-    #   ciencias (10 cr.) de una lista de cursos Optativos de Ciencia, o su equivalente,
-    #   definida por el Comité Curricular de la Escuela de Ingeniería."
 
     def is_limited(courseinfo: CourseInfo, code: str):
         info = courseinfo.try_course(code)
@@ -169,6 +165,18 @@ async def apply_curriculum_rules(
             _merge_ofgs(curriculum)
             _allow_selection_duplication(courseinfo, curriculum)
             _limit_ofg10(courseinfo, curriculum)
+            # TODO: Agregar optativo de ciencias
+            #   Se pueden tomar hasta 10 creditos de optativo de ciencias, que es una
+            #   lista separada que al parecer solo esta disponible en forma textual.
+            #   Los ramos de esta lista no son parte de la lista `!L1` que brinda
+            #   SIDING, y tampoco sabemos si esta disponible en otra lista.
+            #   Referencias:
+            #   "Además, es válido para avance curricular de OFG máximo 1 curso
+            #   optativo en ciencias (10 cr.) de una lista de cursos Optativos de
+            #   Ciencia, o su equivalente, definida por el Comité Curricular de la
+            #   Escuela de Ingeniería."
+            #   https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/optativos/op_ciencias/alumno_2020/index.phtml
+            #   https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/formacion_gral/alumno_2020/index.phtml
             # TODO: El titulo tiene que tener 130 creditos exclusivos
             #   Recordar incluir los optativos (ramos de ing nivel 3000) y IPres
             pass
