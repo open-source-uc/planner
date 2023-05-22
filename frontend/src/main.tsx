@@ -16,7 +16,8 @@ function App (): JSX.Element {
     </AuthProvider>
   )
 }
-OpenAPI.BASE = import.meta.env.VITE_BASE_API_URL
+OpenAPI.BASE = import.meta.env.VITE_BASE_API_URL // TODO: Make this work for production
+// OpenAPI.BASE = 'http://localhost:8000'
 OpenAPI.TOKEN = async () => {
   const token = localStorage.getItem('access-token')
   if (token != null) {
