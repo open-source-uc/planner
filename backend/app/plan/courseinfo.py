@@ -4,11 +4,20 @@ Cache course info from the database in memory, for easy access.
 
 from dataclasses import dataclass
 from typing import Optional
+
+from prisma import Json
 from .course import EquivalenceId, PseudoCourse
 import pydantic
 from pydantic import BaseModel
 from .validation.courses.logic import Expr
-from prisma.models import Course, Equivalence, EquivalenceCourse
+from prisma.models import (
+    Course,
+    Equivalence,
+    EquivalenceCourse,
+    CachedCourseInfo as DbCachedCourseInfo,
+)
+
+_CACHED_COURSES_ID: str = "cached-course-info"
 
 
 class CourseDetails(BaseModel):
@@ -105,9 +114,10 @@ class CourseInfo:
 _course_info_cache: Optional[CourseInfo] = None
 
 
-def clear_course_info_cache():
+async def clear_course_info_cache():
     global _course_info_cache
     _course_info_cache = None
+    await DbCachedCourseInfo.prisma().delete(where={"id": _CACHED_COURSES_ID})
 
 
 async def add_equivalence(equiv: EquivDetails):
@@ -144,25 +154,50 @@ async def add_equivalence(equiv: EquivDetails):
         _course_info_cache.equivs[equiv.code] = equiv
 
 
+class CachedCourseDetailsJson(BaseModel):
+    __root__: dict[str, CourseDetails]
+
+
 async def course_info() -> CourseInfo:
     global _course_info_cache
     if _course_info_cache is None:
         # Derive course rules from courses in database
         print("caching courseinfo from database...")
-        print("  fetching courses from database...")
-        all_courses = await Course.prisma().find_many()
-        print("  loading courses to memory...")
-        courses: dict[str, CourseDetails] = {}
-        for course in all_courses:
-            # Create course object
-            courses[course.code] = CourseDetails.from_db(course)
+        courses: dict[str, CourseDetails]
+
+        # Attempt to fetch pre-parsed courses
+        preparsed = await DbCachedCourseInfo.prisma().find_unique(
+            {"id": _CACHED_COURSES_ID}
+        )
+        if preparsed is not None:
+            print("  loading pre-parsed course cache...")
+            courses = pydantic.parse_raw_as(dict[str, CourseDetails], preparsed.info)
+        else:
+            # Parse courses from database
+            print("  fetching courses from database...")
+            all_courses = await Course.prisma().find_many()
+            print("  loading courses to memory...")
+            courses = {}
+            for course in all_courses:
+                # Create course object
+                courses[course.code] = CourseDetails.from_db(course)
+            print("  storing cached courses to database")
+            await DbCachedCourseInfo.prisma().create(
+                {
+                    "id": _CACHED_COURSES_ID,
+                    "info": Json(CachedCourseDetailsJson(__root__=courses).json()),
+                }
+            )
         print(f"  processed {len(courses)} courses")
+        
+        # Load equivalences
         print("  loading equivalences from database...")
         all_equivs = await Equivalence.prisma().find_many()
         equivs: dict[str, EquivDetails] = {}
         for equiv in all_equivs:
             equivs[equiv.code] = await EquivDetails.from_db(equiv)
         print(f"  processed {len(equivs)} equivalences")
+
         _course_info_cache = CourseInfo(courses=courses, equivs=equivs)
 
     return _course_info_cache

@@ -30,7 +30,7 @@ async def run_upstream_sync():
     # Fetch major, minor and title offer to database
     await siding_translate.load_siding_offer_to_database()
     # Recache course info
-    clear_course_info_cache()
+    await clear_course_info_cache()
     await course_info()
 
 

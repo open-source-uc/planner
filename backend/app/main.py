@@ -257,7 +257,7 @@ async def rebuild_validation_rules():
     """
     Recache course information from internal database.
     """
-    clear_course_info_cache()
+    await clear_course_info_cache()
     info = await course_info()
     return {
         "message": f"Recached {len(info.courses)} courses and "

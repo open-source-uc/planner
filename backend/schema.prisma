@@ -9,6 +9,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Cached course info.
+model CachedCourseInfo {
+  id   String @id
+  info Json
+}
+
 // A concrete course in the DB
 // Cached from SIDING or whatever other source
 // In turn, these courses are cached in memory at startup
