@@ -214,8 +214,6 @@ const CurriculumSelector = memo(_CurriculumSelector)
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
 const Planner = (): JSX.Element => {
-  console.log('redrawing planner')
-
   const [planName, setPlanName] = useState<string>('')
   const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null >(null)
   const [courseDetails, setCourseDetails] = useState<{ [code: string]: PseudoCourseDetail }>({})
@@ -344,21 +342,17 @@ const Planner = (): JSX.Element => {
   }
 
   async function validate (validatablePlan: ValidatablePlan): Promise<void> {
-    try {
-      const response = authState?.user == null ? await DefaultService.validateGuestPlan(validatablePlan) : await DefaultService.validatePlanForUser(validatablePlan)
-      previousCurriculum.current = {
-        major: validatablePlan.curriculum.major,
-        minor: validatablePlan.curriculum.minor,
-        title: validatablePlan.curriculum.title
-      }
-      setValidationResult(response)
-      setPlannerStatus(PlannerStatus.READY)
-      // No deberia ser necesario hacer una copia profunda, porque los planes debieran ser inmutables (!) ya que React lo requiere
-      // Al contrario, si se vuelve necesario hacer una copia profunda significa que hay un bug en algun lado porque se estan mutando datos que debieran ser inmutables.
-      previousClasses.current = validatablePlan.classes
-    } catch (err) {
-      handleErrors(err)
+    const response = authState?.user == null ? await DefaultService.validateGuestPlan(validatablePlan) : await DefaultService.validatePlanForUser(validatablePlan)
+    previousCurriculum.current = {
+      major: validatablePlan.curriculum.major,
+      minor: validatablePlan.curriculum.minor,
+      title: validatablePlan.curriculum.title
     }
+    setValidationResult(response)
+    setPlannerStatus(PlannerStatus.READY)
+    // No deberia ser necesario hacer una copia profunda, porque los planes debieran ser inmutables (!) ya que React lo requiere
+    // Al contrario, si se vuelve necesario hacer una copia profunda significa que hay un bug en algun lado porque se estan mutando datos que debieran ser inmutables.
+    previousClasses.current = validatablePlan.classes
   }
 
   async function savePlan (): Promise<void> {
@@ -647,7 +641,7 @@ const Planner = (): JSX.Element => {
             is_warning: false,
             message: `Error interno: ${String(err)}`
           }],
-          course_superblocks: validatablePlan.classes.map(sem => sem.map(c => ''))
+          course_superblocks: {}
         })
       })
     }

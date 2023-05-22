@@ -1,5 +1,5 @@
 from .solve import SolvedCurriculum, solve_curriculum
-from ...plan import ClassIndex, ValidatablePlan
+from ...plan import ValidatablePlan
 from ..diagnostic import DiagnosticErr, DiagnosticWarn, ValidationResult
 from .tree import Block, Curriculum
 from ...courseinfo import CourseInfo
@@ -13,10 +13,10 @@ class CurriculumErr(DiagnosticErr):
 
 
 class UnassignedWarn(DiagnosticWarn):
-    index: ClassIndex
+    index: tuple[int, int]
     code: str
 
-    def course_index(self) -> ClassIndex:
+    def class_index(self) -> tuple[int, int]:
         return self.index
 
     def message(self) -> str:
@@ -65,9 +65,12 @@ def _tag_superblock(
 ):
     node = g.nodes[id]
     if isinstance(node.origin, tuple):
-        layer, index = node.origin
+        layer, c = node.origin
         if layer == "":
-            out.course_superblocks[index.semester][index.position] = superblock
+            list_of_sb = out.course_superblocks.setdefault(c.course.code, [])
+            while c.repeat_index >= len(list_of_sb):
+                list_of_sb.append(None)
+            list_of_sb[c.repeat_index] = superblock
     else:
         for edge in node.incoming:
             if edge.flow <= 0:
@@ -106,9 +109,14 @@ def diagnose_curriculum(
 
     # Send warning for each unassigned course
     # (Only for courses that have not been passed)
-    for sem_i in range(plan.next_semester, len(plan.classes)):
-        sem = plan.classes[sem_i]
+    counters: dict[str, int] = {}
+    for sem_i, sem in enumerate(plan.classes):
         for i, c in enumerate(sem):
-            index = ClassIndex(semester=sem_i, position=i)
-            if out.course_superblocks[index.semester][index.position] is None:
-                out.add(UnassignedWarn(index=index, code=c.code))
+            count = counters.get(c.code, 0)
+            counters[c.code] = count + 1
+            if (
+                c.code not in out.course_superblocks
+                or count >= len(out.course_superblocks[c.code])
+                or out.course_superblocks[c.code][count] is None
+            ):
+                out.add(UnassignedWarn(index=(sem_i, i), code=c.code))

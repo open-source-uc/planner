@@ -292,7 +292,7 @@ async def validate_guest_plan(plan: ValidatablePlan):
     """
     Validate a plan, generating diagnostics.
     """
-    return (await diagnose_plan(plan, user_ctx=None)).flatten()
+    return (await diagnose_plan(plan, user_ctx=None)).flatten(plan)
 
 
 @app.post("/plan/validate_for", response_model=FlatValidationResult)
@@ -304,7 +304,7 @@ async def validate_plan_for_user(
     Includes warnings tailored for the given user.
     """
     user_ctx = await sync.get_student_data(user)
-    return (await diagnose_plan(plan, user_ctx)).flatten()
+    return (await diagnose_plan(plan, user_ctx)).flatten(plan)
 
 
 @app.post("/plan/curriculum_graph")

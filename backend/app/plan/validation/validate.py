@@ -8,7 +8,7 @@ from .courses.validate import CourseInstance, PlanContext, is_satisfied
 from ..courseinfo import CourseInfo, course_info
 from ...sync import get_curriculum
 from .diagnostic import ValidationResult
-from ..plan import ClassIndex, PseudoCourse, ValidatablePlan
+from ..plan import ValidatablePlan
 
 
 async def diagnose_plan(
@@ -54,20 +54,20 @@ async def diagnose_plan_skip_curriculum(plan: ValidatablePlan) -> ValidationResu
 def quick_validate_dependencies(
     courseinfo: CourseInfo,
     plan: ValidatablePlan,
-    index: ClassIndex,
-    course: PseudoCourse,
+    sem: int,
+    index: int,
 ) -> bool:
     """
     Simulate placing the given course at the given semester, and check if its
     dependencies are met.
     """
-    assert courseinfo.try_course(course.code)
-    course_ctx = PlanContext(courseinfo, plan)
+    course = plan.classes[sem][index]
     info = courseinfo.try_course(course.code)
     if info is None:
         return False
+    course_ctx = PlanContext(courseinfo, plan)
     return is_satisfied(
         course_ctx,
-        CourseInstance(course, index),
+        CourseInstance(course=course, sem=sem, index=index),
         info.deps,
     )

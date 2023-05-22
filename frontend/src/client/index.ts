@@ -7,7 +7,7 @@ export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
 export { And } from './models/And';
-export type { ClassIndex } from './models/ClassIndex';
+export type { ClassId } from './models/ClassId';
 export type { ConcreteId } from './models/ConcreteId';
 export { Const } from './models/Const';
 export type { CourseDetails } from './models/CourseDetails';
