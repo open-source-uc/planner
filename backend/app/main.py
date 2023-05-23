@@ -144,7 +144,7 @@ class CourseFilter(BaseModel):
     # Only allow courses matching the given school.
     school: Optional[str] = None
     # Only allow courses that match the given availability.
-    available: Optional[bool] = False
+    available: Optional[bool] = None
     # Only allow courses available on the given semester.
     on_semester: Optional[tuple[bool, bool]] = None
     # Only allow courses that are members of the given equivalence.
