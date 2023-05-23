@@ -107,8 +107,7 @@ def diagnose_curriculum(
         if isinstance(node.origin, Block) and node.origin.name is not None:
             _tag_superblock(node.origin.name, out, g, edge.src)
 
-    # Send warning for each unassigned course
-    # (Only for courses that have not been passed)
+    # Send warning for each unassigned course (including passed courses)
     counters: dict[str, int] = {}
     for sem_i, sem in enumerate(plan.classes):
         for i, c in enumerate(sem):
