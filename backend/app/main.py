@@ -35,6 +35,7 @@ from .plan.courseinfo import (
 )
 from typing import Optional, Union
 from pydantic import BaseModel
+from unidecode import unidecode
 
 
 # Set-up operation IDs for OpenAPI
@@ -153,12 +154,13 @@ class CourseFilter(BaseModel):
     def as_db_filter(self) -> CourseWhereInput:
         filter = CourseWhereInput()
         if self.text is not None:
+            ascii_text = unidecode(self.text)
             name_parts: list[CourseWhereInputRecursive2] = list(
                 map(
                     lambda text_part: {
                         "name": {"contains": text_part, "mode": "insensitive"}
                     },
-                    self.text.split(),
+                    ascii_text.split(),
                 )
             )
             filter["OR"] = [
@@ -168,7 +170,8 @@ class CourseFilter(BaseModel):
         if self.credits is not None:
             filter["credits"] = self.credits
         if self.school is not None:
-            filter["school"] = {"contains": self.school, "mode": "insensitive"}
+            ascii_school = unidecode(self.school)
+            filter["school"] = {"contains": ascii_school, "mode": "insensitive"}
         if self.available is not None:
             filter["is_available"] = self.available
         if self.on_semester is not None:
