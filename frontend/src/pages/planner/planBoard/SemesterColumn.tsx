@@ -31,8 +31,8 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
     })
   }))
   const openSelector = useCallback((course: PseudoCourseId, semester: number, index: number) => {
-    if ('credits' in course) openModal(course, semester, index)
-    else openModal(course.equivalence, semester, index)
+    if ('equivalence' in course) openModal(course.equivalence, semester, index)
+    else openModal(course, semester, index)
   }, [])
   return (
     <div className={'drop-shadow-xl w-[165px] shrink-0 bg-base-200 rounded-lg h-full flex flex-col'}>
