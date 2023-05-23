@@ -114,7 +114,7 @@ def diagnose_curriculum(
         for i, c in enumerate(sem):
             count = counters.get(c.code, 0)
             counters[c.code] = count + 1
-            if (
+            if sem_i >= plan.next_semester and (
                 c.code not in out.course_superblocks
                 or count >= len(out.course_superblocks[c.code])
                 or out.course_superblocks[c.code][count] is None
