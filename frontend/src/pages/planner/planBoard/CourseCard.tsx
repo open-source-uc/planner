@@ -143,8 +143,11 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
 }
 
 const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError }: CardProps): JSX.Element => {
+  // Turns out animations are a big source of lag
+  const allowAnimations = false
+
   return (
-    <div className={`card group ${courseBlock} ${cardData.is_concrete !== true ? 'animated' : ''}`}>
+    <div className={`card group ${courseBlock} ${cardData.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
       { hasEquivalence === true && (courseBlock === 'FormacionGeneral'
         ? cardData.is_concrete === true
           ? <button onClick={() => openSelector(cardData, semester, index)}><img className='opacity-60 absolute w-3 top-2 left-2' src={editWhiteIcon} alt="Seleccionar Curso" /></button>
@@ -162,11 +165,11 @@ const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSele
       </div>
       <div className='absolute bottom-2 left-2 text-[0.5rem] opacity-75'>{cardData.credits} créd.</div>
       {hasError && <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-300 opacity-90"></span>
-        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-400"></span>
+        <span className={`${allowAnimations ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-red-300 opacity-90`}></span>
+        <span className={`${allowAnimations ? 'animate-ping' : ''} relative inline-flex rounded-full h-3 w-3 bg-red-400`}></span>
       </span> }
       {!hasError && hasWarning && <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-90"></span>
+        <span className="absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-90"></span>
         <span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-400"></span>
       </span> }
   </div>
