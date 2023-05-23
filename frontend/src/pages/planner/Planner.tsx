@@ -66,7 +66,7 @@ const _CurriculumSelector = ({
         <div className={'selectorName'}>Major:</div>
         <Listbox value={curriculum.major !== undefined && curriculum.major !== null ? curriculumData.majors[curriculum.major] : {}} onChange={(m) => selectMajor(m)}>
           <Listbox.Button className={'selectorButton'}>
-            <span className="inline truncate">{curriculum.major !== undefined && curriculum.major !== null ? curriculumData.majors[curriculum.major].name : 'Por elegir'}</span>
+            <span className="inline truncate">{curriculum.major != null ? curriculumData.majors[curriculum.major]?.name : 'Por elegir'}</span>
             <img className="inline" src={down_arrow} alt="Seleccionar Major" />
           </Listbox.Button>
           <Transition
@@ -115,7 +115,7 @@ const _CurriculumSelector = ({
           value={curriculum.minor !== undefined && curriculum.minor !== null ? curriculumData.minors[curriculum.minor] : {}}
           onChange={(m) => selectMinor(m)}>
           <Listbox.Button className={'selectorButton'}>
-            <span className="inline truncate">{curriculum.minor !== undefined && curriculum.minor !== null ? curriculumData.minors[curriculum.minor].name : 'Por elegir'}</span>
+            <span className="inline truncate">{curriculum.minor != null ? curriculumData.minors[curriculum.minor]?.name : 'Por elegir'}</span>
             <img className="inline" src={down_arrow} alt="Seleccionar Minor" />
           </Listbox.Button>
           <Transition
@@ -162,7 +162,7 @@ const _CurriculumSelector = ({
         <div className={'selectorName'}>Titulo:</div>
         <Listbox value={curriculum.title !== undefined && curriculum.title !== null ? curriculumData.titles[curriculum.title] : {}} onChange={(t) => selectTitle(t)}>
           <Listbox.Button className="selectorButton">
-            <span className="inline truncate">{curriculum.title !== undefined && curriculum.title !== null ? curriculumData.titles[curriculum.title].name : 'Por elegir'}</span>
+            <span className="inline truncate">{curriculum.title != null ? curriculumData.titles[curriculum.title]?.name : 'Por elegir'}</span>
             <img className="inline" src={down_arrow} alt="Seleccionar Titulo" />
           </Listbox.Button>
           <Transition
