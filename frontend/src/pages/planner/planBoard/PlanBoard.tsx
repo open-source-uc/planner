@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import SemesterColumn from './SemesterColumn'
-import CourseCard from './CourseCard'
-import { CourseDetails, FlatValidationResult } from '../../../client'
-import { PseudoCourseId, PseudoCourseDetail } from '../Planner'
+import { FlatValidationResult } from '../../../client'
+import { PseudoCourseId, PseudoCourseDetail, ValidationDigest } from '../Planner'
 import 'react-toastify/dist/ReactToastify.css'
 
 interface PlanBoardProps {
@@ -14,25 +13,7 @@ interface PlanBoardProps {
   remCourse: Function
   validating: Boolean
   validationResult: FlatValidationResult | null
-}
-
-const findInstanceIndex = (classes: PseudoCourseId[][], semester: number, index: number): number => {
-  let count = 0
-  for (let i = 0; i <= semester; i++) {
-    for (let j = 0; j < classes[i].length; j++) {
-      if (i === semester && j >= index) break
-      if (classes[i][j].code === classes[semester][index].code) count++
-    }
-  }
-  return count
-}
-
-const findCourseSuperblock = (classes: PseudoCourseId[][] | null, validationResults: FlatValidationResult | null, semester: number, index: number): string | null => {
-  if (classes == null || validationResults == null) return null
-  const instIndex = findInstanceIndex(classes, semester, index)
-  const rawSuperblock = validationResults.course_superblocks[classes[semester]?.[index]?.code]?.[instIndex] ?? null
-  if (rawSuperblock === null) return null
-  return rawSuperblock.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(' ', '').split(' ')[0]
+  validationDigest: ValidationDigest
 }
 
 /**
@@ -40,54 +21,47 @@ const findCourseSuperblock = (classes: PseudoCourseId[][] | null, validationResu
  * Displays several semesters, as well as several classes per semester.
  */
 
-const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCourse, remCourse, validating, validationResult }: PlanBoardProps): JSX.Element => {
+const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCourse, remCourse, validating, validationResult, validationDigest }: PlanBoardProps): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false)
 
   return (
-      <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap rtl-grid flex-grow ${validating === true ? 'pointer-events-none' : ''}`}>
-        {classesGrid === null
-          ? <h1>elija plan</h1>
-          : <>
-            {classesGrid.map((classes: PseudoCourseId[], semester: number) => (
-                <SemesterColumn
-                  key={semester}
-                  semester={semester + 1}
-                  addEnd={(dragCourse: CourseDetails & { index: number, semester: number }) => moveCourse(dragCourse, semester, classes.length)}
-                >
-                  {classes?.map((course: PseudoCourseId, index: number) => (
-                    <CourseCard
-                      key={index.toString() + course.code}
-                      cardData={{ ...course, semester, index, ...classesDetails[course.code] }}
-                      isDragging={(e: boolean) => setIsDragging(e)}
-                      handleMove={(dragCourse: CourseDetails & { index: number, semester: number }) => moveCourse(dragCourse, semester, index)}
-                      remCourse={() => remCourse(semester, course.code)}
-                      courseBlock={findCourseSuperblock(classesGrid, validationResult, semester, index)}
-                      openSelector={() => { if ('credits' in course) openModal(course, semester, index); else openModal(course.equivalence, semester, index) }}
-                      hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
-                      hasError={validationResult?.diagnostics?.find((e) => e.class_id?.code === course.code && e.class_id?.instance === findInstanceIndex(classesGrid, semester, index) && !e.is_warning) != null}
-                      hasWarning={validationResult?.diagnostics?.find((e) => e.class_id?.code === course.code && e.class_id?.instance === findInstanceIndex(classesGrid, semester, index) && e.is_warning) != null}
-                    />
-                  ))}
-                  {!isDragging && <div className="h-10 mx-2 bg-slate-300 card">
-                  <button key="+" className="w-full" onClick={() => addCourse(semester)}>+</button>
-                  </div>}
-                </SemesterColumn>
-            ))}
-            {isDragging && <>
+    <div className= {`CurriculumTable overflow-x-auto flex flex-row flex-nowrap rtl-grid flex-grow ${validating === true ? 'pointer-events-none' : ''}`}>
+      {classesGrid === null
+        ? <h1>elija plan</h1>
+        : <>
+          {classesGrid.map((classes: PseudoCourseId[], semester: number) => (
               <SemesterColumn
-                key={classesGrid.length }
-                semester={classesGrid.length + 1}
-                addEnd={(dragCourse: CourseDetails & { index: number, semester: number }) => moveCourse(dragCourse, classesGrid.length, 0)}
+                key={semester}
+                semester={semester}
+                addCourse={addCourse}
+                moveCourse={moveCourse}
+                remCourse={remCourse}
+                openModal={openModal}
+                classes={classes}
+                classesDetails={classesDetails}
+                validationDigest={validationDigest[semester]}
+                isDragging={isDragging}
+                setIsDragging={setIsDragging}
               />
-              <SemesterColumn
-                key={classesGrid.length + 1}
-                semester={classesGrid.length + 2}
-                addEnd={(dragCourse: CourseDetails & { index: number, semester: number }) => moveCourse(dragCourse, classesGrid.length + 1, 0)}
-              />
-            </>}
-            </>
-        }
-      </div>
+          ))}
+          {isDragging && [0, 1].map(off => (
+            <SemesterColumn
+              key={classesGrid.length + off}
+              semester={classesGrid.length + off}
+              addCourse={addCourse}
+              moveCourse={moveCourse}
+              remCourse={remCourse}
+              openModal={openModal}
+              classes={[]}
+              classesDetails={classesDetails}
+              validationDigest={[]}
+              isDragging={isDragging}
+              setIsDragging={setIsDragging}
+            />
+          ))}
+          </>
+      }
+    </div>
   )
 }
 
