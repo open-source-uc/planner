@@ -573,7 +573,8 @@ const Planner = (): JSX.Element => {
       const details = (await DefaultService.getCourseDetails([selection]))[0]
       setCourseDetails((prev) => { return { ...prev, [details.code]: details } })
 
-      const newValidatablePlan = validatablePlan
+      const newValidatablePlan = { ...validatablePlan, classes: [...validatablePlan.classes] }
+      newValidatablePlan.classes[modalData.semester] = [...newValidatablePlan.classes[modalData.semester]]
       if (modalData.equivalence === undefined) {
         newValidatablePlan.classes[modalData.semester][index] = {
           is_concrete: true,
