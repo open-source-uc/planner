@@ -25,7 +25,7 @@ const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCour
   const [isDragging, setIsDragging] = useState(false)
 
   return (
-    <div className= {`overflow-auto grid grid-rows-[fit-content] grid-flow-col ${validating === true ? 'pointer-events-none' : ''}`}>
+    <div className= {`overflow-auto grid grid-rows-[fit-content] grid-flow-col justify-start ${validating === true ? 'pointer-events-none' : ''}`}>
       {classesGrid === null
         ? <h1>elija plan</h1>
         : <>
