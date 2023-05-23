@@ -35,10 +35,10 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
     else openModal(course, semester, index)
   }, [])
   return (
-    <div className={'drop-shadow-xl w-[165px] shrink-0 bg-base-200 rounded-lg h-full flex flex-col'}>
+    <div className={'drop-shadow-xl w-[165px] shrink-0 bg-base-200 rounded-lg flex flex-col'}>
       <h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2>
       <div className="my-2 divider"></div>
-      <div className={'max-h-full '}>
+      <div>
         {
           classes.map((course: PseudoCourseId, index: number) => (
             <CourseCard
