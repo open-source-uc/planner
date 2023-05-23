@@ -144,7 +144,7 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
 
 const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError }: CardProps): JSX.Element => {
   // Turns out animations are a big source of lag
-  const allowAnimations = false
+  const allowAnimations = true
 
   return (
     <div className={`card group ${courseBlock} ${cardData.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
