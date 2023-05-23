@@ -88,10 +88,18 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       setPromiseInstance(promise)
       const response = await promise
       setPromiseInstance(null)
-      const responseCourses = new Set<string>(response)
-      const showCoursesCount = Object.keys(loadedCourses).filter(key => responseCourses.has(key)).length
-      if (showCoursesCount < response.length && showCoursesCount < 10) {
-        await getCourseDetails(response.splice(0, 20)).catch(err => console.log(err))
+      const missingInfo = []
+      for (const code of response) {
+        if (missingInfo.length >= 20) break
+        if (code in loadedCourses) continue
+        missingInfo.push(code)
+      }
+      if (missingInfo.length > 0) {
+        try {
+          await getCourseDetails(missingInfo)
+        } catch (e) {
+          console.error(e)
+        }
       }
       setFilteredCodes(response)
       setLoadingCoursesData(false)
