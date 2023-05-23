@@ -73,7 +73,10 @@ class EquivDetails(BaseModel):
         dbcourses = await EquivalenceCourse.prisma().find_many(
             where={
                 "equiv_code": db.code,
-            }
+            },
+            order={
+                "index": "asc",
+            },
         )
         courses = list(map(lambda ec: ec.course_code, dbcourses))
         return EquivDetails(
@@ -134,18 +137,18 @@ async def add_equivalence(equiv: EquivDetails):
         equiv.name,
         equiv.is_homogeneous,
     )
+    # Clear previous equivalence courses
+    await EquivalenceCourse.prisma().delete_many(where={"equiv_code": equiv.code})
     # Add equivalence courses to database
     value_tuples: list[str] = []
     query_args = [equiv.code]
     for i, code in enumerate(equiv.courses):
-        value_tuples.append(f"($1, ${2+i})")
+        value_tuples.append(f"({i}, $1, ${2+i})")
         query_args.append(code)
     await EquivalenceCourse.prisma().query_raw(
         f"""
-        INSERT INTO "EquivalenceCourse" (equiv_code, course_code)
+        INSERT INTO "EquivalenceCourse" (index, equiv_code, course_code)
         VALUES {','.join(value_tuples)}
-        ON CONFLICT (equiv_code, course_code)
-        DO NOTHING
         """,
         *query_args,
     )

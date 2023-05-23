@@ -54,6 +54,7 @@ model Equivalence {
 
 // A relationship between an equivalence and a course.
 model EquivalenceCourse {
+  index       Int
   equiv       Equivalence @relation(fields: [equiv_code], references: [code])
   equiv_code  String
   course      Course      @relation(fields: [course_code], references: [code])
