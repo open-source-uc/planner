@@ -189,7 +189,7 @@ async def course_info() -> CourseInfo:
                 }
             )
         print(f"  processed {len(courses)} courses")
-        
+
         # Load equivalences
         print("  loading equivalences from database...")
         all_equivs = await Equivalence.prisma().find_many()
