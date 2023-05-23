@@ -214,7 +214,12 @@ async def load_siding_offer_to_database():
     await DbMajorMinor.prisma().delete_many()
 
     print("  loading majors")
-    majors = await client.get_majors()
+    p_majors, p_minors, p_titles = (
+        client.get_majors(),
+        client.get_minors(),
+        client.get_titles(),
+    )
+    majors = await p_majors
     for major in majors:
         for cyear in _decode_curriculum_versions(major.Curriculum):
             await DbMajor.prisma().create(
@@ -227,8 +232,7 @@ async def load_siding_offer_to_database():
             )
 
     print("  loading minors")
-    minors = await client.get_minors()
-    for minor in minors:
+    for minor in await p_minors:
         for cyear in _decode_curriculum_versions(minor.Curriculum):
             await DbMinor.prisma().create(
                 data={
@@ -241,8 +245,7 @@ async def load_siding_offer_to_database():
             )
 
     print("  loading titles")
-    titles = await client.get_titles()
-    for title in titles:
+    for title in await p_titles:
         for cyear in _decode_curriculum_versions(title.Curriculum):
             await DbTitle.prisma().create(
                 data={
@@ -255,8 +258,11 @@ async def load_siding_offer_to_database():
             )
 
     print("  loading major-minor associations")
-    for major in majors:
-        assoc_minors = await client.get_minors_for_major(major.CodMajor)
+    p_major_minor = list(
+        map(lambda maj: (maj, client.get_minors_for_major(maj.CodMajor)), majors)
+    )
+    for major, p_assoc_minors in p_major_minor:
+        assoc_minors = await p_assoc_minors
         for cyear in _decode_curriculum_versions(major.Curriculum):
             for minor in assoc_minors:
                 if cyear not in _decode_curriculum_versions(minor.Curriculum):
