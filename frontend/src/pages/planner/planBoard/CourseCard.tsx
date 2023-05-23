@@ -3,6 +3,8 @@ import { useDrag, useDrop } from 'react-dnd'
 import { Course } from '../../../client'
 import editWhiteIcon from '../../../assets/editWhite.svg'
 import editBlackIcon from '../../../assets/editBlack.svg'
+// import { useAuth } from '../../../contexts/auth.context'
+
 interface CourseCardProps {
   cardData: { name: string, code: string, credits?: number, semester: number, is_concrete?: boolean }
   isDragging: Function
@@ -42,6 +44,8 @@ const BlockInitials = (courseBlock: string): string => {
 
 const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, openSelector, hasEquivalence, hasError, hasWarning }: CourseCardProps): JSX.Element => {
   const ref = useRef(null)
+  // const authState = useAuth()
+
   const [collected = { isDragging: false }, drag] = useDrag(() => ({
     type: 'card',
     item: () => {
@@ -70,6 +74,8 @@ const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, 
   drag(drop(ref))
   return (
     <>
+      {/* {authState?.passed?.[cardData.semester]?.find(o => o.code === cardData.code) != null ? console.log('PASSED') : console.log('NOPE')} */}
+
       <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3 cursor-grab' : 'cursor-grabbing'} `}>
       {!collected.isDragging && <>{dropProps.isOver
         ? <div className={'card bg-place-holder'} />
