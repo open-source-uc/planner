@@ -29,7 +29,12 @@ def _skip_extras(curriculum: Curriculum):
     # - El test de ingles tiene requisitos incumplibles de forma normal, por lo que el
     #   recomendador no logra colocarlo
     # - Es buena idea mantener la practica si, porque hay algunos ramos que tienen la
-    #   practica de requisito
+    #   practica de requisito.
+    #   Tambien, la practica puede contar como optativo de fundamentos. Para que la
+    #   practica no se pinte de Plan Comun, hay que dirigirla a otro bloque.
+    # Esto significa que los cursos no tendran un bloque para el que contar y no se
+    # generaran automaticamente. Sin embargo, si un estudiante los tiene entre sus
+    # cursos tomados los cursos no se eliminan.
 
     for superblock in curriculum.root.children:
         if not isinstance(superblock, Combination):
@@ -186,6 +191,8 @@ async def apply_curriculum_rules(
             #   Escuela de Ingeniería."
             #   https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/optativos/op_ciencias/alumno_2020/index.phtml
             #   https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/formacion_gral/alumno_2020/index.phtml
+            # TODO: Asegurarse que los optativos complementarios de minor funcionen
+            #   correctamente.
             # TODO: El titulo tiene que tener 130 creditos exclusivos
             #   Recordar incluir los optativos (ramos de ing nivel 3000) y IPres
             pass
