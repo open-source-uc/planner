@@ -328,10 +328,6 @@ async def fetch_to_database():
             print(f"failed to process course {code}:")
             print(traceback.format_exc())
 
-    # Remove previous course data from database
-    print("  clearing previous courses...")
-    await DbCourse.prisma().delete_many()
-
     # Put courses in database
     print("  storing courses in db...")
     await DbCourse.prisma().create_many(data=db_input)

@@ -149,6 +149,8 @@ async def add_equivalence(equiv: EquivDetails):
         f"""
         INSERT INTO "EquivalenceCourse" (index, equiv_code, course_code)
         VALUES {','.join(value_tuples)}
+        ON CONFLICT
+        DO NOTHING
         """,
         *query_args,
     )

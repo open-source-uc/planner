@@ -33,6 +33,7 @@ from .plan.courseinfo import (
     clear_course_info_cache,
     course_info,
 )
+from .sync.siding.client import client as siding_soap_client
 from typing import Optional, Union
 from pydantic import BaseModel
 
@@ -59,6 +60,8 @@ app.add_middleware(
 @app.on_event("startup")  # type: ignore
 async def startup():
     await prisma.connect()
+    # Setup SIDING webservice
+    siding_soap_client.on_startup()
     # Prime course info cache
     courseinfo = await course_info()
     # Sync courses if database is empty
@@ -70,6 +73,7 @@ async def startup():
 @app.on_event("shutdown")  # type: ignore
 async def shutdown():
     await prisma.disconnect()
+    siding_soap_client.on_shutdown()
 
 
 @app.get("/")

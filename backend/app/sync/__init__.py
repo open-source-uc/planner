@@ -16,7 +16,28 @@ from ..plan.courseinfo import clear_course_info_cache, course_info
 from . import buscacursos_dl
 from prisma.models import (
     Curriculum as DbCurriculum,
+    Major as DbMajor,
+    Minor as DbMinor,
+    Title as DbTitle,
+    MajorMinor as DbMajorMinor,
+    EquivalenceCourse as DbEquivalenceCourse,
+    Course as DbCourse,
+    Equivalence as DbEquivalence,
 )
+
+
+async def clear_upstream_data():
+    print("  clearing upstream data from database")
+    await DbEquivalenceCourse.prisma().delete_many()
+    await DbCourse.prisma().delete_many()
+    await DbEquivalence.prisma().delete_many()
+
+    await DbMajor.prisma().delete_many()
+    await DbMinor.prisma().delete_many()
+    await DbTitle.prisma().delete_many()
+    await DbMajorMinor.prisma().delete_many()
+
+    await DbCurriculum.prisma().delete_many()
 
 
 async def run_upstream_sync():
@@ -24,6 +45,8 @@ async def run_upstream_sync():
     Populate database with "official" data.
     """
     print("syncing database with external sources...")
+    # Remove previous data
+    await clear_upstream_data()
     # Get course data from "official" source
     # Currently we have no official source
     await buscacursos_dl.fetch_to_database()

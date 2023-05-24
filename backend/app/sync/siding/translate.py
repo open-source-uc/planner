@@ -207,12 +207,6 @@ async def load_siding_offer_to_database():
 
     print("loading major/minor/title offer to database...")
 
-    print("  clearing previous data")
-    await DbMajor.prisma().delete_many()
-    await DbMinor.prisma().delete_many()
-    await DbTitle.prisma().delete_many()
-    await DbMajorMinor.prisma().delete_many()
-
     print("  loading majors")
     p_majors, p_minors, p_titles = (
         client.get_majors(),
