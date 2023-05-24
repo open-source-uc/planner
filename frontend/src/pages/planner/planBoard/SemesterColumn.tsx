@@ -8,7 +8,6 @@ import deepEqual from 'fast-deep-equal'
 
 interface SemesterColumnProps {
   classesDetails: { [code: string]: PseudoCourseDetail }
-  // validationResult: FlatValidationResult
   semester: number
   addCourse: Function
   moveCourse: Function
