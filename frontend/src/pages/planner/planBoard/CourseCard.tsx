@@ -1,10 +1,11 @@
 import { useRef } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
-import { Course } from '../../../client'
+import { PseudoCourseDetail } from '../Planner'
 import editWhiteIcon from '../../../assets/editWhite.svg'
 import editBlackIcon from '../../../assets/editBlack.svg'
+
 interface CourseCardProps {
-  cardData: { name: string, code: string, credits?: number, semester: number, is_concrete?: boolean }
+  cardData: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }
   isDragging: Function
   handleMove: Function
   remCourse: Function
@@ -15,7 +16,7 @@ interface CourseCardProps {
   hasWarning: boolean
 }
 interface CardProps {
-  cardData: { name: string, code: string, credits?: number, semester: number, is_concrete?: boolean }
+  cardData: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }
   remCourse: Function
   courseBlock: string | null
   openSelector: Function
@@ -57,8 +58,9 @@ const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, 
   }))
   const [dropProps, drop] = useDrop(() => ({
     accept: 'card',
-    drop (course: Course) {
+    drop (course: PseudoCourseDetail) {
       handleMove(course)
+      return course
     },
     collect: monitor => ({
       isOver: !!monitor.isOver(),

@@ -2,7 +2,7 @@ import { Spinner } from '../../components/Spinner'
 import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
-import CourseSelectorDialog from '../../components/CourseSelectorDialog'
+import CourseSelectorDialog from './CourseSelectorDialog'
 import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
 import { Fragment, useState, useEffect, useRef } from 'react'
@@ -19,7 +19,7 @@ import DebugGraph from '../../components/DebugGraph'
 export type PseudoCourseId = ConcreteId | EquivalenceId
 export type PseudoCourseDetail = Course | Equivalence
 
-type ModalData = { equivalence: Equivalence, semester: number, index: number } | undefined
+type ModalData = { equivalence: Equivalence | undefined, selector: boolean, semester: number, index: number } | undefined
 
 interface CurriculumData {
   majors: { [code: string]: Major }
@@ -71,7 +71,7 @@ const CurriculumSelector = ({
         <div className={'selectorName'}>Major:</div>
         <Listbox value={validatablePlan.curriculum.major !== undefined && validatablePlan.curriculum.major !== null ? curriculumData.majors[validatablePlan.curriculum.major] : {}} onChange={(m) => selectMajor(m)}>
           <Listbox.Button className={'selectorButton'}>
-            <span className="inline truncate">{validatablePlan.curriculum.major !== undefined && validatablePlan.curriculum.major !== null ? curriculumData.majors[validatablePlan.curriculum.major].name : 'Por elegir'}</span>
+            <span className="inline truncate">{validatablePlan.curriculum.major !== undefined && validatablePlan.curriculum.major !== null ? curriculumData.majors[validatablePlan.curriculum.major]?.name : 'Por elegir'}</span>
             <img className="inline" src={down_arrow} alt="Seleccionar Major" />
           </Listbox.Button>
           <Transition
@@ -120,7 +120,7 @@ const CurriculumSelector = ({
           value={validatablePlan.curriculum.minor !== undefined && validatablePlan.curriculum.minor !== null ? curriculumData.minors[validatablePlan.curriculum.minor] : {}}
           onChange={(m) => selectMinor(m)}>
           <Listbox.Button className={'selectorButton'}>
-            <span className="inline truncate">{validatablePlan.curriculum.minor !== undefined && validatablePlan.curriculum.minor !== null ? curriculumData.minors[validatablePlan.curriculum.minor].name : 'Por elegir'}</span>
+            <span className="inline truncate">{validatablePlan.curriculum.minor !== undefined && validatablePlan.curriculum.minor !== null ? curriculumData.minors[validatablePlan.curriculum.minor]?.name : 'Por elegir'}</span>
             <img className="inline" src={down_arrow} alt="Seleccionar Minor" />
           </Listbox.Button>
           <Transition
@@ -167,7 +167,7 @@ const CurriculumSelector = ({
         <div className={'selectorName'}>Titulo:</div>
         <Listbox value={validatablePlan.curriculum.title !== undefined && validatablePlan.curriculum.title !== null ? curriculumData.titles[validatablePlan.curriculum.title] : {}} onChange={(t) => selectTitle(t)}>
           <Listbox.Button className="selectorButton">
-            <span className="inline truncate">{validatablePlan.curriculum.title !== undefined && validatablePlan.curriculum.title !== null ? curriculumData.titles[validatablePlan.curriculum.title].name : 'Por elegir'}</span>
+            <span className="inline truncate">{validatablePlan.curriculum.title !== undefined && validatablePlan.curriculum.title !== null ? curriculumData.titles[validatablePlan.curriculum.title]?.name : 'Por elegir'}</span>
             <img className="inline" src={down_arrow} alt="Seleccionar Titulo" />
           </Listbox.Button>
           <Transition
@@ -220,7 +220,7 @@ const CurriculumSelector = ({
  */
 const Planner = (): JSX.Element => {
   const [planName, setPlanName] = useState<string>('')
-  const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null>(null)
+  const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null >(null)
   const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course | Equivalence }>({})
   const [curriculumData, setCurriculumData] = useState<CurriculumData | null>(null)
   const [modalData, setModalData] = useState<ModalData>()
@@ -306,6 +306,24 @@ const Planner = (): JSX.Element => {
     }
   }
 
+  async function fetchData (): Promise<void> {
+    try {
+      if (params?.plannerId != null) {
+        if (validatablePlan !== null) {
+          await getDefaultPlan(validatablePlan)
+        } else {
+          await getPlanById(params.plannerId)
+        }
+      } else {
+        await getDefaultPlan(validatablePlan ?? undefined)
+      }
+    } catch (error) {
+      setError('Hubo un error al cargar el planner')
+      console.error(error)
+      setPlannerStatus(PlannerStatus.ERROR)
+    }
+  }
+
   async function getCourseDetails (courses: PseudoCourseId[]): Promise<void> {
     console.log('getting Courses Details...')
     const coursesCodes = new Set<string>()
@@ -348,7 +366,7 @@ const Planner = (): JSX.Element => {
 
   async function savePlan (): Promise<void> {
     if (validatablePlan == null) {
-      alert('No se ha generado un plan aun')
+      toast.error('No se ha generado un plan aun')
       return
     }
     if (params?.plannerId != null) {
@@ -377,35 +395,66 @@ const Planner = (): JSX.Element => {
     setPlannerStatus(PlannerStatus.READY)
   }
 
-  async function addCourse (semIdx: number): Promise<void> {
+  function addCourse (semIdx: number): void {
     if (validatablePlan == null) {
       return
     }
-    const courseCodeRaw = prompt('Sigla del curso?')
-    if (courseCodeRaw == null || courseCodeRaw === '') return
-    const courseCode = courseCodeRaw.toUpperCase()
-    for (const existingCourse of validatablePlan?.classes.flat()) {
-      if (existingCourse.code === courseCode) {
-        alert(`${courseCode} ya se encuentra en el plan, seleccione otro curso por favor`)
-        return
+    setModalData({
+      equivalence: undefined,
+      selector: true,
+      semester: semIdx,
+      index: validatablePlan.classes[semIdx].length
+    })
+    setIsModalOpen(true)
+  }
+
+  function remCourse (semIdx: number, code: string): void {
+    if (validatablePlan === null) return
+    let idx = -1
+    for (let i = 0; i < validatablePlan.classes[semIdx].length; i++) {
+      if (validatablePlan.classes[semIdx][i].code === code) {
+        idx = i
+        break
       }
     }
-    try {
-      const response = await DefaultService.getCourseDetails([courseCode])
-      setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
-      setValidatablePlan((prev) => {
-        if (prev == null) return prev
-        const newClasses = [...prev.classes]
-        newClasses[semIdx] = [...prev.classes[semIdx]]
-        newClasses[semIdx].push({
-          is_concrete: true,
-          code: response[0].code
-        })
-        return { ...prev, classes: newClasses }
-      })
-    } catch (err) {
-      handleErrors(err)
+    if (idx === -1) return
+    setValidatablePlan(prev => {
+      if (prev === null) return prev
+      const newClases = prev.classes
+      newClases[semIdx].splice(idx, 1)
+      while (newClases[newClases.length - 1].length === 0) {
+        newClases.pop()
+      }
+      return { ...prev, classes: newClases }
+    })
+  }
+
+  function moveCourse (drag: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }, semester: number, index: number): void {
+    if (validatablePlan === null) {
+      return
     }
+    setValidatablePlan(prev => {
+      if (prev === null) return prev
+      if (drag.is_concrete === true && semester !== drag.semester && semester < prev.classes.length && prev.classes[semester].map(course => course.code).includes(drag.code)) {
+        toast.error('No se puede tener dos ramos iguales en un mismo semestre')
+        return prev
+      }
+      const newClassesGrid = prev.classes
+      if (semester - newClassesGrid.length >= 0) {
+        if (semester - newClassesGrid.length > 0) newClassesGrid.push([])
+        newClassesGrid.push([])
+      }
+      newClassesGrid[semester].splice(index, 0, newClassesGrid[drag.semester][drag.index])
+      if (semester === drag.semester && index < drag.index) {
+        newClassesGrid[drag.semester].splice(drag.index + 1, 1)
+      } else {
+        newClassesGrid[drag.semester].splice(drag.index, 1)
+      }
+      while (newClassesGrid[newClassesGrid.length - 1].length === 0) {
+        newClassesGrid.pop()
+      }
+      return { ...prev, classes: newClassesGrid }
+    })
   }
 
   async function loadCurriculumsData (cYear: string, cMajor?: string): Promise<void> {
@@ -433,10 +482,10 @@ const Planner = (): JSX.Element => {
 
   async function openModal (equivalence: Equivalence | EquivalenceId, semester: number, index: number): Promise<void> {
     if ('courses' in equivalence) {
-      setModalData({ equivalence, semester, index })
+      setModalData({ equivalence, selector: false, semester, index })
     } else {
       const response = await DefaultService.getEquivalenceDetails([equivalence.code])
-      setModalData({ equivalence: response[0], semester, index })
+      setModalData({ equivalence: response[0], selector: false, semester, index })
     }
     setIsModalOpen(true)
   }
@@ -444,29 +493,34 @@ const Planner = (): JSX.Element => {
   async function closeModal (selection?: string): Promise<void> {
     if (selection != null && modalData !== undefined && validatablePlan != null) {
       const pastClass = validatablePlan.classes[modalData.semester][modalData.index]
-      if (selection === pastClass.code) { setIsModalOpen(false); return }
-      for (const existingCourse of validatablePlan.classes.flat()) {
+      if (pastClass !== undefined && selection === pastClass.code) { setIsModalOpen(false); return }
+      for (const existingCourse of validatablePlan.classes[modalData.semester].flat()) {
         if (existingCourse.code === selection) {
-          alert(`${selection} ya se encuentra en el plan, seleccione otro curso por favor`)
+          toast.error(`${selection} ya se encuentra en este semestre, seleccione otro curso por favor`)
           return
         }
       }
       const details = (await DefaultService.getCourseDetails([selection]))[0]
       setCourseDetails((prev) => { return { ...prev, [details.code]: details } })
-      setValidatablePlan((prev) => {
-        if (prev == null) return prev
-        const newClasses = [...prev.classes]
-        newClasses[modalData.semester] = [...prev.classes[modalData.semester]]
+
+      const newValidatablePlan = validatablePlan
+      if (modalData.equivalence === undefined) {
+        newValidatablePlan.classes[modalData.semester][modalData.index] = {
+          is_concrete: true,
+          code: selection,
+          equivalence: undefined
+        }
+      } else {
         const oldEquivalence = 'credits' in pastClass ? pastClass : pastClass.equivalence
 
-        newClasses[modalData.semester][modalData.index] = {
+        newValidatablePlan.classes[modalData.semester][modalData.index] = {
           is_concrete: true,
           code: selection,
           equivalence: oldEquivalence
         }
         if (oldEquivalence !== undefined && oldEquivalence.credits !== details.credits) {
           if (oldEquivalence.credits > details.credits) {
-            newClasses[modalData.semester].splice(modalData.index, 1,
+            newValidatablePlan.classes[modalData.semester].splice(modalData.index, 1,
               {
                 is_concrete: true,
                 code: selection,
@@ -492,7 +546,7 @@ const Planner = (): JSX.Element => {
             // option 2: decresed the one of 10 to 5
 
             // Partial solution: just consume anything we find
-            const semester = newClasses[modalData.semester]
+            const semester = newValidatablePlan.classes[modalData.semester]
             let extra = details.credits - oldEquivalence.credits
             for (let i = semester.length; i-- > 0;) {
               const equiv = semester[i]
@@ -511,7 +565,7 @@ const Planner = (): JSX.Element => {
 
             // Increase the credits of the equivalence
             // We might not have found all the missing credits, but that's ok
-            newClasses[modalData.semester].splice(modalData.index, 1,
+            newValidatablePlan.classes[modalData.semester].splice(modalData.index, 1,
               {
                 is_concrete: true,
                 code: selection,
@@ -523,8 +577,8 @@ const Planner = (): JSX.Element => {
             )
           }
         }
-        return { ...prev, classes: newClasses }
-      })
+      }
+      setValidatablePlan(newValidatablePlan)
       setPlannerStatus(PlannerStatus.VALIDATING)
     }
     setIsModalOpen(false)
@@ -532,7 +586,6 @@ const Planner = (): JSX.Element => {
 
   function reset (): void {
     setPlannerStatus(PlannerStatus.LOADING)
-    setValidatablePlan(null)
   }
 
   async function checkMinorForNewMajor (major: Major): Promise<void> {
@@ -637,24 +690,8 @@ const Planner = (): JSX.Element => {
   }, [])
 
   useEffect(() => {
+    console.log(plannerStatus)
     if (plannerStatus === 'LOADING') {
-      async function fetchData (): Promise<void> {
-        try {
-          if (params?.plannerId != null) {
-            if (validatablePlan !== null) {
-              await getDefaultPlan(validatablePlan)
-            } else {
-              await getPlanById(params.plannerId)
-            }
-          } else {
-            await getDefaultPlan(validatablePlan ?? undefined)
-          }
-        } catch (error) {
-          setError('Hubo un error al cargar el planner')
-          console.error(error)
-          setPlannerStatus(PlannerStatus.ERROR)
-        }
-      }
       void fetchData()
     } else if (plannerStatus === 'VALIDATING' && validatablePlan != null) {
       validate(validatablePlan).catch(err => {
@@ -679,26 +716,10 @@ const Planner = (): JSX.Element => {
       if (curriculumChanged) {
         setPlannerStatus(PlannerStatus.LOADING)
       } else {
-        // dont validate if the classes are rearranging the same semester at previous validation
-        let classesChanged = validatablePlan.classes.length !== previousClasses.current.length
-        if (!classesChanged) {
-          for (let idx = 0; idx < validatablePlan.classes.length; idx++) {
-            // Note: because the order of classes within a semester is now meaningful, we need to revalidate if changing the order
-            const cur = validatablePlan.classes[idx]
-            const prev = previousClasses.current[idx]
-            if (JSON.stringify(cur) !== JSON.stringify(prev)) {
-              classesChanged = true
-              break
-            }
-          }
-        }
-        if (classesChanged) {
-          setPlannerStatus(PlannerStatus.VALIDATING)
-        }
+        setPlannerStatus(PlannerStatus.VALIDATING)
       }
     }
   }, [validatablePlan])
-
   return (
     <div className={`w-full h-full p-3 flex flex-grow overflow-hidden flex-row ${(plannerStatus !== 'ERROR' && plannerStatus !== 'READY') ? 'cursor-wait' : ''}`}>
       <DebugGraph validatablePlan={validatablePlan} />
@@ -731,10 +752,11 @@ const Planner = (): JSX.Element => {
           />
           <DndProvider backend={HTML5Backend}>
             <PlanBoard
-              classesGrid={validatablePlan?.classes ?? []}
+              classesGrid={validatablePlan?.classes ?? null}
               classesDetails={courseDetails}
-              setPlan={setValidatablePlan}
+              moveCourse={moveCourse}
               openModal={openModal}
+              remCourse={remCourse}
               addCourse={addCourse}
               validating={plannerStatus !== 'READY'}
               validationResult={validationResult}

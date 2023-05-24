@@ -222,12 +222,17 @@ async def get_equivalence_details(
             raise HTTPException(
                 status_code=404, detail=f"Equivalence '{code}' not found"
             )
-        equiv.courses = await _filter_courses(
-            courses=equiv.courses,
-            name=filter_name,
-            credits=filter_credits,
-            school=filter_school,
-        )
+        if (
+            filter_name is not None
+            or filter_credits is not None
+            or filter_school is not None
+        ):
+            equiv.courses = await _filter_courses(
+                courses=equiv.courses,
+                name=filter_name,
+                credits=filter_credits,
+                school=filter_school,
+            )
         equivs.append(equiv)
     return equivs
 
