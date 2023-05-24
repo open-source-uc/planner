@@ -184,6 +184,9 @@ async def apply_curriculum_rules(
             #   lista separada que al parecer solo esta disponible en forma textual.
             #   Los ramos de esta lista no son parte de la lista `!L1` que brinda
             #   SIDING, y tampoco sabemos si esta disponible en otra lista.
+            #   La lista L3 se ve prometedora, incluso incluye un curso "ING0001
+            #   Optativo En Ciencias" generico, pero no es exactamente igual al listado
+            #   textual en SIDING.
             #   Referencias:
             #   "Además, es válido para avance curricular de OFG máximo 1 curso
             #   optativo en ciencias (10 cr.) de una lista de cursos Optativos de
