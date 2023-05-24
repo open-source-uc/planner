@@ -5,7 +5,7 @@ Transform the Siding format into something usable.
 from typing import Optional
 
 from ...user.info import StudentInfo
-from ...plan.courseinfo import CourseInfo, add_equivalence
+from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
 from ...plan.course import ConcreteId, EquivalenceId, PseudoCourse
 from . import client, curriculum_rules
 from .client import (
@@ -18,7 +18,6 @@ from prisma.models import (
     Minor as DbMinor,
     Title as DbTitle,
     MajorMinor as DbMajorMinor,
-    Equivalence as DbEquivalence,
 )
 from ...plan.validation.curriculum.tree import (
     Combination,
@@ -89,7 +88,7 @@ async def _fetch_raw_blocks(
             raw_courses = await client.get_predefined_list(raw_block.CodLista)
             codes = list(map(lambda c: c.Sigla, raw_courses))
             await add_equivalence(
-                DbEquivalence(
+                EquivDetails(
                     code=code,
                     name=raw_block.Nombre,
                     # TODO: Do some deeper analysis to determine if an equivalency is
@@ -106,7 +105,7 @@ async def _fetch_raw_blocks(
             for equiv in raw_block.Equivalencias.Cursos:
                 codes.append(equiv.Sigla)
             await add_equivalence(
-                DbEquivalence(
+                EquivDetails(
                     code=code, name=raw_block.Nombre, is_homogeneous=True, courses=codes
                 )
             )
@@ -215,7 +214,12 @@ async def load_siding_offer_to_database():
     await DbMajorMinor.prisma().delete_many()
 
     print("  loading majors")
-    majors = await client.get_majors()
+    p_majors, p_minors, p_titles = (
+        client.get_majors(),
+        client.get_minors(),
+        client.get_titles(),
+    )
+    majors = await p_majors
     for major in majors:
         for cyear in _decode_curriculum_versions(major.Curriculum):
             await DbMajor.prisma().create(
@@ -228,8 +232,7 @@ async def load_siding_offer_to_database():
             )
 
     print("  loading minors")
-    minors = await client.get_minors()
-    for minor in minors:
+    for minor in await p_minors:
         for cyear in _decode_curriculum_versions(minor.Curriculum):
             await DbMinor.prisma().create(
                 data={
@@ -242,8 +245,7 @@ async def load_siding_offer_to_database():
             )
 
     print("  loading titles")
-    titles = await client.get_titles()
-    for title in titles:
+    for title in await p_titles:
         for cyear in _decode_curriculum_versions(title.Curriculum):
             await DbTitle.prisma().create(
                 data={
@@ -256,8 +258,11 @@ async def load_siding_offer_to_database():
             )
 
     print("  loading major-minor associations")
-    for major in majors:
-        assoc_minors = await client.get_minors_for_major(major.CodMajor)
+    p_major_minor = list(
+        map(lambda maj: (maj, client.get_minors_for_major(maj.CodMajor)), majors)
+    )
+    for major, p_assoc_minors in p_major_minor:
+        assoc_minors = await p_assoc_minors
         for cyear in _decode_curriculum_versions(major.Curriculum):
             for minor in assoc_minors:
                 if cyear not in _decode_curriculum_versions(minor.Curriculum):

@@ -5,7 +5,6 @@ within a block and respecting exclusivity rules.
 
 from typing import Optional
 
-from ...plan import ClassIndex
 from ...course import ConcreteId, PseudoCourse
 
 from ...courseinfo import CourseInfo
@@ -15,6 +14,30 @@ from dataclasses import dataclass, field
 
 # Print debug messages when solving a curriculum.
 DEBUG_SOLVE = False
+
+
+@dataclass
+class TakenCourse:
+    # The courseid of the course.
+    course: PseudoCourse
+    # The amount of credits of the course.
+    # Must correspond to `course`.
+    credits: int
+    # The semester in which this course was taken.
+    sem: int
+    # Where in the semester was this course taken.
+    index: int
+    # Flattened index indicating where along the plan this course was taken.
+    flat_index: int
+    # `0` if this course is unique (by code) in the plan.
+    # Otherwise, increments by one per every repetition.
+    repeat_index: int
+
+
+@dataclass
+class TakenCourses:
+    flat: list[TakenCourse]
+    mapped: dict[str, list[TakenCourse]]
 
 
 @dataclass
@@ -31,10 +54,9 @@ class Edge:
 class Node:
     # Either:
     # - A curriculum `Block`
-    # - A course, with a layer id `str`, a semester index and a position within that
-    #   semester.
+    # - A course, with a layer id `str` and course information.
     # - No origin (eg. the virtual sink node)
-    origin: Block | tuple[str, ClassIndex] | None = None
+    origin: Block | tuple[str, TakenCourse] | None = None
     outgoing: list[Edge] = field(default_factory=list)
     incoming: list[Edge] = field(default_factory=list)
 
@@ -50,28 +72,6 @@ class Node:
         for edge in self.outgoing:
             c += edge.cap
         return c
-
-
-@dataclass
-class TakenCourse:
-    # The courseid of the course.
-    course: PseudoCourse
-    # The amount of credits of the course.
-    # Must correspond to `course`.
-    credits: int
-    # Where in the plan was this course taken.
-    index: ClassIndex
-    # Flattened index indicating where along the plan this course was taken.
-    flat_index: int
-    # `0` if this course is unique (by code) in the plan.
-    # Otherwise, increments by one per every repetition.
-    repeat_index: int
-
-
-@dataclass
-class TakenCourses:
-    flat: list[TakenCourse]
-    mapped: dict[str, list[TakenCourse]]
 
 
 class SolvedCurriculum:
@@ -102,11 +102,15 @@ class SolvedCurriculum:
         self.nodes.append(node)
         return id
 
-    def connect(self, src_id: int, dst_id: int, cap: int):
+    def connect(self, src_id: int, dst_id: int, cap: int, cost: int = 0):
         src = self.nodes[src_id]
         dst = self.nodes[dst_id]
-        edge_fw = Edge(cap=cap, flow=0, src=src_id, dst=dst_id, rev=len(dst.outgoing))
-        edge_rev = Edge(cap=0, flow=0, src=dst_id, dst=src_id, rev=len(src.outgoing))
+        edge_fw = Edge(
+            cap=cap, flow=0, src=src_id, dst=dst_id, rev=len(dst.outgoing), cost=cost
+        )
+        edge_rev = Edge(
+            cap=0, flow=0, src=dst_id, dst=src_id, rev=len(src.outgoing), cost=-cost
+        )
         src.outgoing.append(edge_fw)
         dst.incoming.append(edge_fw)
         dst.outgoing.append(edge_rev)
@@ -124,7 +128,7 @@ class SolvedCurriculum:
         id = layer[c.flat_index]
         if id is not None:
             return id
-        id = self.add(Node(origin=(layer_id, c.index)))
+        id = self.add(Node(origin=(layer_id, c)))
         layer[c.flat_index] = id
         self.connect(self.source, id, c.credits)
         return id
@@ -144,8 +148,8 @@ class SolvedCurriculum:
                 if len(node.origin.fill_with) > 0:
                     label += f"\n({len(node.origin.fill_with)} recommendations)"
             elif isinstance(node.origin, tuple):
-                layer, index = node.origin
-                label = taken[index.semester][index.position].code
+                layer, c = node.origin
+                label = taken[c.sem][c.index].code
                 if layer != "":
                     label = f"{label}({layer})"
             else:
@@ -174,14 +178,26 @@ class SolvedCurriculum:
 
 
 def _connect_course(
-    g: SolvedCurriculum, block: Leaf, taken: TakenCourses, c: TakenCourse, superid: int
+    g: SolvedCurriculum,
+    block: Leaf,
+    taken: TakenCourses,
+    c: TakenCourse,
+    superid: int,
 ):
     max_multiplicity = block.codes[c.course.code]
     if max_multiplicity is not None and c.repeat_index >= max_multiplicity:
         # Cannot connect to more than `max_multiplicity` courses at once
         return
     subid = g.add_course(block.layer, taken, c)
-    g.connect(subid, superid, c.credits)
+    cost = 2
+    if (
+        isinstance(c, ConcreteId)
+        and c.equivalence is not None
+        and c.equivalence.code in block.codes
+    ):
+        # Prefer equivalence edges over non-equivalence edges
+        cost = 1
+    g.connect(subid, superid, c.credits, cost)
 
 
 def _build_visit(g: SolvedCurriculum, taken: TakenCourses, block: Block) -> int:
@@ -229,12 +245,6 @@ def _build_graph(
     taken = TakenCourses(flat=[], mapped={})
     for sem_i, sem in enumerate(taken_semesters):
         for i, c in sorted(enumerate(sem)):
-            if isinstance(c, ConcreteId) and c.equivalence is not None:
-                # TODO: Right now we are forcing concretized equivalences to count as
-                #   the equivalence instead of as the concrete course
-                #   Instead, we could count them as concrete courses, but give priority
-                #   to the corresponding equivalences
-                c = c.equivalence
             creds = courseinfo.get_credits(c)
             if creds is None:
                 continue
@@ -248,7 +258,8 @@ def _build_graph(
             c = TakenCourse(
                 course=c,
                 credits=creds,
-                index=ClassIndex(semester=sem_i, position=i),
+                sem=sem_i,
+                index=i,
                 flat_index=len(taken.flat),
                 repeat_index=len(repetitions),
             )

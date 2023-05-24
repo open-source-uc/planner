@@ -9,8 +9,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Cached course info.
+model CachedCourseInfo {
+  id   String @id
+  info Json
+}
+
+// A concrete course in the DB
+// Cached from SIDING or whatever other source
+// In turn, these courses are cached in memory at startup
 model Course {
-  code                String  @id
+  code                String              @id
   name                String
   credits             Int
   deps                Json
@@ -31,15 +40,30 @@ model Course {
   semestrality_first  Boolean
   semestrality_second Boolean
   semestrality_tav    Boolean
+  equivs              EquivalenceCourse[]
 }
 
+// An equivalence.
+// The courses of the equivalence are stored relationally.
 model Equivalence {
-  code           String   @id
+  code           String              @id
   name           String
   is_homogeneous Boolean
-  courses        String[]
+  courses        EquivalenceCourse[]
 }
 
+// A relationship between an equivalence and a course.
+model EquivalenceCourse {
+  equiv       Equivalence @relation(fields: [equiv_code], references: [code])
+  equiv_code  String
+  course      Course      @relation(fields: [course_code], references: [code])
+  course_code String
+
+  @@id([equiv_code, course_code])
+}
+
+// An available major for a certain cyear.
+// Majors are duplicated once for each cyear!
 model Major {
   // C2013, C2020, C2022, etc...
   cyear   String
@@ -48,9 +72,11 @@ model Major {
   // Vs.01, Vs.02, etc...
   version String
 
-  @@unique([cyear, code])
+  @@id([cyear, code])
 }
 
+// An available minor for a certain cyear.
+// Minors are duplicated once for each cyear!
 model Minor {
   // C2013, C2020, C2022, etc...
   cyear      String
@@ -61,17 +87,20 @@ model Minor {
   // "Amplitud", "Profundidad"
   minor_type String
 
-  @@unique([cyear, code])
+  @@id([cyear, code])
 }
 
+// Indicates that for the given cyear and major, the given minor is available.
 model MajorMinor {
   cyear String
   major String
   minor String
 
-  @@unique([cyear, major, minor])
+  @@id([cyear, major, minor])
 }
 
+// An available title for a certain cyear.
+// Titles are duplicated once for each cyear!
 model Title {
   // C2013, C2020, C2022, etc...
   cyear      String
@@ -82,9 +111,10 @@ model Title {
   // "CIVIL", "INDUSTRIAL"
   title_type String
 
-  @@unique([cyear, code])
+  @@id([cyear, code])
 }
 
+// A stored plan, saved by a student.
 model Plan {
   id               String   @id @default(cuid())
   created_at       DateTime @default(now())
@@ -95,6 +125,7 @@ model Plan {
   validatable_plan Json
 }
 
+// A curriculum definition, fetched from SIDING and cached here.
 model Curriculum {
   cyear      String
   major      String
@@ -102,5 +133,5 @@ model Curriculum {
   title      String
   curriculum Json
 
-  @@unique([cyear, major, minor, title])
+  @@id([cyear, major, minor, title])
 }

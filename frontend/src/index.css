@@ -41,14 +41,6 @@
     transition: opacity 0.5s ease;
   }
 
-  .CurriculumTable{
-    overflow-y: overlay;
-    overflow-x: auto;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-  }
-
   .btn{
     @apply font-semibold py-2 px-4 rounded;
     @apply  text-white;

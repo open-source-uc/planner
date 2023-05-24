@@ -13,7 +13,6 @@ from .validation.curriculum.tree import (
     Cyear,
 )
 from .plan import (
-    ClassIndex,
     Level,
     PseudoCourse,
     ValidatablePlan,
@@ -211,8 +210,9 @@ def _try_add_course_group(
     for i, course in enumerate(course_group):
         if courseinfo.try_course(course.code) is None:
             continue
-        index = ClassIndex(semester=len(plan.classes) - 1, position=original_length + i)
-        if not quick_validate_dependencies(courseinfo, plan, index, course):
+        if not quick_validate_dependencies(
+            courseinfo, plan, len(plan.classes) - 1, original_length + i
+        ):
             # Requirements are not met
             # Undo changes and cancel
             while len(semester) > original_length:

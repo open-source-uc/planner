@@ -6,6 +6,6 @@ import type { FlatDiagnostic } from './FlatDiagnostic';
 
 export type FlatValidationResult = {
     diagnostics: Array<FlatDiagnostic>;
-    course_superblocks: Array<Array<string>>;
+    course_superblocks: Record<string, Array<string>>;
 };
 

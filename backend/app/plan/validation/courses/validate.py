@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from ...course import EquivalenceId
 from ..diagnostic import DiagnosticErr, DiagnosticWarn, ValidationResult
-from ...plan import ClassIndex, PseudoCourse, ValidatablePlan
+from ...plan import PseudoCourse, ValidatablePlan
 from ...courseinfo import CourseDetails, CourseInfo
 from .logic import (
     Atom,
@@ -26,11 +26,11 @@ from .simplify import simplify
 class CourseInstance:
     """
     An instance of a course, with a student and semester associated with it.
-    In particular, the course index is a (semester, index within semester) pair.
     """
 
     course: PseudoCourse
-    index: ClassIndex
+    sem: int
+    index: int
 
 
 class PlanContext:
@@ -42,7 +42,7 @@ class PlanContext:
     """
 
     courseinfo: CourseInfo
-    # A dictionary of classes and their respective semesters
+    # A dictionary from course code to the first time the course appears in the plan
     classes: dict[str, CourseInstance]
     # A list of accumulated total approved credits per semester
     # approved_credits[i] contains the amount of approved credits in the range [0, i)
@@ -71,9 +71,7 @@ class PlanContext:
                     ):
                         code = equiv.courses[0]
                 if code not in classes:
-                    classes[code] = CourseInstance(
-                        course, index=ClassIndex(semester=sem, position=i)
-                    )
+                    classes[code] = CourseInstance(course, sem=sem, index=i)
                 # Accumulate credits
                 creds += courseinfo.get_credits(course) or 0
             acc_credits.append(creds)
@@ -88,11 +86,10 @@ class PlanContext:
             sem_credits: int = 0
 
             for i, courseid in enumerate(self.plan.classes[sem]):
-                index = ClassIndex(semester=sem, position=i)
                 if isinstance(courseid, EquivalenceId):
                     equiv = self.courseinfo.try_equiv(courseid.code)
                     if equiv is None:
-                        out.add(UnknownCourseErr(code=courseid.code, index=index))
+                        out.add(UnknownCourseErr(code=courseid.code, index=(sem, i)))
                         continue
                     elif equiv.is_homogeneous and len(equiv.courses) >= 1:
                         code = equiv.courses[0]
@@ -105,7 +102,7 @@ class PlanContext:
 
                 course = self.courseinfo.try_course(code)
                 if course is None:
-                    out.add(UnknownCourseErr(code=code, index=index))
+                    out.add(UnknownCourseErr(code=code, index=(sem, i)))
                     continue
 
                 inst = self.classes[course.code]
@@ -126,10 +123,18 @@ class PlanContext:
     ):
         if details.is_available:
             # TODO: check for TAV semester
-            if not details.semestrality[inst.index.semester % 2]:
-                out.add(SemestralityWarn(code=inst.course.code, index=inst.index))
+            if not details.semestrality[inst.sem % 2]:
+                out.add(
+                    SemestralityWarn(
+                        code=inst.course.code, index=(inst.sem, inst.index)
+                    )
+                )
         else:
-            out.add(CourseUnavailableWarn(code=inst.course.code, index=inst.index))
+            out.add(
+                CourseUnavailableWarn(
+                    code=inst.course.code, index=(inst.sem, inst.index)
+                )
+            )
 
     def check_max_credits(self, out: ValidationResult, semester: int, credits: int):
         if max_creds_err := SemesterErrHandler.check_error(
@@ -173,7 +178,9 @@ class PlanContext:
             missing = simplify(fold_atoms(self, inst, expr, lambda atom, sat: sat))
         # Show this expression
         out.add(
-            RequirementErr(code=inst.course.code, index=inst.index, missing=missing)
+            RequirementErr(
+                code=inst.course.code, index=(inst.sem, inst.index), missing=missing
+            )
         )
 
 
@@ -187,7 +194,7 @@ def is_satisfied(ctx: PlanContext, cl: CourseInstance, expr: Expr) -> bool:
             ok = expr.op(ok, is_satisfied(ctx, cl, child))
         return ok
     if isinstance(expr, MinCredits):
-        return ctx.approved_credits[cl.index.semester] >= expr.min_credits
+        return ctx.approved_credits[cl.sem] >= expr.min_credits
     if isinstance(expr, ReqLevel):
         if ctx.plan.level is None:
             # TODO: Does everybody have a level?
@@ -206,9 +213,9 @@ def is_satisfied(ctx: PlanContext, cl: CourseInstance, expr: Expr) -> bool:
             return False
         req_cl = ctx.classes[expr.code]
         if expr.coreq:
-            return req_cl.index.semester <= cl.index.semester
+            return req_cl.sem <= cl.sem
         else:
-            return req_cl.index.semester < cl.index.semester
+            return req_cl.sem < cl.sem
     # assert isinstance(expr, Const)
     return expr.value
 
@@ -275,10 +282,10 @@ def strip_satisfied(
 
 
 class SemestralityWarn(DiagnosticWarn):
-    index: ClassIndex
+    index: tuple[int, int]
     code: str
 
-    def course_index(self) -> Optional[ClassIndex]:
+    def class_index(self) -> Optional[tuple[int, int]]:
         return self.index
 
     def message(self) -> str:
@@ -288,16 +295,16 @@ class SemestralityWarn(DiagnosticWarn):
         )
 
     def semester_type(self):
-        if self.index.semester % 2 == 0:
+        if self.index[0] % 2 == 0:
             return "primeros"
         return "segundos"
 
 
 class CourseUnavailableWarn(DiagnosticWarn):
-    index: ClassIndex
+    index: tuple[int, int]
     code: str
 
-    def course_index(self) -> Optional[ClassIndex]:
+    def class_index(self) -> Optional[tuple[int, int]]:
         return self.index
 
     def message(self) -> str:
@@ -321,9 +328,9 @@ class AmbiguousCoursesErr(DiagnosticErr):
 
 class CourseErr(DiagnosticErr, ABC):
     code: str
-    index: ClassIndex
+    index: tuple[int, int]
 
-    def course_index(self) -> Optional[ClassIndex]:
+    def class_index(self) -> Optional[tuple[int, int]]:
         return self.index
 
 

@@ -16,7 +16,11 @@ function App (): JSX.Element {
     </AuthProvider>
   )
 }
-OpenAPI.BASE = import.meta.env.VITE_BASE_API_URL
+const baseUrl = import.meta.env.VITE_BASE_API_URL
+if (typeof baseUrl !== 'string') {
+  throw new Error('VITE_BASE_API_URL environment variable not set during build')
+}
+OpenAPI.BASE = baseUrl
 OpenAPI.TOKEN = async () => {
   const token = localStorage.getItem('access-token')
   if (token != null) {

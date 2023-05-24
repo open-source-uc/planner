@@ -20,7 +20,6 @@ from fastapi.routing import APIRoute
 from .database import prisma
 from prisma.models import (
     Course as DbCourse,
-    Equivalence as DbEquivalence,
     Major as DbMajor,
     Minor as DbMinor,
     Title as DbTitle,
@@ -28,9 +27,15 @@ from prisma.models import (
 from prisma.types import CourseWhereInput, CourseWhereInputRecursive2
 from .user.auth import require_authentication, login_cas, UserKey
 from . import sync
-from .plan.courseinfo import clear_course_info_cache, course_info
+from .plan.courseinfo import (
+    CourseDetails,
+    EquivDetails,
+    clear_course_info_cache,
+    course_info,
+)
 from typing import Optional, Union
 from pydantic import BaseModel
+from unidecode import unidecode
 
 
 # Set-up operation IDs for OpenAPI
@@ -128,110 +133,123 @@ class CourseOverview(BaseModel):
     name: str
     credits: int
     school: str
+    area: Optional[str]
+    is_available: bool
 
 
-def _get_course_filter(
-    name: Optional[str] = None,
-    credits: Optional[int] = None,
-    school: Optional[str] = None,
-    code_whitelist: Optional[list[str]] = None,
-):
-    filter = CourseWhereInput()
-    if name is not None:
-        name_parts: list[CourseWhereInputRecursive2] = list(
-            map(
-                lambda name_part: {
-                    "name": {"contains": name_part, "mode": "insensitive"}
-                },
-                name.split(),
+class CourseFilter(BaseModel):
+    # Only allow courses that match the given search string, in name or course code.
+    text: Optional[str] = None
+    # Only allow courses that have the given amount of credits.
+    credits: Optional[int] = None
+    # Only allow courses matching the given school.
+    school: Optional[str] = None
+    # Only allow courses that match the given availability.
+    available: Optional[bool] = None
+    # Only allow courses available on the given semester.
+    on_semester: Optional[tuple[bool, bool]] = None
+    # Only allow courses that are members of the given equivalence.
+    equiv: Optional[str] = None
+
+    def as_db_filter(self) -> CourseWhereInput:
+        filter = CourseWhereInput()
+        if self.text is not None:
+            ascii_text = unidecode(self.text)
+            name_parts: list[CourseWhereInputRecursive2] = list(
+                map(
+                    lambda text_part: {
+                        "name": {"contains": text_part, "mode": "insensitive"}
+                    },
+                    ascii_text.split(),
+                )
             )
-        )
-        filter["OR"] = [
-            {"code": {"contains": name, "mode": "insensitive"}},
-            {"AND": name_parts},
-        ]
-    if credits is not None:
-        filter["credits"] = credits
-    if school is not None:
-        filter["school"] = {"contains": school, "mode": "insensitive"}
-    if code_whitelist is not None:
-        filter["code"] = {
-            "in": code_whitelist,
-        }
-    return filter
+            filter["OR"] = [
+                {"code": {"contains": self.text, "mode": "insensitive"}},
+                {"AND": name_parts},
+            ]
+        if self.credits is not None:
+            filter["credits"] = self.credits
+        if self.school is not None:
+            ascii_school = unidecode(self.school)
+            filter["school"] = {"contains": ascii_school, "mode": "insensitive"}
+        if self.available is not None:
+            filter["is_available"] = self.available
+        if self.on_semester is not None:
+            filter["semestrality_first"] = self.on_semester[0]
+            filter["semestrality_second"] = self.on_semester[1]
+        if self.equiv is not None:
+            filter["equivs"] = {"some": {"equiv_code": self.equiv}}
+        return filter
 
 
-@app.get("/courses/search", response_model=list[CourseOverview])
-async def search_courses(
-    name: Optional[str] = None,
-    credits: Optional[int] = None,
-    school: Optional[str] = None,
-):
+# This should be a GET request, but FastAPI does not support JSON in GET requests
+# easily.
+# See https://github.com/tiangolo/fastapi/discussions/7919
+@app.post("/courses/search/details", response_model=list[CourseOverview])
+async def search_course_details(filter: CourseFilter):
     """
     Fetches a list of courses that match the given name (or code),
     credits and school.
     """
-    filter = _get_course_filter(name=name, credits=credits, school=school)
-    return await DbCourse.prisma().find_many(where=filter, take=50)
+    return await DbCourse.prisma().find_many(where=filter.as_db_filter(), take=50)
 
 
-@app.get("/courses", response_model=list[DbCourse])
-async def get_course_details(codes: list[str] = Query()) -> list[DbCourse]:
+# This should be a GET request, but FastAPI does not support JSON in GET requests
+# easily.
+# See https://github.com/tiangolo/fastapi/discussions/7919
+@app.post("/courses/search/codes", response_model=list[str])
+async def search_course_codes(filter: CourseFilter):
+    """
+    Fetches a list of courses that match the given name (or code),
+    credits and school.
+    Returns only the course codes, but allows up to 3000 results.
+    """
+    codes = list(
+        map(
+            lambda c: c.code,
+            await DbCourse.prisma().find_many(where=filter.as_db_filter(), take=3000),
+        )
+    )
+    print(f"got {len(codes)} codes")
+    return codes
+
+
+@app.get("/courses", response_model=list[CourseDetails])
+async def get_course_details(codes: list[str] = Query()) -> list[CourseDetails]:
     """
     For a list of course codes, fetch a corresponding list of course details.
 
     Request example: `/api/courses?codes=IIC2233&codes=IIC2173`
     """
-    courses: list[DbCourse] = []
+
+    courseinfo = await course_info()
+    courses: list[CourseDetails] = []
     for code in codes:
-        course = await DbCourse.prisma().find_unique(where={"code": code})
+        course = courseinfo.try_course(code)
         if course is None:
             raise HTTPException(status_code=404, detail=f"Course '{code}' not found")
         courses.append(course)
     return courses
 
 
-async def _filter_courses(
-    courses: list[str],
-    name: Optional[str] = None,
-    credits: Optional[int] = None,
-    school: Optional[str] = None,
-) -> list[str]:
-    filter = _get_course_filter(
-        name=name, credits=credits, school=school, code_whitelist=courses
-    )
-    filtered: list[DbCourse] = await DbCourse.prisma().find_many(where=filter)
-    return list(map(lambda c: c.code, filtered))
-
-
-@app.get("/equivalences", response_model=list[DbEquivalence])
+@app.get("/equivalences", response_model=list[EquivDetails])
 async def get_equivalence_details(
     codes: list[str] = Query(),
-    filter_name: Optional[str] = None,
-    filter_credits: Optional[int] = None,
-    filter_school: Optional[str] = None,
-) -> list[DbEquivalence]:
+) -> list[EquivDetails]:
     """
-    For a list of equivalence codes, fetch a corresponding list of equivalence details
-    with the `courses` attribute filtered.
+    For a list of equivalence codes, fetch the raw equivalence details, without any
+    filtering.
+    To filter courses for a specific equivalence, use `search_courses` with an
+    equivalence filter.
     """
-    equivs: list[DbEquivalence] = []
+
+    courseinfo = await course_info()
+    equivs: list[EquivDetails] = []
     for code in codes:
-        equiv = await DbEquivalence.prisma().find_unique(where={"code": code})
+        equiv = courseinfo.try_equiv(code)
         if equiv is None:
             raise HTTPException(
                 status_code=404, detail=f"Equivalence '{code}' not found"
-            )
-        if (
-            filter_name is not None
-            or filter_credits is not None
-            or filter_school is not None
-        ):
-            equiv.courses = await _filter_courses(
-                courses=equiv.courses,
-                name=filter_name,
-                credits=filter_credits,
-                school=filter_school,
             )
         equivs.append(equiv)
     return equivs
@@ -242,7 +260,7 @@ async def rebuild_validation_rules():
     """
     Recache course information from internal database.
     """
-    clear_course_info_cache()
+    await clear_course_info_cache()
     info = await course_info()
     return {
         "message": f"Recached {len(info.courses)} courses and "
@@ -277,7 +295,7 @@ async def validate_guest_plan(plan: ValidatablePlan):
     """
     Validate a plan, generating diagnostics.
     """
-    return (await diagnose_plan(plan, user_ctx=None)).flatten()
+    return (await diagnose_plan(plan, user_ctx=None)).flatten(plan)
 
 
 @app.post("/plan/validate_for", response_model=FlatValidationResult)
@@ -289,7 +307,7 @@ async def validate_plan_for_user(
     Includes warnings tailored for the given user.
     """
     user_ctx = await sync.get_student_data(user)
-    return (await diagnose_plan(plan, user_ctx)).flatten()
+    return (await diagnose_plan(plan, user_ctx)).flatten(plan)
 
 
 @app.post("/plan/curriculum_graph")

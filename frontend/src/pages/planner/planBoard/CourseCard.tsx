@@ -1,24 +1,29 @@
-import { useRef } from 'react'
+import { memo, useRef } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
 import { PseudoCourseDetail } from '../Planner'
 import editWhiteIcon from '../../../assets/editWhite.svg'
 import editBlackIcon from '../../../assets/editBlack.svg'
+import deepEqual from 'fast-deep-equal'
 
 interface CourseCardProps {
+  semester: number
+  index: number
   cardData: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }
   isDragging: Function
-  handleMove: Function
+  moveCourse: Function
   remCourse: Function
-  courseBlock: string | null
+  courseBlock: string
   openSelector: Function
   hasEquivalence?: boolean
   hasError: boolean
   hasWarning: boolean
 }
 interface CardProps {
+  semester: number
+  index: number
   cardData: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }
   remCourse: Function
-  courseBlock: string | null
+  courseBlock: string
   openSelector: Function
   hasEquivalence?: boolean
   hasError: boolean
@@ -41,7 +46,7 @@ const BlockInitials = (courseBlock: string): string => {
   return ''
 }
 
-const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, openSelector, hasEquivalence, hasError, hasWarning }: CourseCardProps): JSX.Element => {
+const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCourse, courseBlock, openSelector, hasEquivalence, hasError, hasWarning }: CourseCardProps): JSX.Element => {
   const ref = useRef(null)
   const [collected = { isDragging: false }, drag] = useDrag(() => ({
     type: 'card',
@@ -59,7 +64,7 @@ const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, 
   const [dropProps, drop] = useDrop(() => ({
     accept: 'card',
     drop (course: PseudoCourseDetail) {
-      handleMove(course)
+      moveCourse(course, semester, index)
       return course
     },
     collect: monitor => ({
@@ -76,8 +81,10 @@ const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, 
       {!collected.isDragging && <>{dropProps.isOver
         ? <div className={'card bg-place-holder'} />
         : <div> {!collected.isDragging && ((cardData.is_concrete !== true && courseBlock != null)
-          ? <button className='w-full' onClick={() => openSelector()}>
+          ? <button className='w-full' onClick={() => openSelector(cardData, semester, index)}>
               <Card
+                semester={semester}
+                index={index}
                 courseBlock={courseBlock}
                 cardData={cardData}
                 hasEquivalence={hasEquivalence}
@@ -88,6 +95,8 @@ const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, 
               />
             </button>
           : <Card
+            semester={semester}
+            index={index}
                 courseBlock={courseBlock}
                 cardData={cardData}
                 hasEquivalence={hasEquivalence}
@@ -101,6 +110,8 @@ const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, 
       </div>
       {!collected.isDragging && dropProps.isOver && <div className={'px-2 pb-3'}>
       <Card
+        semester={semester}
+        index={index}
         courseBlock={courseBlock}
         cardData={cardData}
         hasEquivalence={hasEquivalence}
@@ -115,19 +126,22 @@ const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, 
   )
 }
 
-const Card = ({ courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError }: CardProps): JSX.Element => {
+const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError }: CardProps): JSX.Element => {
+  // Turns out animations are a big source of lag
+  const allowAnimations = true
+
   return (
-    <div className={`card group ${courseBlock != null ? courseBlock : ''} ${cardData.is_concrete !== true ? 'animated' : ''}`}>
+    <div className={`card group ${courseBlock} ${cardData.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
       { hasEquivalence === true && (courseBlock === 'FormacionGeneral'
         ? cardData.is_concrete === true
-          ? <button onClick={() => openSelector()}><img className='opacity-60 absolute w-3 top-2 left-2' src={editWhiteIcon} alt="Seleccionar Curso" /></button>
+          ? <button onClick={() => openSelector(cardData, semester, index)}><img className='opacity-60 absolute w-3 top-2 left-2' src={editWhiteIcon} alt="Seleccionar Curso" /></button>
           : <img className='opacity-60 absolute w-3 top-2 left-2' src={editWhiteIcon} alt="Seleccionar Curso" />
         : cardData.is_concrete === true
-          ? <button onClick={() => openSelector()}><img className='opacity-60 absolute w-3 top-2 left-2' src={editBlackIcon} alt="Seleccionar Curso" /></button>
+          ? <button onClick={() => openSelector(cardData, semester, index)}><img className='opacity-60 absolute w-3 top-2 left-2' src={editBlackIcon} alt="Seleccionar Curso" /></button>
           : <img className='opacity-60 absolute w-3 top-2 left-2' src={editBlackIcon} alt="Seleccionar Curso" />)
       }
-      {courseBlock == null
-        ? <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>
+      {courseBlock === ''
+        ? <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse(semester, index)}>x</button>
         : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{BlockInitials(courseBlock)}</div>}
       <div className='flex items-center justify-center text-center flex-col'>
         <div className='text-xs line-clamp-2'>{cardData.name}</div>
@@ -135,15 +149,15 @@ const Card = ({ courseBlock, cardData, hasEquivalence, openSelector, remCourse, 
       </div>
       <div className='absolute bottom-2 left-2 text-[0.5rem] opacity-75'>{cardData.credits} créd.</div>
       {hasError && <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-300 opacity-90"></span>
+        <span className={`${allowAnimations ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-red-300 opacity-90`}></span>
         <span className="relative inline-flex rounded-full h-3 w-3 bg-red-400"></span>
       </span> }
       {!hasError && hasWarning && <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-90"></span>
+        <span className={`${allowAnimations ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-90`}></span>
         <span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-400"></span>
       </span> }
   </div>
   )
 }
 
-export default CourseCard
+export default memo(CourseCard, deepEqual)
