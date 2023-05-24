@@ -42,6 +42,8 @@ const BlockInitials = (courseBlock: string): string => {
       return 'M'
     case 'Minor':
       return 'm'
+    case 'Titulo':
+      return 'T'
   }
   return ''
 }

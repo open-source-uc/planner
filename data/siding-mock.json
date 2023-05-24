@@ -20072,6 +20072,1228 @@
                 "Requisitos": null,
                 "Tipocurso": null,
                 "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Se\u00f1ales y Sistemas",
+                "CodSigla": "IEE2103",
+                "CodLista": null,
+                "Programa": "Minor en Ingenier\u00eda El\u00e9ctrica",
+                "Creditos": 10,
+                "SemestreBloque": 9,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Minor"
+            },
+            {
+                "Nombre": "Circuitos El\u00e9ctricos",
+                "CodSigla": "IEE2123",
+                "CodLista": null,
+                "Programa": "Minor en Ingenier\u00eda El\u00e9ctrica",
+                "Creditos": 10,
+                "SemestreBloque": 9,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Minor"
+            },
+            {
+                "Nombre": "Sistemas Digitales",
+                "CodSigla": "IEE2713",
+                "CodLista": null,
+                "Programa": "Minor en Ingenier\u00eda El\u00e9ctrica",
+                "Creditos": 10,
+                "SemestreBloque": 9,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Minor"
+            },
+            {
+                "Nombre": "Control Autom\u00e1tico",
+                "CodSigla": "IEE2613",
+                "CodLista": null,
+                "Programa": "Minor en Ingenier\u00eda El\u00e9ctrica",
+                "Creditos": 10,
+                "SemestreBloque": 9,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Minor"
+            },
+            {
+                "Nombre": "Electivo Minor",
+                "CodSigla": null,
+                "CodLista": "C8766",
+                "Programa": "Minor en Ingenier\u00eda El\u00e9ctrica",
+                "Creditos": 10,
+                "SemestreBloque": 9,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Minor"
+            },
+            {
+                "Nombre": "Optimizaci\u00f3n",
+                "CodSigla": null,
+                "CodLista": "C10129",
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 10,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Titulo"
+            },
+            {
+                "Nombre": "Logica para Ciencias de la Computacion",
+                "CodSigla": "IIC2213",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 10,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Titulo"
+            },
+            {
+                "Nombre": "Teoria de Automatas y Lenguajes Formales",
+                "CodSigla": "IIC2223",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 10,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Titulo"
+            },
+            {
+                "Nombre": "Dise\u00f1o y An\u00e1lisis de Algoritmos",
+                "CodSigla": "IIC2283",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 10,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Titulo"
+            },
+            {
+                "Nombre": "Sistemas Distribuidos",
+                "CodSigla": "IIC2523",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 10,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Titulo"
+            },
+            {
+                "Nombre": "Tecnolog\u00edas y Aplicaciones Web",
+                "CodSigla": "IIC2513",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 10,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Titulo"
+            },
+            {
+                "Nombre": "Inteligencia Artificial",
+                "CodSigla": "IIC2613",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 11,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Titulo"
+            },
+            {
+                "Nombre": "Gesti\u00f3n de Proyectos de Tecnolog\u00edas de Informaci\u00f3n",
+                "CodSigla": "IIC3113",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 11,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Titulo"
+            },
+            {
+                "Nombre": "Criptograf\u00eda y Seguridad Computacional",
+                "CodSigla": "IIC3253",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 11,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Titulo"
+            },
+            {
+                "Nombre": "Computaci\u00f3n de Alto Rendimiento",
+                "CodSigla": "IIC3533",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 11,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Titulo"
+            },
+            {
+                "Nombre": "Desarrollo de Sistemas Complejos (Proyecto de T\u00edtulo)",
+                "CodSigla": "IIC3964",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 11,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Titulo"
+            },
+            {
+                "Nombre": "Inteligencia de M\u00e1quina",
+                "CodSigla": null,
+                "CodLista": "C10157",
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 12,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Titulo"
+            },
+            {
+                "Nombre": "Ingenier\u00eda de Software",
+                "CodSigla": null,
+                "CodLista": "C10158",
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 12,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Titulo"
+            },
+            {
+                "Nombre": "Manejo de Datos",
+                "CodSigla": null,
+                "CodLista": "C10159",
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 12,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Titulo"
+            },
+            {
+                "Nombre": "Teor\u00eda de la Computaci\u00f3n",
+                "CodSigla": null,
+                "CodLista": "C10160",
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 12,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Titulo"
+            }
+        ],
+        "{\"CodCurriculum\": \"C2020\", \"CodMajor\": \"M245\", \"CodMinor\": \"N344\", \"CodTitulo\": \"\"}": [
+            {
+                "Nombre": "C\u00e1lculo I",
+                "CodSigla": "MAT1610",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1000",
+                            "Nombre": "Prec\u00e1lculo",
+                            "Semestralidad": null,
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Qu\u00edmica para Ingenier\u00eda",
+                "CodSigla": "QIM100E",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 2,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "QIM100A",
+                            "Nombre": "Qu\u00edmica General II",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Desaf\u00edos de la Ingenier\u00eda",
+                "CodSigla": "ING1004",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "\u00c1lgebra Lineal",
+                "CodSigla": "MAT1203",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1600",
+                            "Nombre": "Introducci\u00f3n al C\u00e1lculo",
+                            "Semestralidad": null,
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "\u00c9tica para Ingenieros",
+                "CodSigla": "FIL188",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Examen de Comunicaci\u00f3n Escrita (Ece)",
+                "CodSigla": "VRA100C",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 0,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 6,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Requisitos adicionales para obtener el grado de Licenciado en Ciencias de la Ingenier\u00eda"
+            },
+            {
+                "Nombre": "Introducci\u00f3n al Aprendizaje Universitario",
+                "CodSigla": "ING1111",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 0,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 7,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "ING1100",
+                            "Nombre": "Taller de Habitos y Estrategias de Estudio",
+                            "Semestralidad": null,
+                            "Creditos": 5
+                        },
+                        {
+                            "Sigla": "ING1110",
+                            "Nombre": "Taller de H\u00e1bitos y Estrategias de Estudio",
+                            "Semestralidad": null,
+                            "Creditos": 0
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Requisitos adicionales para obtener el grado de Licenciado en Ciencias de la Ingenier\u00eda"
+            },
+            {
+                "Nombre": "C\u00e1lculo II",
+                "CodSigla": "MAT1620",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1610",
+                            "Nombre": "C\u00e1lculo I",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Din\u00e1mica",
+                "CodSigla": "FIS1514",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 2,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1513",
+                            "Nombre": "Est\u00e1tica y Din\u00e1mica",
+                            "Semestralidad": null,
+                            "Creditos": 10
+                        },
+                        {
+                            "Sigla": "ICE1513",
+                            "Nombre": "Estatica y Dinamica",
+                            "Semestralidad": null,
+                            "Creditos": 10
+                        },
+                        {
+                            "Sigla": "ICE1514",
+                            "Nombre": "Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1610",
+                            "Nombre": "C\u00e1lculo I",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "FIS0154",
+                            "Nombre": "Laboratorio de Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 0,
+                            "TipoRequisito": "Corequisito"
+                        },
+                        {
+                            "Sigla": "MAT1203",
+                            "Nombre": "\u00c1lgebra Lineal",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Corequisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Laboratorio de Din\u00e1mica",
+                "CodSigla": "FIS0154",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 0,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 3,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS0151",
+                            "Nombre": "Laboratorio de Estatica y Dinamica",
+                            "Semestralidad": null,
+                            "Creditos": 0
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1514",
+                            "Nombre": "Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Corequisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Introducci\u00f3n a la Econom\u00eda",
+                "CodSigla": "ICS1513",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Introducci\u00f3n a la Programaci\u00f3n",
+                "CodSigla": "IIC1103",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Desarrollo de Habilidades Comunicativas para Ingenieros",
+                "CodSigla": "LET0003",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 6,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "English Test (Sufficiency Alte 3)",
+                "CodSigla": "VRA3010",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 0,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 7,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "RII7000",
+                            "Nombre": "Exit English (Alte3)",
+                            "Semestralidad": null,
+                            "Creditos": 5
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "RII6000",
+                            "Nombre": "English VI (Alte 3)",
+                            "Semestralidad": null,
+                            "Creditos": 5,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Requisitos adicionales para obtener el grado de Licenciado en Ciencias de la Ingenier\u00eda"
+            },
+            {
+                "Nombre": "Pr\u00e1ctica I",
+                "CodSigla": "ING1001",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 0,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 8,
+                "Equivalencias": null,
+                "Restricciones": {
+                    "Restricciones": [
+                        {
+                            "Nombre": "70 Cr. aprobados",
+                            "CreditoMin": 70
+                        }
+                    ]
+                },
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Requisitos adicionales para obtener el grado de Licenciado en Ciencias de la Ingenier\u00eda"
+            },
+            {
+                "Nombre": "C\u00e1lculo III",
+                "CodSigla": "MAT1630",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1203",
+                            "Nombre": "\u00c1lgebra Lineal",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "MAT1620",
+                            "Nombre": "C\u00e1lculo II",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "Ciencias B\u00e1sicas (m\u00ednimos) (LISTA 1)",
+                "CodSigla": null,
+                "CodLista": "C8924",
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Laboratorio de Termodin\u00e1mica",
+                "CodSigla": "FIS0152",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 0,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1523",
+                            "Nombre": "Termodin\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Corequisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Ecuaciones Diferenciales",
+                "CodSigla": "MAT1640",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1203",
+                            "Nombre": "\u00c1lgebra Lineal",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "MAT1620",
+                            "Nombre": "C\u00e1lculo II",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "Optativo de Exploraci\u00f3n de Major",
+                "CodSigla": null,
+                "CodLista": "L11",
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "Cursos formaci\u00f3n teol\u00f3gica",
+                "CodSigla": null,
+                "CodLista": "L2",
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 6,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Probabilidades y Estad\u00edstica",
+                "CodSigla": "EYP1113",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1523",
+                            "Nombre": "Calculo III",
+                            "Semestralidad": null,
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Ciencias B\u00e1sicas (m\u00ednimos) (LISTA 2)",
+                "CodSigla": null,
+                "CodLista": "C8927",
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Laboratorio de Electricidad y Magnetismo",
+                "CodSigla": "FIS0153",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 0,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1533",
+                            "Nombre": "Electricidad y Magnetismo",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Corequisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Matem\u00e1ticas Discretas",
+                "CodSigla": "IIC1253",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1203",
+                            "Nombre": "\u00c1lgebra Lineal",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Programaci\u00f3n Avanzada",
+                "CodSigla": "IIC2233",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIC1103",
+                            "Nombre": "Introducci\u00f3n a la Programaci\u00f3n",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 6,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Estructuras de Datos y Algoritmos",
+                "CodSigla": "IIC2133",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIC1222",
+                            "Nombre": "Programacion Avanzada",
+                            "Semestralidad": null,
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "IIC1253",
+                            "Nombre": "Matem\u00e1ticas Discretas",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Optativo Biol\u00f3gico",
+                "CodSigla": null,
+                "CodLista": "L10",
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Optativo de Fundamentos de Ciencias o Ingenier\u00eda ",
+                "CodSigla": null,
+                "CodLista": "C8931",
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Investigaci\u00f3n, Innovaci\u00f3n y Emprendimiento",
+                "CodSigla": "ING2030",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 4,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIE2001",
+                            "Nombre": "Investigaci\u00f3n, Innovaci\u00f3n y Emprendimiento",
+                            "Semestralidad": null,
+                            "Creditos": 10
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Inteligencia Artificial",
+                "CodSigla": "IIC2613",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 6,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "EYP1113",
+                            "Nombre": "Probabilidades y Estad\u00edstica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "IIC2233",
+                            "Nombre": "Programaci\u00f3n Avanzada",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Arquitectura de Computadores",
+                "CodSigla": "IIC2343",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 6,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIC1103",
+                            "Nombre": "Introducci\u00f3n a la Programaci\u00f3n",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Ingenier\u00eda de Software",
+                "CodSigla": "IIC2143",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 6,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIC2233",
+                            "Nombre": "Programaci\u00f3n Avanzada",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 6,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Sistemas Operativos y Redes",
+                "CodSigla": "IIC2333",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 7,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIC2343",
+                            "Nombre": "Arquitectura de Computadores",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Tecnolog\u00edas y Aplicaciones Web",
+                "CodSigla": "IIC2513",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 7,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIC2412",
+                            "Nombre": "Bases de Datos",
+                            "Semestralidad": null,
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Bases de Datos",
+                "CodSigla": "IIC2413",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 7,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIC2233",
+                            "Nombre": "Programaci\u00f3n Avanzada",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 7,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Proyecto de Especialidad",
+                "CodSigla": "IIC2154",
+                "CodLista": null,
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 8,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIC2143",
+                            "Nombre": "Ingenier\u00eda de Software",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "IIC2413",
+                            "Nombre": "Bases de Datos",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "IIC2513",
+                            "Nombre": "Tecnolog\u00edas y Aplicaciones Web",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "IIC2613",
+                            "Nombre": "Inteligencia Artificial",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Computaci\u00f3n y Sistemas de Informaci\u00f3n - Track Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 8,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
             }
         ]
     },
@@ -37871,6 +39093,1008 @@
                 "Sigla": "SUS1000",
                 "Nombre": "CMD Sustentabilidad",
                 "Semestralidad": "I y II",
+                "Creditos": 10
+            }
+        ],
+        "{\"CodLista\": \"C8766\"}": [
+            {
+                "Sigla": "IEE2010",
+                "Nombre": "Teoria Electromagnetica",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2012",
+                "Nombre": "Monitoreo Fisiol\u00f3gico y An\u00e1lisis de Datos",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2014",
+                "Nombre": "Radiaci\u00f3n y Seguridad",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE201L",
+                "Nombre": "Laboratorio Electricidad",
+                "Semestralidad": null,
+                "Creditos": 4
+            },
+            {
+                "Sigla": "IEE2020",
+                "Nombre": "Materiales Electricos",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE203L",
+                "Nombre": "Laboratorio Mediciones",
+                "Semestralidad": null,
+                "Creditos": 4
+            },
+            {
+                "Sigla": "IEE204L",
+                "Nombre": "Lab Sistemas Digitales I",
+                "Semestralidad": null,
+                "Creditos": 5
+            },
+            {
+                "Sigla": "IEE2101",
+                "Nombre": "Im\u00e1genes Biom\u00e9dicas",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2102",
+                "Nombre": "Analisis de Senales",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2103",
+                "Nombre": "Se\u00f1ales y Sistemas",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2112",
+                "Nombre": "Teoria Electromagnetica",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2113",
+                "Nombre": "Teor\u00eda Electromagn\u00e9tica",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2120",
+                "Nombre": "Redes Electricas II",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2123",
+                "Nombre": "Circuitos El\u00e9ctricos",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2170",
+                "Nombre": "Laboratorio Redes Electricas I",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2172",
+                "Nombre": "Laboratorio de Circuitos",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2173",
+                "Nombre": "Laboratorio Ingenieria Electrica",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2183",
+                "Nombre": "Laboratorio de Mediciones El\u00e9ctricas",
+                "Semestralidad": "I y II",
+                "Creditos": 5
+            },
+            {
+                "Sigla": "IEE2210",
+                "Nombre": "Maquinas Electricas I",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2212",
+                "Nombre": "Maquinas Electricas",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2213",
+                "Nombre": "M\u00e1quinas El\u00e9ctricas",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2224",
+                "Nombre": "Accionamientos El\u00e9ctricos",
+                "Semestralidad": "I",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2233",
+                "Nombre": "Tracci\u00f3n El\u00e9ctrica",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2243",
+                "Nombre": "Electr\u00f3nica de Potencia",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2244",
+                "Nombre": "Electr\u00f3nica Industrial",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2253",
+                "Nombre": "Generaci\u00f3n de Energ\u00eda El\u00e9ctrica",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2270",
+                "Nombre": "Lab Maquinas Electricas",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2272",
+                "Nombre": "Laboratorio de Maquinas Electricas",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2273",
+                "Nombre": "Laboratorio de M\u00e1quinas El\u00e9ctricas",
+                "Semestralidad": "I y II",
+                "Creditos": 5
+            },
+            {
+                "Sigla": "IEE2303",
+                "Nombre": "T\u00f2picos Avanzados en Ingenier\u00eda de Potencia",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2310",
+                "Nombre": "Sistemas de Potencia I",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2312",
+                "Nombre": "Sistemas de Potencia",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2313",
+                "Nombre": "Sistemas de Potencia",
+                "Semestralidad": "II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2323",
+                "Nombre": "Operaci\u00f3n Econ\u00f3mica de Sistemas El\u00e9ctricos",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2324",
+                "Nombre": "Pol\u00edtica Energ\u00e9tica",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2330",
+                "Nombre": "Planif de Sist Elect de Potencia",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2333",
+                "Nombre": "Planificaci\u00f3n de Sistemas El\u00e9ctricos",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2340",
+                "Nombre": "Protecciones",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2343",
+                "Nombre": "Protecciones",
+                "Semestralidad": "I",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2353",
+                "Nombre": "Sistemas de Distribuci\u00f3n",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2360",
+                "Nombre": "Proyecto Electrico",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2362",
+                "Nombre": "Proyecto Electrico",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2363",
+                "Nombre": "Proyecto El\u00e9ctrico",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2372",
+                "Nombre": "Mercados Electricos",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2373",
+                "Nombre": "Mercados El\u00e9ctricos",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2380",
+                "Nombre": "Seminario Sistemas de Potencia",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2383",
+                "Nombre": "Seminario de Sistemas de Potencia",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2390",
+                "Nombre": "Confiabilidad de Sistemas Electri",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2393",
+                "Nombre": "Redes Inteligentes para Energ\u00eda Sustentable",
+                "Semestralidad": "I",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2410",
+                "Nombre": "Electronica I",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2412",
+                "Nombre": "Electronica",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2413",
+                "Nombre": "Electr\u00f3nica",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2423",
+                "Nombre": "Dise\u00f1o y Caracterizaci\u00f3n de Circuitos Integrados",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2433",
+                "Nombre": "Dise\u00f1o de Circuitos Integrados Anal\u00f3gicos",
+                "Semestralidad": "II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2440",
+                "Nombre": "Electronica Industrial",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2442",
+                "Nombre": "Mecatronica",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2462",
+                "Nombre": "Introduccion a los Microbots",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2463",
+                "Nombre": "Sistemas Electr\u00f3nicos Programables",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2470",
+                "Nombre": "Lab Electronica I",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2472",
+                "Nombre": "Laboratorio de Electrona y Comunicaciones",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2473",
+                "Nombre": "Laboratorio de Electr\u00f3nica Anal\u00f3gica y Digital",
+                "Semestralidad": "I y II",
+                "Creditos": 5
+            },
+            {
+                "Sigla": "IEE2482",
+                "Nombre": "Laboratorio de Electronica",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2483",
+                "Nombre": "Laboratorio de Electr\u00f3nica",
+                "Semestralidad": "I",
+                "Creditos": 5
+            },
+            {
+                "Sigla": "IEE2492",
+                "Nombre": "Taller de Electronica de Audio",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2493",
+                "Nombre": "Taller de Electr\u00f3nica de Audio",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2510",
+                "Nombre": "Planificacion y Trafico Telefonic",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2511",
+                "Nombre": "Telecomunicaciones I",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2512",
+                "Nombre": "Telecomunicaciones",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2513",
+                "Nombre": "Comunicaciones",
+                "Semestralidad": "I",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2514",
+                "Nombre": "Comunicaciones Digitales",
+                "Semestralidad": "II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE251A",
+                "Nombre": "Diseno Logico de Computadores",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2520",
+                "Nombre": "Conmutacion Digital",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2530",
+                "Nombre": "Transmision Digital",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2533",
+                "Nombre": "Ubicaci\u00f3n \u00d3ptima de Recursos en Redes",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2540",
+                "Nombre": "Sistemas de Datos",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2543",
+                "Nombre": "Transmisi\u00f3n de Datos",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2554",
+                "Nombre": "Sistemas de Codificaci\u00f3n",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2560",
+                "Nombre": "Sistemas Telefonicos Digitales",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2562",
+                "Nombre": "Sistemas Telefonicos Digitales",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2570",
+                "Nombre": "Lab Telecomunicaciones I",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2572",
+                "Nombre": "Laboratorio de Telecomunicaciones",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2573",
+                "Nombre": "Laboratorio de Telecomunicaciones",
+                "Semestralidad": "II",
+                "Creditos": 5
+            },
+            {
+                "Sigla": "IEE2584",
+                "Nombre": "Comunicaciones Inal\u00e1mbricas",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2590",
+                "Nombre": "Seminario de Comunicaciones",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2593",
+                "Nombre": "Sistemas de Comunicaciones Inal\u00e1mbricas",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2610",
+                "Nombre": "Control Automatico I",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2612",
+                "Nombre": "Control Automatico",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2613",
+                "Nombre": "Control Autom\u00e1tico",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2634",
+                "Nombre": "Automatizaci\u00f3n y Control en la Miner\u00eda",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2640",
+                "Nombre": "Instrumentacion Industrial",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2642",
+                "Nombre": "Instrument y Automat Industrial",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2643",
+                "Nombre": "Instrumentaci\u00f3n y Automatizaci\u00f3n Industrial",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2660",
+                "Nombre": "Control Procesos Con Computador",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2664",
+                "Nombre": "Control Inteligente",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2670",
+                "Nombre": "Laboratorio Control Automatico I",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2674",
+                "Nombre": "Control Predictivo",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2682",
+                "Nombre": "Laboratorio de Control Automatico",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2683",
+                "Nombre": "Laboratorio de Control Autom\u00e1tico",
+                "Semestralidad": "I y II",
+                "Creditos": 5
+            },
+            {
+                "Sigla": "IEE2693",
+                "Nombre": "Electro-\u00d3ptica",
+                "Semestralidad": "II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2710",
+                "Nombre": "Sistemas Digitales I",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2712",
+                "Nombre": "Sistemas Digitales",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2713",
+                "Nombre": "Sistemas Digitales",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2714",
+                "Nombre": "Fundamentos de Procesamiento de Im\u00e1genes",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2718",
+                "Nombre": "Sistemas Digitales",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2722",
+                "Nombre": "Arquitectura de Computadores",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2724",
+                "Nombre": "Reconocimiento de Patrones",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2730",
+                "Nombre": "Procesamiento Digital de Senales",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2734",
+                "Nombre": "Visi\u00f3n por Computador",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2740",
+                "Nombre": "Microcomputadores",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2743",
+                "Nombre": "Microcomputadores",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2753",
+                "Nombre": "Dise\u00f1o de Circuitos Integrados Digitales",
+                "Semestralidad": "I",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2764",
+                "Nombre": "Formaci\u00f3n de Im\u00e1genes",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2770",
+                "Nombre": "Laboratorio Sistemas Digitales I",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2772",
+                "Nombre": "Laboratorio de Control y Digitales",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2774",
+                "Nombre": "Laboratorio de Resonancia Magn\u00e9tica",
+                "Semestralidad": null,
+                "Creditos": 5
+            },
+            {
+                "Sigla": "IEE2780",
+                "Nombre": "Procesamiento de Imagenes",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2782",
+                "Nombre": "Laboratorio de Sistemas Digitales",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2783",
+                "Nombre": "Laboratorio de Sistemas Digitales",
+                "Semestralidad": "I",
+                "Creditos": 5
+            },
+            {
+                "Sigla": "IEE2784",
+                "Nombre": "Procesamiento Avanzado de Im\u00e1genes",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2800",
+                "Nombre": "Introd a la Ingenieria Biomedica",
+                "Semestralidad": null,
+                "Creditos": 4
+            },
+            {
+                "Sigla": "IEE2801",
+                "Nombre": "Introd a la Ingenieria Biomedica",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2864",
+                "Nombre": "Fundamentos de Instrumentaci\u00f3n Astron\u00f3mica",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2900",
+                "Nombre": "Seminario en Ingenieria Electrica (Introduccion a los Microbots)",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2901",
+                "Nombre": "Aplicaciones de Dsp en Convertidores Estaticos",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2910",
+                "Nombre": "Diseno Electrico",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2913",
+                "Nombre": "Dise\u00f1o El\u00e9ctrico (Capstone)",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2923",
+                "Nombre": "Sensores y Actuadores para Rob\u00f3tica",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2936",
+                "Nombre": "Estimaci\u00f3n y Control \u00d3ptimo en Rob\u00f3tica",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2943",
+                "Nombre": "Dise\u00f1o de Robots M\u00f3viles",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2972",
+                "Nombre": "Trabajo Personal Dirigido",
+                "Semestralidad": null,
+                "Creditos": 5
+            },
+            {
+                "Sigla": "IEE2981",
+                "Nombre": "Trabajo Personal Dirigido",
+                "Semestralidad": null,
+                "Creditos": 5
+            },
+            {
+                "Sigla": "IEE2985",
+                "Nombre": "Investigacion o Proyecto",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2986",
+                "Nombre": "Investigacion o Proyecto",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2987",
+                "Nombre": "Investigacion o Proyecto",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2991",
+                "Nombre": "Trabajo Personal Dirigido",
+                "Semestralidad": null,
+                "Creditos": 4
+            },
+            {
+                "Sigla": "IEE2992",
+                "Nombre": "Trabajo Personal Dirigido",
+                "Semestralidad": null,
+                "Creditos": 4
+            },
+            {
+                "Sigla": "IEE2995",
+                "Nombre": "Investigacion o Proyecto",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2996",
+                "Nombre": "Investigacion o Proyecto",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE2997",
+                "Nombre": "Investigacion o Proyecto",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2998",
+                "Nombre": "Investigacion o Proyecto",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2999",
+                "Nombre": "Investigacion o Proyecto",
+                "Semestralidad": null,
+                "Creditos": 16
+            },
+            {
+                "Sigla": "IEE299A",
+                "Nombre": "Investigacion o Proyecto",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE299B",
+                "Nombre": "Investigacion o Proyecto",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE299C",
+                "Nombre": "Investigacion o Proyecto",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE299D",
+                "Nombre": "Investigacion o Proyecto",
+                "Semestralidad": null,
+                "Creditos": 8
+            },
+            {
+                "Sigla": "IEE299E",
+                "Nombre": "Investigacion o Proyecto",
+                "Semestralidad": null,
+                "Creditos": 8
+            }
+        ],
+        "{\"CodLista\": \"C10129\"}": [
+            {
+                "Sigla": "ICS1113",
+                "Nombre": "Optimizaci\u00f3n",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "ICS113H",
+                "Nombre": "Optimizaci\u00f3n-Honors",
+                "Semestralidad": "I",
+                "Creditos": 10
+            }
+        ],
+        "{\"CodLista\": \"C10157\"}": [
+            {
+                "Sigla": "IIC3633",
+                "Nombre": "Sistemas Recomendadores",
+                "Semestralidad": "II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC3640",
+                "Nombre": "Modelos Gr\u00e1ficos Probabil\u00edsticos",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC3692",
+                "Nombre": "Topicos Avanzados en Inteligencia Artificial",
+                "Semestralidad": "II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC3695",
+                "Nombre": "T\u00f3picos Avanzados en Inteligencia de M\u00e1quina",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC3697",
+                "Nombre": "Aprendizaje Profundo",
+                "Semestralidad": "I",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC3724",
+                "Nombre": "Reconocimiento de Patrones",
+                "Semestralidad": "I",
+                "Creditos": 10
+            }
+        ],
+        "{\"CodLista\": \"C10158\"}": [
+            {
+                "Sigla": "IIC3143",
+                "Nombre": "Desarrollo de Software",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC3380",
+                "Nombre": "Taller de Aplicaciones en Plataformas Moviles",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC3745",
+                "Nombre": "Testing",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            }
+        ],
+        "{\"CodLista\": \"C10159\"}": [
+            {
+                "Sigla": "IIC3413",
+                "Nombre": "Implementaci\u00f3n de Sistemas de Base de Datos",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC3423",
+                "Nombre": "Big Data",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC3432",
+                "Nombre": "Topicos Avanzados en Bases de Datos",
+                "Semestralidad": null,
+                "Creditos": 10
+            }
+        ],
+        "{\"CodLista\": \"C10160\"}": [
+            {
+                "Sigla": "IIC3242",
+                "Nombre": "Complejidad Computacional",
+                "Semestralidad": "I",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC3263",
+                "Nombre": "Teor\u00eda de Modelos Finitos",
+                "Semestralidad": "II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC3284",
+                "Nombre": "Algoritmos y Aleatoriedad",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC3632",
+                "Nombre": "L\u00f3gica y Representaci\u00f3n del Conocimiento",
+                "Semestralidad": null,
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC3810",
+                "Nombre": "T\u00f3picos Avanzados en Teor\u00eda de la Computaci\u00f3n",
+                "Semestralidad": null,
                 "Creditos": 10
             }
         ]
