@@ -21,19 +21,28 @@ from ...plan.courseinfo import CourseInfo
 
 
 def _skip_extras(curriculum: Curriculum):
-    # Saltarse los superbloques que solamente contienen bloques de 0 creditos (en
-    # realidad, 1 credito fantasma)
-    # Elimina el superbloque "Requisitos adicionales para obtener el grado de
-    # Licenciado..."
-    curriculum.root.children = list(
-        filter(
-            lambda superblock: not (
-                isinstance(superblock, Combination)
-                and all(map(lambda block: block.cap == 1, superblock.children))
-            ),
-            curriculum.root.children,
+    # Saltarse los ramos de 0 creditos del bloque de "Requisitos adicionales para
+    # obtener el grado de Licenciado...", excepto por la Practica I
+    # Razones:
+    # - Hay un ramo que se llama "Aprendizaje Universitario" que no sale en Seguimiento
+    #   Curricular, y ni idea que es
+    # - El test de ingles tiene requisitos incumplibles de forma normal, por lo que el
+    #   recomendador no logra colocarlo
+    # - Es buena idea mantener la practica si, porque hay algunos ramos que tienen la
+    #   practica de requisito
+
+    for superblock in curriculum.root.children:
+        if not isinstance(superblock, Combination):
+            continue
+        if not all(map(lambda block: block.cap == 1, superblock.children)):
+            continue
+        superblock.children = list(
+            filter(
+                lambda b: b.name is not None
+                and ("Practica" in b.name or "Práctica" in b.name),
+                superblock.children,
+            )
         )
-    )
 
 
 def _merge_ofgs(curriculum: Curriculum):
