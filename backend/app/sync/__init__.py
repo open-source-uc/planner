@@ -26,11 +26,12 @@ from prisma.models import (
 )
 
 
-async def clear_upstream_data():
+async def clear_upstream_data(courses: bool = True):
     print("  clearing upstream data from database")
     await DbEquivalenceCourse.prisma().delete_many()
-    await DbCourse.prisma().delete_many()
     await DbEquivalence.prisma().delete_many()
+    if courses:
+        await DbCourse.prisma().delete_many()
 
     await DbMajor.prisma().delete_many()
     await DbMinor.prisma().delete_many()
@@ -40,16 +41,17 @@ async def clear_upstream_data():
     await DbCurriculum.prisma().delete_many()
 
 
-async def run_upstream_sync():
+async def run_upstream_sync(courses: bool = True):
     """
     Populate database with "official" data.
     """
     print("syncing database with external sources...")
     # Remove previous data
-    await clear_upstream_data()
-    # Get course data from "official" source
-    # Currently we have no official source
-    await buscacursos_dl.fetch_to_database()
+    await clear_upstream_data(courses)
+    if courses:
+        # Get course data from "official" source
+        # Currently we have no official source
+        await buscacursos_dl.fetch_to_database()
     # Fetch major, minor and title offer to database
     await siding_translate.load_siding_offer_to_database()
     # Recache course info

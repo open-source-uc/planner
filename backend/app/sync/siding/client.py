@@ -168,22 +168,8 @@ class SoapClient:
         self.soap_client = None
         self.mock_db = {}
         self.record_path = None
-    
-    def on_startup(self):
-        # Connect to SIDING webservice
-        if settings.siding_username != "":
-            wsdl_url = os.path.join(os.path.dirname(__file__), "ServiciosPlanner.wsdl")
-            http_client = httpx.AsyncClient(
-                auth=httpx.DigestAuth(
-                    settings.siding_username,
-                    settings.siding_password.get_secret_value(),
-                )
-            )
-            self.soap_client = AsyncClient(
-                wsdl_url,
-                transport=AsyncTransport(http_client),
-            )
 
+    def on_startup(self):
         # Load mockup data
         if settings.siding_mock_path != "":
             try:
@@ -201,9 +187,25 @@ class SoapClient:
                 )
                 self.mock_db = {}
 
+        # Connect to SIDING webservice
+        if settings.siding_username != "":
+            wsdl_url = os.path.join(os.path.dirname(__file__), "ServiciosPlanner.wsdl")
+            http_client = httpx.AsyncClient(
+                auth=httpx.DigestAuth(
+                    settings.siding_username,
+                    settings.siding_password.get_secret_value(),
+                )
+            )
+            self.soap_client = AsyncClient(
+                wsdl_url,
+                transport=AsyncTransport(http_client),
+            )
+            print("connected to live SIDING webservice")
+
         # Setup response recording
         if settings.siding_record_path != "":
             self.record_path = settings.siding_record_path
+            print("recording SIDING responses")
 
     async def call_endpoint(self, name: str, args: dict[str, Any]) -> Any:
         # Check if request is in mock database
@@ -232,6 +234,7 @@ class SoapClient:
         if self.record_path is not None:
             print(f"saving recorded SIDING responses to '{self.record_path}'")
             try:
+
                 class CustomEncoder(json.JSONEncoder):
                     def default(self, o: Any):
                         if isinstance(o, Decimal):

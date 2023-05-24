@@ -121,11 +121,11 @@ async def get_student_info(user: UserKey = Depends(require_authentication)):
 # change.
 @app.get("/sync")
 # TODO: Require admin permissions for this endpoint.
-async def sync_courses():
+async def sync_database(courses_too: bool = False):
     """
     Initiate a synchronization of the internal database from external sources.
     """
-    await sync.run_upstream_sync()
+    await sync.run_upstream_sync(courses_too)
     return {
         "message": "Course database updated",
     }
