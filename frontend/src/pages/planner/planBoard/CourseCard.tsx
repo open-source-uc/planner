@@ -5,22 +5,6 @@ import editWhiteIcon from '../../../assets/editWhite.svg'
 import editBlackIcon from '../../../assets/editBlack.svg'
 import deepEqual from 'fast-deep-equal'
 
-/*
-
-              key={index}
-              semester={semester}
-              index={index}
-              cardData={{ ...course, semester, index, ...classesDetails[course.code] }}
-              isDragging={setIsDragging}
-              moveCourse={moveCourse}
-              remCourse={remCourse}
-              courseBlock={validationDigest[index]?.superblock ?? ''}
-              openSelector={openSelector}
-              hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
-              hasError={validationDigest[index]?.errorIndices?.[0] != null}
-              hasWarning={validationDigest[index]?.warningIndices?.[0] != null}
-*/
-
 interface CourseCardProps {
   semester: number
   index: number
