@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAuth } from '../../../contexts/auth.context'
 import SemesterColumn from './SemesterColumn'
 import CourseCard from './CourseCard'
 import { ValidatablePlan, Course, FlatValidationResult } from '../../../client'
@@ -28,6 +29,7 @@ const findCourseSuperblock = (validationResults: FlatValidationResult | null, co
  */
 
 const PlanBoard = ({ classesGrid, classesDetails, setPlan, openModal, addCourse, validating, validationResult }: PlanBoardProps): JSX.Element => {
+  const authState = useAuth()
   const [isDragging, setIsDragging] = useState(false)
   function remCourse (semIdx: number, code: string): void {
     let idx = -1
@@ -92,7 +94,7 @@ const PlanBoard = ({ classesGrid, classesDetails, setPlan, openModal, addCourse,
                   hasWarning={validationResult?.diagnostics?.find((e) => e.course_code === course.code && e.is_warning) != null}
                 />
               ))}
-              {!isDragging && <div className="h-10 mx-2 bg-slate-300 card">
+              {((authState?.passed?.length) != null) && (semester + 1 > authState?.passed?.length) && !isDragging && <div className="h-10 mx-2 bg-slate-300 card">
               <button key="+" className="w-full" onClick={() => addCourse(semester)}>+</button>
               </div>}
             </SemesterColumn>
