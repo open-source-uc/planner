@@ -54,7 +54,6 @@ const BlockInitials = (courseBlock: string): string => {
   return ''
 }
 
-
 const ConditionalWrapper = ({ condition, wrapperPassed, wrapperNotPassed, children }: ConditionalWrapperProps): JSX.Element => {
   return (
     condition ? wrapperPassed(children) : wrapperNotPassed(children)
@@ -152,7 +151,6 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
     </>
   )
 }
-
 
 const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError }: CardProps): JSX.Element => {
   const authState = useAuth()
