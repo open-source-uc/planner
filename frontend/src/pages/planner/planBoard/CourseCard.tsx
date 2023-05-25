@@ -1,9 +1,9 @@
-import { useRef } from 'react'
+import { ReactNode, useRef } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
 import { Course } from '../../../client'
 import editWhiteIcon from '../../../assets/editWhite.svg'
 import editBlackIcon from '../../../assets/editBlack.svg'
-// import { useAuth } from '../../../contexts/auth.context'
+import { useAuth } from '../../../contexts/auth.context'
 
 interface CourseCardProps {
   cardData: { name: string, code: string, credits?: number, semester: number, is_concrete?: boolean }
@@ -26,6 +26,13 @@ interface CardProps {
   hasWarning: boolean
 }
 
+interface ConditionalWrapperProps {
+  condition: boolean
+  wrapperPassed: Function
+  wrapperNotPassed: Function
+  children: ReactNode
+}
+
 const BlockInitials = (courseBlock: string): string => {
   switch (courseBlock) {
     case 'CienciasBasicas':
@@ -42,9 +49,17 @@ const BlockInitials = (courseBlock: string): string => {
   return ''
 }
 
+const ConditionalWrapper = ({ condition, wrapperPassed, wrapperNotPassed, children }: ConditionalWrapperProps): JSX.Element => {
+  return (
+    condition ? wrapperPassed(children) : wrapperNotPassed(children)
+  )
+}
+
 const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, openSelector, hasEquivalence, hasError, hasWarning }: CourseCardProps): JSX.Element => {
   const ref = useRef(null)
-  // const authState = useAuth()
+  const authState = useAuth()
+
+  const conditionPassed = authState?.passed?.[cardData.semester]?.find(o => o.code === cardData.code) !== undefined
 
   const [collected = { isDragging: false }, drag] = useDrag(() => ({
     type: 'card',
@@ -71,38 +86,44 @@ const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, 
     })
   }))
 
-  drag(drop(ref))
+  if (!conditionPassed) {
+    drag(drop(ref))
+  }
+
   return (
     <>
-      {/* {authState?.passed?.[cardData.semester]?.find(o => o.code === cardData.code) != null ? console.log('PASSED') : console.log('NOPE')} */}
+      <ConditionalWrapper
+        condition={conditionPassed}
+        wrapperPassed={(children: ReactNode) => <div ref={ref} draggable={false} className={'px-2 opacity-50 pb-3 cursor-not-allowed'}>{children}</div>}
+        wrapperNotPassed={(children: ReactNode) => <div ref={ref} draggable={true} className={`px-2 pb-3 ${!collected.isDragging ? 'cursor-grab' : 'cursor-grabbing'} `}>{children}</div>}
+      >
+        {!collected.isDragging && <>{dropProps.isOver
+          ? <div className={'card bg-place-holder'} />
+          : <div> {!collected.isDragging && ((cardData.is_concrete !== true && courseBlock != null)
+            ? <button className='w-full' onClick={() => openSelector()}>
+                <Card
+                  courseBlock={courseBlock}
+                  cardData={cardData}
+                  hasEquivalence={hasEquivalence}
+                  openSelector={openSelector}
+                  remCourse={remCourse}
+                  hasWarning={hasWarning}
+                  hasError={hasError}
+                />
+              </button>
+            : <Card
+                  courseBlock={courseBlock}
+                  cardData={cardData}
+                  hasEquivalence={hasEquivalence}
+                  openSelector={openSelector}
+                  remCourse={remCourse}
+                  hasWarning={hasWarning}
+                  hasError={hasError}
+                />)}
+            </div>}
+            </>}
+      </ConditionalWrapper>
 
-      <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3 cursor-grab' : 'cursor-grabbing'} `}>
-      {!collected.isDragging && <>{dropProps.isOver
-        ? <div className={'card bg-place-holder'} />
-        : <div> {!collected.isDragging && ((cardData.is_concrete !== true && courseBlock != null)
-          ? <button className='w-full' onClick={() => openSelector()}>
-              <Card
-                courseBlock={courseBlock}
-                cardData={cardData}
-                hasEquivalence={hasEquivalence}
-                openSelector={openSelector}
-                remCourse={remCourse}
-                hasWarning={hasWarning}
-                hasError={hasError}
-              />
-            </button>
-          : <Card
-                courseBlock={courseBlock}
-                cardData={cardData}
-                hasEquivalence={hasEquivalence}
-                openSelector={openSelector}
-                remCourse={remCourse}
-                hasWarning={hasWarning}
-                hasError={hasError}
-              />)}
-          </div>}
-          </>}
-      </div>
       {!collected.isDragging && dropProps.isOver && <div className={'px-2 pb-3'}>
       <Card
         courseBlock={courseBlock}
@@ -120,6 +141,9 @@ const CourseCard = ({ cardData, isDragging, handleMove, remCourse, courseBlock, 
 }
 
 const Card = ({ courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError }: CardProps): JSX.Element => {
+  const authState = useAuth()
+  const conditionPassed = authState?.passed?.[cardData.semester]?.find(o => o.code === cardData.code) !== undefined
+
   return (
     <div className={`card group ${courseBlock != null ? courseBlock : ''} ${cardData.is_concrete !== true ? 'animated' : ''}`}>
       { hasEquivalence === true && (courseBlock === 'FormacionGeneral'
@@ -131,8 +155,10 @@ const Card = ({ courseBlock, cardData, hasEquivalence, openSelector, remCourse, 
           : <img className='opacity-60 absolute w-3 top-2 left-2' src={editBlackIcon} alt="Seleccionar Curso" />)
       }
       {courseBlock == null
-        ? <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>
-        : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{BlockInitials(courseBlock)}</div>}
+        ? <>{conditionPassed ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>}</>
+        : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{BlockInitials(courseBlock)}</div>
+      }
+
       <div className='flex items-center justify-center text-center flex-col'>
         <div className='text-xs line-clamp-2'>{cardData.name}</div>
         <div className='text-[0.6rem] opacity-75'>{cardData.is_concrete !== true ? `Seleccionar Curso  (${cardData.code})` : cardData.code}</div>
