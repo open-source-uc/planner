@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useAuth } from '../../../contexts/auth.context'
 import SemesterColumn from './SemesterColumn'
 import { FlatValidationResult } from '../../../client'
 import { PseudoCourseId, PseudoCourseDetail, ValidationDigest } from '../Planner'
@@ -23,7 +22,6 @@ interface PlanBoardProps {
  */
 
 const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCourse, remCourse, validating, validationResult, validationDigest }: PlanBoardProps): JSX.Element => {
-  const authState = useAuth()
   const [isDragging, setIsDragging] = useState(false)
 
   return (

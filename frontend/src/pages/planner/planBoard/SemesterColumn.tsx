@@ -2,7 +2,7 @@
 import { memo, useCallback } from 'react'
 import { useDrop } from 'react-dnd'
 import { useAuth } from '../../../contexts/auth.context'
-import { Course, CourseDetails } from '../../../client'
+import { CourseDetails } from '../../../client'
 import { CourseValidationDigest, PseudoCourseDetail, PseudoCourseId } from '../Planner'
 import CourseCard from './CourseCard'
 import deepEqual from 'fast-deep-equal'
@@ -22,6 +22,7 @@ interface SemesterColumnProps {
 
 const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCourse, openModal, classes, validationDigest, isDragging, setIsDragging }: SemesterColumnProps): JSX.Element => {
   const authState = useAuth()
+  console.log(semester)
   const [dropProps, drop] = useDrop(() => ({
     accept: 'card',
     drop (course: CourseDetails & { semester: number }) {
@@ -58,11 +59,11 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
             />
           ))
         }
-        {!isDragging && <div className="h-10 mx-2 bg-slate-300 card">
+        {((authState?.passed?.length) != null) && (semester >= authState?.passed?.length) && !isDragging && <div className="h-10 mx-2 bg-slate-300 card">
         <button key="+" className="w-full" onClick={() => addCourse(semester)}>+</button>
         </div>}
       </div>
-      {((authState?.passed?.length) != null) && (semester <= authState?.passed?.length)
+      {((authState?.passed?.length) != null) && (semester < authState?.passed?.length)
         ? null
         : <div ref={drop} className={'px-2 flex min-h-[90px] flex-grow'}>
             {dropProps.isOver &&
