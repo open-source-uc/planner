@@ -1,19 +1,23 @@
 from abc import ABC, abstractmethod
 from typing import Optional
+from ..plan import ClassId, ValidatablePlan
 from pydantic import BaseModel
 
 
 class FlatDiagnostic(BaseModel):
-    course_code: Optional[str]
+    # The course identifier is a (code, index of the instance of this code) tuple.
+    class_id: Optional[ClassId]
     is_warning: bool
     message: str
 
 
 class FlatValidationResult(BaseModel):
     diagnostics: list[FlatDiagnostic]
-    # Associates course codes with academic block names (superblocks).
+    # Associates course indices with academic block names (superblocks).
     # Used to assign colors to each course depending on what purpose they serve.
-    course_superblocks: dict[str, str]
+    # Ideally, this would be a `dict[str, list[Optional[str]]]`, but the typescript
+    # client generator is a bit dumb and forgets about `Optional[]`???
+    course_superblocks: dict[str, list[str]]
 
 
 class Diagnostic(BaseModel, ABC):
@@ -21,7 +25,7 @@ class Diagnostic(BaseModel, ABC):
     A diagnostic message, that may be associated to a course that the user is taking.
     """
 
-    def course_code(self) -> Optional[str]:
+    def class_index(self) -> Optional[tuple[int, int]]:
         return None
 
     @abstractmethod
@@ -43,9 +47,16 @@ class ValidationResult(BaseModel):
     """
 
     diagnostics: list[Diagnostic]
-    # Associates course codes with academic block names (superblocks).
+    # Associates course indices with academic block names (superblocks).
     # Used to assign colors to each course depending on what purpose they serve.
-    course_superblocks: dict[str, str]
+    course_superblocks: dict[str, list[Optional[str]]]
+
+    @staticmethod
+    def empty(plan: ValidatablePlan) -> "ValidationResult":
+        return ValidationResult(
+            diagnostics=[],
+            course_superblocks={},
+        )
 
     def add(self, diag: Diagnostic):
         self.diagnostics.append(diag)
@@ -55,15 +66,36 @@ class ValidationResult(BaseModel):
             if i in indices:
                 del self.diagnostics[i]
 
-    def flatten(self) -> FlatValidationResult:
+    def flatten(self, plan: ValidatablePlan) -> FlatValidationResult:
+        # Build index -> id mapping
+        counters: dict[str, int] = {}
+        idx2id: list[list[ClassId]] = []
+        for sem in plan.classes:
+            ids: list[ClassId] = []
+            for c in sem:
+                count = counters.get(c.code, 0)
+                counters[c.code] = count + 1
+                ids.append(ClassId(code=c.code, instance=count))
+            idx2id.append(ids)
+
+        # Flatten diagnostics
         flat_diags: list[FlatDiagnostic] = []
         for diag in self.diagnostics:
+            index = diag.class_index()
+            if index is None:
+                id = None
+            else:
+                id = idx2id[index[0]][index[1]]
             flat = FlatDiagnostic(
-                course_code=diag.course_code(),
+                class_id=id,
                 is_warning=isinstance(diag, DiagnosticWarn),
                 message=diag.message(),
             )
             flat_diags.append(flat)
         return FlatValidationResult(
-            diagnostics=flat_diags, course_superblocks=self.course_superblocks
+            diagnostics=flat_diags,
+            course_superblocks={
+                code: [sb or "" for sb in instances]
+                for code, instances in self.course_superblocks.items()
+            },
         )

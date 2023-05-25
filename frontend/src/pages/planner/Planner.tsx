@@ -2,23 +2,25 @@ import { Spinner } from '../../components/Spinner'
 import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
-import CourseSelectorDialog from '../../components/CourseSelectorDialog'
+import CourseSelectorDialog from './CourseSelectorDialog'
 import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
-import { Fragment, useState, useEffect, useRef } from 'react'
+import { Fragment, useState, useEffect, useRef, useCallback, memo, useMemo } from 'react'
 import { Listbox, Transition } from '@headlessui/react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, Course, Equivalence, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
+import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, CourseDetails, EquivDetails, ConcreteId, EquivalenceId, FlatValidationResult, PlanView, CurriculumSpec } from '../../client'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import down_arrow from '../../assets/down_arrow.svg'
 import 'react-toastify/dist/ReactToastify.css'
+import DebugGraph from '../../components/DebugGraph'
+import deepEqual from 'fast-deep-equal'
 
 export type PseudoCourseId = ConcreteId | EquivalenceId
-export type PseudoCourseDetail = Course | Equivalence
+export type PseudoCourseDetail = CourseDetails | EquivDetails
 
-type ModalData = { equivalence: Equivalence, semester: number, index: number } | undefined
+type ModalData = { equivalence: EquivDetails | undefined, selector: boolean, semester: number, index?: number } | undefined
 
 interface CurriculumData {
   majors: { [code: string]: Major }
@@ -29,7 +31,7 @@ interface CurriculumData {
 interface CurriculumSelectorProps {
   planName: String
   curriculumData: CurriculumData
-  validatablePlan: ValidatablePlan
+  curriculum: CurriculumSpec
   selectMajor: Function
   selectMinor: Function
   selectTitle: Function
@@ -43,14 +45,6 @@ enum PlannerStatus {
   READY = 'READY',
 }
 
-const findCourseSuperblock = (validationResults: FlatValidationResult | null, code: string): string | null => {
-  if (validationResults == null) return null
-  for (const c in validationResults.course_superblocks) {
-    if (c === code) return validationResults.course_superblocks[c].normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(' ', '').split(' ')[0]
-  }
-  return null
-}
-
 const isApiError = (err: any): err is ApiError => {
   return err.status !== undefined
 }
@@ -58,10 +52,10 @@ const isApiError = (err: any): err is ApiError => {
 /**
  * The selector of major, minor and tittle.
  */
-const CurriculumSelector = ({
+const _CurriculumSelector = ({
   planName,
   curriculumData,
-  validatablePlan,
+  curriculum,
   selectMajor,
   selectMinor,
   selectTitle
@@ -70,9 +64,9 @@ const CurriculumSelector = ({
     <ul className={'curriculumSelector'}>
       <li className={'selectorElement'}>
         <div className={'selectorName'}>Major:</div>
-        <Listbox value={validatablePlan.curriculum.major !== undefined && validatablePlan.curriculum.major !== null ? curriculumData.majors[validatablePlan.curriculum.major] : {}} onChange={(m) => selectMajor(m)}>
+        <Listbox value={curriculum.major !== undefined && curriculum.major !== null ? curriculumData.majors[curriculum.major] : {}} onChange={(m) => selectMajor(m)}>
           <Listbox.Button className={'selectorButton'}>
-            <span className="inline truncate">{validatablePlan.curriculum.major !== undefined && validatablePlan.curriculum.major !== null ? curriculumData.majors[validatablePlan.curriculum.major]?.name : 'Por elegir'}</span>
+            <span className="inline truncate">{curriculum.major != null ? curriculumData.majors[curriculum.major]?.name : 'Por elegir'}</span>
             <img className="inline" src={down_arrow} alt="Seleccionar Major" />
           </Listbox.Button>
           <Transition
@@ -118,10 +112,10 @@ const CurriculumSelector = ({
       <li className={'selectorElement'}>
         <div className={'selectorName'}>Minor:</div>
         <Listbox
-          value={validatablePlan.curriculum.minor !== undefined && validatablePlan.curriculum.minor !== null ? curriculumData.minors[validatablePlan.curriculum.minor] : {}}
+          value={curriculum.minor !== undefined && curriculum.minor !== null ? curriculumData.minors[curriculum.minor] : {}}
           onChange={(m) => selectMinor(m)}>
           <Listbox.Button className={'selectorButton'}>
-            <span className="inline truncate">{validatablePlan.curriculum.minor !== undefined && validatablePlan.curriculum.minor !== null ? curriculumData.minors[validatablePlan.curriculum.minor]?.name : 'Por elegir'}</span>
+            <span className="inline truncate">{curriculum.minor != null ? curriculumData.minors[curriculum.minor]?.name : 'Por elegir'}</span>
             <img className="inline" src={down_arrow} alt="Seleccionar Minor" />
           </Listbox.Button>
           <Transition
@@ -166,9 +160,9 @@ const CurriculumSelector = ({
       </li>
       <li className={'selectorElement'}>
         <div className={'selectorName'}>Titulo:</div>
-        <Listbox value={validatablePlan.curriculum.title !== undefined && validatablePlan.curriculum.title !== null ? curriculumData.titles[validatablePlan.curriculum.title] : {}} onChange={(t) => selectTitle(t)}>
+        <Listbox value={curriculum.title !== undefined && curriculum.title !== null ? curriculumData.titles[curriculum.title] : {}} onChange={(t) => selectTitle(t)}>
           <Listbox.Button className="selectorButton">
-            <span className="inline truncate">{validatablePlan.curriculum.title !== undefined && validatablePlan.curriculum.title !== null ? curriculumData.titles[validatablePlan.curriculum.title]?.name : 'Por elegir'}</span>
+            <span className="inline truncate">{curriculum.title != null ? curriculumData.titles[curriculum.title]?.name : 'Por elegir'}</span>
             <img className="inline" src={down_arrow} alt="Seleccionar Titulo" />
           </Listbox.Button>
           <Transition
@@ -215,14 +209,34 @@ const CurriculumSelector = ({
     </ul>
   )
 }
+const CurriculumSelector = memo(_CurriculumSelector)
+
+export interface PlanDigest {
+  // Maps `(code, course instance index)` to `(semester, index within semester)`
+  idToIndex: { [code: string]: Array<[number, number]> }
+  // Maps `(semester, index within semester)` to `(code, course instance index)`
+  indexToId: Array<Array<{ code: string, instance: number }>>
+}
+
+export interface CourseValidationDigest {
+  // Contains the superblock string
+  // The empty string if no superblock is found
+  superblock: string
+  // Contains the indices of any errors associated with this course
+  errorIndices: number[]
+  // Contains the indices of any warnings associated with this course
+  warningIndices: number[]
+}
+
+export type ValidationDigest = CourseValidationDigest[][]
 
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
 const Planner = (): JSX.Element => {
   const [planName, setPlanName] = useState<string>('')
-  const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null>(null)
-  const [courseDetails, setCourseDetails] = useState<{ [code: string]: Course | Equivalence }>({})
+  const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null >(null)
+  const [courseDetails, setCourseDetails] = useState<{ [code: string]: PseudoCourseDetail }>({})
   const [curriculumData, setCurriculumData] = useState<CurriculumData | null>(null)
   const [modalData, setModalData] = useState<ModalData>()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -236,6 +250,62 @@ const Planner = (): JSX.Element => {
 
   const params = useParams()
   const authState = useAuth()
+
+  const planDigest = useMemo((): PlanDigest => {
+    const digest: PlanDigest = {
+      idToIndex: {},
+      indexToId: []
+    }
+    if (validatablePlan != null) {
+      for (let i = 0; i < validatablePlan.classes.length; i++) {
+        const idx2id = []
+        for (let j = 0; j < validatablePlan.classes[i].length; j++) {
+          const c = validatablePlan.classes[i][j]
+          let reps = digest.idToIndex[c.code]
+          if (reps === undefined) {
+            reps = []
+            digest.idToIndex[c.code] = reps
+          }
+          idx2id.push({ code: c.code, instance: reps.length })
+          reps.push([i, j])
+        }
+        digest.indexToId.push(idx2id)
+      }
+    }
+    return digest
+  }, [validatablePlan])
+
+  const validationDigest = useMemo((): ValidationDigest => {
+    let digest: ValidationDigest = []
+    if (validatablePlan != null) {
+      digest = validatablePlan.classes.map((semester, i) => {
+        return semester.map((course, j) => {
+          const { code, instance } = planDigest.indexToId[i][j]
+          const rawSuperblock = validationResult?.course_superblocks?.[code]?.[instance] ?? null
+          const superblock = rawSuperblock === null ? '' : rawSuperblock.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(' ', '').split(' ')[0]
+          return {
+            superblock,
+            errorIndices: [],
+            warningIndices: []
+          }
+        })
+      })
+      if (validationResult != null) {
+        for (let k = 0; k < validationResult.diagnostics.length; k++) {
+          const diag = validationResult.diagnostics[k]
+          if (diag.class_id != null) {
+            const semAndIdx = planDigest.idToIndex[diag.class_id.code]?.[diag.class_id.instance] ?? null
+            if (semAndIdx != null) {
+              const [sem, idx] = semAndIdx
+              const diagIndices = diag.is_warning ? digest[sem][idx].warningIndices : digest[sem][idx].errorIndices
+              diagIndices.push(k)
+            }
+          }
+        }
+      }
+    }
+    return digest
+  }, [validatablePlan, planDigest, validationResult])
 
   function handleErrors (err: unknown): void {
     console.log(err)
@@ -272,6 +342,8 @@ const Planner = (): JSX.Element => {
       console.log('getting Basic Plan...')
       if (ValidatablePlan === undefined) {
         ValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
+      } else {
+        ValidatablePlan = { ...ValidatablePlan }
       }
       // truncate the validatablePlan to the last not empty semester
       while (ValidatablePlan.classes.length > 0 && ValidatablePlan.classes[ValidatablePlan.classes.length - 1].length === 0) {
@@ -307,19 +379,37 @@ const Planner = (): JSX.Element => {
     }
   }
 
+  async function fetchData (): Promise<void> {
+    try {
+      if (params?.plannerId != null) {
+        if (validatablePlan !== null) {
+          await getDefaultPlan(validatablePlan)
+        } else {
+          await getPlanById(params.plannerId)
+        }
+      } else {
+        await getDefaultPlan(validatablePlan ?? undefined)
+      }
+    } catch (error) {
+      setError('Hubo un error al cargar el planner')
+      console.error(error)
+      setPlannerStatus(PlannerStatus.ERROR)
+    }
+  }
+
   async function getCourseDetails (courses: PseudoCourseId[]): Promise<void> {
     console.log('getting Courses Details...')
-    const coursesCodes = []
-    const equivalenceCodes = []
+    const coursesCodes = new Set<string>()
+    const equivalenceCodes = new Set<string>()
     for (const courseid of courses) {
-      if (courseid.is_concrete === true) { coursesCodes.push(courseid.code) } else { equivalenceCodes.push(courseid.code) }
+      if (courseid.is_concrete === true) { coursesCodes.add(courseid.code) } else { equivalenceCodes.add(courseid.code) }
     }
     try {
       const promises = []
-      if (coursesCodes.length > 0) promises.push(DefaultService.getCourseDetails(coursesCodes))
-      if (equivalenceCodes.length > 0) promises.push(DefaultService.getEquivalenceDetails(equivalenceCodes))
+      if (coursesCodes.size > 0) promises.push(DefaultService.getCourseDetails(Array.from(coursesCodes)))
+      if (equivalenceCodes.size > 0) promises.push(DefaultService.getEquivalenceDetails(Array.from(equivalenceCodes)))
       const courseDetails = await Promise.all(promises)
-      const dict = courseDetails.flat().reduce((acc: { [code: string]: Course | Equivalence }, curr: Course | Equivalence) => {
+      const dict = courseDetails.flat().reduce((acc: { [code: string]: PseudoCourseDetail }, curr: PseudoCourseDetail) => {
         acc[curr.code] = curr
         return acc
       }, {})
@@ -337,11 +427,16 @@ const Planner = (): JSX.Element => {
         minor: validatablePlan.curriculum.minor,
         title: validatablePlan.curriculum.title
       }
-      setValidationResult(response)
+      setValidationResult(prev => {
+        // Validation often gives the same results after small changes
+        // Avoid triggering changes if this happens
+        if (deepEqual(prev, response)) return prev
+        return response
+      })
       setPlannerStatus(PlannerStatus.READY)
-      // Es necesario hacer una copia profunda del plan para comparar, pues si se copia el objeto entero
-      // entonces la copia es modificada junto al objeto original. Lo ideal seria usar una librearia para esto en el futuro
-      previousClasses.current = JSON.parse(JSON.stringify(validatablePlan.classes))
+      // No deberia ser necesario hacer una copia profunda, porque los planes debieran ser inmutables (!) ya que React lo requiere
+      // Al contrario, si se vuelve necesario hacer una copia profunda significa que hay un bug en algun lado porque se estan mutando datos que debieran ser inmutables.
+      previousClasses.current = validatablePlan.classes
     } catch (err) {
       handleErrors(err)
     }
@@ -349,7 +444,7 @@ const Planner = (): JSX.Element => {
 
   async function savePlan (): Promise<void> {
     if (validatablePlan == null) {
-      alert('No se ha generado un plan aun')
+      toast.error('No se ha generado un plan aun')
       return
     }
     if (params?.plannerId != null) {
@@ -378,36 +473,55 @@ const Planner = (): JSX.Element => {
     setPlannerStatus(PlannerStatus.READY)
   }
 
-  async function addCourse (semIdx: number): Promise<void> {
-    if (validatablePlan == null) {
-      return
-    }
-    const courseCodeRaw = prompt('Sigla del curso?')
-    if (courseCodeRaw == null || courseCodeRaw === '') return
-    const courseCode = courseCodeRaw.toUpperCase()
-    for (const existingCourse of validatablePlan?.classes.flat()) {
-      if (existingCourse.code === courseCode) {
-        alert(`${courseCode} ya se encuentra en el plan, seleccione otro curso por favor`)
-        return
+  const addCourse = useCallback((semIdx: number): void => {
+    setModalData({
+      equivalence: undefined,
+      selector: true,
+      semester: semIdx
+    })
+    setIsModalOpen(true)
+  }, []) // addCourse should not depend on `validatablePlan`, so that memoing does its work
+
+  const remCourse = useCallback((semIdx: number, index: number): void => {
+    // its ok to use `setValidatablePlan`
+    // its not ok to use `validatablePlan` directly
+    setValidatablePlan(prev => {
+      if (prev === null) return null
+      const newClases = prev.classes
+      newClases[semIdx].splice(index, 1)
+      while (newClases[newClases.length - 1].length === 0) {
+        newClases.pop()
       }
-    }
-    try {
-      const response = await DefaultService.getCourseDetails([courseCode])
-      setCourseDetails((prev) => { return { ...prev, [response[0].code]: response[0] } })
-      setValidatablePlan((prev) => {
-        if (prev == null) return prev
-        const newClasses = [...prev.classes]
-        newClasses[semIdx] = [...prev.classes[semIdx]]
-        newClasses[semIdx].push({
-          is_concrete: true,
-          code: response[0].code
-        })
-        return { ...prev, classes: newClasses }
-      })
-    } catch (err) {
-      handleErrors(err)
-    }
-  }
+      return { ...prev, classes: newClases }
+    })
+  }, []) // remCourse should not depend on `validatablePlan`, so that memoing does its work
+
+  const moveCourse = useCallback((drag: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }, semester: number, index: number): void => {
+    // move course from drag.semester, drag.index to semester, index
+    setValidatablePlan(prev => {
+      if (prev === null) return prev
+      if (drag.is_concrete === true && semester !== drag.semester && semester < prev.classes.length && prev.classes[semester].map(course => course.code).includes(drag.code)) {
+        toast.error('No se puede tener dos ramos iguales en un mismo semestre')
+        return prev
+      }
+      const newClassesGrid = [...prev.classes]
+      while (semester >= newClassesGrid.length) {
+        newClassesGrid.push([])
+      }
+      newClassesGrid[semester] = [...newClassesGrid[semester]]
+      newClassesGrid[drag.semester] = [...newClassesGrid[drag.semester]]
+      newClassesGrid[semester].splice(index, 0, newClassesGrid[drag.semester][drag.index])
+      if (semester === drag.semester && index < drag.index) {
+        newClassesGrid[drag.semester].splice(drag.index + 1, 1)
+      } else {
+        newClassesGrid[drag.semester].splice(drag.index, 1)
+      }
+      while (newClassesGrid[newClassesGrid.length - 1].length === 0) {
+        newClassesGrid.pop()
+      }
+      return { ...prev, classes: newClassesGrid }
+    })
+  }, []) // moveCourse should not depend on `validatablePlan`, so that memoing does its work
 
   // THIS IS GIVING NOTHING ///
   async function loadCurriculumsData (cYear: string, cMajor?: string): Promise<void> {
@@ -433,42 +547,52 @@ const Planner = (): JSX.Element => {
     setCurriculumData(curriculumData)
   }
 
-  async function openModal (equivalence: Equivalence | EquivalenceId, semester: number, index: number): Promise<void> {
+  const openModal = useCallback(async (equivalence: EquivDetails | EquivalenceId, semester: number, index?: number): Promise<void> => {
     if ('courses' in equivalence) {
-      setModalData({ equivalence, semester, index })
+      setModalData({ equivalence, selector: false, semester, index })
     } else {
       const response = await DefaultService.getEquivalenceDetails([equivalence.code])
-      setModalData({ equivalence: response[0], semester, index })
+      setModalData({ equivalence: response[0], selector: false, semester, index })
     }
     setIsModalOpen(true)
-  }
+  }, [])
 
   async function closeModal (selection?: string): Promise<void> {
     if (selection != null && modalData !== undefined && validatablePlan != null) {
-      const pastClass = validatablePlan.classes[modalData.semester][modalData.index]
-      if (selection === pastClass.code) { setIsModalOpen(false); return }
-      for (const existingCourse of validatablePlan.classes.flat()) {
+      let index = modalData.index
+      if (index === undefined) {
+        index = validatablePlan.classes[modalData.semester].length
+      }
+      const pastClass = validatablePlan.classes[modalData.semester][index]
+      if (pastClass !== undefined && selection === pastClass.code) { setIsModalOpen(false); return }
+      for (const existingCourse of validatablePlan.classes[modalData.semester].flat()) {
         if (existingCourse.code === selection) {
-          alert(`${selection} ya se encuentra en el plan, seleccione otro curso por favor`)
+          toast.error(`${selection} ya se encuentra en este semestre, seleccione otro curso por favor`)
           return
         }
       }
       const details = (await DefaultService.getCourseDetails([selection]))[0]
       setCourseDetails((prev) => { return { ...prev, [details.code]: details } })
-      setValidatablePlan((prev) => {
-        if (prev == null) return prev
-        const newClasses = [...prev.classes]
-        newClasses[modalData.semester] = [...prev.classes[modalData.semester]]
+
+      const newValidatablePlan = { ...validatablePlan, classes: [...validatablePlan.classes] }
+      newValidatablePlan.classes[modalData.semester] = [...newValidatablePlan.classes[modalData.semester]]
+      if (modalData.equivalence === undefined) {
+        newValidatablePlan.classes[modalData.semester][index] = {
+          is_concrete: true,
+          code: selection,
+          equivalence: undefined
+        }
+      } else {
         const oldEquivalence = 'credits' in pastClass ? pastClass : pastClass.equivalence
 
-        newClasses[modalData.semester][modalData.index] = {
+        newValidatablePlan.classes[modalData.semester][index] = {
           is_concrete: true,
           code: selection,
           equivalence: oldEquivalence
         }
         if (oldEquivalence !== undefined && oldEquivalence.credits !== details.credits) {
           if (oldEquivalence.credits > details.credits) {
-            newClasses[modalData.semester].splice(modalData.index, 1,
+            newValidatablePlan.classes[modalData.semester].splice(index, 1,
               {
                 is_concrete: true,
                 code: selection,
@@ -494,14 +618,14 @@ const Planner = (): JSX.Element => {
             // option 2: decresed the one of 10 to 5
 
             // Partial solution: just consume anything we find
-            const semester = newClasses[modalData.semester]
+            const semester = newValidatablePlan.classes[modalData.semester]
             let extra = details.credits - oldEquivalence.credits
             for (let i = semester.length; i-- > 0;) {
               const equiv = semester[i]
               if ('credits' in equiv && equiv.code === oldEquivalence.code) {
                 if (equiv.credits <= extra) {
                   // Consume this equivalence entirely
-                  semester.splice(modalData.index, 1)
+                  semester.splice(index, 1)
                   extra -= equiv.credits
                 } else {
                   // Consume part of this equivalence
@@ -513,7 +637,7 @@ const Planner = (): JSX.Element => {
 
             // Increase the credits of the equivalence
             // We might not have found all the missing credits, but that's ok
-            newClasses[modalData.semester].splice(modalData.index, 1,
+            newValidatablePlan.classes[modalData.semester].splice(index, 1,
               {
                 is_concrete: true,
                 code: selection,
@@ -525,8 +649,8 @@ const Planner = (): JSX.Element => {
             )
           }
         }
-        return { ...prev, classes: newClasses }
-      })
+      }
+      setValidatablePlan(newValidatablePlan)
       setPlannerStatus(PlannerStatus.VALIDATING)
     }
     setIsModalOpen(false)
@@ -534,10 +658,33 @@ const Planner = (): JSX.Element => {
 
   function reset (): void {
     setPlannerStatus(PlannerStatus.LOADING)
-    setValidatablePlan(null)
   }
 
-  async function checkMinorForNewMajor (major: Major): Promise<void> {
+  const selectMajor = useCallback(async (majorCode: string, isMinorValid: boolean): Promise<void> => {
+    setValidatablePlan((prev) => {
+      if (prev == null) return prev
+      const newCurriculum = { ...prev.curriculum, major: majorCode }
+      return { ...prev, classes: [], curriculum: newCurriculum }
+    })
+  }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
+
+  const selectMinor = useCallback((minor: Minor): void => {
+    setValidatablePlan((prev) => {
+      if (prev == null) return prev
+      const newCurriculum = { ...prev.curriculum, minor: minor.code }
+      return { ...prev, classes: [], curriculum: newCurriculum }
+    })
+  }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
+
+  const selectTitle = useCallback((title: Title): void => {
+    setValidatablePlan((prev) => {
+      if (prev == null) return prev
+      const newCurriculum = { ...prev.curriculum, title: title.code }
+      return { ...prev, classes: [], curriculum: newCurriculum }
+    })
+  }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
+
+  const checkMinorForNewMajor = useCallback(async (major: Major): Promise<void> => {
     const newMinors = await DefaultService.getMinors(major.cyear, major.code)
     const isValidMinor = validatablePlan?.curriculum.minor === null || validatablePlan?.curriculum.minor === undefined || newMinors.some(m => m.code === validatablePlan?.curriculum.minor)
     if (!isValidMinor) {
@@ -550,7 +697,7 @@ const Planner = (): JSX.Element => {
     } else {
       await selectMajor(major.code, true)
     }
-  }
+  }, [validatablePlan?.curriculum, setPopUpAlert, selectMajor]) // this sensitivity list shouldn't contain frequently-changing attributes
 
   async function handlePopUpAlert (isCanceled: boolean): Promise<void> {
     const major = popUpAlert.major
@@ -560,113 +707,17 @@ const Planner = (): JSX.Element => {
     }
   }
 
-  async function selectMajor (majorCode: string, isMinorValid: boolean): Promise<void> {
-    setValidatablePlan((prev) => {
-      if (prev == null) return prev
-
-      const newCurriculum = prev.curriculum
-      const newClasses = prev.classes
-      newCurriculum.major = majorCode
-      newClasses.forEach((sem, idx) => {
-        if (idx >= prev.next_semester) {
-          newClasses[idx] = sem.filter((c) => {
-            if (findCourseSuperblock(validationResult, c.code) !== 'Major') {
-              return c
-            }
-            return false
-          })
-        }
-      })
-      if (!isMinorValid) {
-        newCurriculum.minor = undefined
-        newClasses.forEach((sem, idx) => {
-          if (idx >= prev.next_semester) {
-            newClasses[idx] = sem.filter((c) => {
-              if (findCourseSuperblock(validationResult, c.code) !== 'Minor') {
-                return c
-              }
-              return false
-            })
-          }
-        })
-      }
-      return { ...prev, curriculum: newCurriculum }
-    })
-  }
-
-  function selectMinor (minor: Minor): void {
-    setValidatablePlan((prev) => {
-      if (prev == null) return prev
-      const newCurriculum = prev.curriculum
-      const newClasses = prev.classes
-      newCurriculum.minor = minor.code
-      newClasses.forEach((sem, idx) => {
-        if (idx >= prev.next_semester) {
-          newClasses[idx] = sem.filter((c) => {
-            if (findCourseSuperblock(validationResult, c.code) !== 'Minor') {
-              return c
-            }
-            return false
-          })
-        }
-      })
-      return { ...prev, curriculum: newCurriculum }
-    })
-  }
-
-  function selectTitle (title: Title): void {
-    setValidatablePlan((prev) => {
-      if (prev == null) return prev
-      const newCurriculum = prev.curriculum
-      const newClasses = prev.classes
-      newCurriculum.title = title.code
-      newClasses.forEach((sem, idx) => {
-        if (idx >= prev.next_semester) {
-          newClasses[idx] = sem.filter((c) => {
-            if (findCourseSuperblock(validationResult, c.code) !== 'Title') {
-              return c
-            }
-            return false
-          })
-        }
-      })
-      return { ...prev, curriculum: newCurriculum }
-    })
-  }
-
   useEffect(() => {
     setPlannerStatus(PlannerStatus.LOADING)
   }, [])
 
   useEffect(() => {
+    console.log(plannerStatus)
     if (plannerStatus === 'LOADING') {
-      async function fetchData (): Promise<void> {
-        try {
-          if (params?.plannerId != null) {
-            if (validatablePlan !== null) {
-              await getDefaultPlan(validatablePlan)
-            } else {
-              await getPlanById(params.plannerId)
-            }
-          } else {
-            await getDefaultPlan(validatablePlan ?? undefined)
-          }
-        } catch (error) {
-          setError('Hubo un error al cargar el planner')
-          console.error(error)
-          setPlannerStatus(PlannerStatus.ERROR)
-        }
-      }
       void fetchData()
     } else if (plannerStatus === 'VALIDATING' && validatablePlan != null) {
       validate(validatablePlan).catch(err => {
-        setValidationResult({
-          diagnostics: [{
-            is_warning: false,
-            message: `Error interno: ${String(err)}`
-          }],
-          course_superblocks: {}
-        })
+        handleErrors(err)
       })
     }
   }, [plannerStatus])
@@ -681,28 +732,14 @@ const Planner = (): JSX.Element => {
       if (curriculumChanged) {
         setPlannerStatus(PlannerStatus.LOADING)
       } else {
-        // dont validate if the classes are rearranging the same semester at previous validation
-        let classesChanged = validatablePlan.classes.length !== previousClasses.current.length
-        if (!classesChanged) {
-          for (let idx = 0; idx < validatablePlan.classes.length; idx++) {
-            const cur = [...validatablePlan.classes[idx]].sort((a, b) => a.code.localeCompare(b.code))
-            const prev = [...previousClasses.current[idx]].sort((a, b) => a.code.localeCompare(b.code))
-            if (JSON.stringify(cur) !== JSON.stringify(prev)) {
-              classesChanged = true
-              break
-            }
-          }
-        }
-        if (classesChanged) {
-          setPlannerStatus(PlannerStatus.VALIDATING)
-        }
+        setPlannerStatus(PlannerStatus.VALIDATING)
       }
     }
   }, [validatablePlan])
-
   return (
     <div className={`w-full h-full p-3 flex flex-grow overflow-hidden flex-row ${(plannerStatus !== 'ERROR' && plannerStatus !== 'READY') ? 'cursor-wait' : ''}`}>
-      <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={async (selection?: string) => await closeModal(selection)}/>
+      <DebugGraph validatablePlan={validatablePlan} />
+      <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
       <AlertModal title={popUpAlert.title} desc={popUpAlert.desc} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}/>
       {plannerStatus === 'LOADING' && (
         <Spinner message='Cargando planificación...' />
@@ -719,7 +756,7 @@ const Planner = (): JSX.Element => {
             <CurriculumSelector
               planName={planName}
               curriculumData={curriculumData}
-              validatablePlan={validatablePlan}
+              curriculum={validatablePlan.curriculum}
               selectMajor={checkMinorForNewMajor}
               selectMinor={selectMinor}
               selectTitle={selectTitle}
@@ -731,10 +768,12 @@ const Planner = (): JSX.Element => {
           />
           <DndProvider backend={HTML5Backend}>
             <PlanBoard
-              classesGrid={validatablePlan?.classes ?? []}
+              classesGrid={validatablePlan?.classes ?? null}
+              validationDigest={validationDigest}
               classesDetails={courseDetails}
-              setPlan={setValidatablePlan}
+              moveCourse={moveCourse}
               openModal={openModal}
+              remCourse={remCourse}
               addCourse={addCourse}
               validating={plannerStatus !== 'READY'}
               validationResult={validationResult}

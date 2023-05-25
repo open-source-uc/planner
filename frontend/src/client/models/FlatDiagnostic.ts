@@ -2,8 +2,10 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { ClassId } from './ClassId';
+
 export type FlatDiagnostic = {
-    course_code?: string;
+    class_id?: ClassId;
     is_warning: boolean;
     message: string;
 };

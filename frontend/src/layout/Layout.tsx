@@ -6,19 +6,18 @@ import { ToastContainer, toast } from 'react-toastify'
 const isPlannerRedirection = (data: any): data is { planId: string } => {
   return data.planId !== undefined
 }
-
-toast.onChange(payload => {
-  if (payload.status === 'removed' && payload.type === toast.TYPE.ERROR && payload.id === 'ERROR401') {
-    window.location.href = `${import.meta.env.VITE_BASE_API_URL as string}/auth/login`
-    localStorage.removeItem('access-token')
-  } else if (payload.status === 'removed' && payload.type === toast.TYPE.SUCCESS && payload.id === 'newPlanSaved') {
-    if (isPlannerRedirection(payload.data)) {
-      window.location.href = `/planner/${payload.data.planId}`
-    }
-  }
-})
-
 function Layout (): JSX.Element {
+  toast.onChange((payload: any) => {
+    if (payload.status === 'removed' && payload.type === toast.TYPE.ERROR && payload.id === 'ERROR401') {
+      window.location.href = `${import.meta.env.VITE_BASE_API_URL as string}/auth/login`
+      localStorage.removeItem('access-token')
+    } else if (payload.status === 'removed' && payload.type === toast.TYPE.SUCCESS && payload.id === 'newPlanSaved') {
+      if (isPlannerRedirection(payload.data)) {
+        const planId = parseInt(payload.data.planId)
+        window.location.href = `/planner/${planId}`
+      }
+    }
+  })
   return (
       <div className="h-screen flex flex-col overflow-hidden">
         <Navbar/>
@@ -27,7 +26,8 @@ function Layout (): JSX.Element {
           autoClose={3000}
           hideProgressBar={false}
           newestOnTop={false}
-          closeOnClick
+          closeOnClick={false}
+          draggable={false}
           pauseOnFocusLoss={false}
           pauseOnHover={false}
           rtl={false}

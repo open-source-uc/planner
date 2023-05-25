@@ -1,9 +1,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { Course } from '../models/Course';
+import type { CourseDetails } from '../models/CourseDetails';
+import type { CourseFilter } from '../models/CourseFilter';
 import type { CourseOverview } from '../models/CourseOverview';
-import type { Equivalence } from '../models/Equivalence';
+import type { EquivDetails } from '../models/EquivDetails';
 import type { FlatValidationResult } from '../models/FlatValidationResult';
 import type { LowDetailPlanView } from '../models/LowDetailPlanView';
 import type { Major } from '../models/Major';
@@ -111,28 +112,44 @@ export class DefaultService {
     }
 
     /**
-     * Search Courses
-     * Fetches a list of courses that match the given name (including code),
-     * credits, and school.
-     * @param name
-     * @param credits
-     * @param school
+     * Search Course Details
+     * Fetches a list of courses that match the given name (or code),
+     * credits and school.
+     * @param requestBody
      * @returns CourseOverview Successful Response
      * @throws ApiError
      */
-    public static searchCourses(
-        name?: string,
-        credits?: number,
-        school?: string,
+    public static searchCourseDetails(
+        requestBody: CourseFilter,
     ): CancelablePromise<Array<CourseOverview>> {
         return __request(OpenAPI, {
-            method: 'GET',
-            url: '/courses/search',
-            query: {
-                'name': name,
-                'credits': credits,
-                'school': school,
+            method: 'POST',
+            url: '/courses/search/details',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
             },
+        });
+    }
+
+    /**
+     * Search Course Codes
+     * Fetches a list of courses that match the given name (or code),
+     * credits and school.
+     * Returns only the course codes, but allows up to 3000 results.
+     * @param requestBody
+     * @returns string Successful Response
+     * @throws ApiError
+     */
+    public static searchCourseCodes(
+        requestBody: CourseFilter,
+    ): CancelablePromise<Array<string>> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/courses/search/codes',
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: `Validation Error`,
             },
@@ -145,12 +162,12 @@ export class DefaultService {
      *
      * Request example: `/api/courses?codes=IIC2233&codes=IIC2173`
      * @param codes
-     * @returns Course Successful Response
+     * @returns CourseDetails Successful Response
      * @throws ApiError
      */
     public static getCourseDetails(
         codes: Array<string>,
-    ): CancelablePromise<Array<Course>> {
+    ): CancelablePromise<Array<CourseDetails>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/courses',
@@ -165,14 +182,17 @@ export class DefaultService {
 
     /**
      * Get Equivalence Details
-     * For a list of equivalence codes, fetch a corresponding list of equivalence details.
+     * For a list of equivalence codes, fetch the raw equivalence details, without any
+     * filtering.
+     * To filter courses for a specific equivalence, use `search_courses` with an
+     * equivalence filter.
      * @param codes
-     * @returns Equivalence Successful Response
+     * @returns EquivDetails Successful Response
      * @throws ApiError
      */
     public static getEquivalenceDetails(
         codes: Array<string>,
-    ): CancelablePromise<Array<Equivalence>> {
+    ): CancelablePromise<Array<EquivDetails>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/equivalences',
@@ -265,6 +285,28 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/plan/validate_for',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Get Curriculum Validation Graph
+     * Get the curriculum validation graph for a certain plan, in Graphviz DOT format.
+     * Useful for debugging and kind of a bonus easter egg.
+     * @param requestBody
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static getCurriculumValidationGraph(
+        requestBody: ValidatablePlan,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/plan/curriculum_graph',
             body: requestBody,
             mediaType: 'application/json',
             errors: {

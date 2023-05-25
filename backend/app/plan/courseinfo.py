@@ -4,13 +4,23 @@ Cache course info from the database in memory, for easy access.
 
 from dataclasses import dataclass
 from typing import Optional
+
+from prisma import Json
+from .course import EquivalenceId, PseudoCourse
 import pydantic
+from pydantic import BaseModel
 from .validation.courses.logic import Expr
-from prisma.models import Course, Equivalence
+from prisma.models import (
+    Course,
+    Equivalence,
+    EquivalenceCourse,
+    CachedCourseInfo as DbCachedCourseInfo,
+)
+
+_CACHED_COURSES_ID: str = "cached-course-info"
 
 
-@dataclass
-class CourseDetails:
+class CourseDetails(BaseModel):
     code: str
     name: str
     credits: int
@@ -46,8 +56,7 @@ class CourseDetails:
         )
 
 
-@dataclass
-class EquivDetails:
+class EquivDetails(BaseModel):
     code: str
     name: str
     # Indicates whether this equivalence is "homogeneous".
@@ -60,12 +69,18 @@ class EquivDetails:
     courses: list[str]
 
     @staticmethod
-    def from_db(db: Equivalence) -> "EquivDetails":
+    async def from_db(db: Equivalence) -> "EquivDetails":
+        dbcourses = await EquivalenceCourse.prisma().find_many(
+            where={
+                "equiv_code": db.code,
+            }
+        )
+        courses = list(map(lambda ec: ec.course_code, dbcourses))
         return EquivDetails(
             code=db.code,
             name=db.name,
             is_homogeneous=db.is_homogeneous,
-            courses=db.courses,
+            courses=courses,
         )
 
 
@@ -80,39 +95,67 @@ class CourseInfo:
     def try_equiv(self, code: str) -> Optional[EquivDetails]:
         return self.equivs.get(code)
 
-    def course(self, code: str) -> CourseDetails:
-        return self.courses[code]
+    def is_course_available(self, code: str) -> bool:
+        info = self.try_course(code)
+        if info is None:
+            return False
+        return info.is_available
 
-    def equiv(self, code: str) -> EquivDetails:
-        return self.equivs[code]
+    def get_credits(self, course: PseudoCourse) -> Optional[int]:
+        if isinstance(course, EquivalenceId):
+            return course.credits
+        else:
+            info = self.try_course(course.code)
+            if info is None:
+                return None
+            return info.credits
 
 
 _course_info_cache: Optional[CourseInfo] = None
 
 
-def clear_course_info_cache():
+async def clear_course_info_cache():
     global _course_info_cache
     _course_info_cache = None
+    await DbCachedCourseInfo.prisma().delete(where={"id": _CACHED_COURSES_ID})
 
 
-async def add_equivalence(equiv: Equivalence):
+async def add_equivalence(equiv: EquivDetails):
     print(f"adding equivalence {equiv.code}")
     # Add equivalence to database
     await Equivalence.prisma().query_raw(
         """
-        INSERT INTO "Equivalence" (code, name, is_homogeneous, courses)
-        VALUES($1, $2, $3, $4)
+        INSERT INTO "Equivalence" (code, name, is_homogeneous)
+        VALUES($1, $2, $3)
         ON CONFLICT (code)
-        DO UPDATE SET name = $2, is_homogeneous = $3, courses = $4
+        DO UPDATE SET name = $2, is_homogeneous = $3
         """,
         equiv.code,
         equiv.name,
         equiv.is_homogeneous,
-        equiv.courses,
+    )
+    # Add equivalence courses to database
+    value_tuples: list[str] = []
+    query_args = [equiv.code]
+    for i, code in enumerate(equiv.courses):
+        value_tuples.append(f"($1, ${2+i})")
+        query_args.append(code)
+    await EquivalenceCourse.prisma().query_raw(
+        f"""
+        INSERT INTO "EquivalenceCourse" (equiv_code, course_code)
+        VALUES {','.join(value_tuples)}
+        ON CONFLICT (equiv_code, course_code)
+        DO NOTHING
+        """,
+        *query_args,
     )
     # Update in-memory cache if it was already loaded
     if _course_info_cache:
-        _course_info_cache.equivs[equiv.code] = EquivDetails.from_db(equiv)
+        _course_info_cache.equivs[equiv.code] = equiv
+
+
+class CachedCourseDetailsJson(BaseModel):
+    __root__: dict[str, CourseDetails]
 
 
 async def course_info() -> CourseInfo:
@@ -120,20 +163,41 @@ async def course_info() -> CourseInfo:
     if _course_info_cache is None:
         # Derive course rules from courses in database
         print("caching courseinfo from database...")
-        print("  fetching courses from database...")
-        all_courses = await Course.prisma().find_many()
-        print("  loading courses to memory...")
-        courses = {}
-        for course in all_courses:
-            # Create course object
-            courses[course.code] = CourseDetails.from_db(course)
+        courses: dict[str, CourseDetails]
+
+        # Attempt to fetch pre-parsed courses
+        preparsed = await DbCachedCourseInfo.prisma().find_unique(
+            {"id": _CACHED_COURSES_ID}
+        )
+        if preparsed is not None:
+            print("  loading pre-parsed course cache...")
+            courses = pydantic.parse_raw_as(dict[str, CourseDetails], preparsed.info)
+        else:
+            # Parse courses from database
+            print("  fetching courses from database...")
+            all_courses = await Course.prisma().find_many()
+            print("  loading courses to memory...")
+            courses = {}
+            for course in all_courses:
+                # Create course object
+                courses[course.code] = CourseDetails.from_db(course)
+            print("  storing cached courses to database")
+            await DbCachedCourseInfo.prisma().create(
+                {
+                    "id": _CACHED_COURSES_ID,
+                    "info": Json(CachedCourseDetailsJson(__root__=courses).json()),
+                }
+            )
         print(f"  processed {len(courses)} courses")
+
+        # Load equivalences
         print("  loading equivalences from database...")
         all_equivs = await Equivalence.prisma().find_many()
-        equivs = {}
+        equivs: dict[str, EquivDetails] = {}
         for equiv in all_equivs:
-            equivs[equiv.code] = EquivDetails.from_db(equiv)
+            equivs[equiv.code] = await EquivDetails.from_db(equiv)
         print(f"  processed {len(equivs)} equivalences")
+
         _course_info_cache = CourseInfo(courses=courses, equivs=equivs)
 
     return _course_info_cache

@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import router from '../router'
 import { useAuth } from '../contexts/auth.context'
 import { ReactComponent as PanguiPath } from '../assets/PanguiPath.svg'
+import { memo } from 'react'
 
 function Navbar (): JSX.Element {
   const authState = useAuth()
@@ -37,4 +38,4 @@ function Navbar (): JSX.Element {
   )
 }
 
-export default Navbar
+export default memo(Navbar)
