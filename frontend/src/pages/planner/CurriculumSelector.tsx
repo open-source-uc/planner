@@ -1,6 +1,6 @@
 import { Fragment, memo } from 'react'
 import { Listbox, Transition } from '@headlessui/react'
-import { CurriculumSpec } from '../../client'
+import { Major, Minor, Title, CurriculumSpec } from '../../client'
 import { CurriculumData } from './Planner'
 
 interface CurriculumSelectorProps {
@@ -11,6 +11,69 @@ interface CurriculumSelectorProps {
   selectMinor: Function
   selectTitle: Function
 }
+interface SelectorProps {
+  data: { [code: string]: Major | Minor | Title }
+  value: string | null | undefined
+  onChange: (value: string) => void
+}
+
+const Selector = memo(function _Selector ({
+  data,
+  value,
+  onChange
+}: SelectorProps): JSX.Element {
+  return (
+    <Listbox value={value !== undefined && value !== null ? data[value] : {}} onChange={onChange}>
+      <Listbox.Button className="selectorButton">
+        <span className="inline truncate">
+          {value !== undefined && value !== null ? `${data[value]?.name} (${value})` : 'Por elegir'}
+        </span>
+        <svg
+          className="inline"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          width="24"
+          height="24"
+        >
+          <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M7 10l5 5 5-5"/>
+        </svg>
+      </Listbox.Button>
+      <Transition
+        as={Fragment}
+        leave="transition ease-in duration-100"
+        leaveFrom="opacity-100"
+        leaveTo="opacity-0"
+      >
+        <Listbox.Options className="curriculumOptions" style={{ zIndex: 1 }}>
+          {Object.keys(data).map((key) => (
+            <Listbox.Option
+              className={({ active }) =>
+                `curriculumOption ${active ? 'bg-place-holder text-amber-800' : 'text-gray-900'}`
+              }
+              key={key}
+              value={data[key]}
+            >
+              {({ selected }) => (
+                <>
+                  <span
+                    className={`block truncate ${selected ? 'font-medium text-black' : 'font-normal'}`}
+                  >
+                    {data[key].name} ({key})
+                  </span>
+                  {selected
+                    ? (
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-800">*</span>
+                      )
+                    : null}
+                </>
+              )}
+            </Listbox.Option>
+          ))}
+        </Listbox.Options>
+      </Transition>
+    </Listbox>
+  )
+})
 
 /**
  * The selector of major, minor and tittle.
@@ -27,157 +90,50 @@ const CurriculumSelector = memo(function CurriculumSelector ({
       <ul className={'curriculumSelector'}>
         <li className={'selectorElement'}>
           <div className={'selectorName'}>Major:</div>
-          {curriculumData != null &&
-            <Listbox value={curriculumSpec.major !== undefined && curriculumSpec.major !== null ? curriculumData.majors[curriculumSpec.major] : {}} onChange={(m) => selectMajor(m)}>
-              <Listbox.Button className={'selectorButton'}>
-                <span className="inline truncate">{curriculumSpec.major !== undefined && curriculumSpec.major !== null ? curriculumData.majors[curriculumSpec.major]?.name : 'Por elegir'}</span>
-                <svg className="inline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-                  <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M7 10l5 5 5-5"/>
-                </svg>
-              </Listbox.Button>
-              <Transition
-                as={Fragment}
-                leave="transition ease-in duration-10 b0"
-                leaveFrom="opacity-100"
-                leaveTo="opacity-0"
-              >
-                <Listbox.Options className={'curriculumOptions'} style={{ zIndex: 1 }}>
-                  {Object.keys(curriculumData.majors).map((key) => (
-                    <Listbox.Option
-                      className={({ active }) =>
-                      `curriculumOption ${
-                        active ? 'bg-place-holder text-amber-800' : 'text-gray-900'
-                      }`
-                      }key={key}
-                      value={curriculumData.majors[key]}
-                    >
-                      {({ selected }) => (
-                        <>
-                          <span
-                            className={`block truncate ${
-                              selected ? 'font-medium text-black' : 'font-normal'
-                            }`}
-                          >
-                            {curriculumData.majors[key].name}
-                          </span>
-                          {selected
-                            ? (
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-800">
-                              *
-                            </span>
-                              )
-                            : null}
-                        </>
-                      )}
-                    </Listbox.Option>
-                  ))}
-                </Listbox.Options>
-              </Transition>
-            </Listbox>
+          {curriculumData != null
+            ? <Selector
+              data={curriculumData.majors}
+              value={curriculumSpec.major}
+              onChange={(t) => selectMajor(t)}
+            />
+            : <svg
+              className="inline"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
+            >
+              <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M7 10l5 5 5-5"/>
+            </svg>
           }
         </li>
         <li className={'selectorElement'}>
           <div className={'selectorName'}>Minor:</div>
-          {curriculumData != null &&
-            <Listbox
-              value={curriculumSpec.minor !== undefined && curriculumSpec.minor !== null ? curriculumData.minors[curriculumSpec.minor] : {}}
-              onChange={(m) => selectMinor(m)}>
-              <Listbox.Button className={'selectorButton'}>
-                <span className="inline truncate">{curriculumSpec.minor !== undefined && curriculumSpec.minor !== null ? curriculumData.minors[curriculumSpec.minor]?.name : 'Por elegir'}</span>
-                <svg className="inline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-                  <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M7 10l5 5 5-5"/>
-                </svg>
-              </Listbox.Button>
-              <Transition
-                as={Fragment}
-                leave="transition ease-in duration-100"
-                leaveFrom="opacity-100"
-                leaveTo="opacity-0"
+          {curriculumData != null
+            ? <Selector
+              data={curriculumData.minors}
+              value={curriculumSpec.minor}
+              onChange={(t) => selectMinor(t)}
+            />
+            : <svg
+                className="inline"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                width="24"
+                height="24"
               >
-                <Listbox.Options className={'curriculumOptions'} style={{ zIndex: 1 }}>
-                  { Object.keys(curriculumData.minors).map((key) => (
-                    <Listbox.Option
-                      className={({ active }) =>
-                        `curriculumOption ${
-                          active ? 'bg-place-holder text-amber-800' : 'text-gray-900'
-                        }`
-                      }key={key}
-                      value={curriculumData.minors[key]}
-                    >
-                      {({ selected }) => (
-                        <>
-                          <span
-                            className={`block truncate ${
-                              selected ? 'font-medium text-black' : 'font-normal'
-                            }`}
-                          >
-                            {curriculumData.minors[key].name}
-                          </span>
-                          {selected
-                            ? (
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-800">
-                              *
-                            </span>
-                              )
-                            : null}
-                        </>
-                      )}
-                    </Listbox.Option>
-                  ))}
-                </Listbox.Options>
-              </Transition>
-            </Listbox>
+              <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M7 10l5 5 5-5"/>
+            </svg>
           }
         </li>
         <li className={'selectorElement'}>
           <div className={'selectorName'}>Titulo:</div>
           {curriculumData != null &&
-          <Listbox value={(curriculumData != null) && curriculumSpec.title !== undefined && curriculumSpec.title !== null ? curriculumData.titles[curriculumSpec.title] : {}} onChange={(t) => selectTitle(t)}>
-            <Listbox.Button className="selectorButton">
-              <span className="inline truncate">{curriculumSpec.title !== undefined && curriculumSpec.title !== null ? curriculumData.titles[curriculumSpec.title]?.name : 'Por elegir'}</span>
-              <svg className="inline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-                  <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M7 10l5 5 5-5"/>
-                </svg>
-            </Listbox.Button>
-            <Transition
-              as={Fragment}
-              leave="transition ease-in duration-100"
-              leaveFrom="opacity-100"
-              leaveTo="opacity-0"
-            >
-              <Listbox.Options className={'curriculumOptions'} style={{ zIndex: 1 }}>
-                {Object.keys(curriculumData.titles).map((key) => (
-                  <Listbox.Option
-                    className={({ active }) =>
-                    `curriculumOption ${
-                      active ? 'bg-place-holder text-amber-800' : ''
-                    }`
-                    }key={key}
-                    value={curriculumData.titles[key]}
-                  >
-                    {({ selected }) => (
-                      <>
-                        <span
-                          className={`block truncate ${
-                            selected ? 'font-medium text-black' : 'font-normal'
-                          }`}
-                        >
-                          {curriculumData.titles[key].name}
-                        </span>
-                        {selected
-                          ? (
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-800">
-                            *
-                          </span>
-                            )
-                          : null}
-                      </>
-                    )}
-                  </Listbox.Option>
-                ))}
-              </Listbox.Options>
-            </Transition>
-          </Listbox>
+            <Selector
+              data={curriculumData.titles}
+              value={curriculumSpec.title}
+              onChange={(t) => selectTitle(t)}
+            />
           }
         </li>
         {planName !== '' && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {planName}</li>}
