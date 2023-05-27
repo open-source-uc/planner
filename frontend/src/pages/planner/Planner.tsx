@@ -490,7 +490,11 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = { ...prev.curriculum, major: majorCode }
-      return { ...prev, classes: [], curriculum: newCurriculum }
+      prev.classes.splice(prev.next_semester)
+      if (!isMinorValid) {
+        newCurriculum.minor = undefined
+      }
+      return { ...prev, curriculum: newCurriculum }
     })
   }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
 
@@ -498,7 +502,8 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = { ...prev.curriculum, minor: minor.code }
-      return { ...prev, classes: [], curriculum: newCurriculum }
+      prev.classes.splice(prev.next_semester)
+      return { ...prev, curriculum: newCurriculum }
     })
   }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
 
@@ -506,7 +511,8 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = { ...prev.curriculum, title: title.code }
-      return { ...prev, classes: [], curriculum: newCurriculum }
+      prev.classes.splice(prev.next_semester)
+      return { ...prev, curriculum: newCurriculum }
     })
   }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
 
