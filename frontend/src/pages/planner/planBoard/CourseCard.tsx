@@ -129,17 +129,14 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
 const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError }: CardProps): JSX.Element => {
   // Turns out animations are a big source of lag
   const allowAnimations = true
+  const editIcon = courseBlock === 'FormacionGeneral' ? editWhiteIcon : editBlackIcon
 
   return (
     <div className={`card group ${courseBlock} ${cardData.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
-      { hasEquivalence === true && (courseBlock === 'FormacionGeneral'
-        ? cardData.is_concrete === true
-          ? <button onClick={() => openSelector(cardData, semester, index)}><img className='opacity-60 absolute w-3 top-2 left-2' src={editWhiteIcon} alt="Seleccionar Curso" /></button>
-          : <img className='opacity-60 absolute w-3 top-2 left-2' src={editWhiteIcon} alt="Seleccionar Curso" />
-        : cardData.is_concrete === true
-          ? <button onClick={() => openSelector(cardData, semester, index)}><img className='opacity-60 absolute w-3 top-2 left-2' src={editBlackIcon} alt="Seleccionar Curso" /></button>
-          : <img className='opacity-60 absolute w-3 top-2 left-2' src={editBlackIcon} alt="Seleccionar Curso" />)
-      }
+      { hasEquivalence === true && (cardData.is_concrete === true
+        ? <button onClick={() => openSelector()}><img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" /></button>
+        : <img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" />
+      )}
       {courseBlock === ''
         ? <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse(semester, index)}>x</button>
         : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{BlockInitials(courseBlock)}</div>}

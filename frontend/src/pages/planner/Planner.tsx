@@ -3,16 +3,15 @@ import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
 import CourseSelectorDialog from './CourseSelectorDialog'
+import CurriculumSelector from './CurriculumSelector'
 import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
-import { Fragment, useState, useEffect, useRef, useCallback, memo, useMemo } from 'react'
-import { Listbox, Transition } from '@headlessui/react'
+import {  useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, CourseDetails, EquivDetails, ConcreteId, EquivalenceId, FlatValidationResult, PlanView, CurriculumSpec } from '../../client'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
-import down_arrow from '../../assets/down_arrow.svg'
 import 'react-toastify/dist/ReactToastify.css'
 import DebugGraph from '../../components/DebugGraph'
 import deepEqual from 'fast-deep-equal'
@@ -22,20 +21,6 @@ export type PseudoCourseDetail = CourseDetails | EquivDetails
 
 type ModalData = { equivalence: EquivDetails | undefined, selector: boolean, semester: number, index?: number } | undefined
 
-interface CurriculumData {
-  majors: { [code: string]: Major }
-  minors: { [code: string]: Minor }
-  titles: { [code: string]: Title }
-}
-
-interface CurriculumSelectorProps {
-  planName: String
-  curriculumData: CurriculumData
-  curriculum: CurriculumSpec
-  selectMajor: Function
-  selectMinor: Function
-  selectTitle: Function
-}
 
 enum PlannerStatus {
   LOADING = 'LOADING',
@@ -48,168 +33,6 @@ enum PlannerStatus {
 const isApiError = (err: any): err is ApiError => {
   return err.status !== undefined
 }
-
-/**
- * The selector of major, minor and tittle.
- */
-const _CurriculumSelector = ({
-  planName,
-  curriculumData,
-  curriculum,
-  selectMajor,
-  selectMinor,
-  selectTitle
-}: CurriculumSelectorProps): JSX.Element => {
-  return (
-    <ul className={'curriculumSelector'}>
-      <li className={'selectorElement'}>
-        <div className={'selectorName'}>Major:</div>
-        <Listbox value={curriculum.major !== undefined && curriculum.major !== null ? curriculumData.majors[curriculum.major] : {}} onChange={(m) => selectMajor(m)}>
-          <Listbox.Button className={'selectorButton'}>
-            <span className="inline truncate">{curriculum.major != null ? curriculumData.majors[curriculum.major]?.name : 'Por elegir'}</span>
-            <img className="inline" src={down_arrow} alt="Seleccionar Major" />
-          </Listbox.Button>
-          <Transition
-            as={Fragment}
-            leave="transition ease-in duration-100"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <Listbox.Options className={'curriculumOptions'} style={{ zIndex: 1 }}>
-              {Object.keys(curriculumData.majors).map((key) => (
-                <Listbox.Option
-                  className={({ active }) =>
-                  `curriculumOption ${
-                    active ? 'bg-place-holder text-amber-800' : 'text-gray-900'
-                  }`
-                  }key={key}
-                  value={curriculumData.majors[key]}
-                >
-                  {({ selected }) => (
-                    <>
-                      <span
-                        className={`block truncate ${
-                          selected ? 'font-medium text-black' : 'font-normal'
-                        }`}
-                      >
-                        {curriculumData.majors[key].name}
-                      </span>
-                      {selected
-                        ? (
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-800">
-                          *
-                        </span>
-                          )
-                        : null}
-                    </>
-                  )}
-                </Listbox.Option>
-              ))}
-            </Listbox.Options>
-          </Transition>
-        </Listbox>
-      </li>
-      <li className={'selectorElement'}>
-        <div className={'selectorName'}>Minor:</div>
-        <Listbox
-          value={curriculum.minor !== undefined && curriculum.minor !== null ? curriculumData.minors[curriculum.minor] : {}}
-          onChange={(m) => selectMinor(m)}>
-          <Listbox.Button className={'selectorButton'}>
-            <span className="inline truncate">{curriculum.minor != null ? curriculumData.minors[curriculum.minor]?.name : 'Por elegir'}</span>
-            <img className="inline" src={down_arrow} alt="Seleccionar Minor" />
-          </Listbox.Button>
-          <Transition
-            as={Fragment}
-            leave="transition ease-in duration-100"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <Listbox.Options className={'curriculumOptions'} style={{ zIndex: 1 }}>
-              {Object.keys(curriculumData.minors).map((key) => (
-                <Listbox.Option
-                  className={({ active }) =>
-                    `curriculumOption ${
-                      active ? 'bg-place-holder text-amber-800' : 'text-gray-900'
-                    }`
-                  }key={key}
-                  value={curriculumData.minors[key]}
-                >
-                  {({ selected }) => (
-                    <>
-                      <span
-                        className={`block truncate ${
-                          selected ? 'font-medium text-black' : 'font-normal'
-                        }`}
-                      >
-                        {curriculumData.minors[key].name}
-                      </span>
-                      {selected
-                        ? (
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-800">
-                          *
-                        </span>
-                          )
-                        : null}
-                    </>
-                  )}
-                </Listbox.Option>
-              ))}
-            </Listbox.Options>
-          </Transition>
-        </Listbox>
-      </li>
-      <li className={'selectorElement'}>
-        <div className={'selectorName'}>Titulo:</div>
-        <Listbox value={curriculum.title !== undefined && curriculum.title !== null ? curriculumData.titles[curriculum.title] : {}} onChange={(t) => selectTitle(t)}>
-          <Listbox.Button className="selectorButton">
-            <span className="inline truncate">{curriculum.title != null ? curriculumData.titles[curriculum.title]?.name : 'Por elegir'}</span>
-            <img className="inline" src={down_arrow} alt="Seleccionar Titulo" />
-          </Listbox.Button>
-          <Transition
-            as={Fragment}
-            leave="transition ease-in duration-100"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <Listbox.Options className={'curriculumOptions'} style={{ zIndex: 1 }}>
-              {Object.keys(curriculumData.titles).map((key) => (
-                <Listbox.Option
-                  className={({ active }) =>
-                  `curriculumOption ${
-                    active ? 'bg-place-holder text-amber-800' : ''
-                  }`
-                  }key={key}
-                  value={curriculumData.titles[key]}
-                >
-                  {({ selected }) => (
-                    <>
-                      <span
-                        className={`block truncate ${
-                          selected ? 'font-medium text-black' : 'font-normal'
-                        }`}
-                      >
-                        {curriculumData.titles[key].name}
-                      </span>
-                      {selected
-                        ? (
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-800">
-                          *
-                        </span>
-                          )
-                        : null}
-                    </>
-                  )}
-                </Listbox.Option>
-              ))}
-            </Listbox.Options>
-          </Transition>
-        </Listbox>
-      </li>
-      {planName !== '' && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {planName}</li>}
-    </ul>
-  )
-}
-const CurriculumSelector = memo(_CurriculumSelector)
 
 export interface PlanDigest {
   // Maps `(code, course instance index)` to `(semester, index within semester)`
@@ -237,7 +60,6 @@ const Planner = (): JSX.Element => {
   const [planName, setPlanName] = useState<string>('')
   const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null >(null)
   const [courseDetails, setCourseDetails] = useState<{ [code: string]: PseudoCourseDetail }>({})
-  const [curriculumData, setCurriculumData] = useState<CurriculumData | null>(null)
   const [modalData, setModalData] = useState<ModalData>()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [plannerStatus, setPlannerStatus] = useState<PlannerStatus>(PlannerStatus.LOADING)
@@ -352,7 +174,6 @@ const Planner = (): JSX.Element => {
       const response: ValidatablePlan = await DefaultService.generatePlan(ValidatablePlan)
       await Promise.all([
         getCourseDetails(response.classes.flat()),
-        loadCurriculumsData(response.curriculum.cyear.raw, response.curriculum.major),
         validate(response)
       ])
       setValidatablePlan(response)
@@ -368,7 +189,6 @@ const Planner = (): JSX.Element => {
       const response: PlanView = await DefaultService.readPlan(id)
       await Promise.all([
         getCourseDetails(response.validatable_plan.classes.flat()),
-        loadCurriculumsData(response.validatable_plan.curriculum.cyear.raw, response.validatable_plan.curriculum.major),
         validate(response.validatable_plan)
       ])
       setValidatablePlan(response.validatable_plan)
@@ -522,29 +342,6 @@ const Planner = (): JSX.Element => {
       return { ...prev, classes: newClassesGrid }
     })
   }, []) // moveCourse should not depend on `validatablePlan`, so that memoing does its work
-
-  async function loadCurriculumsData (cYear: string, cMajor?: string): Promise<void> {
-    const [majors, minors, titles] = await Promise.all([
-      DefaultService.getMajors(cYear),
-      DefaultService.getMinors(cYear, cMajor),
-      DefaultService.getTitles(cYear)
-    ])
-    const curriculumData: CurriculumData = {
-      majors: majors.reduce((dict: { [code: string]: Major }, m: Major) => {
-        dict[m.code] = m
-        return dict
-      }, {}),
-      minors: minors.reduce((dict: { [code: string]: Minor }, m: Minor) => {
-        dict[m.code] = m
-        return dict
-      }, {}),
-      titles: titles.reduce((dict: { [code: string]: Title }, t: Title) => {
-        dict[t.code] = t
-        return dict
-      }, {})
-    }
-    setCurriculumData(curriculumData)
-  }
 
   const openModal = useCallback(async (equivalence: EquivDetails | EquivalenceId, semester: number, index?: number): Promise<void> => {
     if ('courses' in equivalence) {
@@ -751,15 +548,13 @@ const Planner = (): JSX.Element => {
 
       {plannerStatus !== 'LOADING' && plannerStatus !== 'ERROR' && <>
         <div className={'flex flex-col w-5/6 flex-grow'}>
-          {curriculumData != null && validatablePlan != null &&
-            <CurriculumSelector
-              planName={planName}
-              curriculumData={curriculumData}
-              curriculum={validatablePlan.curriculum}
-              selectMajor={checkMinorForNewMajor}
-              selectMinor={selectMinor}
-              selectTitle={selectTitle}
-            />}
+          <CurriculumSelector
+            planName={planName}
+            curriculumSpec={validatablePlan?.curriculum ?? { cyear: null, major: null, minor: null, title: null }}
+            selectMajor={checkMinorForNewMajor}
+            selectMinor={selectMinor}
+            selectTitle={selectTitle}
+          />
           <ControlTopBar
             reset={reset}
             save={savePlan}
