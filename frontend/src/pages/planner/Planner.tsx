@@ -6,10 +6,10 @@ import CourseSelectorDialog from './CourseSelectorDialog'
 import CurriculumSelector from './CurriculumSelector'
 import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
-import {  useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, CourseDetails, EquivDetails, ConcreteId, EquivalenceId, FlatValidationResult, PlanView, CurriculumSpec } from '../../client'
+import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, CourseDetails, EquivDetails, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -18,9 +18,13 @@ import deepEqual from 'fast-deep-equal'
 
 export type PseudoCourseId = ConcreteId | EquivalenceId
 export type PseudoCourseDetail = CourseDetails | EquivDetails
+export interface CurriculumData {
+  majors: { [code: string]: Major }
+  minors: { [code: string]: Minor }
+  titles: { [code: string]: Title }
+}
 
 type ModalData = { equivalence: EquivDetails | undefined, selector: boolean, semester: number, index?: number } | undefined
-
 
 enum PlannerStatus {
   LOADING = 'LOADING',
@@ -60,6 +64,7 @@ const Planner = (): JSX.Element => {
   const [planName, setPlanName] = useState<string>('')
   const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null >(null)
   const [courseDetails, setCourseDetails] = useState<{ [code: string]: PseudoCourseDetail }>({})
+  const [curriculumData, setCurriculumData] = useState<CurriculumData | null>(null)
   const [modalData, setModalData] = useState<ModalData>()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [plannerStatus, setPlannerStatus] = useState<PlannerStatus>(PlannerStatus.LOADING)
@@ -174,6 +179,7 @@ const Planner = (): JSX.Element => {
       const response: ValidatablePlan = await DefaultService.generatePlan(ValidatablePlan)
       await Promise.all([
         getCourseDetails(response.classes.flat()),
+        loadCurriculumsData(response.curriculum.cyear.raw, response.curriculum.major),
         validate(response)
       ])
       setValidatablePlan(response)
@@ -189,6 +195,7 @@ const Planner = (): JSX.Element => {
       const response: PlanView = await DefaultService.readPlan(id)
       await Promise.all([
         getCourseDetails(response.validatable_plan.classes.flat()),
+        loadCurriculumsData(response.validatable_plan.curriculum.cyear.raw, response.validatable_plan.curriculum.major),
         validate(response.validatable_plan)
       ])
       setValidatablePlan(response.validatable_plan)
@@ -342,6 +349,29 @@ const Planner = (): JSX.Element => {
       return { ...prev, classes: newClassesGrid }
     })
   }, []) // moveCourse should not depend on `validatablePlan`, so that memoing does its work
+
+  async function loadCurriculumsData (cYear: string, cMajor?: string): Promise<void> {
+    const [majors, minors, titles] = await Promise.all([
+      DefaultService.getMajors(cYear),
+      DefaultService.getMinors(cYear, cMajor),
+      DefaultService.getTitles(cYear)
+    ])
+    const curriculumData: CurriculumData = {
+      majors: majors.reduce((dict: { [code: string]: Major }, m: Major) => {
+        dict[m.code] = m
+        return dict
+      }, {}),
+      minors: minors.reduce((dict: { [code: string]: Minor }, m: Minor) => {
+        dict[m.code] = m
+        return dict
+      }, {}),
+      titles: titles.reduce((dict: { [code: string]: Title }, t: Title) => {
+        dict[t.code] = t
+        return dict
+      }, {})
+    }
+    setCurriculumData(curriculumData)
+  }
 
   const openModal = useCallback(async (equivalence: EquivDetails | EquivalenceId, semester: number, index?: number): Promise<void> => {
     if ('courses' in equivalence) {
@@ -538,18 +568,21 @@ const Planner = (): JSX.Element => {
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
       <AlertModal title={popUpAlert.title} desc={popUpAlert.desc} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}/>
       {plannerStatus === 'LOADING' && (
-        <Spinner message='Cargando planificación...' />
+        <div className="fixed left-0 w-screen h-full z-50 bg-white  flex justify-center items-center">
+          <Spinner message='Cargando planificación...' />
+        </div>
       )}
 
-      {plannerStatus === 'ERROR' && (<div className={'w-full h-full flex flex-col justify-center items-center'}>
+      {plannerStatus === 'ERROR'
+        ? (<div className={'w-full h-full flex flex-col justify-center items-center'}>
         <p className={'text-2xl font-semibold mb-4'}>Error al cargar plan</p>
         <p className={'text-sm font-normal'}>{error}</p>
-      </div>)}
-
-      {plannerStatus !== 'LOADING' && plannerStatus !== 'ERROR' && <>
-        <div className={'flex flex-col w-5/6 flex-grow'}>
+      </div>)
+        : <>
+        <div className={`flex flex-col w-5/6 flex-grow  ${plannerStatus !== PlannerStatus.READY ? 'pointer-events-none' : ''} `}>
           <CurriculumSelector
             planName={planName}
+            curriculumData={curriculumData}
             curriculumSpec={validatablePlan?.curriculum ?? { cyear: null, major: null, minor: null, title: null }}
             selectMajor={checkMinorForNewMajor}
             selectMinor={selectMinor}
@@ -561,17 +594,16 @@ const Planner = (): JSX.Element => {
             validating={plannerStatus !== 'READY'}
           />
           <DndProvider backend={HTML5Backend}>
-            <PlanBoard
-              classesGrid={validatablePlan?.classes ?? null}
-              validationDigest={validationDigest}
-              classesDetails={courseDetails}
-              moveCourse={moveCourse}
-              openModal={openModal}
-              remCourse={remCourse}
-              addCourse={addCourse}
-              validating={plannerStatus !== 'READY'}
-              validationResult={validationResult}
-            />
+            {(validatablePlan != null) &&
+              <PlanBoard
+                classesGrid={validatablePlan.classes}
+                classesDetails={courseDetails}
+                moveCourse={moveCourse}
+                openModal={openModal}
+                addCourse={addCourse}
+                remCourse={remCourse}
+                validationDigest={validationDigest}
+              />}
           </DndProvider>
         </div>
         <ErrorTray diagnostics={validationResult?.diagnostics ?? []} validating={plannerStatus === 'VALIDATING'}/>

@@ -1,15 +1,11 @@
-import { Fragment, useState, useEffect, memo } from 'react'
+import { Fragment, memo } from 'react'
 import { Listbox, Transition } from '@headlessui/react'
-import { Major, Minor, Title, DefaultService, CurriculumSpec } from '../../client'
-
-interface CurriculumData {
-  majors: { [code: string]: Major }
-  minors: { [code: string]: Minor }
-  titles: { [code: string]: Title }
-}
+import { CurriculumSpec } from '../../client'
+import { CurriculumData } from './Planner'
 
 interface CurriculumSelectorProps {
   planName: String
+  curriculumData: CurriculumData | null
   curriculumSpec: CurriculumSpec | { cyear: null, major: null, minor: null, title: null }
   selectMajor: Function
   selectMinor: Function
@@ -21,40 +17,12 @@ interface CurriculumSelectorProps {
  */
 const CurriculumSelector = memo(function CurriculumSelector ({
   planName,
+  curriculumData,
   curriculumSpec,
   selectMajor,
   selectMinor,
   selectTitle
 }: CurriculumSelectorProps): JSX.Element {
-  const [curriculumData, setCurriculumData] = useState<CurriculumData | null>(null)
-  async function loadCurriculumsData (cYear: string, cMajor?: string): Promise<void> {
-    const [majors, minors, titles] = await Promise.all([
-      DefaultService.getMajors(cYear),
-      DefaultService.getMinors(cYear, cMajor),
-      DefaultService.getTitles(cYear)
-    ])
-    const curriculumData: CurriculumData = {
-      majors: majors.reduce((dict: { [code: string]: Major }, m: Major) => {
-        dict[m.code] = m
-        return dict
-      }, {}),
-      minors: minors.reduce((dict: { [code: string]: Minor }, m: Minor) => {
-        dict[m.code] = m
-        return dict
-      }, {}),
-      titles: titles.reduce((dict: { [code: string]: Title }, t: Title) => {
-        dict[t.code] = t
-        return dict
-      }, {})
-    }
-    setCurriculumData(curriculumData)
-  }
-
-  useEffect(() => {
-    if (curriculumSpec.cyear !== null) {
-      void loadCurriculumsData(curriculumSpec.cyear.raw, curriculumSpec.major)
-    }
-  }, [curriculumSpec])
   return (
       <ul className={'curriculumSelector'}>
         <li className={'selectorElement'}>

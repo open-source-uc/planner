@@ -1,6 +1,6 @@
 import { useState, memo, useCallback } from 'react'
 import { useDrop } from 'react-dnd'
-import { FlatValidationResult, CourseDetails } from '../../../client'
+import { CourseDetails } from '../../../client'
 import { CourseValidationDigest, PseudoCourseId, PseudoCourseDetail, ValidationDigest } from '../Planner'
 import CourseCard from './CourseCard'
 import 'react-toastify/dist/ReactToastify.css'
@@ -13,8 +13,6 @@ interface PlanBoardProps {
   openModal: Function
   addCourse: Function
   remCourse: Function
-  validating: Boolean
-  validationResult: FlatValidationResult | null
   validationDigest: ValidationDigest
 }
 
@@ -107,11 +105,11 @@ const SemesterColumn = memo(function _SemesterColumn ({ classesDetails, semester
  * Displays several semesters, as well as several classes per semester.
  */
 
-const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCourse, remCourse, validating, validationResult, validationDigest }: PlanBoardProps): JSX.Element => {
+const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCourse, remCourse, validationDigest }: PlanBoardProps): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false)
 
   return (
-    <div className= {`overflow-auto grid grid-rows-[fit-content] grid-flow-col justify-start ${validating === true ? 'pointer-events-none' : ''}`}>
+    <div className= {'overflow-auto grid grid-rows-[fit-content] grid-flow-col justify-start'}>
       {classesGrid === null
         ? <h1>elija plan</h1>
         : <>
