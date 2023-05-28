@@ -6,7 +6,7 @@ import { Spinner } from '../../components/Spinner'
 // TODO: fetch school list from backend
 // Existen escuelas en buscacursos que no tienen cursos: 'Acad Inter de Filosofía'
 const schoolOptions = ['Acad Inter de Filosofía', 'Actividades Universitarias', 'Actuación', 'Agronomía e Ing. Forestal', 'Antropología', 'Arquitectura', 'Arte', 'Astrofísica', 'Bachillerato', 'CARA', 'Ciencia Política', 'Ciencias Biológicas', 'Ciencias de la Salud', 'College', 'Comunicaciones', 'Construcción Civil', 'Deportes', 'Derecho', 'Desarrollo Sustentable', 'Diseño', 'Economía y Administración', 'Educación', 'Enfermería', 'Escuela de Gobierno', 'Escuela de Graduados', 'Estudios Urbanos', 'Estética', 'Filosofía', 'Física', 'Geografía', 'Historia', 'Ing Matemática y Computacional', 'Ingeniería', 'Ingeniería Biológica y Médica', 'Instituto de Éticas Aplicadas', 'Letras', 'Matemáticas', 'Medicina', 'Medicina Veterinaria', 'Música', 'Odontología', 'Psicología', 'Química', 'Química y Farmacia', 'Requisito Idioma', 'Sociología', 'Teología', 'Trabajo Social', 'Villarrica']
-
+const coursesBatchSize = 30
 const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: EquivDetails, open: boolean, onClose: Function }): JSX.Element => {
   const [loadedCourses, setLoadedCourses] = useState<{ [code: string]: CourseOverview }>({})
   const [filteredCodes, setFilteredCodes] = useState<string[]>([])
@@ -91,7 +91,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       setPromiseInstance(null)
       const missingInfo = []
       for (const code of response) {
-        if (missingInfo.length >= 20) break
+        if (missingInfo.length >= coursesBatchSize) break
         if (code in loadedCourses) continue
         missingInfo.push(code)
       }
@@ -111,14 +111,36 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     if (!open || loadingCoursesData) return
     const { scrollTop, scrollHeight, clientHeight } = event.currentTarget
     if (scrollTop + clientHeight === scrollHeight && equivalence !== undefined) {
-      getCourseDetails(filteredCodes.filter((code) => !Object.keys(loadedCourses).includes(code)).splice(0, 20)).catch(err => console.log(err))
+      getCourseDetails(filteredCodes.filter((code) => !Object.keys(loadedCourses).includes(code)).splice(0, coursesBatchSize)).catch(err => console.log(err))
+    }
+  }
+
+  const handleKeyDownFilter: React.EventHandler<React.KeyboardEvent<HTMLInputElement>> = e => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      try {
+        void handleSearch()
+      } catch (err) {
+        console.log(err)
+      }
+    }
+  }
+
+  const handleKeyDownSelection: React.EventHandler<React.KeyboardEvent<HTMLInputElement>> = e => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      try {
+        void onClose(selectedCourse)
+      } catch (err) {
+        console.log(err)
+      }
     }
   }
 
   useEffect(() => {
     const showCoursesCount = Object.keys(loadedCourses).filter(key => filteredCodes.includes(key)).length
-    if (showCoursesCount < 10 && filteredCodes.length > 0) {
-      getCourseDetails(filteredCodes.filter((code) => !Object.keys(loadedCourses).includes(code)).splice(0, 20)).catch(err => console.log(err))
+    if (showCoursesCount < coursesBatchSize && filteredCodes.length > 0) {
+      getCourseDetails(filteredCodes.filter((code) => !Object.keys(loadedCourses).includes(code)).splice(0, coursesBatchSize)).catch(err => console.log(err))
     }
   }, [filteredCodes])
 
@@ -165,7 +187,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                   <div className="grid border-2 p-4 py-3 rounded bg-slate-100 border-slate-500 border-solid gap-2 grid-cols-5">
                     <div className="col-span-5 grid  grid-cols-5">
                       <label className="col-span-1 my-auto" htmlFor="nameFilter">Nombre o Sigla: </label>
-                      <input className="col-span-4 rounded py-1" type="text" id="nameFilter" value={filter.name} onChange={e => setFilter({ ...filter, name: e.target.value })} />
+                      <input className="col-span-4 rounded py-1" type="text" id="nameFilter" value={filter.name} onChange={e => setFilter({ ...filter, name: e.target.value })} onKeyDown={handleKeyDownFilter}/>
                     </div>
                     <div className="col-span-4 grid  grid-cols-4">
                       <label className="col-span-1 my-auto" htmlFor="schoolFilter">Escuela: </label>
@@ -219,10 +241,18 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                   {loadingCoursesData &&
                   <tr className="fixed pr-10" style={{ height: 'inherit', width: 'inherit' }}><td className="bg-white w-full h-full flex "> <Spinner message='Cargando cursos...' /></td></tr>
                   }
-                  {Object.entries(loadedCourses).filter(([key, course]) => filteredCodes.includes(key)).map(([code, course]) => (
+                  {Object.entries(loadedCourses).filter(([key, course]) => filteredCodes.includes(key)).map(([code, course], index) => (
                     <tr key={code} className="flex mt-3 mx-3">
                       <td className="w-8">
-                        <input className='cursor-pointer' id={code} type="radio" name="status" value={code} onChange={e => setSelectedCourse(e.target.value)}/>
+                        <input
+                          className='cursor-pointer'
+                          id={code}
+                          type="radio"
+                          name="status"
+                          value={code}
+                          onChange={e => setSelectedCourse(e.target.value)}
+                          onKeyDown={handleKeyDownSelection}
+                        />
                       </td>
                       <td className='w-20'>{code}</td>
                       <td className='w-96'>{course.name}</td>
