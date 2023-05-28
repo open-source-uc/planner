@@ -22,7 +22,6 @@ interface SemesterColumnProps {
 
 const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCourse, openModal, classes, validationDigest, isDragging, setIsDragging }: SemesterColumnProps): JSX.Element => {
   const authState = useAuth()
-  console.log(semester)
   const [dropProps, drop] = useDrop(() => ({
     accept: 'card',
     drop (course: CourseDetails & { semester: number }) {
