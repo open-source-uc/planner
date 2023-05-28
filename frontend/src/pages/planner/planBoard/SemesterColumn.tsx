@@ -55,7 +55,7 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
               moveCourse={moveCourse}
               remCourse={remCourse}
               courseBlock={validationDigest[index]?.superblock ?? ''}
-              openSelector={openSelector}
+              openSelector={() => openSelector(course, semester, index)}
               hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
               hasError={validationDigest[index]?.errorIndices?.[0] != null}
               hasWarning={validationDigest[index]?.warningIndices?.[0] != null}
