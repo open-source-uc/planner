@@ -581,39 +581,40 @@ const Planner = (): JSX.Element => {
 
       {plannerStatus === 'ERROR'
         ? (<div className={'w-full h-full flex flex-col justify-center items-center'}>
-        <p className={'text-2xl font-semibold mb-4'}>Error al cargar plan</p>
-        <p className={'text-sm font-normal'}>{error}</p>
-      </div>)
-        : <>
-        <div className={`flex flex-col w-5/6 flex-grow  ${plannerStatus !== PlannerStatus.READY ? 'pointer-events-none' : ''} `}>
-          <CurriculumSelector
-            planName={planName}
-            curriculumData={curriculumData}
-            curriculumSpec={validatablePlan?.curriculum ?? { cyear: null, major: null, minor: null, title: null }}
-            selectMajor={checkMinorForNewMajor}
-            selectMinor={selectMinor}
-            selectTitle={selectTitle}
-          />
-          <ControlTopBar
-            reset={reset}
-            save={savePlan}
-            validating={plannerStatus !== 'READY'}
-          />
-          <DndProvider backend={HTML5Backend}>
-            {(validatablePlan != null) &&
-              <PlanBoard
-                classesGrid={validatablePlan.classes}
-                classesDetails={courseDetails}
-                moveCourse={moveCourse}
-                openModal={openModal}
-                addCourse={addCourse}
-                remCourse={remCourse}
-                validationDigest={validationDigest}
-              />}
-          </DndProvider>
+            <p className={'text-2xl font-semibold mb-4'}>Error al cargar plan</p>
+            <p className={'text-sm font-normal'}>{error}</p>
+          </div>)
+        : <div className={'flex w-full'}>
+            <div className={`flex flex-col overflow-auto flex-grow  ${plannerStatus !== PlannerStatus.READY ? 'pointer-events-none' : ''} `}>
+              <CurriculumSelector
+                planName={planName}
+                curriculumData={curriculumData}
+                curriculumSpec={validatablePlan?.curriculum ?? { cyear: null, major: null, minor: null, title: null }}
+                selectMajor={checkMinorForNewMajor}
+                selectMinor={selectMinor}
+                selectTitle={selectTitle}
+              />
+              <ControlTopBar
+                reset={reset}
+                save={savePlan}
+                validating={plannerStatus !== 'READY'}
+              />
+              <DndProvider backend={HTML5Backend}>
+                {(validatablePlan != null) &&
+                  <PlanBoard
+                    classesGrid={validatablePlan.classes}
+                    classesDetails={courseDetails}
+                    moveCourse={moveCourse}
+                    openModal={openModal}
+                    addCourse={addCourse}
+                    remCourse={remCourse}
+                    validationDigest={validationDigest}
+                  />}
+              </DndProvider>
+            </div>
+          <ErrorTray diagnostics={validationResult?.diagnostics ?? []} validating={plannerStatus === 'VALIDATING'}/>
         </div>
-        <ErrorTray diagnostics={validationResult?.diagnostics ?? []} validating={plannerStatus === 'VALIDATING'}/>
-        </>}
+      }
     </div>
   )
 }

@@ -142,7 +142,7 @@ const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSele
         : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{BlockInitials(courseBlock)}</div>}
       <div className='flex items-center justify-center text-center flex-col'>
         <div className='text-xs line-clamp-2'>{cardData.name}</div>
-        <div className='text-[0.6rem] opacity-75'>{cardData.is_concrete !== true ? `Seleccionar Curso  (${cardData.code})` : cardData.code}</div>
+        <div className='text-[0.6rem] opacity-75'>{cardData.is_concrete !== true ? 'Seleccionar Curso' : cardData.code}</div>
       </div>
       <div className='absolute bottom-2 left-2 text-[0.5rem] opacity-75'>{cardData.credits} créd.</div>
       {hasError && <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
