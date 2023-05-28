@@ -3,39 +3,28 @@ import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
 import CourseSelectorDialog from './CourseSelectorDialog'
+import CurriculumSelector from './CurriculumSelector'
 import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
-import { Fragment, useState, useEffect, useRef, useCallback, memo, useMemo } from 'react'
-import { Listbox, Transition } from '@headlessui/react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, CourseDetails, EquivDetails, ConcreteId, EquivalenceId, FlatValidationResult, PlanView, CurriculumSpec } from '../../client'
+import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, CourseDetails, EquivDetails, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
-import down_arrow from '../../assets/down_arrow.svg'
 import 'react-toastify/dist/ReactToastify.css'
 import DebugGraph from '../../components/DebugGraph'
 import deepEqual from 'fast-deep-equal'
 
 export type PseudoCourseId = ConcreteId | EquivalenceId
 export type PseudoCourseDetail = CourseDetails | EquivDetails
-
-type ModalData = { equivalence: EquivDetails | undefined, selector: boolean, semester: number, index?: number } | undefined
-
-interface CurriculumData {
+export interface CurriculumData {
   majors: { [code: string]: Major }
   minors: { [code: string]: Minor }
   titles: { [code: string]: Title }
 }
 
-interface CurriculumSelectorProps {
-  planName: String
-  curriculumData: CurriculumData
-  curriculum: CurriculumSpec
-  selectMajor: Function
-  selectMinor: Function
-  selectTitle: Function
-}
+type ModalData = { equivalence: EquivDetails | undefined, selector: boolean, semester: number, index?: number } | undefined
 
 enum PlannerStatus {
   LOADING = 'LOADING',
@@ -48,168 +37,6 @@ enum PlannerStatus {
 const isApiError = (err: any): err is ApiError => {
   return err.status !== undefined
 }
-
-/**
- * The selector of major, minor and tittle.
- */
-const _CurriculumSelector = ({
-  planName,
-  curriculumData,
-  curriculum,
-  selectMajor,
-  selectMinor,
-  selectTitle
-}: CurriculumSelectorProps): JSX.Element => {
-  return (
-    <ul className={'curriculumSelector'}>
-      <li className={'selectorElement'}>
-        <div className={'selectorName'}>Major:</div>
-        <Listbox value={curriculum.major !== undefined && curriculum.major !== null ? curriculumData.majors[curriculum.major] : {}} onChange={(m) => selectMajor(m)}>
-          <Listbox.Button className={'selectorButton'}>
-            <span className="inline truncate">{curriculum.major != null ? curriculumData.majors[curriculum.major]?.name : 'Por elegir'}</span>
-            <img className="inline" src={down_arrow} alt="Seleccionar Major" />
-          </Listbox.Button>
-          <Transition
-            as={Fragment}
-            leave="transition ease-in duration-100"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <Listbox.Options className={'curriculumOptions'} style={{ zIndex: 1 }}>
-              {Object.keys(curriculumData.majors).map((key) => (
-                <Listbox.Option
-                  className={({ active }) =>
-                  `curriculumOption ${
-                    active ? 'bg-place-holder text-amber-800' : 'text-gray-900'
-                  }`
-                  }key={key}
-                  value={curriculumData.majors[key]}
-                >
-                  {({ selected }) => (
-                    <>
-                      <span
-                        className={`block truncate ${
-                          selected ? 'font-medium text-black' : 'font-normal'
-                        }`}
-                      >
-                        {curriculumData.majors[key].name}
-                      </span>
-                      {selected
-                        ? (
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-800">
-                          *
-                        </span>
-                          )
-                        : null}
-                    </>
-                  )}
-                </Listbox.Option>
-              ))}
-            </Listbox.Options>
-          </Transition>
-        </Listbox>
-      </li>
-      <li className={'selectorElement'}>
-        <div className={'selectorName'}>Minor:</div>
-        <Listbox
-          value={curriculum.minor !== undefined && curriculum.minor !== null ? curriculumData.minors[curriculum.minor] : {}}
-          onChange={(m) => selectMinor(m)}>
-          <Listbox.Button className={'selectorButton'}>
-            <span className="inline truncate">{curriculum.minor != null ? curriculumData.minors[curriculum.minor]?.name : 'Por elegir'}</span>
-            <img className="inline" src={down_arrow} alt="Seleccionar Minor" />
-          </Listbox.Button>
-          <Transition
-            as={Fragment}
-            leave="transition ease-in duration-100"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <Listbox.Options className={'curriculumOptions'} style={{ zIndex: 1 }}>
-              {Object.keys(curriculumData.minors).map((key) => (
-                <Listbox.Option
-                  className={({ active }) =>
-                    `curriculumOption ${
-                      active ? 'bg-place-holder text-amber-800' : 'text-gray-900'
-                    }`
-                  }key={key}
-                  value={curriculumData.minors[key]}
-                >
-                  {({ selected }) => (
-                    <>
-                      <span
-                        className={`block truncate ${
-                          selected ? 'font-medium text-black' : 'font-normal'
-                        }`}
-                      >
-                        {curriculumData.minors[key].name}
-                      </span>
-                      {selected
-                        ? (
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-800">
-                          *
-                        </span>
-                          )
-                        : null}
-                    </>
-                  )}
-                </Listbox.Option>
-              ))}
-            </Listbox.Options>
-          </Transition>
-        </Listbox>
-      </li>
-      <li className={'selectorElement'}>
-        <div className={'selectorName'}>Titulo:</div>
-        <Listbox value={curriculum.title !== undefined && curriculum.title !== null ? curriculumData.titles[curriculum.title] : {}} onChange={(t) => selectTitle(t)}>
-          <Listbox.Button className="selectorButton">
-            <span className="inline truncate">{curriculum.title != null ? curriculumData.titles[curriculum.title]?.name : 'Por elegir'}</span>
-            <img className="inline" src={down_arrow} alt="Seleccionar Titulo" />
-          </Listbox.Button>
-          <Transition
-            as={Fragment}
-            leave="transition ease-in duration-100"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <Listbox.Options className={'curriculumOptions'} style={{ zIndex: 1 }}>
-              {Object.keys(curriculumData.titles).map((key) => (
-                <Listbox.Option
-                  className={({ active }) =>
-                  `curriculumOption ${
-                    active ? 'bg-place-holder text-amber-800' : ''
-                  }`
-                  }key={key}
-                  value={curriculumData.titles[key]}
-                >
-                  {({ selected }) => (
-                    <>
-                      <span
-                        className={`block truncate ${
-                          selected ? 'font-medium text-black' : 'font-normal'
-                        }`}
-                      >
-                        {curriculumData.titles[key].name}
-                      </span>
-                      {selected
-                        ? (
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-800">
-                          *
-                        </span>
-                          )
-                        : null}
-                    </>
-                  )}
-                </Listbox.Option>
-              ))}
-            </Listbox.Options>
-          </Transition>
-        </Listbox>
-      </li>
-      {planName !== '' && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {planName}</li>}
-    </ul>
-  )
-}
-const CurriculumSelector = memo(_CurriculumSelector)
 
 export interface PlanDigest {
   // Maps `(code, course instance index)` to `(semester, index within semester)`
@@ -664,7 +491,11 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = { ...prev.curriculum, major: majorCode }
-      return { ...prev, classes: [], curriculum: newCurriculum }
+      prev.classes.splice(prev.next_semester)
+      if (!isMinorValid) {
+        newCurriculum.minor = undefined
+      }
+      return { ...prev, curriculum: newCurriculum }
     })
   }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
 
@@ -672,7 +503,8 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = { ...prev.curriculum, minor: minor.code }
-      return { ...prev, classes: [], curriculum: newCurriculum }
+      prev.classes.splice(prev.next_semester)
+      return { ...prev, curriculum: newCurriculum }
     })
   }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
 
@@ -680,7 +512,8 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = { ...prev.curriculum, title: title.code }
-      return { ...prev, classes: [], curriculum: newCurriculum }
+      prev.classes.splice(prev.next_semester)
+      return { ...prev, curriculum: newCurriculum }
     })
   }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
 
@@ -742,46 +575,47 @@ const Planner = (): JSX.Element => {
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
       <AlertModal title={popUpAlert.title} desc={popUpAlert.desc} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}/>
       {plannerStatus === 'LOADING' && (
-        <Spinner message='Cargando planificación...' />
+        <div className="fixed left-0 w-screen h-full z-50 bg-white  flex justify-center items-center">
+          <Spinner message='Cargando planificación...' />
+        </div>
       )}
 
-      {plannerStatus === 'ERROR' && (<div className={'w-full h-full flex flex-col justify-center items-center'}>
-        <p className={'text-2xl font-semibold mb-4'}>Error al cargar plan</p>
-        <p className={'text-sm font-normal'}>{error}</p>
-      </div>)}
-
-      {plannerStatus !== 'LOADING' && plannerStatus !== 'ERROR' && <>
-        <div className={'flex flex-col w-5/6 flex-grow'}>
-          {curriculumData != null && validatablePlan != null &&
-            <CurriculumSelector
-              planName={planName}
-              curriculumData={curriculumData}
-              curriculum={validatablePlan.curriculum}
-              selectMajor={checkMinorForNewMajor}
-              selectMinor={selectMinor}
-              selectTitle={selectTitle}
-            />}
-          <ControlTopBar
-            reset={reset}
-            save={savePlan}
-            validating={plannerStatus !== 'READY'}
-          />
-          <DndProvider backend={HTML5Backend}>
-            <PlanBoard
-              classesGrid={validatablePlan?.classes ?? null}
-              validationDigest={validationDigest}
-              classesDetails={courseDetails}
-              moveCourse={moveCourse}
-              openModal={openModal}
-              remCourse={remCourse}
-              addCourse={addCourse}
-              validating={plannerStatus !== 'READY'}
-              validationResult={validationResult}
-            />
-          </DndProvider>
+      {plannerStatus === 'ERROR'
+        ? (<div className={'w-full h-full flex flex-col justify-center items-center'}>
+            <p className={'text-2xl font-semibold mb-4'}>Error al cargar plan</p>
+            <p className={'text-sm font-normal'}>{error}</p>
+          </div>)
+        : <div className={'flex w-full'}>
+            <div className={`flex flex-col overflow-auto flex-grow  ${plannerStatus !== PlannerStatus.READY ? 'pointer-events-none' : ''} `}>
+              <CurriculumSelector
+                planName={planName}
+                curriculumData={curriculumData}
+                curriculumSpec={validatablePlan?.curriculum ?? { cyear: null, major: null, minor: null, title: null }}
+                selectMajor={checkMinorForNewMajor}
+                selectMinor={selectMinor}
+                selectTitle={selectTitle}
+              />
+              <ControlTopBar
+                reset={reset}
+                save={savePlan}
+                validating={plannerStatus !== 'READY'}
+              />
+              <DndProvider backend={HTML5Backend}>
+                {(validatablePlan != null) &&
+                  <PlanBoard
+                    classesGrid={validatablePlan.classes}
+                    classesDetails={courseDetails}
+                    moveCourse={moveCourse}
+                    openModal={openModal}
+                    addCourse={addCourse}
+                    remCourse={remCourse}
+                    validationDigest={validationDigest}
+                  />}
+              </DndProvider>
+            </div>
+          <ErrorTray diagnostics={validationResult?.diagnostics ?? []} validating={plannerStatus === 'VALIDATING'}/>
         </div>
-        <ErrorTray diagnostics={validationResult?.diagnostics ?? []} validating={plannerStatus === 'VALIDATING'}/>
-        </>}
+      }
     </div>
   )
 }

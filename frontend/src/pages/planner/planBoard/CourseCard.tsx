@@ -156,25 +156,22 @@ const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSele
   const authState = useAuth()
   const conditionPassed = authState?.passed?.[cardData.semester]?.find(o => o.code === cardData.code) !== undefined
   // Turns out animations are a big source of lag
-  const allowAnimations = true
+  const allowAnimations = true && courseBlock !== 'FormacionGeneral'
+  const editIcon = courseBlock === 'FormacionGeneral' ? editWhiteIcon : editBlackIcon
 
   return (
     <div className={`card group ${courseBlock} ${cardData.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
-      { hasEquivalence === true && (courseBlock === 'FormacionGeneral'
-        ? cardData.is_concrete === true
-          ? <button onClick={() => openSelector(cardData, semester, index)}><img className='opacity-60 absolute w-3 top-2 left-2' src={editWhiteIcon} alt="Seleccionar Curso" /></button>
-          : <img className='opacity-60 absolute w-3 top-2 left-2' src={editWhiteIcon} alt="Seleccionar Curso" />
-        : cardData.is_concrete === true
-          ? <button onClick={() => openSelector(cardData, semester, index)}><img className='opacity-60 absolute w-3 top-2 left-2' src={editBlackIcon} alt="Seleccionar Curso" /></button>
-          : <img className='opacity-60 absolute w-3 top-2 left-2' src={editBlackIcon} alt="Seleccionar Curso" />)
-      }
+      { hasEquivalence === true && (cardData.is_concrete === true
+        ? <button onClick={() => openSelector()}><img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" /></button>
+        : <img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" />
+      )}
       {courseBlock === ''
         ? <>{conditionPassed ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>}</>
         : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{BlockInitials(courseBlock)}</div>
       }
       <div className='flex items-center justify-center text-center flex-col'>
         <div className='text-xs line-clamp-2'>{cardData.name}</div>
-        <div className='text-[0.6rem] opacity-75'>{cardData.is_concrete !== true ? `Seleccionar Curso  (${cardData.code})` : cardData.code}</div>
+        <div className='text-[0.6rem] opacity-75'>{cardData.is_concrete !== true ? 'Seleccionar Curso' : cardData.code}</div>
       </div>
       <div className='absolute bottom-2 left-2 text-[0.5rem] opacity-75'>{cardData.credits} créd.</div>
       {hasError && <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
