@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import SemesterColumn from './SemesterColumn'
-import { FlatValidationResult } from '../../../client'
 import { PseudoCourseId, PseudoCourseDetail, ValidationDigest } from '../Planner'
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -11,8 +10,6 @@ interface PlanBoardProps {
   openModal: Function
   addCourse: Function
   remCourse: Function
-  validating: Boolean
-  validationResult: FlatValidationResult | null
   validationDigest: ValidationDigest
 }
 
@@ -21,11 +18,11 @@ interface PlanBoardProps {
  * Displays several semesters, as well as several classes per semester.
  */
 
-const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCourse, remCourse, validating, validationResult, validationDigest }: PlanBoardProps): JSX.Element => {
+const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCourse, remCourse, validationDigest }: PlanBoardProps): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false)
 
   return (
-    <div className= {`overflow-auto grid grid-rows-[fit-content] grid-flow-col justify-start ${validating === true ? 'pointer-events-none' : ''}`}>
+    <div className= {'overflow-auto grid grid-rows-[fit-content] grid-flow-col justify-start'}>
       {classesGrid === null
         ? <h1>elija plan</h1>
         : <>
