@@ -22,6 +22,7 @@ interface SemesterColumnProps {
 
 const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCourse, openModal, classes, validationDigest, isDragging, setIsDragging }: SemesterColumnProps): JSX.Element => {
   const authState = useAuth()
+  const conditionPassed = ((authState?.passed?.length) != null) && (semester < authState?.passed?.length)
   const [dropProps, drop] = useDrop(() => ({
     accept: 'card',
     drop (course: CourseDetails & { semester: number }) {
@@ -37,7 +38,10 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
   }, [])
   return (
     <div className={'drop-shadow-xl w-[165px] shrink-0 bg-base-200 rounded-lg flex flex-col'}>
-      <h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2>
+      {conditionPassed
+        ? <span className='line-through decoration-black/40'><h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2></span>
+        : <h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2>
+      }
       <div className="my-2 divider"></div>
       <div>
         {
@@ -62,7 +66,7 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
         <button key="+" className="w-full" onClick={() => addCourse(semester)}>+</button>
         </div>}
       </div>
-      {((authState?.passed?.length) != null) && (semester < authState?.passed?.length)
+      {conditionPassed
         ? null
         : <div ref={drop} className={'px-2 flex min-h-[90px] flex-grow'}>
             {dropProps.isOver &&

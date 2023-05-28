@@ -350,7 +350,6 @@ const Planner = (): JSX.Element => {
     })
   }, []) // moveCourse should not depend on `validatablePlan`, so that memoing does its work
 
-  // THIS IS GIVING NOTHING ///
   async function loadCurriculumsData (cYear: string, cMajor?: string): Promise<void> {
     const [majors, minors, titles] = await Promise.all([
       DefaultService.getMajors(cYear),
