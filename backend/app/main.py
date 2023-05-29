@@ -123,13 +123,13 @@ async def get_student_info(user: UserKey = Depends(require_authentication)):
 # change.
 @app.get("/sync")
 # TODO: Require admin permissions for this endpoint.
-async def sync_database(courses_too: bool = False):
+async def sync_database(courses: bool = False, offer: bool = False):
     """
     Initiate a synchronization of the internal database from external sources.
     """
-    await sync.run_upstream_sync(courses_too)
+    await sync.run_upstream_sync(courses, offer)
     return {
-        "message": "Course database updated",
+        "message": "Database updated from external sources",
     }
 
 
@@ -213,7 +213,6 @@ async def search_course_codes(filter: CourseFilter):
             await DbCourse.prisma().find_many(where=filter.as_db_filter(), take=3000),
         )
     )
-    print(f"got {len(codes)} codes")
     return codes
 
 

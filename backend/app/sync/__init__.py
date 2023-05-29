@@ -26,34 +26,36 @@ from prisma.models import (
 )
 
 
-async def clear_upstream_data(courses: bool = True):
+async def clear_upstream_data(courses: bool = True, offer: bool = True):
     print("  clearing upstream data from database")
     await DbEquivalenceCourse.prisma().delete_many()
     await DbEquivalence.prisma().delete_many()
     if courses:
         await DbCourse.prisma().delete_many()
 
-    await DbMajor.prisma().delete_many()
-    await DbMinor.prisma().delete_many()
-    await DbTitle.prisma().delete_many()
-    await DbMajorMinor.prisma().delete_many()
+    if offer:
+        await DbMajor.prisma().delete_many()
+        await DbMinor.prisma().delete_many()
+        await DbTitle.prisma().delete_many()
+        await DbMajorMinor.prisma().delete_many()
 
     await DbCurriculum.prisma().delete_many()
 
 
-async def run_upstream_sync(courses: bool = True):
+async def run_upstream_sync(courses: bool = True, offer: bool = True):
     """
     Populate database with "official" data.
     """
     print("syncing database with external sources...")
     # Remove previous data
-    await clear_upstream_data(courses)
+    await clear_upstream_data(courses, offer)
     if courses:
         # Get course data from "official" source
         # Currently we have no official source
         await buscacursos_dl.fetch_to_database()
     # Fetch major, minor and title offer to database
-    await siding_translate.load_siding_offer_to_database()
+    if offer:
+        await siding_translate.load_siding_offer_to_database()
     # Recache course info
     await clear_course_info_cache()
     await course_info()

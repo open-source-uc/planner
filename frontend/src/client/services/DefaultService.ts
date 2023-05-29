@@ -101,18 +101,21 @@ export class DefaultService {
     /**
      * Sync Database
      * Initiate a synchronization of the internal database from external sources.
-     * @param coursesToo
+     * @param courses
+     * @param offer
      * @returns any Successful Response
      * @throws ApiError
      */
     public static syncDatabase(
-        coursesToo: boolean = false,
+        courses: boolean = false,
+        offer: boolean = false,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/sync',
             query: {
-                'courses_too': coursesToo,
+                'courses': courses,
+                'offer': offer,
             },
             errors: {
                 422: `Validation Error`,
