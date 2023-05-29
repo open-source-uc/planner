@@ -21,6 +21,8 @@ model CachedCourseInfo {
 model Course {
   code                String              @id
   name                String
+  // A name normalized to lowercase english letters and spaces only
+  searchable_name     String
   credits             Int
   deps                Json
   program             String

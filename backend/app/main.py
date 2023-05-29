@@ -32,6 +32,7 @@ from .plan.courseinfo import (
     EquivDetails,
     clear_course_info_cache,
     course_info,
+    make_searchable_name,
 )
 from .sync.siding.client import client as siding_soap_client
 from typing import Optional, Union
@@ -158,17 +159,15 @@ class CourseFilter(BaseModel):
     def as_db_filter(self) -> CourseWhereInput:
         filter = CourseWhereInput()
         if self.text is not None:
-            ascii_text = unidecode(self.text)
+            search_text = make_searchable_name(self.text)
             name_parts: list[CourseWhereInputRecursive2] = list(
                 map(
-                    lambda text_part: {
-                        "name": {"contains": text_part, "mode": "insensitive"}
-                    },
-                    ascii_text.split(),
+                    lambda text_part: {"searchable_name": {"contains": text_part}},
+                    search_text.split(),
                 )
             )
             filter["OR"] = [
-                {"code": {"contains": self.text, "mode": "insensitive"}},
+                {"code": {"contains": search_text.upper()}},
                 {"AND": name_parts},
             ]
         if self.credits is not None:

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from prisma import Json
+from unidecode import unidecode
 from .course import EquivalenceId, PseudoCourse
 import pydantic
 from pydantic import BaseModel
@@ -206,3 +207,17 @@ async def course_info() -> CourseInfo:
         _course_info_cache = CourseInfo(courses=courses, equivs=equivs)
 
     return _course_info_cache
+
+
+def make_searchable_name(name: str) -> str:
+    """
+    Take a course name and normalize it to lowercase english letters, numbers and
+    spaces.
+    """
+    name = unidecode(name)  # Remove accents
+    name = name.lower()  # Make lowercase
+    name = "".join(
+        map(lambda char: char if char.isalnum() else " ", name)
+    )  # Remove non-alphanumeric characters
+    name = " ".join(name.split())  # Merge adjacent spaces
+    return name

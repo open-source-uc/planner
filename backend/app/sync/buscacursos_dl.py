@@ -2,6 +2,7 @@ import lzma
 import traceback
 
 
+from ..plan.courseinfo import make_searchable_name
 from ..plan.validation.courses.simplify import simplify
 from ..plan.validation.courses.logic import (
     Const,
@@ -314,6 +315,7 @@ async def fetch_to_database():
                 {
                     "code": code,
                     "name": name,
+                    "searchable_name": make_searchable_name(name),
                     "credits": c.credits,
                     "deps": Json(deps.json()),
                     "program": c.program,
