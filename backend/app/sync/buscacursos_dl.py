@@ -35,6 +35,7 @@ class BcSection(BaseModel):
     is_removable: bool
     is_special: bool
     total_quota: int
+    quota: dict[str, int]
 
 
 class BcCourseInstance(BaseModel):
@@ -269,7 +270,7 @@ async def fetch_to_database():
     # Fetch json blob from an unofficial source
     dl_url = (
         "https://github.com/negamartin/buscacursos-dl/releases/download"
-        + "/universal-1/courses-universal-noprogram.json.xz"
+        + "/universal-3/universal-noprogram.json.xz"
     )
     print(f"  downloading course data from {dl_url}...")
     # TODO: Use an async HTTP client
@@ -306,11 +307,13 @@ async def fetch_to_database():
             for period in c.instances.keys():
                 sem = periods[period][1] - 1
                 available_in_semester[sem] = True
+            # Use names from buscacursos if available, because they have accents
+            name = max(c.instances.items())[1].name if c.instances else c.name
             # Queue for adding to database
             db_input.append(
                 {
                     "code": code,
-                    "name": c.name,
+                    "name": name,
                     "credits": c.credits,
                     "deps": Json(deps.json()),
                     "program": c.program,
