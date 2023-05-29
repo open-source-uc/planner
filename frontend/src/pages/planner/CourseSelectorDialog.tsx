@@ -1,5 +1,6 @@
 import { useState, useEffect, Fragment } from 'react'
-import { Dialog, Transition } from '@headlessui/react'
+import { Dialog, Transition, Switch } from '@headlessui/react'
+import Toggle from '../../components/switch'
 import { DefaultService, EquivDetails, CourseOverview, CancelablePromise } from '../../client'
 import { Spinner } from '../../components/Spinner'
 
@@ -15,8 +16,11 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   const [filter, setFilter] = useState(() => ({
     name: '',
     credits: '',
-    school: ''
+    school: '',
+    available: true,
+    on_semester: undefined
   }))
+
   const [promiseInstance, setPromiseInstance] = useState<CancelablePromise<any> | null>(null)
 
   function resetFilters (): void {
@@ -24,7 +28,9 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     setFilter({
       name: '',
       credits: '',
-      school: ''
+      school: '',
+      available: true,
+      on_semester: undefined
     })
     if (promiseInstance != null) {
       promiseInstance.cancel()
@@ -63,7 +69,8 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
         text: filter.name,
         credits: crd,
         school: filter.school,
-        available: true
+        available: filter.available,
+        on_semester: filter.on_semester
       })
       setPromiseInstance(promise)
       const response = await promise
@@ -83,7 +90,8 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
         text: filter.name,
         credits: crd,
         school: filter.school,
-        available: true,
+        available: filter.available,
+        on_semester: filter.on_semester,
         equiv: equivalence.code
       })
       setPromiseInstance(promise)
@@ -184,19 +192,12 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                 {equivalence !== undefined ? equivalence.name : 'Curso Extra'}
               </Dialog.Title>
                 {(equivalence === undefined || equivalence.courses.length >= 30) &&
-                  <div className="grid border-2 p-4 py-3 rounded bg-slate-100 border-slate-500 border-solid gap-2 grid-cols-5">
-                    <div className="col-span-5 grid  grid-cols-5">
+                  <div className="grid border-2 p-4 py-3 rounded bg-slate-100 border-slate-500 border-solid gap-2 grid-cols-12">
+                    <div className="col-span-9 grid  grid-cols-5">
                       <label className="col-span-1 my-auto" htmlFor="nameFilter">Nombre o Sigla: </label>
                       <input className="col-span-4 rounded py-1" type="text" id="nameFilter" value={filter.name} onChange={e => setFilter({ ...filter, name: e.target.value })} onKeyDown={handleKeyDownFilter}/>
                     </div>
-                    <div className="col-span-4 grid  grid-cols-4">
-                      <label className="col-span-1 my-auto" htmlFor="schoolFilter">Escuela: </label>
-                      <select className="col-span-3 rounded py-1" id="schoolFilter" value={filter.school} onChange={e => setFilter({ ...filter, school: e.target.value })} >
-                        <option value=''>-- Todas --</option>
-                        {schoolOptions.map(school => <option key={school} value={school}>{school}</option>)}
-                      </select>
-                    </div>
-                    <div className="col-span-1 grid grid-cols-2">
+                    <div className="col-span-3 grid grid-cols-2">
                       <label className="col-span-1 my-auto" htmlFor="creditsFilter">Creditos: </label>
                       <select className="col-span-1 col-end-3 rounded py-1" id="creditsFilter" value={filter.credits} onChange={e => setFilter({ ...filter, credits: e.target.value })}>
                         <option value={''}>-</option>
@@ -210,7 +211,43 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                         <option value={'30'}>30</option>
                       </select>
                     </div>
-                    <div className='flex justify-end col-span-2 col-end-6 '>
+
+                    <div className="col-span-8 grid  grid-cols-5">
+                      <label className="col-span-1 my-auto" htmlFor="schoolFilter">Escuela: </label>
+                      <select className="col-span-4 rounded py-1" id="schoolFilter" value={filter.school} onChange={e => setFilter({ ...filter, school: e.target.value })} >
+                        <option value=''>-- Todas --</option>
+                        {schoolOptions.map(school => <option key={school} value={school}>{school}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="col-span-4 grid grid-cols-2">
+                      <label className="col-span-1 my-auto" htmlFor="creditsFilter">Semestralidad: </label>
+                      <select className="col-span-1 col-end-3 rounded py-1" id="creditsFilter" value={filter.on_semester} onChange={e => setFilter({ ...filter, on_semester: e.target.value })}>
+                        <option value={undefined}>Cualquiera</option>
+                        <option value={[undefined, true]}>Pares</option>
+                        <option value={[true, undefined]}>Impares</option>
+                      </select>
+                    </div>
+
+                    <div className="my-auto col-span-5">
+                      <label className="my-auto" htmlFor="availableFilter">Filtrar ramos no habilitados: </label>
+                      <Switch
+                        checked={filter.available}
+                        onChange={e => setFilter({ ...filter, available: e })}
+                        id="availableFilter"
+                        className={`${
+                          filter.available ? 'darkBlue' : 'bg-gray-200'
+                        } relative inline-flex h-6 w-11 items-center rounded-full`}
+                      >
+                        <span className="sr-only">Filtrar cursos no habiles</span>
+                        <span
+                          className={`${
+                            filter.available ? 'translate-x-6' : 'translate-x-1'
+                          } inline-block h-4 w-4 transform rounded-full bg-white transition`}
+                        />
+                      </Switch>
+                    </div>
+                    <div className='flex justify-end col-span-4 col-end-13'>
                       <button
                         className="btn mr-2"
                         onClick={() => resetFilters()}>

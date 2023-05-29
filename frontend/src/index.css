@@ -40,7 +40,9 @@
     opacity: 1;
     transition: opacity 0.5s ease;
   }
-
+  .darkBlue{
+    background-color: #3D4451;
+  }
   .btn{
     @apply font-semibold py-2 px-4 rounded;
     @apply  text-white;
