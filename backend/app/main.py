@@ -14,18 +14,29 @@ from .plan.storage import (
     modify_plan_metadata,
     remove_plan,
 )
+from .sync.siding import translate as siding_translate
 from fastapi import FastAPI, Query, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from .database import prisma
 from prisma.models import (
+    AccessLevel as DbAccessLevel,
     Course as DbCourse,
     Major as DbMajor,
     Minor as DbMinor,
     Title as DbTitle,
 )
 from prisma.types import CourseWhereInput, CourseWhereInputRecursive2
-from .user.auth import require_authentication, login_cas, UserKey
+from .user.auth import (
+    require_authentication,
+    require_mod_auth,
+    require_admin_auth,
+    login_cas,
+    UserKey,
+    ModKey,
+    AdminKey,
+    AccessLevelOverview,
+)
 from . import sync
 from .plan.courseinfo import (
     CourseDetails,
@@ -97,10 +108,86 @@ async def authenticate(next: Optional[str] = None, ticket: Optional[str] = None)
 @app.get("/auth/check")
 async def check_auth(user_data: UserKey = Depends(require_authentication)):
     """
-    Request succeeds if authentication was successful.
+    Request succeeds if user authentication was successful.
     Otherwise, the request fails with 401 Unauthorized.
     """
     return {"message": "Authenticated"}
+
+
+@app.get("/auth/check/mod")
+async def check_mod(user_data: ModKey = Depends(require_mod_auth)):
+    """
+    Request succeeds if user authentication and mod authorization were successful.
+    Otherwise, the request fails with 401 Unauthorized or 403 Forbidden.
+    """
+    return {"message": "Authenticated with mod access"}
+
+
+@app.get("/auth/check/admin")
+async def check_admin(user_data: AdminKey = Depends(require_admin_auth)):
+    """
+    Request succeeds if user authentication and admin authorization were successful.
+    Otherwise, the request fails with 401 Unauthorized or 403 Forbidden.
+    """
+    return {"message": "Authenticated with admin access"}
+
+
+@app.get("/auth/mod", response_model=list[AccessLevelOverview])
+async def view_mods(user_data: AdminKey = Depends(require_admin_auth)):
+    """
+    Show a list of all current mods with username and RUT. Up to 50 records.
+    """
+    mods = await DbAccessLevel.prisma().find_many(take=50)
+
+    named_mods: list[AccessLevelOverview] = []
+    for mod in mods:
+        named_mods.append(AccessLevelOverview(**dict(mod)))
+        try:
+            print(f"fetching user data for user {mod.user_rut} from SIDING...")
+            # TODO: check if this function works for non-students
+            data = await siding_translate.fetch_student_info(mod.user_rut)
+            named_mods[-1].name = data.full_name
+        finally:
+            # Ignore if couldn't get the name by any reason to at least show
+            # the RUT, which is more important.
+            pass
+    return named_mods
+
+
+@app.post("/auth/mod")
+async def add_mod(rut: str, user_data: AdminKey = Depends(require_admin_auth)):
+    """
+    Give mod access to a user with the specified RUT.
+    """
+    return await DbAccessLevel.prisma().upsert(
+        where={
+            "user_rut": rut,
+        },
+        data={
+            "create": {
+                "user_rut": rut,
+                "is_mod": True,
+            },
+            "update": {
+                "is_mod": True,
+            },
+        },
+    )
+
+
+@app.delete("/auth/mod")
+async def remove_mod(rut: str, user_data: AdminKey = Depends(require_admin_auth)):
+    """
+    Remove mod access from a user with the specified RUT.
+
+    TODO: add JWT tracking system for mods to be able to instantly revoke unexpired
+    token access after permission removal.
+    """
+    mod_record = await DbAccessLevel.prisma().find_unique(where={"user_rut": rut})
+
+    if not mod_record:
+        raise HTTPException(status_code=404, detail="Mod not found")
+    return await DbAccessLevel.prisma().delete(where={"user_rut": rut})
 
 
 @app.get("/student/info", response_model=StudentContext)
