@@ -204,8 +204,7 @@ async def get_student_info(user: UserKey = Depends(require_authentication)):
 # For the meantime this makes it easier to trigger syncs, but in the future this must
 # change.
 @app.get("/sync")
-# TODO: Require admin permissions for this endpoint.
-async def sync_courses():
+async def sync_courses(user_data: AdminKey = Depends(require_admin_auth)):
     """
     Initiate a synchronization of the internal database from external sources.
     """
