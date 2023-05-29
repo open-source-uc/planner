@@ -10,9 +10,10 @@ Cuando aparezca una nueva version del curriculum con reglas especificas, este co
 el que habra que tocar.
 """
 
-from ...plan.plan import PseudoCourse
 from ...plan.validation.curriculum.tree import (
+    Block,
     Combination,
+    CourseRecommendation,
     Curriculum,
     CurriculumSpec,
     Leaf,
@@ -50,6 +51,13 @@ def _skip_extras(curriculum: Curriculum):
         )
 
 
+def _is_ofg(block: Block) -> bool:
+    """
+    Check if the given block is an OFG block or not.
+    """
+    return isinstance(block, Leaf) and next(iter(block.codes.keys()), None) == "!L1"
+
+
 def _merge_ofgs(curriculum: Curriculum):
     # Junta los bloques de OFG de 10 creditos en un bloque grande de OFG
     # El codigo de lista para los OFG es `!L1`
@@ -60,22 +68,20 @@ def _merge_ofgs(curriculum: Curriculum):
         for block in superblock.children:
             if not isinstance(block, Leaf):
                 continue
-            if len(block.fill_with) > 0 and block.fill_with[0][1].code == "!L1":
+            if _is_ofg(block):
                 l1_blocks.append(block)
         if len(l1_blocks) > 0:
             superblock.children = list(
                 filter(
-                    lambda block: not (
-                        isinstance(block, Leaf) and block.fill_with[0][1].code == "!L1"
-                    ),
+                    lambda block: not _is_ofg(block),
                     superblock.children,
                 )
             )
             total_cap = sum(map(lambda block: block.cap, l1_blocks))
-            fill_with: list[tuple[int, PseudoCourse]] = []
+            fill_with: list[CourseRecommendation] = []
             for block in l1_blocks:
                 fill_with.extend(block.fill_with)
-            fill_with.sort(key=lambda priority_course: priority_course[0], reverse=True)
+            fill_with.sort(key=lambda rec: rec.order, reverse=True)
             superblock.children.append(
                 Leaf(
                     name=l1_blocks[0].name,
@@ -94,11 +100,7 @@ def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum)
         if not isinstance(superblock, Combination):
             continue
         for block in superblock.children:
-            if (
-                isinstance(block, Leaf)
-                and len(block.fill_with) > 0
-                and block.fill_with[0][1].code == "!L1"
-            ):
+            if isinstance(block, Leaf) and _is_ofg(block):
                 for code in block.codes.keys():
                     if not code.startswith("DPT"):
                         continue
@@ -139,11 +141,7 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
         if not isinstance(superblock, Combination):
             continue
         for block_i, block in enumerate(superblock.children):
-            if (
-                isinstance(block, Leaf)
-                and len(block.fill_with) > 0
-                and block.fill_with[0][1].code == "!L1"
-            ):
+            if isinstance(block, Leaf) and _is_ofg(block):
                 # Segregar los cursos de 5 creditos que cumplan los requisitos
                 limited = {}
                 unlimited = {}

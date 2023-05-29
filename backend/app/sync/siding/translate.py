@@ -21,6 +21,7 @@ from prisma.models import (
 )
 from ...plan.validation.curriculum.tree import (
     Combination,
+    CourseRecommendation,
     Curriculum,
     CurriculumSpec,
     Cyear,
@@ -167,7 +168,7 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
         codes_dict[code] = None
         for code in codes:
             codes_dict[code] = 1
-        recommended_priority = raw_block.SemestreBloque * 10 + raw_block.OrdenSemestre
+        recommended_order = raw_block.SemestreBloque * 10 + raw_block.OrdenSemestre
         superblock = superblocks.setdefault(raw_block.BloqueAcademico, [])
         superblock.append(
             Leaf(
@@ -175,10 +176,7 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
                 cap=creds,
                 codes=codes_dict,
                 fill_with=[
-                    (
-                        recommended_priority,
-                        recommended,
-                    )
+                    CourseRecommendation(course=recommended, order=recommended_order)
                 ],
             )
         )
