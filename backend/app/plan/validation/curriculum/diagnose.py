@@ -39,6 +39,7 @@ class MustSelectCurriculumErr(DiagnosticErr):
 
 def _diagnose_block(
     courseinfo: CourseInfo,
+    diagnosed: dict[str, set[int]],
     out: ValidationResult,
     g: SolvedCurriculum,
     id: int,
@@ -48,6 +49,13 @@ def _diagnose_block(
     if isinstance(node.origin, tuple):
         _layer, c = node.origin
         if isinstance(c, RecommendedCourse):
+            # Make sure to diagnose each course at most once
+            diagnosed_insts = diagnosed.setdefault(c.rec.course.code, set())
+            if c.repeat_index in diagnosed_insts:
+                return 0
+            diagnosed_insts.add(c.repeat_index)
+
+            # Mark that this amount of credits have to be diagnosed
             creds = courseinfo.get_credits(c.rec.course)
             if creds is None:
                 return 0
@@ -70,7 +78,9 @@ def _diagnose_block(
         for edge in node.incoming:
             if edge.flow <= 0:
                 continue
-            needs_diagnosis += _diagnose_block(courseinfo, out, g, edge.src, name)
+            needs_diagnosis += _diagnose_block(
+                courseinfo, diagnosed, out, g, edge.src, name
+            )
 
         if needs_diagnosis > 0 and (my_name is not None or id == g.root):
             if name == "":
@@ -118,7 +128,7 @@ def diagnose_curriculum(
     g = solve_curriculum(courseinfo, curriculum, plan.classes)
 
     # Generate diagnostics
-    _diagnose_block(courseinfo, out, g, g.root, "")
+    _diagnose_block(courseinfo, {}, out, g, g.root, "")
 
     # Tag each course with its associated superblock
     for edge in g.nodes[g.root].incoming:
