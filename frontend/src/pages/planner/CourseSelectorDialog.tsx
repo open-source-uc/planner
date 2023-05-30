@@ -73,6 +73,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   async function handleSearch (filterProp: Filter): Promise<void> {
     setLoadingCoursesData(true)
     const crd = filter.credits === '' ? undefined : parseInt(filter.credits)
+    const onlyAvaible = filter.available ? filter.available : undefined
     if (promisesInstance != null) {
       for (const promiseInstance of promisesInstance) promiseInstance.cancel()
       setPromisesInstance(null)
@@ -83,7 +84,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
           text: filter.name,
           credits: crd,
           school: filter.school,
-          available: filter.available,
+          available: onlyAvaible,
           on_semester: semFilter
         })
       })
@@ -106,7 +107,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
           text: filter.name,
           credits: crd,
           school: filter.school,
-          available: filter.available,
+          available: onlyAvaible,
           on_semester: semFilter,
           equiv: equivalence.code
         })
@@ -204,9 +205,34 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
             <Dialog.Panel className="w-11/12 px-5 py-6 bg-slate-100 border-slate-300 overflow-hidden max-w-4xl transform  rounded-2xl border-2 text-left align-middle shadow-xl transition-all">
-              <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900  mb-3">
-                {equivalence !== undefined ? equivalence.name : 'Curso Extra'}
-              </Dialog.Title>
+              <div className="flex justify-between items-center mb-3">
+                <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900  mb-3">
+                  {equivalence !== undefined ? equivalence.name : 'Curso Extra'}
+                </Dialog.Title>
+                  {equivalence !== undefined && equivalence.courses.length < 30 &&
+                    <div>
+                      <label className="my-auto" htmlFor="availableFilter">Filtrar ramos no habiles: </label>
+                      <Switch
+                        checked={filter.available}
+                        onChange={(e: boolean) => {
+                          setFilter((prev) => { return { ...prev, available: e } })
+                          void handleSearch({ ...filter, available: e })
+                        }}
+                        id="availableFilter"
+                        className={`${
+                          filter.available ? 'darkBlue' : 'bg-gray-200'
+                        } relative inline-flex h-6 w-11 items-center rounded-full`}
+                      >
+                        <span className="sr-only">Filtrar cursos no habiles</span>
+                        <span
+                          className={`${
+                            filter.available ? 'translate-x-6' : 'translate-x-1'
+                          } inline-block h-4 w-4 transform rounded-full bg-white transition`}
+                        />
+                      </Switch>
+                    </div>
+                  }
+                </div>
                 {(equivalence === undefined || equivalence.courses.length >= 30) &&
                   <div className="grid border-2 p-4 py-3 rounded bg-slate-100 border-slate-500 border-solid gap-2 grid-cols-12">
                     <div className="col-span-9 flex">
