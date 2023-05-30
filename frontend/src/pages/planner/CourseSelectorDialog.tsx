@@ -233,7 +233,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                   ))}
                  </tbody>
               </table>
-              <div className='right-0'>{Object.keys(loadedCourses).filter(key => filteredCodes.includes(key)).length} - {filteredCodes.length}</div>
+              <div className='right-0'>{Object.keys(loadedCourses).filter(key => filteredCodes.includes(key)).length} - {filteredCodes.length}{equivalence === undefined && filteredCodes.length === 50 && '+'}</div>
               <div className='float-right mx-2 '>
                 <button className="btn mr-2" onClick={() => onClose()}>Cancelar</button>
                 <button className="btn " onClick={() => onClose(selectedCourse)}>Guardar</button>

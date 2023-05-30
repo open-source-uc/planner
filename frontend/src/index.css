@@ -19,7 +19,7 @@
     @apply text-sm inline mr-1 font-normal;
   }
   .curriculumSelector .selectorElement .selectorButton{
-    @apply text-base pl-1 pr-10 text-left;
+    @apply text-base pl-1 pr-1 text-left;
   }
   .curriculumSelector .selectorElement .curriculumOptions {
     @apply absolute mt-1 max-h-96 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm;

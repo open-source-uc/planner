@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     # token as a query parameter.
     login_endpoint: str = Field(...)
 
+    # Admin RUT as string. This user will always be the only admin.
+    admin_rut: SecretStr = Field(...)
+
     # JWT secret hex string. If this secret is leaked, anyone can forge JWT tokens for
     # any user.
     jwt_secret: SecretStr = Field(...)

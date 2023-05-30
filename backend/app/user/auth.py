@@ -1,13 +1,15 @@
-from dataclasses import dataclass
 from fastapi import HTTPException, Depends
 from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from typing import Optional, Any
+from pydantic import BaseModel
+from typing import Optional, Any, Union
 from cas import CASClientV3
 from jose import jwt, JWTError, ExpiredSignatureError
 from datetime import datetime, timedelta
 from ..settings import settings
 import traceback
+from .key import UserKey, ModKey, AdminKey
+from prisma.models import AccessLevel as DbAccessLevel
 
 
 # CASClient abuses class constructors (__new__),
@@ -18,7 +20,27 @@ cas_client: CASClientV3 = CASClientV3(
 )
 
 
-def generate_token(user: str, rut: str, expire_delta: Optional[float] = None):
+def _is_admin(rut: str):
+    """
+    Checks if user with given RUT is an admin.
+    """
+    admin = settings.admin_rut.get_secret_value()
+    if admin == "":
+        return False
+    return rut == admin
+
+
+async def _is_mod(rut: str):
+    """
+    Checks if user with given RUT is a mod.
+    """
+    level = await DbAccessLevel.prisma().find_unique(where={"user_rut": rut})
+    if level is None:
+        return False
+    return level.is_mod
+
+
+async def generate_token(user: str, rut: str, expire_delta: Optional[float] = None):
     """
     Generate a signed token (one that is unforgeable) with the given user, rut and
     expiration time.
@@ -28,7 +50,15 @@ def generate_token(user: str, rut: str, expire_delta: Optional[float] = None):
         expire_delta = settings.jwt_expire
     expire_time = datetime.utcnow() + timedelta(seconds=expire_delta)
     # Pack user, rut and expire date into a signed token
-    payload = {"exp": expire_time, "sub": user, "rut": rut}
+    payload: dict[str, Union[datetime, str, bool]] = {
+        "exp": expire_time,
+        "sub": user,
+        "rut": rut,
+    }
+    if _is_admin(rut):
+        payload["is_admin"] = True
+    elif await _is_mod(rut):
+        payload["is_mod"] = True
     token = jwt.encode(
         payload, settings.jwt_secret.get_secret_value(), settings.jwt_algorithm
     )
@@ -52,34 +82,64 @@ def decode_token(token: str):
     if not isinstance(payload["rut"], str):
         raise HTTPException(status_code=401, detail="Invalid token")
 
+    if "is_admin" in payload.keys():
+        if not isinstance(payload["is_admin"], bool):
+            raise HTTPException(status_code=401, detail="Invalid token")
+        if payload["is_admin"]:
+            return AdminKey(payload["sub"], payload["rut"])
+
+    if "is_mod" in payload.keys():
+        if not isinstance(payload["is_mod"], bool):
+            raise HTTPException(status_code=401, detail="Invalid token")
+        if payload["is_mod"]:
+            return ModKey(payload["sub"], payload["rut"])
+
     return UserKey(payload["sub"], payload["rut"])
-
-
-@dataclass
-class UserKey:
-    """
-    Contains data that identifies a user.
-    Holding an instance of this class is intended to mean "I have authorization to
-    access data for this user".
-    Similarly, requiring this type as an argument is intended to mean "using this
-    function requires authorization to access the user".
-    """
-
-    user: str
-    rut: str
 
 
 def require_authentication(
     bearer: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
 ):
     """
-    Intended for API endpoints that require authentication.
+    Intended for API endpoints that requires user authentication.
 
     Example:
-    def endpoint(userdata: UserData = Depends(require_authentication)):
+    def endpoint(user_data: UserKey = Depends(require_authentication)):
         pass
     """
     return decode_token(bearer.credentials)
+
+
+def require_mod_auth(
+    bearer: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
+):
+    """
+    Intended for API endpoints that requires authentication with mod access.
+
+    Example:
+    def endpoint(user_data: ModKey = Depends(require_mod_auth)):
+        pass
+    """
+    key = require_authentication(bearer=bearer)
+    if not key.is_mod:
+        raise HTTPException(status_code=403, detail="Insufficient access")
+    return key
+
+
+def require_admin_auth(
+    bearer: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
+):
+    """
+    Intended for API endpoints that requires authentication with admin access.
+
+    Example:
+    def endpoint(user_data: AdminKey = Depends(require_admin_auth)):
+        pass
+    """
+    key = require_authentication(bearer=bearer)
+    if not key.is_admin:
+        raise HTTPException(status_code=403, detail="Insufficient access")
+    return key
 
 
 async def login_cas(next: Optional[str] = None, ticket: Optional[str] = None):
@@ -130,7 +190,7 @@ async def login_cas(next: Optional[str] = None, ticket: Optional[str] = None):
             )
 
         # CAS token was validated, generate JWT token
-        token = generate_token(user, rut)
+        token = await generate_token(user, rut)
 
         # Redirect to next URL with JWT token attached
         return RedirectResponse(next + f"?token={token}")
@@ -145,3 +205,13 @@ async def login_cas(next: Optional[str] = None, ticket: Optional[str] = None):
                 status_code=500, detail="CAS redirection URL not found"
             )
         return RedirectResponse(cas_login_url)
+
+
+class AccessLevelOverview(BaseModel):
+    name: Optional[str] = None
+
+    # attributes from db
+    user_rut: str
+    is_mod: bool
+    created_at: datetime
+    updated_at: datetime

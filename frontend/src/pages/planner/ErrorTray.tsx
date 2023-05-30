@@ -43,7 +43,7 @@ const ErrorTray = ({ diagnostics, validating }: { diagnostics: FlatDiagnostic[],
     }
   })
   const messageList: JSX.Element[] = diagnostics.map((diag, index) => Message(diag, index))
-  return (<div className="w-80 h-[95%] mb-6 overflow-y-auto px-5 py-6 bg-slate-100 border-slate-300 border-2 rounded-lg shadow-lg">
+  return (<div className="w-80 min-w-[200px] h-[95%] mb-6 overflow-y-auto px-5 py-6 bg-slate-100 border-slate-300 border-2 rounded-lg shadow-lg">
     <p className="text-xl font-semibold mb-4 text-center">Errores y advertencias</p>
   <div className="flex flex-col gap-2">
     {validating ? <Spinner message='Validando...'/> : <>{messageList.length > 0 ? messageList : <NoMessages/>}</>}

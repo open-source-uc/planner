@@ -9,6 +9,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Indicates the access level for a given RUT. In particular, it
+// assignes a user a mod level by their RUT.
+// If needed, this model can be updated to additionally hold
+// information about the admin level.
+model AccessLevel {
+  user_rut   String   @id
+  is_mod     Boolean
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
 // Cached course info.
 model CachedCourseInfo {
   id   String @id

@@ -1,4 +1,5 @@
-import React, { Dispatch, SetStateAction } from 'react'
+import React, { Dispatch, SetStateAction, useEffect, useState } from 'react'
+import { DefaultService, StudentInfo, ConcreteId, EquivalenceId } from '../client'
 
 export interface UserData {
   token: string
@@ -7,6 +8,8 @@ export interface UserData {
 export interface AuthState {
   user: UserData | null
   setUser: Dispatch<SetStateAction<UserData | null>> | null
+  info: StudentInfo | null
+  passed: Array<Array<(ConcreteId | EquivalenceId)>> | null
 }
 
 interface Props {
@@ -18,9 +21,26 @@ const AuthContext = React.createContext<AuthState | null>(null)
 
 export function AuthProvider ({ children, userData }: Props): JSX.Element {
   const [user, setUser] = React.useState<UserData | null>(userData)
+  const [info, setInfo] = useState <StudentInfo | null>(null)
+  const [passed, setPassed] = useState <Array<Array<(ConcreteId | EquivalenceId)>>>([])
+
+  const getInfo = async (): Promise<void> => {
+    const response = await DefaultService.getStudentInfo()
+    setInfo(response.info)
+    setPassed(response.passed_courses)
+  }
+
+  useEffect(() => {
+    getInfo().catch(err => {
+      console.log(err)
+      if (err.status === 401) {
+        console.log('token invalid or expired, loading re-login page')
+      }
+    })
+  }, [user])
 
   return (
-    <AuthContext.Provider value={{ user, setUser }}>
+    <AuthContext.Provider value={{ user, setUser, info, passed }}>
       {children}
     </AuthContext.Provider>
   )
