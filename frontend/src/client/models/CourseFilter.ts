@@ -7,7 +7,8 @@ export type CourseFilter = {
     credits?: number;
     school?: string;
     available?: boolean;
-    on_semester?: Array<any>;
+    first_semester?: boolean;
+    second_semester?: boolean;
     equiv?: string;
 };
 
