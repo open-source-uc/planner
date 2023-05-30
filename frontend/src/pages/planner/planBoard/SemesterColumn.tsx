@@ -2,7 +2,6 @@
 import { memo, useCallback } from 'react'
 import { useDrop } from 'react-dnd'
 import { useAuth } from '../../../contexts/auth.context'
-import { CourseDetails } from '../../../client'
 import { CourseValidationDigest, PseudoCourseDetail, PseudoCourseId } from '../Planner'
 import CourseCard from './CourseCard'
 import deepEqual from 'fast-deep-equal'
@@ -25,8 +24,8 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
   const conditionPassed = ((authState?.passed?.length) != null) && (semester < authState?.passed?.length)
   const [dropProps, drop] = useDrop(() => ({
     accept: 'card',
-    drop (course: CourseDetails & { semester: number }) {
-      moveCourse(course, semester, classes.length)
+    drop (course: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }) {
+      moveCourse({ semester: course.semester, index: course.index }, { semester, index: classes.length })
     },
     collect: monitor => ({
       isOver: !!monitor.isOver()

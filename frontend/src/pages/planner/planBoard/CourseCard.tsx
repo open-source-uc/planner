@@ -1,6 +1,5 @@
 import { memo, ReactNode, useRef } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
-import { PseudoCourseDetail } from '../Planner'
 import editWhiteIcon from '../../../assets/editWhite.svg'
 import editBlackIcon from '../../../assets/editBlack.svg'
 import { useAuth } from '../../../contexts/auth.context'
@@ -83,8 +82,8 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
   }))
   const [dropProps, drop] = useDrop(() => ({
     accept: 'card',
-    drop (course: PseudoCourseDetail) {
-      moveCourse(course, semester, index)
+    drop (course: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }) {
+      moveCourse({ semester: course.semester, index: course.index }, { semester, index })
       return course
     },
     collect: monitor => ({
@@ -170,7 +169,7 @@ const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSele
         : <img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" />
       )}
       {blockId === ''
-        ? <>{conditionPassed ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>}</>
+        ? <>{conditionPassed ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse(semester, index)}>x</button>}</>
         : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{blockId}</div>
       }
       <div className='flex items-center justify-center text-center flex-col'>
