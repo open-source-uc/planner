@@ -1,6 +1,5 @@
 import { useState, useEffect, Fragment } from 'react'
 import { Dialog, Transition, Switch } from '@headlessui/react'
-import Toggle from '../../components/switch'
 import { DefaultService, EquivDetails, CourseOverview, CancelablePromise } from '../../client'
 import { Spinner } from '../../components/Spinner'
 
@@ -8,20 +7,34 @@ import { Spinner } from '../../components/Spinner'
 // Existen escuelas en buscacursos que no tienen cursos: 'Acad Inter de Filosofía'
 const schoolOptions = ['Acad Inter de Filosofía', 'Actividades Universitarias', 'Actuación', 'Agronomía e Ing. Forestal', 'Antropología', 'Arquitectura', 'Arte', 'Astrofísica', 'Bachillerato', 'CARA', 'Ciencia Política', 'Ciencias Biológicas', 'Ciencias de la Salud', 'College', 'Comunicaciones', 'Construcción Civil', 'Deportes', 'Derecho', 'Desarrollo Sustentable', 'Diseño', 'Economía y Administración', 'Educación', 'Enfermería', 'Escuela de Gobierno', 'Escuela de Graduados', 'Estudios Urbanos', 'Estética', 'Filosofía', 'Física', 'Geografía', 'Historia', 'Ing Matemática y Computacional', 'Ingeniería', 'Ingeniería Biológica y Médica', 'Instituto de Éticas Aplicadas', 'Letras', 'Matemáticas', 'Medicina', 'Medicina Veterinaria', 'Música', 'Odontología', 'Psicología', 'Química', 'Química y Farmacia', 'Requisito Idioma', 'Sociología', 'Teología', 'Trabajo Social', 'Villarrica']
 const coursesBatchSize = 30
+const semestreApiOptions = [
+  [undefined], // todos los semestres
+  [[true, false], [true, true]], // primeros semestres
+  [[false, true], [true, true]]// segundos semestres
+]
+
+interface Filter {
+  name: string
+  credits: string
+  school: string
+  available: boolean
+  on_semester: number
+}
+
 const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: EquivDetails, open: boolean, onClose: Function }): JSX.Element => {
   const [loadedCourses, setLoadedCourses] = useState<{ [code: string]: CourseOverview }>({})
   const [filteredCodes, setFilteredCodes] = useState<string[]>([])
   const [loadingCoursesData, setLoadingCoursesData] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<string>()
-  const [filter, setFilter] = useState(() => ({
+  const [filter, setFilter] = useState<Filter>(() => ({
     name: '',
     credits: '',
     school: '',
     available: true,
-    on_semester: undefined
+    on_semester: 0
   }))
 
-  const [promiseInstance, setPromiseInstance] = useState<CancelablePromise<any> | null>(null)
+  const [promisesInstance, setPromisesInstance] = useState<Array<CancelablePromise<any>> | null>(null)
 
   function resetFilters (): void {
     setSelectedCourse(undefined)
@@ -30,17 +43,14 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       credits: '',
       school: '',
       available: true,
-      on_semester: undefined
+      on_semester: 0
     })
-    if (promiseInstance != null) {
-      promiseInstance.cancel()
-      setPromiseInstance(null)
+    if (promisesInstance != null) {
+      for (const promiseInstance of promisesInstance) promiseInstance.cancel()
+      setPromisesInstance(null)
+      setLoadingCoursesData(false)
     }
-    if (equivalence !== undefined && open) {
-      setFilteredCodes(equivalence.courses)
-    } else {
-      setFilteredCodes([])
-    }
+    setFilteredCodes([])
   }
 
   async function getCourseDetails (coursesCodes: string[]): Promise<void> {
@@ -48,9 +58,9 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     setLoadingCoursesData(true)
 
     const promise = DefaultService.getCourseDetails(coursesCodes)
-    setPromiseInstance(promise)
+    setPromisesInstance([promise])
     const response = await promise
-    setPromiseInstance(null)
+    setPromisesInstance(null)
 
     const dict = response.reduce((acc: { [code: string]: CourseOverview }, curr: CourseOverview) => {
       acc[curr.code] = curr
@@ -60,45 +70,52 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     setLoadingCoursesData(false)
   }
 
-  async function handleSearch (): Promise<void> {
+  async function handleSearch (filterProp: Filter): Promise<void> {
     setLoadingCoursesData(true)
     const crd = filter.credits === '' ? undefined : parseInt(filter.credits)
-    if (promiseInstance != null) promiseInstance.cancel()
+    if (promisesInstance != null) {
+      for (const promiseInstance of promisesInstance) promiseInstance.cancel()
+      setPromisesInstance(null)
+    }
     if (equivalence === undefined) {
-      const promise = DefaultService.searchCourseDetails({
-        text: filter.name,
-        credits: crd,
-        school: filter.school,
-        available: filter.available,
-        on_semester: filter.on_semester
+      const promises = semestreApiOptions[filter.on_semester].map((semFilter) => {
+        return DefaultService.searchCourseDetails({
+          text: filter.name,
+          credits: crd,
+          school: filter.school,
+          available: filter.available,
+          on_semester: semFilter
+        })
       })
-      setPromiseInstance(promise)
-      const response = await promise
-      setPromiseInstance(null)
-      const dict = response.reduce((acc: { [code: string]: CourseOverview }, curr: CourseOverview) => {
+      setPromisesInstance(promises)
+      const response = await Promise.all(promises)
+      setPromisesInstance(null)
+      const dict = response.flat().reduce((acc: { [code: string]: CourseOverview }, curr: CourseOverview) => {
         acc[curr.code] = curr
         return acc
       }, {})
-      setFilteredCodes(response.reduce((acc: string[], curr: CourseOverview) => {
+      setFilteredCodes(response.flat().reduce((acc: string[], curr: CourseOverview) => {
         acc.push(curr.code)
         return acc
       }, []))
       setLoadedCourses(dict)
       setLoadingCoursesData(false)
     } else {
-      const promise = DefaultService.searchCourseCodes({
-        text: filter.name,
-        credits: crd,
-        school: filter.school,
-        available: filter.available,
-        on_semester: filter.on_semester,
-        equiv: equivalence.code
+      const promises = semestreApiOptions[filter.on_semester].map((semFilter) => {
+        return DefaultService.searchCourseCodes({
+          text: filter.name,
+          credits: crd,
+          school: filter.school,
+          available: filter.available,
+          on_semester: semFilter,
+          equiv: equivalence.code
+        })
       })
-      setPromiseInstance(promise)
-      const response = await promise
-      setPromiseInstance(null)
+      setPromisesInstance(promises)
+      const response = await Promise.all(promises)
+      setPromisesInstance(null)
       const missingInfo = []
-      for (const code of response) {
+      for (const code of response.flat()) {
         if (missingInfo.length >= coursesBatchSize) break
         if (code in loadedCourses) continue
         missingInfo.push(code)
@@ -110,7 +127,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
           console.error(e)
         }
       }
-      setFilteredCodes(response)
+      setFilteredCodes(response.flat())
       setLoadingCoursesData(false)
     }
   }
@@ -127,7 +144,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     if (e.key === 'Enter') {
       e.preventDefault()
       try {
-        void handleSearch()
+        void handleSearch(filter)
       } catch (err) {
         console.log(err)
       }
@@ -154,11 +171,10 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
 
   useEffect(() => {
     if (!open) {
-      if (promiseInstance != null) { promiseInstance.cancel(); setPromiseInstance(null); setLoadingCoursesData(false) }
       void resetFilters()
       setLoadedCourses({})
     } else if (equivalence !== undefined) {
-      setFilteredCodes(equivalence.courses)
+      void handleSearch(filter)
     }
   }, [open])
 
@@ -222,10 +238,10 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
 
                     <div className="col-span-4 flex">
                       <label className="mr-3 my-auto" htmlFor="creditsFilter">Semestralidad: </label>
-                      <select className="grow rounded py-1" id="creditsFilter" value={filter.on_semester} onChange={e => setFilter({ ...filter, on_semester: e.target.value })}>
-                        <option value={undefined}>Cualquiera</option>
-                        <option value={[undefined, true]}>Pares</option>
-                        <option value={[true, undefined]}>Impares</option>
+                      <select className="grow rounded py-1" id="creditsFilter" value={filter.on_semester} onChange={e => setFilter({ ...filter, on_semester: parseInt(e.target.value) })}>
+                        <option value={0}>Cualquiera</option>
+                        <option value={1}>Pares</option>
+                        <option value={2}>Impares</option>
                       </select>
                     </div>
 
@@ -233,7 +249,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                       <label className="my-auto" htmlFor="availableFilter">Filtrar ramos no habiles: </label>
                       <Switch
                         checked={filter.available}
-                        onChange={e => setFilter({ ...filter, available: e })}
+                        onChange={(e: boolean) => setFilter({ ...filter, available: e })}
                         id="availableFilter"
                         className={`${
                           filter.available ? 'darkBlue' : 'bg-gray-200'
@@ -250,12 +266,17 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                     <div className='flex justify-end col-span-4 col-end-13'>
                       <button
                         className="btn mr-2"
-                        onClick={() => resetFilters()}>
+                        onClick={() => {
+                          resetFilters()
+                          if (equivalence !== undefined) {
+                            void handleSearch(filter)
+                          }
+                        }}>
                           Limpiar Filtros
                       </button>
                       <button className="btn" onClick={() => {
                         try {
-                          void handleSearch()
+                          void handleSearch(filter)
                         } catch (err) {
                           console.log(err)
                         }
