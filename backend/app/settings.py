@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     login_endpoint: str = Field(...)
 
     # Admin RUT as string. This user will always be the only admin.
+    # TODO: Maybe use the username instead of the RUT, because RUTs can have zeros in
+    # front of them and this can be confusing.
     admin_rut: SecretStr = Field(...)
 
     # JWT secret hex string. If this secret is leaked, anyone can forge JWT tokens for
