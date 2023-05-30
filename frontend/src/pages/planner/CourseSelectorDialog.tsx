@@ -1,6 +1,6 @@
 import { useState, useEffect, Fragment } from 'react'
 import { Dialog, Transition, Switch } from '@headlessui/react'
-import { DefaultService, EquivDetails, CourseOverview, CancelablePromise } from '../../client'
+import { DefaultService, EquivDetails, CourseOverview, CourseDetails, CancelablePromise } from '../../client'
 import { Spinner } from '../../components/Spinner'
 
 // TODO: fetch school list from backend
@@ -8,9 +8,9 @@ import { Spinner } from '../../components/Spinner'
 const schoolOptions = ['Acad Inter de Filosofía', 'Actividades Universitarias', 'Actuación', 'Agronomía e Ing. Forestal', 'Antropología', 'Arquitectura', 'Arte', 'Astrofísica', 'Bachillerato', 'CARA', 'Ciencia Política', 'Ciencias Biológicas', 'Ciencias de la Salud', 'College', 'Comunicaciones', 'Construcción Civil', 'Deportes', 'Derecho', 'Desarrollo Sustentable', 'Diseño', 'Economía y Administración', 'Educación', 'Enfermería', 'Escuela de Gobierno', 'Escuela de Graduados', 'Estudios Urbanos', 'Estética', 'Filosofía', 'Física', 'Geografía', 'Historia', 'Ing Matemática y Computacional', 'Ingeniería', 'Ingeniería Biológica y Médica', 'Instituto de Éticas Aplicadas', 'Letras', 'Matemáticas', 'Medicina', 'Medicina Veterinaria', 'Música', 'Odontología', 'Psicología', 'Química', 'Química y Farmacia', 'Requisito Idioma', 'Sociología', 'Teología', 'Trabajo Social', 'Villarrica']
 const coursesBatchSize = 30
 const semestreApiOptions = [
-  [undefined], // todos los semestres
-  [[true, false], [true, true]], // primeros semestres
-  [[false, true], [true, true]]// segundos semestres
+  [undefined, undefined], // todos los semestres
+  [true, undefined], // primeros semestres
+  [undefined, true] // segundos semestres
 ]
 
 interface Filter {
@@ -34,7 +34,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     on_semester: 0
   }))
 
-  const [promisesInstance, setPromisesInstance] = useState<Array<CancelablePromise<any>> | null>(null)
+  const [promiseInstance, setPromiseInstance] = useState<CancelablePromise<any> | null>(null)
 
   function resetFilters (): void {
     setSelectedCourse(undefined)
@@ -45,9 +45,9 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       available: true,
       on_semester: 0
     })
-    if (promisesInstance != null) {
-      for (const promiseInstance of promisesInstance) promiseInstance.cancel()
-      setPromisesInstance(null)
+    if (promiseInstance != null) {
+      promiseInstance.cancel()
+      setPromiseInstance(null)
       setLoadingCoursesData(false)
     }
     setFilteredCodes([])
@@ -58,11 +58,11 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     setLoadingCoursesData(true)
 
     const promise = DefaultService.getCourseDetails(coursesCodes)
-    setPromisesInstance([promise])
+    setPromiseInstance(promise)
     const response = await promise
-    setPromisesInstance(null)
+    setPromiseInstance(null)
 
-    const dict = response.reduce((acc: { [code: string]: CourseOverview }, curr: CourseOverview) => {
+    const dict = response.reduce((acc: { [code: string]: CourseDetails }, curr: CourseDetails) => {
       acc[curr.code] = curr
       return acc
     }, {})
@@ -74,23 +74,22 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     setLoadingCoursesData(true)
     const crd = filter.credits === '' ? undefined : parseInt(filter.credits)
     const onlyAvaible = filter.available ? filter.available : undefined
-    if (promisesInstance != null) {
-      for (const promiseInstance of promisesInstance) promiseInstance.cancel()
-      setPromisesInstance(null)
+    if (promiseInstance != null) {
+      promiseInstance.cancel()
+      setPromiseInstance(null)
     }
     if (equivalence === undefined) {
-      const promises = semestreApiOptions[filter.on_semester].map((semFilter) => {
-        return DefaultService.searchCourseDetails({
-          text: filter.name,
-          credits: crd,
-          school: filter.school,
-          available: onlyAvaible,
-          on_semester: semFilter
-        })
+      const promise = DefaultService.searchCourseDetails({
+        text: filter.name,
+        credits: crd,
+        school: filter.school,
+        available: onlyAvaible,
+        first_semester: semestreApiOptions[filter.on_semester][0],
+        second_semester: semestreApiOptions[filter.on_semester][1]
       })
-      setPromisesInstance(promises)
-      const response = await Promise.all(promises)
-      setPromisesInstance(null)
+      setPromiseInstance(promise)
+      const response = await promise
+      setPromiseInstance(null)
       const dict = response.flat().reduce((acc: { [code: string]: CourseOverview }, curr: CourseOverview) => {
         acc[curr.code] = curr
         return acc
@@ -102,19 +101,18 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       setLoadedCourses(dict)
       setLoadingCoursesData(false)
     } else {
-      const promises = semestreApiOptions[filter.on_semester].map((semFilter) => {
-        return DefaultService.searchCourseCodes({
-          text: filter.name,
-          credits: crd,
-          school: filter.school,
-          available: onlyAvaible,
-          on_semester: semFilter,
-          equiv: equivalence.code
-        })
+      const promise = DefaultService.searchCourseCodes({
+        text: filter.name,
+        credits: crd,
+        school: filter.school,
+        available: onlyAvaible,
+        first_semester: semestreApiOptions[filter.on_semester][0],
+        second_semester: semestreApiOptions[filter.on_semester][1],
+        equiv: equivalence.code
       })
-      setPromisesInstance(promises)
-      const response = await Promise.all(promises)
-      setPromisesInstance(null)
+      setPromiseInstance(promise)
+      const response = await promise
+      setPromiseInstance(null)
       const missingInfo = []
       for (const code of response.flat()) {
         if (missingInfo.length >= coursesBatchSize) break
@@ -263,8 +261,8 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                     </div>
 
                     <div className="col-span-4 flex">
-                      <label className="mr-3 my-auto" htmlFor="creditsFilter">Semestralidad: </label>
-                      <select className="grow rounded py-1" id="creditsFilter" value={filter.on_semester} onChange={e => setFilter({ ...filter, on_semester: parseInt(e.target.value) })}>
+                      <label className="mr-3 my-auto" htmlFor="semesterFilter">Semestralidad: </label>
+                      <select className="grow rounded py-1" id="semesterFilter" value={filter.on_semester} onChange={e => setFilter({ ...filter, on_semester: parseInt(e.target.value) })}>
                         <option value={0}>Cualquiera</option>
                         <option value={1}>Pares</option>
                         <option value={2}>Impares</option>
