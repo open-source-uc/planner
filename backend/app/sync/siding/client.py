@@ -1,24 +1,13 @@
+from decimal import Decimal
 from ...settings import settings
 from zeep import AsyncClient
 from zeep.transports import AsyncTransport
 import zeep
 import httpx
+import json
 import os
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 from pydantic import BaseModel, parse_obj_as
-
-wsdl_url = os.path.join(os.path.dirname(__file__), "ServiciosPlanner.wsdl")
-
-http_client = httpx.AsyncClient(
-    auth=httpx.DigestAuth(
-        settings.siding_username, settings.siding_password.get_secret_value()
-    )
-)
-
-soap_client = AsyncClient(
-    wsdl_url,
-    transport=AsyncTransport(http_client),
-)
 
 
 class StringArrayInner(BaseModel):
@@ -170,6 +159,100 @@ class CursoHecho(BaseModel):
     UnidadAcademica: Optional[str]
 
 
+class SoapClient:
+    soap_client: Optional[AsyncClient]
+    mock_db: dict[str, dict[str, Any]]
+    record_path: Optional[str]
+
+    def __init__(self):
+        self.soap_client = None
+        self.mock_db = {}
+        self.record_path = None
+
+    def on_startup(self):
+        # Load mockup data
+        if settings.siding_mock_path != "":
+            try:
+                with open(settings.siding_mock_path, "r") as file:
+                    self.mock_db = json.load(file)
+                cnt = sum(map(lambda r: len(r), self.mock_db.values()))
+                print(
+                    f"loaded {cnt} SIDING mock responses from"
+                    + f" '{settings.siding_mock_path}'"
+                )
+            except Exception as err:
+                print(
+                    "failed to read SIDING mock data from"
+                    + f" '{settings.siding_mock_path}': {err}"
+                )
+                self.mock_db = {}
+
+        # Connect to SIDING webservice
+        if settings.siding_username != "":
+            wsdl_url = os.path.join(os.path.dirname(__file__), "ServiciosPlanner.wsdl")
+            http_client = httpx.AsyncClient(
+                auth=httpx.DigestAuth(
+                    settings.siding_username,
+                    settings.siding_password.get_secret_value(),
+                )
+            )
+            self.soap_client = AsyncClient(
+                wsdl_url,
+                transport=AsyncTransport(http_client),
+            )
+            print("connected to live SIDING webservice")
+
+        # Setup response recording
+        if settings.siding_record_path != "":
+            self.record_path = settings.siding_record_path
+            print("recording SIDING responses")
+
+    async def call_endpoint(self, name: str, args: dict[str, Any]) -> Any:
+        # Check if request is in mock database
+        args_str = json.dumps(args)
+        if name in self.mock_db:
+            if args_str in self.mock_db[name]:
+                return self.mock_db[name][args_str]
+
+        if self.soap_client is None:
+            raise Exception(
+                f"mock data not found for SIDING request {name}({args_str})"
+            )
+
+        # Carry out request to SIDING webservice backend
+        response: Any = zeep.helpers.serialize_object(  # type: ignore
+            await self.soap_client.service[name](**args)
+        )
+
+        # Record response if enabled
+        if self.record_path is not None:
+            self.mock_db.setdefault(name, {})[args_str] = response
+
+        return response
+
+    def on_shutdown(self):
+        if self.record_path is not None:
+            print(f"saving recorded SIDING responses to '{self.record_path}'")
+            try:
+
+                class CustomEncoder(json.JSONEncoder):
+                    def default(self, o: Any):
+                        if isinstance(o, Decimal):
+                            return float(o)
+                        return super().default(o)
+
+                with open(self.record_path, "w") as file:
+                    json.dump(self.mock_db, file, cls=CustomEncoder)
+            except Exception as err:
+                print(
+                    "failed to save recorded SIDING data to"
+                    + f" '{self.record_path}': {err}"
+                )
+
+
+client = SoapClient()
+
+
 async def get_majors() -> list[Major]:
     """
     Obtain a global list of all majors.
@@ -183,9 +266,7 @@ async def get_majors() -> list[Major]:
 
     return parse_obj_as(
         list[Major],
-        zeep.helpers.serialize_object(  # type: ignore
-            await soap_client.service.getListadoMajor(), dict
-        ),
+        await client.call_endpoint("getListadoMajor", {}),
     )
 
 
@@ -195,9 +276,7 @@ async def get_minors() -> list[Minor]:
     """
     return parse_obj_as(
         list[Minor],
-        zeep.helpers.serialize_object(  # type: ignore
-            await soap_client.service.getListadoMinor(), dict
-        ),
+        await client.call_endpoint("getListadoMinor", {}),
     )
 
 
@@ -207,9 +286,7 @@ async def get_titles() -> list[Titulo]:
     """
     return parse_obj_as(
         list[Titulo],
-        zeep.helpers.serialize_object(  # type: ignore
-            await soap_client.service.getListadoTitulo(), dict
-        ),
+        await client.call_endpoint("getListadoTitulo", {}),
     )
 
 
@@ -219,9 +296,7 @@ async def get_minors_for_major(major_code: str) -> list[Minor]:
     """
     return parse_obj_as(
         list[Minor],
-        zeep.helpers.serialize_object(  # type: ignore
-            await soap_client.service.getMajorMinorAsociado(major_code), dict
-        ),
+        await client.call_endpoint("getMajorMinorAsociado", {"CodMajor": major_code}),
     )
 
 
@@ -231,14 +306,14 @@ async def get_courses_for_spec(study_spec: PlanEstudios) -> list[Curso]:
     """
     return parse_obj_as(
         list[Curso],
-        zeep.helpers.serialize_object(  # type: ignore
-            await soap_client.service.getConcentracionCursos(
-                CodCurriculum=study_spec.CodCurriculum,
-                CodMajor=study_spec.CodMajor,
-                CodMinor=study_spec.CodMinor,
-                CodTitulo=study_spec.CodTitulo,
-            ),
-            dict,
+        await client.call_endpoint(
+            "getConcentracionCursos",
+            {
+                "CodCurriculum": study_spec.CodCurriculum,
+                "CodMajor": study_spec.CodMajor,
+                "CodMinor": study_spec.CodMinor,
+                "CodTitulo": study_spec.CodTitulo,
+            },
         ),
     )
 
@@ -249,14 +324,14 @@ async def get_curriculum_for_spec(study_spec: PlanEstudios) -> list[BloqueMalla]
     """
     return parse_obj_as(
         list[BloqueMalla],
-        zeep.helpers.serialize_object(  # type: ignore
-            await soap_client.service.getMallaSugerida(
-                CodCurriculum=study_spec.CodCurriculum,
-                CodMajor=study_spec.CodMajor,
-                CodMinor=study_spec.CodMinor,
-                CodTitulo=study_spec.CodTitulo,
-            ),
-            dict,
+        await client.call_endpoint(
+            "getMallaSugerida",
+            {
+                "CodCurriculum": study_spec.CodCurriculum,
+                "CodMajor": study_spec.CodMajor,
+                "CodMinor": study_spec.CodMinor,
+                "CodTitulo": study_spec.CodTitulo,
+            },
         ),
     )
 
@@ -274,15 +349,15 @@ async def get_equivalencies(course_code: str, study_spec: PlanEstudios) -> list[
     """
     return parse_obj_as(
         list[Curso],
-        zeep.helpers.serialize_object(  # type: ignore
-            await soap_client.service.getCursoEquivalente(
-                Sigla=course_code,
-                CodCurriculum=study_spec.CodCurriculum,
-                CodMajor=study_spec.CodMajor,
-                CodMinor=study_spec.CodMinor,
-                CodTitulo=study_spec.CodTitulo,
-            ),
-            dict,
+        await client.call_endpoint(
+            "getCursoEquivalente",
+            {
+                "Sigla": course_code,
+                "CodCurriculum": study_spec.CodCurriculum,
+                "CodMajor": study_spec.CodMajor,
+                "CodMinor": study_spec.CodMinor,
+                "CodTitulo": study_spec.CodTitulo,
+            },
         ),
     )
 
@@ -296,15 +371,15 @@ async def get_requirements(course_code: str, study_spec: PlanEstudios) -> list[C
     """
     return parse_obj_as(
         list[Curso],
-        zeep.helpers.serialize_object(  # type: ignore
-            await soap_client.service.getRequisito(
-                Sigla=course_code,
-                CodCurriculum=study_spec.CodCurriculum,
-                CodMajor=study_spec.CodMajor,
-                CodMinor=study_spec.CodMinor,
-                CodTitulo=study_spec.CodTitulo,
-            ),
-            dict,
+        await client.call_endpoint(
+            "getRequisito",
+            {
+                "Sigla": course_code,
+                "CodCurriculum": study_spec.CodCurriculum,
+                "CodMajor": study_spec.CodMajor,
+                "CodMinor": study_spec.CodMinor,
+                "CodTitulo": study_spec.CodTitulo,
+            },
         ),
     )
 
@@ -319,15 +394,15 @@ async def get_restrictions(
     """
     return parse_obj_as(
         list[Restriccion],
-        zeep.helpers.serialize_object(  # type: ignore
-            await soap_client.service.getRestriccion(
-                Sigla=course_code,
-                CodCurriculum=study_spec.CodCurriculum,
-                CodMajor=study_spec.CodMajor,
-                CodMinor=study_spec.CodMinor,
-                CodTitulo=study_spec.CodTitulo,
-            ),
-            dict,
+        await client.call_endpoint(
+            "getRestriccion",
+            {
+                "Sigla": course_code,
+                "CodCurriculum": study_spec.CodCurriculum,
+                "CodMajor": study_spec.CodMajor,
+                "CodMinor": study_spec.CodMinor,
+                "CodTitulo": study_spec.CodTitulo,
+            },
         ),
     )
 
@@ -338,10 +413,7 @@ async def get_predefined_list(list_code: str) -> list[Curso]:
     """
     return parse_obj_as(
         list[Curso],
-        zeep.helpers.serialize_object(  # type: ignore
-            await soap_client.service.getListaPredefinida(list_code),
-            dict,
-        ),
+        await client.call_endpoint("getListaPredefinida", {"CodLista": list_code}),
     )
 
 
@@ -352,10 +424,7 @@ async def get_student_info(rut: str) -> InfoEstudiante:
     """
     return parse_obj_as(
         InfoEstudiante,
-        zeep.helpers.serialize_object(  # type: ignore
-            await soap_client.service.getInfoEstudiante(rut),
-            dict,
-        ),
+        await client.call_endpoint("getInfoEstudiante", {"rut": rut}),
     )
 
 
@@ -365,11 +434,7 @@ async def get_student_done_courses(rut: str) -> list[CursoHecho]:
     The RUT must be in the format "011222333-K", the same format used by CAS.
     """
     return parse_obj_as(
-        list[CursoHecho],
-        zeep.helpers.serialize_object(  # type: ignore
-            await soap_client.service.getCursosHechos(rut),
-            dict,
-        ),
+        list[CursoHecho], await client.call_endpoint("getCursosHechos", {"rut": rut})
     )
 
 

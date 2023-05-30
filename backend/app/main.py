@@ -43,7 +43,9 @@ from .plan.courseinfo import (
     EquivDetails,
     clear_course_info_cache,
     course_info,
+    make_searchable_name,
 )
+from .sync.siding.client import client as siding_soap_client
 from typing import Optional, Union
 from pydantic import BaseModel
 from unidecode import unidecode
@@ -71,6 +73,8 @@ app.add_middleware(
 @app.on_event("startup")  # type: ignore
 async def startup():
     await prisma.connect()
+    # Setup SIDING webservice
+    siding_soap_client.on_startup()
     # Prime course info cache
     courseinfo = await course_info()
     # Sync courses if database is empty
@@ -82,6 +86,7 @@ async def startup():
 @app.on_event("shutdown")  # type: ignore
 async def shutdown():
     await prisma.disconnect()
+    siding_soap_client.on_shutdown()
 
 
 @app.get("/")
@@ -204,13 +209,17 @@ async def get_student_info(user: UserKey = Depends(require_authentication)):
 # For the meantime this makes it easier to trigger syncs, but in the future this must
 # change.
 @app.get("/sync")
-async def sync_courses(user_data: AdminKey = Depends(require_admin_auth)):
+async def sync_database(
+    courses: bool = False,
+    offer: bool = False,
+    admin_key: AdminKey = Depends(require_admin_auth),
+):
     """
     Initiate a synchronization of the internal database from external sources.
     """
-    await sync.run_upstream_sync()
+    await sync.run_upstream_sync(courses, offer)
     return {
-        "message": "Course database updated",
+        "message": "Database updated from external sources",
     }
 
 
@@ -240,17 +249,15 @@ class CourseFilter(BaseModel):
     def as_db_filter(self) -> CourseWhereInput:
         filter = CourseWhereInput()
         if self.text is not None:
-            ascii_text = unidecode(self.text)
+            search_text = make_searchable_name(self.text)
             name_parts: list[CourseWhereInputRecursive2] = list(
                 map(
-                    lambda text_part: {
-                        "name": {"contains": text_part, "mode": "insensitive"}
-                    },
-                    ascii_text.split(),
+                    lambda text_part: {"searchable_name": {"contains": text_part}},
+                    search_text.split(),
                 )
             )
             filter["OR"] = [
-                {"code": {"contains": self.text, "mode": "insensitive"}},
+                {"code": {"contains": search_text.upper()}},
                 {"AND": name_parts},
             ]
         if self.credits is not None:
@@ -296,7 +303,6 @@ async def search_course_codes(filter: CourseFilter):
             await DbCourse.prisma().find_many(where=filter.as_db_filter(), take=3000),
         )
     )
-    print(f"got {len(codes)} codes")
     return codes
 
 

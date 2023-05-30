@@ -109,7 +109,7 @@ const Planner = (): JSX.Element => {
         return semester.map((course, j) => {
           const { code, instance } = planDigest.indexToId[i][j]
           const rawSuperblock = validationResult?.course_superblocks?.[code]?.[instance] ?? null
-          const superblock = rawSuperblock === null ? '' : rawSuperblock.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(' ', '').split(' ')[0]
+          const superblock = rawSuperblock === null ? '' : rawSuperblock.normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(' ')[0]
           return {
             superblock,
             errorIndices: [],

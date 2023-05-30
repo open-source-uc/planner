@@ -3,7 +3,7 @@
 /* eslint-disable */
 
 export type AccessLevelOverview = {
-    username?: string;
+    name?: string;
     user_rut: string;
     is_mod: boolean;
     created_at: string;
