@@ -1,4 +1,4 @@
-from .solve import SolvedCurriculum, TakenCourse, solve_curriculum
+from .solve import RecommendedCourse, SolvedCurriculum, TakenCourse, solve_curriculum
 from ...plan import ValidatablePlan
 from ..diagnostic import DiagnosticErr, DiagnosticWarn, ValidationResult
 from .tree import Block, Curriculum
@@ -7,9 +7,10 @@ from ...courseinfo import CourseInfo
 
 class CurriculumErr(DiagnosticErr):
     missing: str
+    credits: int
 
     def message(self) -> str:
-        return f"""Faltan créditos para el bloque {self.missing}"""
+        return f"""Faltan {self.credits} créditos para el bloque {self.missing}"""
 
 
 class UnassignedWarn(DiagnosticWarn):
@@ -36,28 +37,48 @@ class MustSelectCurriculumErr(DiagnosticErr):
         return f"Falta seleccionar {' y '.join(missing)}"
 
 
-def _diagnose_block(out: ValidationResult, g: SolvedCurriculum, id: int, name: str):
+def _diagnose_block(
+    courseinfo: CourseInfo,
+    out: ValidationResult,
+    g: SolvedCurriculum,
+    id: int,
+    name: str,
+) -> int:
     node = g.nodes[id]
-    if node.flow() >= node.cap():
-        return False
-    my_name = None
-    if isinstance(node.origin, Block) and node.origin.name is not None:
-        my_name = node.origin.name
-    if my_name is not None:
-        if name != "":
-            name += " -> "
-        name += my_name
-    diagnosed = False
-    for edge in node.incoming:
-        if edge.cap == 0:
-            continue
-        subdiagnosed = _diagnose_block(out, g, edge.src, name)
-        diagnosed = diagnosed or subdiagnosed
-    if not diagnosed and (my_name is not None or id == g.root):
-        if name == "":
-            name = "?"
-        out.add(CurriculumErr(missing=name))
-    return True
+    if isinstance(node.origin, tuple):
+        _layer, c = node.origin
+        if isinstance(c, RecommendedCourse):
+            creds = courseinfo.get_credits(c.rec.course)
+            if creds is None:
+                return 0
+            elif creds == 0:
+                return 1
+            else:
+                return creds
+        else:
+            return 0
+    else:
+        my_name = None
+        if isinstance(node.origin, Block) and node.origin.name is not None:
+            my_name = node.origin.name
+        if my_name is not None:
+            if name != "":
+                name += " -> "
+            name += my_name
+
+        needs_diagnosis = 0
+        for edge in node.incoming:
+            if edge.flow <= 0:
+                continue
+            needs_diagnosis += _diagnose_block(courseinfo, out, g, edge.src, name)
+
+        if needs_diagnosis > 0 and (my_name is not None or id == g.root):
+            if name == "":
+                name = "?"
+            out.add(CurriculumErr(missing=name, credits=needs_diagnosis))
+            return 0
+        else:
+            return needs_diagnosis
 
 
 def _tag_superblock(
@@ -97,7 +118,7 @@ def diagnose_curriculum(
     g = solve_curriculum(courseinfo, curriculum, plan.classes)
 
     # Generate diagnostics
-    _diagnose_block(out, g, g.root, "")
+    _diagnose_block(courseinfo, out, g, g.root, "")
 
     # Tag each course with its associated superblock
     for edge in g.nodes[g.root].incoming:

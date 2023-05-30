@@ -20077,7 +20077,7 @@
                 "Nombre": "Se\u00f1ales y Sistemas",
                 "CodSigla": "IEE2103",
                 "CodLista": null,
-                "Programa": "Minor en Ingenier\u00eda El\u00e9ctrica",
+                "Programa": "Minor de Amplitud en Ingeniería Eléctrica",
                 "Creditos": 10,
                 "SemestreBloque": 9,
                 "OrdenSemestre": 1,
@@ -20085,13 +20085,13 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Minor"
+                "BloqueAcademico": "Minor de Amplitud en Ingeniería Eléctrica"
             },
             {
                 "Nombre": "Circuitos El\u00e9ctricos",
                 "CodSigla": "IEE2123",
                 "CodLista": null,
-                "Programa": "Minor en Ingenier\u00eda El\u00e9ctrica",
+                "Programa": "Minor de Amplitud en Ingeniería Eléctrica",
                 "Creditos": 10,
                 "SemestreBloque": 9,
                 "OrdenSemestre": 2,
@@ -20099,13 +20099,13 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Minor"
+                "BloqueAcademico": "Minor de Amplitud en Ingeniería Eléctrica"
             },
             {
                 "Nombre": "Sistemas Digitales",
                 "CodSigla": "IEE2713",
                 "CodLista": null,
-                "Programa": "Minor en Ingenier\u00eda El\u00e9ctrica",
+                "Programa": "Minor de Amplitud en Ingeniería Eléctrica",
                 "Creditos": 10,
                 "SemestreBloque": 9,
                 "OrdenSemestre": 3,
@@ -20113,13 +20113,13 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Minor"
+                "BloqueAcademico": "Minor de Amplitud en Ingeniería Eléctrica"
             },
             {
                 "Nombre": "Control Autom\u00e1tico",
                 "CodSigla": "IEE2613",
                 "CodLista": null,
-                "Programa": "Minor en Ingenier\u00eda El\u00e9ctrica",
+                "Programa": "Minor de Amplitud en Ingeniería Eléctrica",
                 "Creditos": 10,
                 "SemestreBloque": 9,
                 "OrdenSemestre": 4,
@@ -20127,13 +20127,13 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Minor"
+                "BloqueAcademico": "Minor de Amplitud en Ingeniería Eléctrica"
             },
             {
                 "Nombre": "Electivo Minor",
                 "CodSigla": null,
                 "CodLista": "C8766",
-                "Programa": "Minor en Ingenier\u00eda El\u00e9ctrica",
+                "Programa": "Minor de Amplitud en Ingeniería Eléctrica",
                 "Creditos": 10,
                 "SemestreBloque": 9,
                 "OrdenSemestre": 5,
@@ -20141,7 +20141,7 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Minor"
+                "BloqueAcademico": "Minor de Amplitud en Ingeniería Eléctrica"
             },
             {
                 "Nombre": "Optimizaci\u00f3n",
@@ -20155,7 +20155,7 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Titulo"
+                "BloqueAcademico": "Ingeniero Civil de Computación"
             },
             {
                 "Nombre": "Logica para Ciencias de la Computacion",
@@ -20169,7 +20169,7 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Titulo"
+                "BloqueAcademico": "Ingeniero Civil de Computación"
             },
             {
                 "Nombre": "Teoria de Automatas y Lenguajes Formales",
@@ -20183,7 +20183,7 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Titulo"
+                "BloqueAcademico": "Ingeniero Civil de Computación"
             },
             {
                 "Nombre": "Dise\u00f1o y An\u00e1lisis de Algoritmos",
@@ -20197,7 +20197,7 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Titulo"
+                "BloqueAcademico": "Ingeniero Civil de Computación"
             },
             {
                 "Nombre": "Sistemas Distribuidos",
@@ -20211,7 +20211,7 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Titulo"
+                "BloqueAcademico": "Ingeniero Civil de Computación"
             },
             {
                 "Nombre": "Tecnolog\u00edas y Aplicaciones Web",
@@ -20225,7 +20225,7 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Titulo"
+                "BloqueAcademico": "Ingeniero Civil de Computación"
             },
             {
                 "Nombre": "Inteligencia Artificial",
@@ -20239,7 +20239,7 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Titulo"
+                "BloqueAcademico": "Ingeniero Civil de Computación"
             },
             {
                 "Nombre": "Gesti\u00f3n de Proyectos de Tecnolog\u00edas de Informaci\u00f3n",
@@ -20253,7 +20253,7 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Titulo"
+                "BloqueAcademico": "Ingeniero Civil de Computación"
             },
             {
                 "Nombre": "Criptograf\u00eda y Seguridad Computacional",
@@ -20267,7 +20267,7 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Titulo"
+                "BloqueAcademico": "Ingeniero Civil de Computación"
             },
             {
                 "Nombre": "Computaci\u00f3n de Alto Rendimiento",
@@ -20281,7 +20281,7 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Titulo"
+                "BloqueAcademico": "Ingeniero Civil de Computación"
             },
             {
                 "Nombre": "Desarrollo de Sistemas Complejos (Proyecto de T\u00edtulo)",
@@ -20295,7 +20295,7 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Titulo"
+                "BloqueAcademico": "Ingeniero Civil de Computación"
             },
             {
                 "Nombre": "Inteligencia de M\u00e1quina",
@@ -20309,7 +20309,7 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Titulo"
+                "BloqueAcademico": "Ingeniero Civil de Computación"
             },
             {
                 "Nombre": "Ingenier\u00eda de Software",
@@ -20323,7 +20323,7 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Titulo"
+                "BloqueAcademico": "Ingeniero Civil de Computación"
             },
             {
                 "Nombre": "Manejo de Datos",
@@ -20337,7 +20337,7 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Titulo"
+                "BloqueAcademico": "Ingeniero Civil de Computación"
             },
             {
                 "Nombre": "Teor\u00eda de la Computaci\u00f3n",
@@ -20351,7 +20351,7 @@
                 "Restricciones": null,
                 "Requisitos": null,
                 "Tipocurso": null,
-                "BloqueAcademico": "Titulo"
+                "BloqueAcademico": "Ingeniero Civil de Computación"
             }
         ],
         "{\"CodCurriculum\": \"C2020\", \"CodMajor\": \"M245\", \"CodMinor\": \"N344\", \"CodTitulo\": \"\"}": [

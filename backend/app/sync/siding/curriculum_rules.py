@@ -186,9 +186,7 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     # Encontrar el bloque de titulo
     title_index = None
     for i, block in enumerate(curriculum.root.children):
-        if block.name is not None and (
-            "Titulo" in block.name or "Título" in block.name
-        ):
+        if block.name is not None and block.name.startswith("Ingeniero"):
             title_index = i
             break
     if title_index is None:

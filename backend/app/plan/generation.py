@@ -76,7 +76,6 @@ def _compute_courses_to_pass(
 
     # Determine which curriculum blocks have not been passed yet
     g = solve_curriculum(courseinfo, curriculum, passed_classes)
-    print(g.dump_graphviz(passed_classes))
 
     # Extract recommended courses from solved plan
     to_pass: list[tuple[RecommendedCourse, int]] = []
