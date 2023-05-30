@@ -342,6 +342,10 @@ async def generate_recommended_plan(passed: ValidatablePlan):
         # Stuck! :(
         break
 
+    # Remove empty semesters at the end (if any)
+    while plan.classes and not plan.classes[-1]:
+        plan.classes.pop()
+
     if courses_to_pass:
         print(f"WARNING: could not add courses {courses_to_pass}")
         plan.classes.append(courses_to_pass)
