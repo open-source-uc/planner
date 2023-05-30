@@ -71,10 +71,6 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
     Currently, these have to be requested from SIDING, so some caching is performed.
     """
 
-    # The underlying SIDING webservice does not support empty major/minor selections
-    if spec.major is None or spec.minor is None:
-        return Curriculum.empty()
-
     db_curr = await DbCurriculum.prisma().find_unique(
         where={
             "cyear_major_minor_title": {
