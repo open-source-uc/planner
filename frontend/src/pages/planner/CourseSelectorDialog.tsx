@@ -193,13 +193,13 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
               </Dialog.Title>
                 {(equivalence === undefined || equivalence.courses.length >= 30) &&
                   <div className="grid border-2 p-4 py-3 rounded bg-slate-100 border-slate-500 border-solid gap-2 grid-cols-12">
-                    <div className="col-span-9 grid  grid-cols-5">
-                      <label className="col-span-1 my-auto" htmlFor="nameFilter">Nombre o Sigla: </label>
-                      <input className="col-span-4 rounded py-1" type="text" id="nameFilter" value={filter.name} onChange={e => setFilter({ ...filter, name: e.target.value })} onKeyDown={handleKeyDownFilter}/>
+                    <div className="col-span-9 flex">
+                      <label className="mr-3 my-auto" htmlFor="nameFilter">Nombre o Sigla: </label>
+                      <input className="grow rounded py-1" type="text" id="nameFilter" value={filter.name} onChange={e => setFilter({ ...filter, name: e.target.value })} onKeyDown={handleKeyDownFilter}/>
                     </div>
-                    <div className="col-span-3 grid grid-cols-2">
-                      <label className="col-span-1 my-auto" htmlFor="creditsFilter">Creditos: </label>
-                      <select className="col-span-1 col-end-3 rounded py-1" id="creditsFilter" value={filter.credits} onChange={e => setFilter({ ...filter, credits: e.target.value })}>
+                    <div className="col-span-3 flex">
+                      <label className="mr-3 my-auto" htmlFor="creditsFilter">Creditos: </label>
+                      <select className="grow rounded py-1" id="creditsFilter" value={filter.credits} onChange={e => setFilter({ ...filter, credits: e.target.value })}>
                         <option value={''}>-</option>
                         <option value={'4'}>4</option>
                         <option value={'5'}>5</option>
@@ -212,17 +212,17 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                       </select>
                     </div>
 
-                    <div className="col-span-8 grid  grid-cols-5">
-                      <label className="col-span-1 my-auto" htmlFor="schoolFilter">Escuela: </label>
-                      <select className="col-span-4 rounded py-1" id="schoolFilter" value={filter.school} onChange={e => setFilter({ ...filter, school: e.target.value })} >
+                    <div className="col-span-8 flex">
+                      <label className="mr-3 my-auto" htmlFor="schoolFilter">Escuela: </label>
+                      <select className="grow rounded py-1" id="schoolFilter" value={filter.school} onChange={e => setFilter({ ...filter, school: e.target.value })} >
                         <option value=''>-- Todas --</option>
                         {schoolOptions.map(school => <option key={school} value={school}>{school}</option>)}
                       </select>
                     </div>
 
-                    <div className="col-span-4 grid grid-cols-2">
-                      <label className="col-span-1 my-auto" htmlFor="creditsFilter">Semestralidad: </label>
-                      <select className="col-span-1 col-end-3 rounded py-1" id="creditsFilter" value={filter.on_semester} onChange={e => setFilter({ ...filter, on_semester: e.target.value })}>
+                    <div className="col-span-4 flex">
+                      <label className="mr-3 my-auto" htmlFor="creditsFilter">Semestralidad: </label>
+                      <select className="grow rounded py-1" id="creditsFilter" value={filter.on_semester} onChange={e => setFilter({ ...filter, on_semester: e.target.value })}>
                         <option value={undefined}>Cualquiera</option>
                         <option value={[undefined, true]}>Pares</option>
                         <option value={[true, undefined]}>Impares</option>
@@ -230,7 +230,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                     </div>
 
                     <div className="my-auto col-span-5">
-                      <label className="my-auto" htmlFor="availableFilter">Filtrar ramos no habilitados: </label>
+                      <label className="my-auto" htmlFor="availableFilter">Filtrar ramos no habiles: </label>
                       <Switch
                         checked={filter.available}
                         onChange={e => setFilter({ ...filter, available: e })}
