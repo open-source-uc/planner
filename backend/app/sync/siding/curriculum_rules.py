@@ -303,7 +303,5 @@ async def apply_curriculum_rules(
             #   https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/formacion_gral/alumno_2020/index.phtml
             # TODO: Asegurarse que los optativos complementarios de minor funcionen
             #   correctamente.
-            # TODO: El titulo tiene que tener 130 creditos exclusivos
-            #   Recordar incluir los optativos (ramos de ing nivel 3000) y IPres
             pass
     return curriculum
