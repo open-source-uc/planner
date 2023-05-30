@@ -1,6 +1,5 @@
 import { memo, ReactNode, useRef } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
-import { PseudoCourseDetail } from '../Planner'
 import editWhiteIcon from '../../../assets/editWhite.svg'
 import editBlackIcon from '../../../assets/editBlack.svg'
 import { useAuth } from '../../../contexts/auth.context'
@@ -40,16 +39,18 @@ interface ConditionalWrapperProps {
 
 const BlockInitials = (courseBlock: string): string => {
   switch (courseBlock) {
-    case 'CienciasBasicas':
+    case 'Ciencias':
       return 'PC'
-    case 'BaseGeneral':
+    case 'Base':
       return 'PC'
-    case 'FormacionGeneral':
+    case 'Formacion':
       return 'FG'
     case 'Major':
       return 'M'
     case 'Minor':
       return 'm'
+    case 'Ingeniero':
+      return 'T'
   }
   return ''
 }
@@ -81,8 +82,8 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
   }))
   const [dropProps, drop] = useDrop(() => ({
     accept: 'card',
-    drop (course: PseudoCourseDetail) {
-      moveCourse(course, semester, index)
+    drop (course: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }) {
+      moveCourse({ semester: course.semester, index: course.index }, { semester, index })
       return course
     },
     collect: monitor => ({
@@ -155,19 +156,21 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
 const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError }: CardProps): JSX.Element => {
   const authState = useAuth()
   const conditionPassed = authState?.passed?.[cardData.semester]?.find(o => o.code === cardData.code) !== undefined
+  const blockId = BlockInitials(courseBlock)
+  const editIcon = blockId === 'FG' ? editWhiteIcon : editBlackIcon
+
   // Turns out animations are a big source of lag
-  const allowAnimations = true && courseBlock !== 'FormacionGeneral'
-  const editIcon = courseBlock === 'FormacionGeneral' ? editWhiteIcon : editBlackIcon
+  const allowAnimations = true && blockId !== 'FG'
 
   return (
-    <div className={`card group ${courseBlock} ${cardData.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
+    <div className={`card group block-${blockId} ${cardData.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
       { hasEquivalence === true && (cardData.is_concrete === true
         ? <button onClick={() => openSelector()}><img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" /></button>
         : <img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" />
       )}
-      {courseBlock === ''
-        ? <>{conditionPassed ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>}</>
-        : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{BlockInitials(courseBlock)}</div>
+      {blockId === ''
+        ? <>{conditionPassed ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse(semester, index)}>x</button>}</>
+        : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{blockId}</div>
       }
       <div className='flex items-center justify-center text-center flex-col'>
         <div className='text-xs line-clamp-2'>{cardData.name}</div>

@@ -5,15 +5,24 @@ within a block and respecting exclusivity rules.
 
 from typing import Optional
 
-from ...course import ConcreteId, PseudoCourse
+from ...course import ConcreteId, EquivalenceId, PseudoCourse
 
 from ...courseinfo import CourseInfo
-from .tree import Leaf, Curriculum, Block
+from .tree import CourseRecommendation, Leaf, Curriculum, Block
 from dataclasses import dataclass, field
 
 
 # Print debug messages when solving a curriculum.
 DEBUG_SOLVE = False
+
+
+@dataclass
+class RecommendedCourse:
+    # The original `CourseRecommendation` that spawned this course.
+    rec: CourseRecommendation
+    # The repetition index.
+    # The recommendation repeat indices start after the taken indices.
+    repeat_index: int
 
 
 @dataclass
@@ -55,8 +64,9 @@ class Node:
     # Either:
     # - A curriculum `Block`
     # - A course, with a layer id `str` and course information.
+    #   This course may be either taken by the student or recommended.
     # - No origin (eg. the virtual sink node)
-    origin: Block | tuple[str, TakenCourse] | None = None
+    origin: Block | tuple[str, TakenCourse | RecommendedCourse] | None = None
     outgoing: list[Edge] = field(default_factory=list)
     incoming: list[Edge] = field(default_factory=list)
 
@@ -74,6 +84,17 @@ class Node:
         return c
 
 
+@dataclass
+class LayerCourses:
+    """
+    Stores the current course -> node id mappings.
+    """
+
+    # Contains an entry for each course code.
+    # The nested dictionary maps from repeat indices to vertex ids.
+    courses: dict[str, dict[int, int]]
+
+
 class SolvedCurriculum:
     # List of nodes.
     # The ID of each node is its index in this list.
@@ -87,7 +108,7 @@ class SolvedCurriculum:
     # The root curriculum.
     root: int
     # A dictionary from layer ids to a (list of node ids for each course).
-    courses: dict[str, list[Optional[int]]]
+    layers: dict[str, LayerCourses]
 
     def __init__(self):
         self.nodes = [Node(), Node()]
@@ -95,7 +116,7 @@ class SolvedCurriculum:
         self.source = 0
         self.sink = 1
         self.root = 1
-        self.courses = {}
+        self.layers = {}
 
     def add(self, node: Node) -> int:
         id = len(self.nodes)
@@ -118,19 +139,21 @@ class SolvedCurriculum:
         self.edges.append(edge_fw)
         self.edges.append(edge_rev)
 
-    def add_course(self, layer_id: str, taken: TakenCourses, c: TakenCourse) -> int:
-        layer: list[Optional[int]]
-        if layer_id in self.courses:
-            layer = self.courses[layer_id]
-        else:
-            layer = [None for _c in taken.flat]
-            self.courses[layer_id] = layer
-        id = layer[c.flat_index]
-        if id is not None:
-            return id
-        id = self.add(Node(origin=(layer_id, c)))
-        layer[c.flat_index] = id
-        self.connect(self.source, id, c.credits)
+    def add_course(
+        self,
+        layer_id: str,
+        code: str,
+        repeat_index: int,
+        credits: int,
+        origin: TakenCourse | RecommendedCourse,
+    ) -> int:
+        layer = self.layers.setdefault(layer_id, LayerCourses(courses={}))
+        ids = layer.courses.setdefault(code, {})
+        if repeat_index in ids:
+            return ids[repeat_index]
+        id = self.add(Node(origin=(layer_id, origin)))
+        ids[repeat_index] = id
+        self.connect(self.source, id, credits)
         return id
 
     def dump_graphviz(self, taken: list[list[PseudoCourse]]) -> str:  # noqa: C901
@@ -145,11 +168,14 @@ class SolvedCurriculum:
                 label = "Root"
             elif isinstance(node.origin, Block):
                 label = f"{node.origin.name or f'b{id}'}"
-                if len(node.origin.fill_with) > 0:
+                if isinstance(node.origin, Leaf) and node.origin.fill_with:
                     label += f"\n({len(node.origin.fill_with)} recommendations)"
             elif isinstance(node.origin, tuple):
                 layer, c = node.origin
-                label = taken[c.sem][c.index].code
+                if isinstance(c, TakenCourse):
+                    label = c.course.code
+                else:
+                    label = f"[{c.rec.course.code}]"
                 if layer != "":
                     label = f"{label}({layer})"
             else:
@@ -178,29 +204,53 @@ class SolvedCurriculum:
 
 
 def _connect_course(
+    courseinfo: CourseInfo,
     g: SolvedCurriculum,
     block: Leaf,
-    taken: TakenCourses,
-    c: TakenCourse,
     superid: int,
+    origin: TakenCourse | RecommendedCourse,
 ):
-    max_multiplicity = block.codes[c.course.code]
-    if max_multiplicity is not None and c.repeat_index >= max_multiplicity:
+    """
+    Create or look up the node corresponding to course `c` and connect it to the node
+    `superid`.
+    The caller must uphold that `superid` identifies the node corresponding to block
+    `block`, and that the code of `c` is in `block.codes`.
+    If the course `c` is repeated and the multiplicity of `block` does not allow it,
+    the course is not connected.
+    """
+    if isinstance(origin, TakenCourse):
+        course = origin.course
+    else:
+        course = origin.rec.course
+    repeat_index = origin.repeat_index
+    credits = courseinfo.get_credits(course)
+    if credits is None:
+        return
+    elif credits == 0:
+        credits = 1
+    max_multiplicity = block.codes[course.code]
+    if max_multiplicity is not None and repeat_index >= max_multiplicity:
         # Cannot connect to more than `max_multiplicity` courses at once
         return
-    subid = g.add_course(block.layer, taken, c)
+    subid = g.add_course(block.layer, course.code, repeat_index, credits, origin)
     cost = 2
     if (
-        isinstance(c, ConcreteId)
-        and c.equivalence is not None
-        and c.equivalence.code in block.codes
-    ):
+        isinstance(course, ConcreteId)
+        and course.equivalence is not None
+        and course.equivalence.code in block.codes
+    ) or isinstance(course, EquivalenceId):
         # Prefer equivalence edges over non-equivalence edges
+        # This makes sure that equivalences always count towards their corresponding
+        # blocks if there is the option
         cost = 1
-    g.connect(subid, superid, c.credits, cost)
+    if isinstance(origin, RecommendedCourse):
+        cost = 1000 + origin.rec.cost
+    g.connect(subid, superid, credits, cost)
 
 
-def _build_visit(g: SolvedCurriculum, taken: TakenCourses, block: Block) -> int:
+def _build_visit(
+    courseinfo: CourseInfo, g: SolvedCurriculum, taken: TakenCourses, block: Block
+) -> int:
     superid = g.add(Node(origin=block))
     if isinstance(block, Leaf):
         # A list of courses
@@ -217,17 +267,30 @@ def _build_visit(g: SolvedCurriculum, taken: TakenCourses, block: Block) -> int:
                     minitaken.extend(taken.mapped[code])
             minitaken.sort(key=lambda c: c.flat_index)
             for c in minitaken:
-                _connect_course(g, block, taken, c, superid)
+                _connect_course(courseinfo, g, block, superid, c)
         else:
             # There are way too many codes in this block
             # Iterate through taken courses instead
             for c in taken.flat:
                 if c.course.code in block.codes:
-                    _connect_course(g, block, taken, c, superid)
+                    _connect_course(courseinfo, g, block, superid, c)
+
+        # Iterate over the recommended courses for this block
+        recommend_index: dict[str, int] = {}
+        for rec in block.fill_with:
+            code = rec.course.code
+            if code not in recommend_index:
+                recommend_index[code] = (
+                    len(taken.mapped[code]) if code in taken.mapped else 0
+                )
+            repeat_index = recommend_index[code]
+            recommended = RecommendedCourse(rec=rec, repeat_index=repeat_index)
+            _connect_course(courseinfo, g, block, superid, recommended)
+            recommend_index[code] += 1
     else:
         # A combination of blocks
         for c in block.children:
-            subid = _build_visit(g, taken, c)
+            subid = _build_visit(courseinfo, g, taken, c)
             g.connect(subid, superid, c.cap)
     return superid
 
@@ -267,7 +330,7 @@ def _build_graph(
             taken.flat.append(c)
 
     g = SolvedCurriculum()
-    g.root = _build_visit(g, taken, curriculum.root)
+    g.root = _build_visit(courseinfo, g, taken, curriculum.root)
     g.connect(g.root, g.sink, curriculum.root.cap)
     return g
 
@@ -309,7 +372,7 @@ def _compute_shortest_path(
     return path
 
 
-def _solve_graph(g: SolvedCurriculum):
+def _max_flow_min_cost(g: SolvedCurriculum):
     # Iteratively improve flow
     while True:
         # Find shortest path from source to sink
@@ -336,7 +399,16 @@ def solve_curriculum(
     # Take the curriculum blueprint, and produce a graph for this student
     g = _build_graph(courseinfo, curriculum, taken)
     # Solve the flow problem on the produced graph
-    _solve_graph(g)
+    _max_flow_min_cost(g)
+    # Ensure that demand is satisfied
+    # Recommended courses should always fill in missing demand
+    # It's a bug if they cannot fill in the demand
+    if g.nodes[g.root].flow() < g.nodes[g.root].cap():
+        raise Exception(
+            "maximizing flow does not satisfy the root demand,"
+            + " even with filler recommendations"
+            + f":\n{g.dump_graphviz(taken)}"
+        )
     # Make sure that there is no split flow (ie. there is no course that splits its
     # outgoing flow between two blocks)
     # TODO: Do something about this edge case
@@ -351,6 +423,8 @@ def solve_curriculum(
                 nonzero += 1
         if nonzero > 1:
             raise Exception(
-                f"flow solution produced invalid split-flow: {g.dump_graphviz(taken)}"
+                "min cost max flow produced invalid split-flow"
+                + " (ie. there is some node with 2+ non-zero-flow outgoing edges)"
+                + f":\n{g.dump_graphviz(taken)}"
             )
     return g

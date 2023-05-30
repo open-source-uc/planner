@@ -21,6 +21,7 @@ from prisma.models import (
 )
 from ...plan.validation.curriculum.tree import (
     Combination,
+    CourseRecommendation,
     Curriculum,
     CurriculumSpec,
     Cyear,
@@ -63,21 +64,37 @@ def _semesters_elapsed(start: tuple[int, int], end: tuple[int, int]) -> int:
 async def _fetch_raw_blocks(
     courseinfo: CourseInfo, spec: CurriculumSpec
 ) -> list[BloqueMalla]:
-    """
-    NOTE: Blank major/minors raise an error.
-    """
+
+    # Use a dummy major and minor if they are not specified
+    # Later, remove this information
+    major = "M245" if spec.major is None else spec.major
+    minor = "N344" if spec.minor is None else spec.minor
 
     # Fetch raw curriculum blocks for the given cyear-major-minor-title combination
-    if spec.major is None or spec.minor is None:
-        raise Exception("blank major/minor is not supported")
     raw_blocks = await client.get_curriculum_for_spec(
         PlanEstudios(
             CodCurriculum=str(spec.cyear),
-            CodMajor=spec.major,
-            CodMinor=spec.minor,
+            CodMajor=major,
+            CodMinor=minor,
             CodTitulo=spec.title or "",
         )
     )
+
+    # Remove data if a dummy major/minor was used
+    if spec.major is None:
+        raw_blocks = list(
+            filter(
+                lambda raw_block: not raw_block.BloqueAcademico.startswith("Major"),
+                raw_blocks,
+            )
+        )
+    if spec.minor is None:
+        raw_blocks = list(
+            filter(
+                lambda raw_block: not raw_block.BloqueAcademico.startswith("Minor"),
+                raw_blocks,
+            )
+        )
 
     # Fetch data for unseen equivalences
     for raw_block in raw_blocks:
@@ -127,8 +144,6 @@ def _patch_capacities(block: Block):
 async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curriculum:
     """
     Call into the SIDING webservice and get the curriculum definition for a given spec.
-
-    NOTE: Blank major/minors raise an error.
     """
 
     print(f"fetching curriculum from siding for spec {spec}")
@@ -167,7 +182,7 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
         codes_dict[code] = None
         for code in codes:
             codes_dict[code] = 1
-        recommended_priority = raw_block.SemestreBloque * 10 + raw_block.OrdenSemestre
+        recommended_order = raw_block.SemestreBloque * 10 + raw_block.OrdenSemestre
         superblock = superblocks.setdefault(raw_block.BloqueAcademico, [])
         superblock.append(
             Leaf(
@@ -175,10 +190,7 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
                 cap=creds,
                 codes=codes_dict,
                 fill_with=[
-                    (
-                        recommended_priority,
-                        recommended,
-                    )
+                    CourseRecommendation(course=recommended, order=recommended_order)
                 ],
             )
         )
@@ -206,12 +218,6 @@ async def load_siding_offer_to_database():
     """
 
     print("loading major/minor/title offer to database...")
-
-    print("  clearing previous data")
-    await DbMajor.prisma().delete_many()
-    await DbMinor.prisma().delete_many()
-    await DbTitle.prisma().delete_many()
-    await DbMajorMinor.prisma().delete_many()
 
     print("  loading majors")
     p_majors, p_minors, p_titles = (

@@ -6,6 +6,7 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
+export type { AccessLevelOverview } from './models/AccessLevelOverview';
 export { And } from './models/And';
 export type { ClassId } from './models/ClassId';
 export type { ConcreteId } from './models/ConcreteId';

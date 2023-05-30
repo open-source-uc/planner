@@ -1,6 +1,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { AccessLevelOverview } from '../models/AccessLevelOverview';
 import type { CourseDetails } from '../models/CourseDetails';
 import type { CourseFilter } from '../models/CourseFilter';
 import type { CourseOverview } from '../models/CourseOverview';
@@ -71,7 +72,7 @@ export class DefaultService {
 
     /**
      * Check Auth
-     * Request succeeds if authentication was successful.
+     * Request succeeds if user authentication was successful.
      * Otherwise, the request fails with 401 Unauthorized.
      * @returns any Successful Response
      * @throws ApiError
@@ -80,6 +81,94 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/auth/check',
+        });
+    }
+
+    /**
+     * Check Mod
+     * Request succeeds if user authentication and mod authorization were successful.
+     * Otherwise, the request fails with 401 Unauthorized or 403 Forbidden.
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static checkMod(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/auth/check/mod',
+        });
+    }
+
+    /**
+     * Check Admin
+     * Request succeeds if user authentication and admin authorization were successful.
+     * Otherwise, the request fails with 401 Unauthorized or 403 Forbidden.
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static checkAdmin(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/auth/check/admin',
+        });
+    }
+
+    /**
+     * View Mods
+     * Show a list of all current mods with username and RUT. Up to 50 records.
+     * @returns AccessLevelOverview Successful Response
+     * @throws ApiError
+     */
+    public static viewMods(): CancelablePromise<Array<AccessLevelOverview>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/auth/mod',
+        });
+    }
+
+    /**
+     * Add Mod
+     * Give mod access to a user with the specified RUT.
+     * @param rut
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static addMod(
+        rut: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/auth/mod',
+            query: {
+                'rut': rut,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Remove Mod
+     * Remove mod access from a user with the specified RUT.
+     *
+     * TODO: add JWT tracking system for mods to be able to instantly revoke unexpired
+     * token access after permission removal.
+     * @param rut
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static removeMod(
+        rut: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/auth/mod',
+            query: {
+                'rut': rut,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
         });
     }
 
@@ -99,15 +188,27 @@ export class DefaultService {
     }
 
     /**
-     * Sync Courses
+     * Sync Database
      * Initiate a synchronization of the internal database from external sources.
+     * @param courses
+     * @param offer
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static syncCourses(): CancelablePromise<any> {
+    public static syncDatabase(
+        courses: boolean = false,
+        offer: boolean = false,
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/sync',
+            query: {
+                'courses': courses,
+                'offer': offer,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
         });
     }
 

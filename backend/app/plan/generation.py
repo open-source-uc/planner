@@ -1,5 +1,9 @@
 from typing import Literal, Optional
-from .validation.curriculum.solve import SolvedCurriculum, solve_curriculum
+from .validation.curriculum.solve import (
+    RecommendedCourse,
+    SolvedCurriculum,
+    solve_curriculum,
+)
 
 from fastapi import HTTPException
 from ..user.auth import UserKey
@@ -7,7 +11,6 @@ from ..sync import get_curriculum
 from .validation.courses.logic import And, Expr, Or, ReqCourse
 from .validation.curriculum.tree import (
     LATEST_CYEAR,
-    Block,
     Curriculum,
     CurriculumSpec,
     Cyear,
@@ -22,12 +25,14 @@ from .courseinfo import CourseInfo, course_info
 from .validation.validate import quick_validate_dependencies
 from .. import sync
 
-MAX_CREDITS_PER_SEMESTER = 50
+RECOMMENDED_CREDITS_PER_SEMESTER = 50
 
 
 def _extract_recommendations(
     courseinfo: CourseInfo,
-    to_pass: list[tuple[int, PseudoCourse]],
+    seen: set[int],
+    added: dict[str, set[int]],
+    to_pass: list[tuple[RecommendedCourse, int]],
     g: SolvedCurriculum,
     id: int,
 ):
@@ -36,37 +41,27 @@ def _extract_recommendations(
     If missing credits are found, `to_pass` is filled with the corresponding
     recommended courses in the `fill_with` fields.
     """
-    node = g.nodes[id]
-    missing = node.cap() - node.flow()
-    if missing <= 0:
+    if id in seen:
         return
-    if isinstance(node.origin, Block):
-        for priority, course in node.origin.fill_with:
-            # Get the amount of credits for this pseudocourse
-            creds = courseinfo.get_credits(course)
-            if creds is None:
-                continue
-            if creds == 0:
-                creds = 1
-            # Limit credits if `course` is an equivalence
-            if creds > missing and isinstance(course, EquivalenceId):
-                course = EquivalenceId(code=course.code, credits=missing)
-                creds = missing
-            # Add this course to the courses to pass, and reduce the missing credits
-            to_pass.append((priority, course))
-            missing -= creds
-            if missing <= 0:
-                break
-        if len(node.origin.fill_with) > 0:
-            # Stop the search at the first nonempty `fill_with`
-            # Remember that every path from root to leaf should have at most 1 node
-            # with courses in `fill_with`
-            return
+    seen.add(id)
+
+    node = g.nodes[id]
+    flow = node.flow()
+    if flow <= 0:
+        return
+    # If this course is a recommendation node, extract it
+    if isinstance(node.origin, tuple):
+        _layer, rec = node.origin
+        if isinstance(rec, RecommendedCourse):
+            added_indices = added.setdefault(rec.rec.course.code, set())
+            if rec.repeat_index not in added_indices:
+                to_pass.append((rec, flow))
+                added_indices.add(rec.repeat_index)
     # Recursively extract recommendations from child nodes
     for edge in node.incoming:
         if edge.cap == 0:
             continue
-        _extract_recommendations(courseinfo, to_pass, g, edge.src)
+        _extract_recommendations(courseinfo, seen, added, to_pass, g, edge.src)
 
 
 def _compute_courses_to_pass(
@@ -82,17 +77,23 @@ def _compute_courses_to_pass(
     # Determine which curriculum blocks have not been passed yet
     g = solve_curriculum(courseinfo, curriculum, passed_classes)
 
-    # A list of courses associated to a priority
-    # The priority indicates if the course should be taken early or late in the
-    # student's career plan
-    to_pass: list[tuple[int, PseudoCourse]] = []
-    _extract_recommendations(courseinfo, to_pass, g, g.root)
+    # Extract recommended courses from solved plan
+    to_pass: list[tuple[RecommendedCourse, int]] = []
+    _extract_recommendations(courseinfo, set(), {}, to_pass, g, g.root)
 
     # Order recommendations by priority, from soonest to latest
-    to_pass.sort(key=lambda priority_course: priority_course[0])
+    to_pass.sort(key=lambda rec: rec[0].rec.order)
 
-    # Remove priority information, since it is redundant with the order of the list
-    return list(map(lambda priority_course: priority_course[1], to_pass))
+    # Transform recommendations into flat pseudocourse ids
+    courses_to_pass: list[PseudoCourse] = []
+    for rec, credits in to_pass:
+        if isinstance(rec.rec.course, EquivalenceId):
+            courses_to_pass.append(
+                EquivalenceId(code=rec.rec.course.code, credits=credits)
+            )
+        else:
+            courses_to_pass.append(rec.rec.course)
+    return courses_to_pass
 
 
 def _find_corequirements(out: list[str], expr: Expr):
@@ -197,7 +198,7 @@ def _try_add_course_group(
     group_credits = sum(map(lambda c: _get_credits(courseinfo, c), course_group))
 
     # Bail if there is not enough space in this semester
-    if current_credits + group_credits > MAX_CREDITS_PER_SEMESTER:
+    if current_credits + group_credits > RECOMMENDED_CREDITS_PER_SEMESTER:
         return "credits"
 
     # Temporarily add to plan
@@ -340,6 +341,10 @@ async def generate_recommended_plan(passed: ValidatablePlan):
 
         # Stuck! :(
         break
+
+    # Remove empty semesters at the end (if any)
+    while plan.classes and not plan.classes[-1]:
+        plan.classes.pop()
 
     if courses_to_pass:
         print(f"WARNING: could not add courses {courses_to_pass}")

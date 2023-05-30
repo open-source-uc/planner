@@ -7,21 +7,26 @@ from pydantic import BaseModel
 from typing import Literal, Optional, Union
 
 
+class CourseRecommendation(BaseModel):
+    # The code of the recommended course or equivalency.
+    course: PseudoCourse
+    # Where to place this recommendation relative to other recommendations.
+    # The order indicates if the course should be taken early or late in the
+    # student's career plan.
+    order: int
+    # When there is an option on which courses to recommend, this cost determines which
+    # course is recommended.
+    # This cost is added with a big number to determine the actual cost of recommending
+    # this course.
+    cost: int = 0
+
+
 class BaseBlock(BaseModel):
     # The name of this block.
     # If this block is missing credits, this name will be used to report.
     name: Optional[str] = None
     # What is the maximum amount of credits that this node can support.
     cap: int
-    # If missing credits for this block, fill with the given courses.
-    # Contains a priority (lower is sooner) and a course.
-    # Courses should be sorted from latest to soonest (from high priority number to low
-    # priority number).
-    #
-    # NOTE: There should be exactly 1 node with a `fill_with` attribute in every path
-    # from root to leaf.
-    # If this is not respected, some arbitrary node in the path will be chosen.
-    fill_with: list[tuple[int, PseudoCourse]] = []
 
 
 class Combination(BaseBlock):
@@ -36,6 +41,11 @@ class Leaf(BaseBlock):
     # In most cases this should be `1`, but for example equivalences should count
     # unlimited times (`None`), and selecciones deportivas can count twice.
     codes: dict[str, Optional[int]]
+    # Indicates courses which will be used to fill the credits for this block if it
+    # can't be done with taken courses.
+    # If there are more recommended courses than missing credits, the list is truncated.
+    # Therefore, prefer to place courses with a high `order` number first.
+    fill_with: list[CourseRecommendation] = []
     # Course nodes are deduplicated by their codes.
     # However, this behavior can be controlled by the `layer` property.
     # Course nodes with different `layer` values will not be deduplicated.

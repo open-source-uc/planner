@@ -16,19 +16,46 @@ from ..plan.courseinfo import clear_course_info_cache, course_info
 from . import buscacursos_dl
 from prisma.models import (
     Curriculum as DbCurriculum,
+    Major as DbMajor,
+    Minor as DbMinor,
+    Title as DbTitle,
+    MajorMinor as DbMajorMinor,
+    EquivalenceCourse as DbEquivalenceCourse,
+    Course as DbCourse,
+    Equivalence as DbEquivalence,
 )
 
 
-async def run_upstream_sync():
+async def clear_upstream_data(courses: bool = True, offer: bool = True):
+    print("  clearing upstream data from database")
+    await DbEquivalenceCourse.prisma().delete_many()
+    await DbEquivalence.prisma().delete_many()
+    if courses:
+        await DbCourse.prisma().delete_many()
+
+    if offer:
+        await DbMajor.prisma().delete_many()
+        await DbMinor.prisma().delete_many()
+        await DbTitle.prisma().delete_many()
+        await DbMajorMinor.prisma().delete_many()
+
+    await DbCurriculum.prisma().delete_many()
+
+
+async def run_upstream_sync(courses: bool = True, offer: bool = True):
     """
     Populate database with "official" data.
     """
     print("syncing database with external sources...")
-    # Get course data from "official" source
-    # Currently we have no official source
-    await buscacursos_dl.fetch_to_database()
+    # Remove previous data
+    await clear_upstream_data(courses, offer)
+    if courses:
+        # Get course data from "official" source
+        # Currently we have no official source
+        await buscacursos_dl.fetch_to_database()
     # Fetch major, minor and title offer to database
-    await siding_translate.load_siding_offer_to_database()
+    if offer:
+        await siding_translate.load_siding_offer_to_database()
     # Recache course info
     await clear_course_info_cache()
     await course_info()
@@ -43,10 +70,6 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
     returned.
     Currently, these have to be requested from SIDING, so some caching is performed.
     """
-
-    # The underlying SIDING webservice does not support empty major/minor selections
-    if spec.major is None or spec.minor is None:
-        return Curriculum.empty()
 
     db_curr = await DbCurriculum.prisma().find_unique(
         where={

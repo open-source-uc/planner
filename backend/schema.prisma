@@ -9,6 +9,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Indicates the access level for a given RUT. In particular, it
+// assignes a user a mod level by their RUT.
+// If needed, this model can be updated to additionally hold
+// information about the admin level.
+model AccessLevel {
+  user_rut   String   @id
+  is_mod     Boolean
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
 // Cached course info.
 model CachedCourseInfo {
   id   String @id
@@ -21,6 +32,8 @@ model CachedCourseInfo {
 model Course {
   code                String              @id
   name                String
+  // A name normalized to lowercase english letters and spaces only
+  searchable_name     String
   credits             Int
   deps                Json
   program             String
@@ -54,6 +67,7 @@ model Equivalence {
 
 // A relationship between an equivalence and a course.
 model EquivalenceCourse {
+  index       Int
   equiv       Equivalence @relation(fields: [equiv_code], references: [code])
   equiv_code  String
   course      Course      @relation(fields: [course_code], references: [code])

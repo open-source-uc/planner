@@ -109,7 +109,7 @@ const Planner = (): JSX.Element => {
         return semester.map((course, j) => {
           const { code, instance } = planDigest.indexToId[i][j]
           const rawSuperblock = validationResult?.course_superblocks?.[code]?.[instance] ?? null
-          const superblock = rawSuperblock === null ? '' : rawSuperblock.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(' ', '').split(' ')[0]
+          const superblock = rawSuperblock === null ? '' : rawSuperblock.normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(' ')[0]
           return {
             superblock,
             errorIndices: [],
@@ -324,30 +324,29 @@ const Planner = (): JSX.Element => {
     })
   }, []) // remCourse should not depend on `validatablePlan`, so that memoing does its work
 
-  const moveCourse = useCallback((drag: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }, semester: number, index: number): void => {
+  const moveCourse = useCallback((drag: { semester: number, index: number }, drop: { semester: number, index: number }): void => {
     // move course from drag.semester, drag.index to semester, index
     setValidatablePlan(prev => {
       if (prev === null) return prev
-      if (drag.is_concrete === true && semester !== drag.semester && semester < prev.classes.length && prev.classes[semester].map(course => course.code).includes(drag.code)) {
+      const dragCourse = prev.classes[drag.semester][drag.index]
+      if (dragCourse.is_concrete === true && drop.semester !== drag.semester && prev.classes[drop.semester].map(course => course.code).includes(dragCourse.code)) {
         toast.error('No se puede tener dos ramos iguales en un mismo semestre')
         return prev
       }
-      const newClassesGrid = [...prev.classes]
-      while (semester >= newClassesGrid.length) {
-        newClassesGrid.push([])
+      const newClasses = [...prev.classes]
+      while (drop.semester >= newClasses.length) {
+        newClasses.push([])
       }
-      newClassesGrid[semester] = [...newClassesGrid[semester]]
-      newClassesGrid[drag.semester] = [...newClassesGrid[drag.semester]]
-      newClassesGrid[semester].splice(index, 0, newClassesGrid[drag.semester][drag.index])
-      if (semester === drag.semester && index < drag.index) {
-        newClassesGrid[drag.semester].splice(drag.index + 1, 1)
+      newClasses[drop.semester].splice(drop.index, 0, newClasses[drag.semester][drag.index])
+      if (drop.semester === drag.semester && drop.index < drag.index) {
+        newClasses[drag.semester].splice(drag.index + 1, 1)
       } else {
-        newClassesGrid[drag.semester].splice(drag.index, 1)
+        newClasses[drag.semester].splice(drag.index, 1)
       }
-      while (newClassesGrid[newClassesGrid.length - 1].length === 0) {
-        newClassesGrid.pop()
+      while (newClasses[newClasses.length - 1].length === 0) {
+        newClasses.pop()
       }
-      return { ...prev, classes: newClassesGrid }
+      return { ...prev, classe: newClasses }
     })
   }, []) // moveCourse should not depend on `validatablePlan`, so that memoing does its work
 
