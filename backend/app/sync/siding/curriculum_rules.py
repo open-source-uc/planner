@@ -10,6 +10,9 @@ Cuando aparezca una nueva version del curriculum con reglas especificas, este co
 el que habra que tocar.
 """
 
+from typing import Optional
+
+from ...plan.course import EquivalenceId
 from ...plan.validation.curriculum.tree import (
     Block,
     Combination,
@@ -18,7 +21,7 @@ from ...plan.validation.curriculum.tree import (
     CurriculumSpec,
     Leaf,
 )
-from ...plan.courseinfo import CourseInfo
+from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
 
 
 def _skip_extras(curriculum: Curriculum):
@@ -152,17 +155,124 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                         unlimited[code] = mult
                 # Separar el bloque en 2
                 limited_block = Leaf(cap=10, codes=limited)
-                unlimited_block = Leaf(cap=block.cap, codes=unlimited)
+                unlimited_block = Leaf(
+                    cap=block.cap, codes=unlimited, fill_with=block.fill_with
+                )
                 block = Combination(
                     name=block.name,
                     cap=block.cap,
-                    fill_with=block.fill_with,
                     children=[
                         limited_block,
                         unlimited_block,
                     ],
                 )
                 superblock.children[block_i] = block
+
+
+async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
+    """
+    Aplicar la "transformacion de titulo".
+    Es decir, duplicar el titulo como dos bloques:
+    - Uno de ellos baja el requisito de creditos a 130 y agrega OPIs, pero comparte los
+        ramos con los otros bloques de la malla (llamemoslo "exclusive").
+    - Otro mantiene el requisito de creditos, pero permite que los cursos cuenten para
+        el titulo y otro bloque simultaneamente (llamemoslo "exhaustive").
+    """
+
+    opi_code = "#OPI"
+    opi_name = "Optativos de Ingeniería (OPI)"
+    title_exclusive_creds = 130
+
+    # Encontrar el bloque de titulo
+    title_index = None
+    for i, block in enumerate(curriculum.root.children):
+        if block.name is not None and (
+            "Titulo" in block.name or "Título" in block.name
+        ):
+            title_index = i
+            break
+    if title_index is None:
+        return
+
+    # Duplicar el bloque
+    exhaustive = curriculum.root.children[title_index]
+    if not isinstance(exhaustive, Combination):
+        return
+    exclusive = exhaustive.copy(deep=True)
+    curriculum.root.children.insert(title_index + 1, exclusive)
+
+    # Mover el bloque exhaustivo a una capa paralela, para permitir que comparta ramos
+    # con otros bloques
+    def set_layer(block: Block):
+        if isinstance(block, Leaf):
+            block.layer = "title"
+        else:
+            for subblock in block.children:
+                set_layer(subblock)
+
+    set_layer(exhaustive)
+
+    # Recolectar los OPIs y armar una equivalencia ficticia
+    opi_equiv = courseinfo.try_equiv(opi_code)
+    if opi_equiv is None:
+        opis: list[str] = []
+        for code, course in courseinfo.courses.items():
+            if course.school != "Ingenieria" and course.school != "Ingeniería":
+                continue
+            # TODO: Cuales son "los cursos realizados en intercambio académico oficial
+            # de la Universidad"?
+            # Se supone que estos tambien cuentan para el titulo
+            # TODO: Cual es la definicion exacta de un curso IPre?
+            # En particular, el curso "Cmd Investigación o Proyecto Interdisciplinario"
+            # cuenta como IPre?
+            if (
+                (len(code) >= 6 and code[3] == "3")
+                or course.name == "Investigacion o Proyecto"
+                or course.name == "Investigación o Proyecto"
+            ):
+                opis.append(code)
+        opi_equiv = EquivDetails(
+            code=opi_code,
+            name=opi_name,
+            is_homogeneous=False,
+            courses=opis,
+        )
+        await add_equivalence(opi_equiv)
+
+    # Meter los codigos en un diccionario
+    opi_dict: dict[str, Optional[int]] = {opi_code: None}
+    ipre_dict: dict[str, Optional[int]] = {}
+    for code in opi_equiv.courses:
+        info = courseinfo.try_course(code)
+        if info is None:
+            continue
+        if (
+            info.name == "Investigacion o Proyecto"
+            or info.name == "Investigación o Proyecto"
+        ):
+            ipre_dict[code] = 1
+        else:
+            opi_dict[code] = 1
+
+    # Agregar OPIs y reducir el limite de creditos al exclusivo
+    fill_with: list[CourseRecommendation] = [
+        CourseRecommendation(
+            course=EquivalenceId(code=opi_code, credits=10), order=1000, cost=1
+        )
+        for _i in range((title_exclusive_creds + 9) // 10)
+    ]
+    exclusive.children.append(
+        Combination(
+            name=opi_name,
+            cap=title_exclusive_creds,
+            children=[
+                Leaf(cap=title_exclusive_creds, codes=opi_dict, fill_with=fill_with),
+                Leaf(cap=20, codes=ipre_dict),
+            ],
+        )
+    )
+    exclusive.cap = title_exclusive_creds
+    exclusive.name = f"{exclusive.name} (130 créditos exclusivos)"
 
 
 async def apply_curriculum_rules(
@@ -177,6 +287,7 @@ async def apply_curriculum_rules(
             _merge_ofgs(curriculum)
             _allow_selection_duplication(courseinfo, curriculum)
             _limit_ofg10(courseinfo, curriculum)
+            await _title_transformation(courseinfo, curriculum)
             # TODO: Agregar optativo de ciencias
             #   Se pueden tomar hasta 10 creditos de optativo de ciencias, que es una
             #   lista separada que al parecer solo esta disponible en forma textual.

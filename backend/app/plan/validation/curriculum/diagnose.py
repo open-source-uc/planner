@@ -1,4 +1,4 @@
-from .solve import SolvedCurriculum, solve_curriculum
+from .solve import SolvedCurriculum, TakenCourse, solve_curriculum
 from ...plan import ValidatablePlan
 from ..diagnostic import DiagnosticErr, DiagnosticWarn, ValidationResult
 from .tree import Block, Curriculum
@@ -66,7 +66,7 @@ def _tag_superblock(
     node = g.nodes[id]
     if isinstance(node.origin, tuple):
         layer, c = node.origin
-        if layer == "":
+        if layer == "" and isinstance(c, TakenCourse):
             list_of_sb = out.course_superblocks.setdefault(c.course.code, [])
             while c.repeat_index >= len(list_of_sb):
                 list_of_sb.append(None)

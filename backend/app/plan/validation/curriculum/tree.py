@@ -27,11 +27,6 @@ class BaseBlock(BaseModel):
     name: Optional[str] = None
     # What is the maximum amount of credits that this node can support.
     cap: int
-    # Indicates courses which will be used to fill the credits for this block if it
-    # can't be done with taken courses.
-    # If there are more recommended courses than missing credits, the list is truncated.
-    # Therefore, prefer to place courses with a high `order` number first.
-    fill_with: list[CourseRecommendation] = []
 
 
 class Combination(BaseBlock):
@@ -46,6 +41,11 @@ class Leaf(BaseBlock):
     # In most cases this should be `1`, but for example equivalences should count
     # unlimited times (`None`), and selecciones deportivas can count twice.
     codes: dict[str, Optional[int]]
+    # Indicates courses which will be used to fill the credits for this block if it
+    # can't be done with taken courses.
+    # If there are more recommended courses than missing credits, the list is truncated.
+    # Therefore, prefer to place courses with a high `order` number first.
+    fill_with: list[CourseRecommendation] = []
     # Course nodes are deduplicated by their codes.
     # However, this behavior can be controlled by the `layer` property.
     # Course nodes with different `layer` values will not be deduplicated.

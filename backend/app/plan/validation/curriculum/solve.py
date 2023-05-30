@@ -168,7 +168,7 @@ class SolvedCurriculum:
                 label = "Root"
             elif isinstance(node.origin, Block):
                 label = f"{node.origin.name or f'b{id}'}"
-                if len(node.origin.fill_with) > 0:
+                if isinstance(node.origin, Leaf) and node.origin.fill_with:
                     label += f"\n({len(node.origin.fill_with)} recommendations)"
             elif isinstance(node.origin, tuple):
                 layer, c = node.origin
@@ -372,7 +372,7 @@ def _compute_shortest_path(
     return path
 
 
-def _solve_graph(g: SolvedCurriculum):
+def _max_flow_min_cost(g: SolvedCurriculum):
     # Iteratively improve flow
     while True:
         # Find shortest path from source to sink
@@ -399,7 +399,16 @@ def solve_curriculum(
     # Take the curriculum blueprint, and produce a graph for this student
     g = _build_graph(courseinfo, curriculum, taken)
     # Solve the flow problem on the produced graph
-    _solve_graph(g)
+    _max_flow_min_cost(g)
+    # Ensure that demand is satisfied
+    # Recommended courses should always fill in missing demand
+    # It's a bug if they cannot fill in the demand
+    if g.nodes[g.root].flow() < g.nodes[g.root].cap():
+        raise Exception(
+            "maximizing flow does not satisfy the root demand,"
+            + " even with filler recommendations"
+            + f":\n{g.dump_graphviz(taken)}"
+        )
     # Make sure that there is no split flow (ie. there is no course that splits its
     # outgoing flow between two blocks)
     # TODO: Do something about this edge case
@@ -414,6 +423,8 @@ def solve_curriculum(
                 nonzero += 1
         if nonzero > 1:
             raise Exception(
-                f"flow solution produced invalid split-flow: {g.dump_graphviz(taken)}"
+                "min cost max flow produced invalid split-flow"
+                + " (ie. there is some node with 2+ non-zero-flow outgoing edges)"
+                + f":\n{g.dump_graphviz(taken)}"
             )
     return g
