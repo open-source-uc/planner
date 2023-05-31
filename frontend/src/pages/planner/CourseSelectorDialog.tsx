@@ -2,6 +2,7 @@ import { useState, useEffect, Fragment } from 'react'
 import { Dialog, Transition, Switch } from '@headlessui/react'
 import { DefaultService, EquivDetails, CourseOverview, CourseDetails, CancelablePromise } from '../../client'
 import { Spinner } from '../../components/Spinner'
+import { Info } from '../../components/Info'
 
 // TODO: fetch school list from backend
 // Existen escuelas en buscacursos que no tienen cursos: 'Acad Inter de Filosofía'
@@ -50,7 +51,6 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       setPromiseInstance(null)
       setLoadingCoursesData(false)
     }
-    setFilteredCodes([])
   }
 
   async function getCourseDetails (coursesCodes: string[]): Promise<void> {
@@ -72,20 +72,20 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
 
   async function handleSearch (filterProp: Filter): Promise<void> {
     setLoadingCoursesData(true)
-    const crd = filter.credits === '' ? undefined : parseInt(filter.credits)
-    const onlyAvaible = filter.available ? filter.available : undefined
+    const crd = filterProp.credits === '' ? undefined : parseInt(filterProp.credits)
+    const onlyAvaible = filterProp.available ? filterProp.available : undefined
     if (promiseInstance != null) {
       promiseInstance.cancel()
       setPromiseInstance(null)
     }
     if (equivalence === undefined) {
       const promise = DefaultService.searchCourseDetails({
-        text: filter.name,
+        text: filterProp.name,
         credits: crd,
-        school: filter.school,
+        school: filterProp.school,
         available: onlyAvaible,
-        first_semester: semestreApiOptions[filter.on_semester][0],
-        second_semester: semestreApiOptions[filter.on_semester][1]
+        first_semester: semestreApiOptions[filterProp.on_semester][0],
+        second_semester: semestreApiOptions[filterProp.on_semester][1]
       })
       setPromiseInstance(promise)
       const response = await promise
@@ -102,12 +102,12 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       setLoadingCoursesData(false)
     } else {
       const promise = DefaultService.searchCourseCodes({
-        text: filter.name,
+        text: filterProp.name,
         credits: crd,
-        school: filter.school,
+        school: filterProp.school,
         available: onlyAvaible,
-        first_semester: semestreApiOptions[filter.on_semester][0],
-        second_semester: semestreApiOptions[filter.on_semester][1],
+        first_semester: semestreApiOptions[filterProp.on_semester][0],
+        second_semester: semestreApiOptions[filterProp.on_semester][1],
         equiv: equivalence.code
       })
       setPromiseInstance(promise)
@@ -171,6 +171,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   useEffect(() => {
     if (!open) {
       void resetFilters()
+      setFilteredCodes([])
       setLoadedCourses({})
     } else if (equivalence !== undefined) {
       void handleSearch(filter)
@@ -203,35 +204,31 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
             <Dialog.Panel className="w-11/12 px-5 py-6 bg-slate-100 border-slate-300 overflow-hidden max-w-4xl transform  rounded-2xl border-2 text-left align-middle shadow-xl transition-all">
-              <div className="flex justify-between items-center mb-3">
                 <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900  mb-3">
                   {equivalence !== undefined ? equivalence.name : 'Curso Extra'}
                 </Dialog.Title>
-                  {equivalence !== undefined && equivalence.courses.length < 30 &&
-                    <div>
-                      <label className="my-auto" htmlFor="availableFilter">Filtrar ramos no habiles: </label>
-                      <Switch
-                        checked={filter.available}
-                        onChange={(e: boolean) => {
-                          setFilter((prev) => { return { ...prev, available: e } })
-                          void handleSearch({ ...filter, available: e })
-                        }}
-                        id="availableFilter"
+                  {equivalence !== undefined && equivalence.courses.length < 10 &&
+                  <div className="my-auto inline-flex mb-3">
+                    <label className="my-auto mr-2" htmlFor="availableFilter">Filtrar ramos no habiles: </label>
+                    <Switch
+                      checked={filter.available}
+                      onChange={(e: boolean) => setFilter({ ...filter, available: e })}
+                      id="availableFilter"
+                      className={`${
+                        filter.available ? 'darkBlue' : 'bg-gray-200'
+                      } mr-2 relative inline-flex h-6 w-11 items-center rounded-full`}
+                    >
+                      <span className="sr-only">Filtrar cursos no habiles</span>
+                      <span
                         className={`${
-                          filter.available ? 'darkBlue' : 'bg-gray-200'
-                        } relative inline-flex h-6 w-11 items-center rounded-full`}
-                      >
-                        <span className="sr-only">Filtrar cursos no habiles</span>
-                        <span
-                          className={`${
-                            filter.available ? 'translate-x-6' : 'translate-x-1'
-                          } inline-block h-4 w-4 transform rounded-full bg-white transition`}
-                        />
-                      </Switch>
-                    </div>
+                          filter.available ? 'translate-x-6' : 'translate-x-1'
+                        } inline-block h-4 w-4 transform rounded-full bg-white transition`}
+                      />
+                    </Switch>
+                    <Info message="Un curso no habilitado es aquel que no se ha dictado recientemente, generalmente porque ya no se ofrece o porque es nuevo y aún no se ha impartido."/>
+                  </div>
                   }
-                </div>
-                {(equivalence === undefined || equivalence.courses.length >= 30) &&
+                {(equivalence === undefined || equivalence.courses.length >= 10) &&
                   <div className="grid border-2 p-4 py-3 rounded bg-slate-100 border-slate-500 border-solid gap-2 grid-cols-12">
                     <div className="col-span-9 flex">
                       <label className="mr-3 my-auto" htmlFor="nameFilter">Nombre o Sigla: </label>
@@ -269,15 +266,15 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                       </select>
                     </div>
 
-                    <div className="my-auto col-span-5">
-                      <label className="my-auto" htmlFor="availableFilter">Filtrar ramos no habiles: </label>
+                    <div className="my-auto col-span-5 inline-flex">
+                      <label className="my-auto mr-2" htmlFor="availableFilter">Filtrar ramos no habiles: </label>
                       <Switch
                         checked={filter.available}
                         onChange={(e: boolean) => setFilter({ ...filter, available: e })}
                         id="availableFilter"
                         className={`${
                           filter.available ? 'darkBlue' : 'bg-gray-200'
-                        } relative inline-flex h-6 w-11 items-center rounded-full`}
+                        } mr-2 relative inline-flex h-6 w-11 items-center rounded-full`}
                       >
                         <span className="sr-only">Filtrar cursos no habiles</span>
                         <span
@@ -286,6 +283,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                           } inline-block h-4 w-4 transform rounded-full bg-white transition`}
                         />
                       </Switch>
+                      <Info message="Un curso no habilitado es aquel que no se ha dictado recientemente, generalmente porque ya no se ofrece o porque es nuevo y aún no se ha impartido."/>
                     </div>
                     <div className='flex justify-end col-span-4 col-end-13'>
                       <button
@@ -293,7 +291,13 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                         onClick={() => {
                           resetFilters()
                           if (equivalence !== undefined) {
-                            void handleSearch(filter)
+                            void handleSearch({
+                              name: '',
+                              credits: '',
+                              school: '',
+                              available: true,
+                              on_semester: 0
+                            })
                           }
                         }}>
                           Limpiar Filtros
@@ -345,10 +349,29 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                   ))}
                  </tbody>
               </table>
-              <div className='right-0'>{Object.keys(loadedCourses).filter(key => filteredCodes.includes(key)).length} - {filteredCodes.length}{equivalence === undefined && filteredCodes.length === 50 && '+'}</div>
-              <div className='float-right mx-2 '>
-                <button className="btn mr-2" onClick={() => onClose()}>Cancelar</button>
-                <button className="btn " onClick={() => onClose(selectedCourse)}>Guardar</button>
+              <div className='right-0'>
+                {Object.keys(loadedCourses).filter(key => filteredCodes.includes(key)).length} - {filteredCodes.length}{equivalence === undefined && filteredCodes.length === 50 && '+'}
+                <div className='float-right mx-2 inline-flex'>
+                  <button className="btn mr-2" onClick={() => onClose()}>Cancelar</button>
+                  <div className="group relative flex justify-center">
+                    <button
+                      className={`btn ${selectedCourse === undefined ? 'cursor-not-allowed opacity-80' : ''}`}
+                      onClick={() => onClose(selectedCourse)}
+                      disabled={selectedCourse === undefined}
+                    >
+                      Guardar
+                    </button>
+                    {selectedCourse === undefined &&
+                    <span className={'absolute left-10 -top-5 z-10 transition-all scale-0 group-hover:scale-100'}>
+                      <div className="absolute w-4 h-4 bg-gray-800 rotate-45 rounded" />
+                      <span className={'absolute rounded -left-[4rem] -top-10 w-36 bg-gray-800 p-2 text-xs text-white text-center'}>
+                        Seleccione un curso para continuar
+                      </span>
+                    </span>
+                    }
+
+                  </div>
+                </div>
               </div>
             </Dialog.Panel>
           </Transition.Child>
