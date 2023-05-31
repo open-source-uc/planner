@@ -227,7 +227,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                         filter.available ? 'darkBlue' : 'bg-gray-200'
                       } mr-2 relative inline-flex h-6 w-11 items-center rounded-full`}
                     >
-                      <span className="sr-only">Filtrar cursos no habiles</span>
+                      <span className="sr-only">Ocultar cursos no disponibles</span>
                       <span
                         className={`${
                           filter.available ? 'translate-x-6' : 'translate-x-1'
