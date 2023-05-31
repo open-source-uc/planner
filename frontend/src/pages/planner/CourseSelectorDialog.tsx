@@ -209,10 +209,19 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                 </Dialog.Title>
                   {equivalence !== undefined && equivalence.courses.length < 10 &&
                   <div className="my-auto inline-flex mb-3">
-                    <label className="my-auto mr-2" htmlFor="availableFilter">Filtrar ramos no habiles: </label>
+                    <label className="my-auto mr-2" htmlFor="availableFilter">Ocultar cursos no disponibles: </label>
                     <Switch
                       checked={filter.available}
-                      onChange={(e: boolean) => setFilter({ ...filter, available: e })}
+                      onChange={(e: boolean) => {
+                        setFilter({ ...filter, available: e })
+                        void handleSearch({
+                          name: '',
+                          credits: '',
+                          school: '',
+                          available: e,
+                          on_semester: 0
+                        })
+                      }}
                       id="availableFilter"
                       className={`${
                         filter.available ? 'darkBlue' : 'bg-gray-200'
@@ -225,7 +234,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                         } inline-block h-4 w-4 transform rounded-full bg-white transition`}
                       />
                     </Switch>
-                    <Info message="Un curso no habilitado es aquel que no se ha dictado recientemente, generalmente porque ya no se ofrece o porque es nuevo y aún no se ha impartido."/>
+                    <Info message="Un curso no disponible es aquel que no se ha dictado recientemente, generalmente porque ya no se ofrece o porque es nuevo y aún no se ha impartido."/>
                   </div>
                   }
                 {(equivalence === undefined || equivalence.courses.length >= 10) &&
@@ -267,7 +276,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                     </div>
 
                     <div className="my-auto col-span-5 inline-flex">
-                      <label className="my-auto mr-2" htmlFor="availableFilter">Filtrar ramos no habiles: </label>
+                      <label className="my-auto mr-2" htmlFor="availableFilter">Ocultar cursos no disponibles: </label>
                       <Switch
                         checked={filter.available}
                         onChange={(e: boolean) => setFilter({ ...filter, available: e })}
@@ -276,14 +285,14 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                           filter.available ? 'darkBlue' : 'bg-gray-200'
                         } mr-2 relative inline-flex h-6 w-11 items-center rounded-full`}
                       >
-                        <span className="sr-only">Filtrar cursos no habiles</span>
+                        <span className="sr-only">Ocultar cursos no disponibles</span>
                         <span
                           className={`${
                             filter.available ? 'translate-x-6' : 'translate-x-1'
                           } inline-block h-4 w-4 transform rounded-full bg-white transition`}
                         />
                       </Switch>
-                      <Info message="Un curso no habilitado es aquel que no se ha dictado recientemente, generalmente porque ya no se ofrece o porque es nuevo y aún no se ha impartido."/>
+                      <Info message="Un curso no disponible es aquel que no se ha dictado recientemente, generalmente porque ya no se ofrece o porque es nuevo y aún no se ha impartido."/>
                     </div>
                     <div className='flex justify-end col-span-4 col-end-13'>
                       <button

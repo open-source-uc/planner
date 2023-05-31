@@ -330,7 +330,7 @@ const Planner = (): JSX.Element => {
       if (prev === null) return prev
       const dragCourse = prev.classes[drag.semester][drag.index]
       if (dragCourse.is_concrete === true && drop.semester !== drag.semester && prev.classes[drop.semester].map(course => course.code).includes(dragCourse.code)) {
-        toast.error('No se puede tener dos ramos iguales en un mismo semestre')
+        toast.error('No se puede tener dos cursos iguales en un mismo semestre')
         return prev
       }
       const newClasses = [...prev.classes]
