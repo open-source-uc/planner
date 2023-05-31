@@ -241,8 +241,10 @@ class CourseFilter(BaseModel):
     school: Optional[str] = None
     # Only allow courses that match the given availability.
     available: Optional[bool] = None
-    # Only allow courses available on the given semester.
-    on_semester: Optional[tuple[bool, bool]] = None
+    # Only allow courses that are available/unavailable on first semesters.
+    first_semester: Optional[bool] = None
+    # Only allow courses that are available/unavailable on second semesters.
+    second_semester: Optional[bool] = None
     # Only allow courses that are members of the given equivalence.
     equiv: Optional[str] = None
 
@@ -267,9 +269,10 @@ class CourseFilter(BaseModel):
             filter["school"] = {"contains": ascii_school, "mode": "insensitive"}
         if self.available is not None:
             filter["is_available"] = self.available
-        if self.on_semester is not None:
-            filter["semestrality_first"] = self.on_semester[0]
-            filter["semestrality_second"] = self.on_semester[1]
+        if self.first_semester is not None:
+            filter["semestrality_first"] = self.first_semester
+        if self.second_semester is not None:
+            filter["semestrality_second"] = self.second_semester
         if self.equiv is not None:
             filter["equivs"] = {"some": {"equiv_code": self.equiv}}
         return filter

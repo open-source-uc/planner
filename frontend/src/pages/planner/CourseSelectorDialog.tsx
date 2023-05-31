@@ -1,22 +1,40 @@
 import { useState, useEffect, Fragment } from 'react'
-import { Dialog, Transition } from '@headlessui/react'
-import { DefaultService, EquivDetails, CourseOverview, CancelablePromise } from '../../client'
+import { Dialog, Transition, Switch } from '@headlessui/react'
+import { DefaultService, EquivDetails, CourseOverview, CourseDetails, CancelablePromise } from '../../client'
 import { Spinner } from '../../components/Spinner'
+import { Info } from '../../components/Info'
 
 // TODO: fetch school list from backend
 // Existen escuelas en buscacursos que no tienen cursos: 'Acad Inter de Filosofía'
 const schoolOptions = ['Acad Inter de Filosofía', 'Actividades Universitarias', 'Actuación', 'Agronomía e Ing. Forestal', 'Antropología', 'Arquitectura', 'Arte', 'Astrofísica', 'Bachillerato', 'CARA', 'Ciencia Política', 'Ciencias Biológicas', 'Ciencias de la Salud', 'College', 'Comunicaciones', 'Construcción Civil', 'Deportes', 'Derecho', 'Desarrollo Sustentable', 'Diseño', 'Economía y Administración', 'Educación', 'Enfermería', 'Escuela de Gobierno', 'Escuela de Graduados', 'Estudios Urbanos', 'Estética', 'Filosofía', 'Física', 'Geografía', 'Historia', 'Ing Matemática y Computacional', 'Ingeniería', 'Ingeniería Biológica y Médica', 'Instituto de Éticas Aplicadas', 'Letras', 'Matemáticas', 'Medicina', 'Medicina Veterinaria', 'Música', 'Odontología', 'Psicología', 'Química', 'Química y Farmacia', 'Requisito Idioma', 'Sociología', 'Teología', 'Trabajo Social', 'Villarrica']
+const coursesBatchSize = 30
+const semestreApiOptions = [
+  [undefined, undefined], // todos los semestres
+  [true, undefined], // primeros semestres
+  [undefined, true] // segundos semestres
+]
+
+interface Filter {
+  name: string
+  credits: string
+  school: string
+  available: boolean
+  on_semester: number
+}
 
 const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: EquivDetails, open: boolean, onClose: Function }): JSX.Element => {
   const [loadedCourses, setLoadedCourses] = useState<{ [code: string]: CourseOverview }>({})
   const [filteredCodes, setFilteredCodes] = useState<string[]>([])
   const [loadingCoursesData, setLoadingCoursesData] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<string>()
-  const [filter, setFilter] = useState(() => ({
+  const [filter, setFilter] = useState<Filter>(() => ({
     name: '',
     credits: '',
-    school: ''
+    school: '',
+    available: true,
+    on_semester: 0
   }))
+
   const [promiseInstance, setPromiseInstance] = useState<CancelablePromise<any> | null>(null)
 
   function resetFilters (): void {
@@ -24,16 +42,14 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     setFilter({
       name: '',
       credits: '',
-      school: ''
+      school: '',
+      available: true,
+      on_semester: 0
     })
     if (promiseInstance != null) {
       promiseInstance.cancel()
       setPromiseInstance(null)
-    }
-    if (equivalence !== undefined && open) {
-      setFilteredCodes(equivalence.courses)
-    } else {
-      setFilteredCodes([])
+      setLoadingCoursesData(false)
     }
   }
 
@@ -46,7 +62,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     const response = await promise
     setPromiseInstance(null)
 
-    const dict = response.reduce((acc: { [code: string]: CourseOverview }, curr: CourseOverview) => {
+    const dict = response.reduce((acc: { [code: string]: CourseDetails }, curr: CourseDetails) => {
       acc[curr.code] = curr
       return acc
     }, {})
@@ -54,25 +70,31 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     setLoadingCoursesData(false)
   }
 
-  async function handleSearch (): Promise<void> {
+  async function handleSearch (filterProp: Filter): Promise<void> {
     setLoadingCoursesData(true)
-    const crd = filter.credits === '' ? undefined : parseInt(filter.credits)
-    if (promiseInstance != null) promiseInstance.cancel()
+    const crd = filterProp.credits === '' ? undefined : parseInt(filterProp.credits)
+    const onlyAvaible = filterProp.available ? filterProp.available : undefined
+    if (promiseInstance != null) {
+      promiseInstance.cancel()
+      setPromiseInstance(null)
+    }
     if (equivalence === undefined) {
       const promise = DefaultService.searchCourseDetails({
-        text: filter.name,
+        text: filterProp.name,
         credits: crd,
-        school: filter.school,
-        available: true
+        school: filterProp.school,
+        available: onlyAvaible,
+        first_semester: semestreApiOptions[filterProp.on_semester][0],
+        second_semester: semestreApiOptions[filterProp.on_semester][1]
       })
       setPromiseInstance(promise)
       const response = await promise
       setPromiseInstance(null)
-      const dict = response.reduce((acc: { [code: string]: CourseOverview }, curr: CourseOverview) => {
+      const dict = response.flat().reduce((acc: { [code: string]: CourseOverview }, curr: CourseOverview) => {
         acc[curr.code] = curr
         return acc
       }, {})
-      setFilteredCodes(response.reduce((acc: string[], curr: CourseOverview) => {
+      setFilteredCodes(response.flat().reduce((acc: string[], curr: CourseOverview) => {
         acc.push(curr.code)
         return acc
       }, []))
@@ -80,18 +102,20 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       setLoadingCoursesData(false)
     } else {
       const promise = DefaultService.searchCourseCodes({
-        text: filter.name,
+        text: filterProp.name,
         credits: crd,
-        school: filter.school,
-        available: true,
+        school: filterProp.school,
+        available: onlyAvaible,
+        first_semester: semestreApiOptions[filterProp.on_semester][0],
+        second_semester: semestreApiOptions[filterProp.on_semester][1],
         equiv: equivalence.code
       })
       setPromiseInstance(promise)
       const response = await promise
       setPromiseInstance(null)
       const missingInfo = []
-      for (const code of response) {
-        if (missingInfo.length >= 20) break
+      for (const code of response.flat()) {
+        if (missingInfo.length >= coursesBatchSize) break
         if (code in loadedCourses) continue
         missingInfo.push(code)
       }
@@ -102,7 +126,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
           console.error(e)
         }
       }
-      setFilteredCodes(response)
+      setFilteredCodes(response.flat())
       setLoadingCoursesData(false)
     }
   }
@@ -111,24 +135,46 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     if (!open || loadingCoursesData) return
     const { scrollTop, scrollHeight, clientHeight } = event.currentTarget
     if (scrollTop + clientHeight === scrollHeight && equivalence !== undefined) {
-      getCourseDetails(filteredCodes.filter((code) => !Object.keys(loadedCourses).includes(code)).splice(0, 20)).catch(err => console.log(err))
+      getCourseDetails(filteredCodes.filter((code) => !Object.keys(loadedCourses).includes(code)).splice(0, coursesBatchSize)).catch(err => console.log(err))
+    }
+  }
+
+  const handleKeyDownFilter: React.EventHandler<React.KeyboardEvent<HTMLInputElement>> = e => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      try {
+        void handleSearch(filter)
+      } catch (err) {
+        console.log(err)
+      }
+    }
+  }
+
+  const handleKeyDownSelection: React.EventHandler<React.KeyboardEvent<HTMLInputElement>> = e => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      try {
+        void onClose(selectedCourse)
+      } catch (err) {
+        console.log(err)
+      }
     }
   }
 
   useEffect(() => {
     const showCoursesCount = Object.keys(loadedCourses).filter(key => filteredCodes.includes(key)).length
-    if (showCoursesCount < 10 && filteredCodes.length > 0) {
-      getCourseDetails(filteredCodes.filter((code) => !Object.keys(loadedCourses).includes(code)).splice(0, 20)).catch(err => console.log(err))
+    if (showCoursesCount < coursesBatchSize && filteredCodes.length > 0) {
+      getCourseDetails(filteredCodes.filter((code) => !Object.keys(loadedCourses).includes(code)).splice(0, coursesBatchSize)).catch(err => console.log(err))
     }
   }, [filteredCodes])
 
   useEffect(() => {
     if (!open) {
-      if (promiseInstance != null) { promiseInstance.cancel(); setPromiseInstance(null); setLoadingCoursesData(false) }
       void resetFilters()
+      setFilteredCodes([])
       setLoadedCourses({})
     } else if (equivalence !== undefined) {
-      setFilteredCodes(equivalence.courses)
+      void handleSearch(filter)
     }
   }, [open])
 
@@ -158,25 +204,48 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
             <Dialog.Panel className="w-11/12 px-5 py-6 bg-slate-100 border-slate-300 overflow-hidden max-w-4xl transform  rounded-2xl border-2 text-left align-middle shadow-xl transition-all">
-              <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900  mb-3">
-                {equivalence !== undefined ? equivalence.name : 'Curso Extra'}
-              </Dialog.Title>
-                {(equivalence === undefined || equivalence.courses.length >= 30) &&
-                  <div className="grid border-2 p-4 py-3 rounded bg-slate-100 border-slate-500 border-solid gap-2 grid-cols-5">
-                    <div className="col-span-5 grid  grid-cols-5">
-                      <label className="col-span-1 my-auto" htmlFor="nameFilter">Nombre o Sigla: </label>
-                      <input className="col-span-4 rounded py-1" type="text" id="nameFilter" value={filter.name} onChange={e => setFilter({ ...filter, name: e.target.value })} />
+                <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900  mb-3">
+                  {equivalence !== undefined ? equivalence.name : 'Curso Extra'}
+                </Dialog.Title>
+                  {equivalence !== undefined && equivalence.courses.length < 10 &&
+                  <div className="my-auto inline-flex mb-3">
+                    <label className="my-auto mr-2" htmlFor="availableFilter">Ocultar cursos no disponibles: </label>
+                    <Switch
+                      checked={filter.available}
+                      onChange={(e: boolean) => {
+                        setFilter({ ...filter, available: e })
+                        void handleSearch({
+                          name: '',
+                          credits: '',
+                          school: '',
+                          available: e,
+                          on_semester: 0
+                        })
+                      }}
+                      id="availableFilter"
+                      className={`${
+                        filter.available ? 'darkBlue' : 'bg-gray-200'
+                      } mr-2 relative inline-flex h-6 w-11 items-center rounded-full`}
+                    >
+                      <span className="sr-only">Ocultar cursos no disponibles</span>
+                      <span
+                        className={`${
+                          filter.available ? 'translate-x-6' : 'translate-x-1'
+                        } inline-block h-4 w-4 transform rounded-full bg-white transition`}
+                      />
+                    </Switch>
+                    <Info message="Un curso no disponible es aquel que no se ha dictado recientemente, generalmente porque ya no se ofrece o porque es nuevo y aún no se ha impartido."/>
+                  </div>
+                  }
+                {(equivalence === undefined || equivalence.courses.length >= 10) &&
+                  <div className="grid border-2 p-4 py-3 rounded bg-slate-100 border-slate-500 border-solid gap-2 grid-cols-12">
+                    <div className="col-span-9 flex">
+                      <label className="mr-3 my-auto" htmlFor="nameFilter">Nombre o Sigla: </label>
+                      <input className="grow rounded py-1" type="text" id="nameFilter" value={filter.name} onChange={e => setFilter({ ...filter, name: e.target.value })} onKeyDown={handleKeyDownFilter}/>
                     </div>
-                    <div className="col-span-4 grid  grid-cols-4">
-                      <label className="col-span-1 my-auto" htmlFor="schoolFilter">Escuela: </label>
-                      <select className="col-span-3 rounded py-1" id="schoolFilter" value={filter.school} onChange={e => setFilter({ ...filter, school: e.target.value })} >
-                        <option value=''>-- Todas --</option>
-                        {schoolOptions.map(school => <option key={school} value={school}>{school}</option>)}
-                      </select>
-                    </div>
-                    <div className="col-span-1 grid grid-cols-2">
-                      <label className="col-span-1 my-auto" htmlFor="creditsFilter">Creditos: </label>
-                      <select className="col-span-1 col-end-3 rounded py-1" id="creditsFilter" value={filter.credits} onChange={e => setFilter({ ...filter, credits: e.target.value })}>
+                    <div className="col-span-3 flex">
+                      <label className="mr-3 my-auto" htmlFor="creditsFilter">Creditos: </label>
+                      <select className="grow rounded py-1" id="creditsFilter" value={filter.credits} onChange={e => setFilter({ ...filter, credits: e.target.value })}>
                         <option value={''}>-</option>
                         <option value={'4'}>4</option>
                         <option value={'5'}>5</option>
@@ -188,15 +257,63 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                         <option value={'30'}>30</option>
                       </select>
                     </div>
-                    <div className='flex justify-end col-span-2 col-end-6 '>
+
+                    <div className="col-span-8 flex">
+                      <label className="mr-3 my-auto" htmlFor="schoolFilter">Escuela: </label>
+                      <select className="grow rounded py-1" id="schoolFilter" value={filter.school} onChange={e => setFilter({ ...filter, school: e.target.value })} >
+                        <option value=''>-- Todas --</option>
+                        {schoolOptions.map(school => <option key={school} value={school}>{school}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="col-span-4 flex">
+                      <label className="mr-3 my-auto" htmlFor="semesterFilter">Semestralidad: </label>
+                      <select className="grow rounded py-1" id="semesterFilter" value={filter.on_semester} onChange={e => setFilter({ ...filter, on_semester: parseInt(e.target.value) })}>
+                        <option value={0}>Cualquiera</option>
+                        <option value={1}>Pares</option>
+                        <option value={2}>Impares</option>
+                      </select>
+                    </div>
+
+                    <div className="my-auto col-span-5 inline-flex">
+                      <label className="my-auto mr-2" htmlFor="availableFilter">Ocultar cursos no disponibles: </label>
+                      <Switch
+                        checked={filter.available}
+                        onChange={(e: boolean) => setFilter({ ...filter, available: e })}
+                        id="availableFilter"
+                        className={`${
+                          filter.available ? 'darkBlue' : 'bg-gray-200'
+                        } mr-2 relative inline-flex h-6 w-11 items-center rounded-full`}
+                      >
+                        <span className="sr-only">Ocultar cursos no disponibles</span>
+                        <span
+                          className={`${
+                            filter.available ? 'translate-x-6' : 'translate-x-1'
+                          } inline-block h-4 w-4 transform rounded-full bg-white transition`}
+                        />
+                      </Switch>
+                      <Info message="Un curso no disponible es aquel que no se ha dictado recientemente, generalmente porque ya no se ofrece o porque es nuevo y aún no se ha impartido."/>
+                    </div>
+                    <div className='flex justify-end col-span-4 col-end-13'>
                       <button
                         className="btn mr-2"
-                        onClick={() => resetFilters()}>
+                        onClick={() => {
+                          resetFilters()
+                          if (equivalence !== undefined) {
+                            void handleSearch({
+                              name: '',
+                              credits: '',
+                              school: '',
+                              available: true,
+                              on_semester: 0
+                            })
+                          }
+                        }}>
                           Limpiar Filtros
                       </button>
                       <button className="btn" onClick={() => {
                         try {
-                          void handleSearch()
+                          void handleSearch(filter)
                         } catch (err) {
                           console.log(err)
                         }
@@ -219,10 +336,18 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                   {loadingCoursesData &&
                   <tr className="fixed pr-10" style={{ height: 'inherit', width: 'inherit' }}><td className="bg-white w-full h-full flex "> <Spinner message='Cargando cursos...' /></td></tr>
                   }
-                  {Object.entries(loadedCourses).filter(([key, course]) => filteredCodes.includes(key)).map(([code, course]) => (
+                  {Object.entries(loadedCourses).filter(([key, course]) => filteredCodes.includes(key)).map(([code, course], index) => (
                     <tr key={code} className="flex mt-3 mx-3">
                       <td className="w-8">
-                        <input className='cursor-pointer' id={code} type="radio" name="status" value={code} onChange={e => setSelectedCourse(e.target.value)}/>
+                        <input
+                          className='cursor-pointer'
+                          id={code}
+                          type="radio"
+                          name="status"
+                          value={code}
+                          onChange={e => setSelectedCourse(e.target.value)}
+                          onKeyDown={handleKeyDownSelection}
+                        />
                       </td>
                       <td className='w-20'>{code}</td>
                       <td className='w-96'>{course.name}</td>
@@ -233,10 +358,29 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                   ))}
                  </tbody>
               </table>
-              <div className='right-0'>{Object.keys(loadedCourses).filter(key => filteredCodes.includes(key)).length} - {filteredCodes.length}{equivalence === undefined && filteredCodes.length === 50 && '+'}</div>
-              <div className='float-right mx-2 '>
-                <button className="btn mr-2" onClick={() => onClose()}>Cancelar</button>
-                <button className="btn " onClick={() => onClose(selectedCourse)}>Guardar</button>
+              <div className='right-0'>
+                {Object.keys(loadedCourses).filter(key => filteredCodes.includes(key)).length} - {filteredCodes.length}{equivalence === undefined && filteredCodes.length === 50 && '+'}
+                <div className='float-right mx-2 inline-flex'>
+                  <button className="btn mr-2" onClick={() => onClose()}>Cancelar</button>
+                  <div className="group relative flex justify-center">
+                    <button
+                      className={`btn ${selectedCourse === undefined ? 'cursor-not-allowed opacity-80' : ''}`}
+                      onClick={() => onClose(selectedCourse)}
+                      disabled={selectedCourse === undefined}
+                    >
+                      Guardar
+                    </button>
+                    {selectedCourse === undefined &&
+                    <span className={'absolute left-10 -top-5 z-10 transition-all scale-0 group-hover:scale-100'}>
+                      <div className="absolute w-4 h-4 bg-gray-800 rotate-45 rounded" />
+                      <span className={'absolute rounded -left-[4rem] -top-10 w-36 bg-gray-800 p-2 text-xs text-white text-center'}>
+                        Seleccione un curso para continuar
+                      </span>
+                    </span>
+                    }
+
+                  </div>
+                </div>
               </div>
             </Dialog.Panel>
           </Transition.Child>
