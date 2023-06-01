@@ -166,7 +166,6 @@ const Planner = (): JSX.Element => {
 
   async function getDefaultPlan (ValidatablePlan?: ValidatablePlan): Promise<void> {
     try {
-      console.log(ValidatablePlan)
       console.log('getting Basic Plan...')
       if (ValidatablePlan === undefined) {
         ValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()

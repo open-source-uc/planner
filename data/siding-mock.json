@@ -21295,6 +21295,2977 @@
                 "Tipocurso": null,
                 "BloqueAcademico": "Formaci\u00f3n General"
             }
+        ],
+        "{\"CodCurriculum\": \"C2020\", \"CodMajor\": \"M173\", \"CodMinor\": \"N344\", \"CodTitulo\": \"\"}": [
+            {
+                "Nombre": "C\u00e1lculo I",
+                "CodSigla": "MAT1610",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1000",
+                            "Nombre": "Prec\u00e1lculo",
+                            "Semestralidad": null,
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Qu\u00edmica para Ingenier\u00eda",
+                "CodSigla": "QIM100E",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 2,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "QIM100A",
+                            "Nombre": "Qu\u00edmica General II",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Desaf\u00edos de la Ingenier\u00eda",
+                "CodSigla": "ING1004",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "\u00c1lgebra Lineal",
+                "CodSigla": "MAT1203",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1600",
+                            "Nombre": "Introducci\u00f3n al C\u00e1lculo",
+                            "Semestralidad": null,
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "\u00c9tica para Ingenieros",
+                "CodSigla": "FIL188",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Examen de Comunicaci\u00f3n Escrita (Ece)",
+                "CodSigla": "VRA100C",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 6,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Requisitos adicionales para obtener el grado de Licenciado en Ciencias de la Ingenier\u00eda"
+            },
+            {
+                "Nombre": "Introducci\u00f3n al Aprendizaje Universitario",
+                "CodSigla": "ING1111",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 7,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "ING1100",
+                            "Nombre": "Taller de Habitos y Estrategias de Estudio",
+                            "Semestralidad": null,
+                            "Creditos": 5
+                        },
+                        {
+                            "Sigla": "ING1110",
+                            "Nombre": "Taller de H\u00e1bitos y Estrategias de Estudio",
+                            "Semestralidad": null,
+                            "Creditos": 0
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Requisitos adicionales para obtener el grado de Licenciado en Ciencias de la Ingenier\u00eda"
+            },
+            {
+                "Nombre": "C\u00e1lculo II",
+                "CodSigla": "MAT1620",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1610",
+                            "Nombre": "C\u00e1lculo I",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Din\u00e1mica",
+                "CodSigla": "FIS1514",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 2,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1513",
+                            "Nombre": "Est\u00e1tica y Din\u00e1mica",
+                            "Semestralidad": null,
+                            "Creditos": 10
+                        },
+                        {
+                            "Sigla": "ICE1513",
+                            "Nombre": "Estatica y Dinamica",
+                            "Semestralidad": null,
+                            "Creditos": 10
+                        },
+                        {
+                            "Sigla": "ICE1514",
+                            "Nombre": "Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1610",
+                            "Nombre": "C\u00e1lculo I",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "FIS0154",
+                            "Nombre": "Laboratorio de Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 0,
+                            "TipoRequisito": "Corequisito"
+                        },
+                        {
+                            "Sigla": "MAT1203",
+                            "Nombre": "\u00c1lgebra Lineal",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Corequisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Laboratorio de Din\u00e1mica",
+                "CodSigla": "FIS0154",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 3,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS0151",
+                            "Nombre": "Laboratorio de Estatica y Dinamica",
+                            "Semestralidad": null,
+                            "Creditos": 0
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1514",
+                            "Nombre": "Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Corequisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Introducci\u00f3n a la Econom\u00eda",
+                "CodSigla": "ICS1513",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Introducci\u00f3n a la Programaci\u00f3n",
+                "CodSigla": "IIC1103",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Desarrollo de Habilidades Comunicativas para Ingenieros",
+                "CodSigla": "LET0003",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 6,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "English Test (Sufficiency Alte 3)",
+                "CodSigla": "VRA3010",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 7,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "RII7000",
+                            "Nombre": "Exit English (Alte3)",
+                            "Semestralidad": null,
+                            "Creditos": 5
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "RII6000",
+                            "Nombre": "English VI (Alte 3)",
+                            "Semestralidad": null,
+                            "Creditos": 5,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Requisitos adicionales para obtener el grado de Licenciado en Ciencias de la Ingenier\u00eda"
+            },
+            {
+                "Nombre": "Pr\u00e1ctica I",
+                "CodSigla": "ING1001",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 8,
+                "Equivalencias": null,
+                "Restricciones": {
+                    "Restricciones": [
+                        {
+                            "Nombre": "70 Cr. aprobados",
+                            "CreditoMin": 70
+                        }
+                    ]
+                },
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Requisitos adicionales para obtener el grado de Licenciado en Ciencias de la Ingenier\u00eda"
+            },
+            {
+                "Nombre": "C\u00e1lculo III",
+                "CodSigla": "MAT1630",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1203",
+                            "Nombre": "\u00c1lgebra Lineal",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "MAT1620",
+                            "Nombre": "C\u00e1lculo II",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "Ciencias B\u00e1sicas (m\u00ednimos) (LISTA 1)",
+                "CodSigla": null,
+                "CodLista": "C8924",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Laboratorio de Termodin\u00e1mica",
+                "CodSigla": "FIS0152",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1523",
+                            "Nombre": "Termodin\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Corequisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Ecuaciones Diferenciales",
+                "CodSigla": "MAT1640",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1203",
+                            "Nombre": "\u00c1lgebra Lineal",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "MAT1620",
+                            "Nombre": "C\u00e1lculo II",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "Optativo de Exploraci\u00f3n de Major",
+                "CodSigla": null,
+                "CodLista": "L11",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "Cursos formaci\u00f3n teol\u00f3gica",
+                "CodSigla": null,
+                "CodLista": "L2",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 6,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Probabilidades y Estad\u00edstica",
+                "CodSigla": "EYP1113",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1523",
+                            "Nombre": "Calculo III",
+                            "Semestralidad": null,
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Ciencias B\u00e1sicas (m\u00ednimos) (LISTA 2)",
+                "CodSigla": null,
+                "CodLista": "C8927",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Laboratorio de Electricidad y Magnetismo",
+                "CodSigla": "FIS0153",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1533",
+                            "Nombre": "Electricidad y Magnetismo",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Corequisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Fundamentos de Rob\u00f3tica",
+                "CodSigla": "IRB2001",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1514",
+                            "Nombre": "Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "null",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Din\u00e1mica de Sistemas Mec\u00e1nicos",
+                "CodSigla": "ICM2803",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1514",
+                            "Nombre": "Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 6,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Sistemas Digitales",
+                "CodSigla": "IEE2713",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [{
+                        "Sigla": "MAT1203",
+                        "Nombre": "\u00c1lgebra Lineal",
+                        "Semestralidad": "I y II",
+                        "Creditos": 10,
+                        "TipoRequisito": "Requisito"
+                    }]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Optativo Biol\u00f3gico",
+                "CodSigla": null,
+                "CodLista": "L10",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Optativo de Fundamentos de Ciencias o Ingenier\u00eda ",
+                "CodSigla": null,
+                "CodLista": "C8932",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Investigaci\u00f3n, Innovaci\u00f3n y Emprendimiento",
+                "CodSigla": "ING2030",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 4,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIE2001",
+                            "Nombre": "Investigaci\u00f3n, Innovaci\u00f3n y Emprendimiento",
+                            "Semestralidad": null,
+                            "Creditos": 10
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Procesos de Manufactura",
+                "CodSigla": "ICM2503",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 6,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IRB2001",
+                            "Nombre": "Fundamentos de Rob\u00f3tica",
+                            "Semestralidad": "II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Diseño de Sistemas Robóticos (Capstone)",
+                "CodSigla": "IRB2002",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 6,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IRB2001",
+                            "Nombre": "Fundamentos de Rob\u00f3tica",
+                            "Semestralidad": "II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Optativos Major",
+                "CodSigla": null,
+                "CodLista": "C8900",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 6,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 6,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Optativos Major",
+                "CodSigla": null,
+                "CodLista": "C8901",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 7,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Optativos Major",
+                "CodSigla": null,
+                "CodLista": "C8902",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 7,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Optativos Major",
+                "CodSigla": null,
+                "CodLista": "C8903",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 7,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 7,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Optativos Major",
+                "CodSigla": null,
+                "CodLista": "C8904",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 8,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 8,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Electivo Minor",
+                "CodSigla": null,
+                "CodLista": "C8766",
+                "Programa": "Minor de Amplitud en Ingeniería Eléctrica",
+                "Creditos": 50,
+                "SemestreBloque": 8,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Minor de Amplitud en Ingeniería Eléctrica"
+            }
+        ],
+        "{\"CodCurriculum\": \"C2020\", \"CodMajor\": \"M173\", \"CodMinor\": \"N776\", \"CodTitulo\": \"\"}": [
+            {
+                "Nombre": "C\u00e1lculo I",
+                "CodSigla": "MAT1610",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1000",
+                            "Nombre": "Prec\u00e1lculo",
+                            "Semestralidad": null,
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Qu\u00edmica para Ingenier\u00eda",
+                "CodSigla": "QIM100E",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 2,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "QIM100A",
+                            "Nombre": "Qu\u00edmica General II",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Desaf\u00edos de la Ingenier\u00eda",
+                "CodSigla": "ING1004",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "\u00c1lgebra Lineal",
+                "CodSigla": "MAT1203",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1600",
+                            "Nombre": "Introducci\u00f3n al C\u00e1lculo",
+                            "Semestralidad": null,
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "\u00c9tica para Ingenieros",
+                "CodSigla": "FIL188",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Examen de Comunicaci\u00f3n Escrita (Ece)",
+                "CodSigla": "VRA100C",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 6,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Requisitos adicionales para obtener el grado de Licenciado en Ciencias de la Ingenier\u00eda"
+            },
+            {
+                "Nombre": "Introducci\u00f3n al Aprendizaje Universitario",
+                "CodSigla": "ING1111",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 7,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "ING1100",
+                            "Nombre": "Taller de Habitos y Estrategias de Estudio",
+                            "Semestralidad": null,
+                            "Creditos": 5
+                        },
+                        {
+                            "Sigla": "ING1110",
+                            "Nombre": "Taller de H\u00e1bitos y Estrategias de Estudio",
+                            "Semestralidad": null,
+                            "Creditos": 0
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Requisitos adicionales para obtener el grado de Licenciado en Ciencias de la Ingenier\u00eda"
+            },
+            {
+                "Nombre": "C\u00e1lculo II",
+                "CodSigla": "MAT1620",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1610",
+                            "Nombre": "C\u00e1lculo I",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Din\u00e1mica",
+                "CodSigla": "FIS1514",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 2,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1513",
+                            "Nombre": "Est\u00e1tica y Din\u00e1mica",
+                            "Semestralidad": null,
+                            "Creditos": 10
+                        },
+                        {
+                            "Sigla": "ICE1513",
+                            "Nombre": "Estatica y Dinamica",
+                            "Semestralidad": null,
+                            "Creditos": 10
+                        },
+                        {
+                            "Sigla": "ICE1514",
+                            "Nombre": "Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1610",
+                            "Nombre": "C\u00e1lculo I",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "FIS0154",
+                            "Nombre": "Laboratorio de Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 0,
+                            "TipoRequisito": "Corequisito"
+                        },
+                        {
+                            "Sigla": "MAT1203",
+                            "Nombre": "\u00c1lgebra Lineal",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Corequisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Laboratorio de Din\u00e1mica",
+                "CodSigla": "FIS0154",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 3,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS0151",
+                            "Nombre": "Laboratorio de Estatica y Dinamica",
+                            "Semestralidad": null,
+                            "Creditos": 0
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1514",
+                            "Nombre": "Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Corequisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Introducci\u00f3n a la Econom\u00eda",
+                "CodSigla": "ICS1513",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Introducci\u00f3n a la Programaci\u00f3n",
+                "CodSigla": "IIC1103",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Desarrollo de Habilidades Comunicativas para Ingenieros",
+                "CodSigla": "LET0003",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 6,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "English Test (Sufficiency Alte 3)",
+                "CodSigla": "VRA3010",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 7,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "RII7000",
+                            "Nombre": "Exit English (Alte3)",
+                            "Semestralidad": null,
+                            "Creditos": 5
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "RII6000",
+                            "Nombre": "English VI (Alte 3)",
+                            "Semestralidad": null,
+                            "Creditos": 5,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Requisitos adicionales para obtener el grado de Licenciado en Ciencias de la Ingenier\u00eda"
+            },
+            {
+                "Nombre": "Pr\u00e1ctica I",
+                "CodSigla": "ING1001",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 8,
+                "Equivalencias": null,
+                "Restricciones": {
+                    "Restricciones": [
+                        {
+                            "Nombre": "70 Cr. aprobados",
+                            "CreditoMin": 70
+                        }
+                    ]
+                },
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Requisitos adicionales para obtener el grado de Licenciado en Ciencias de la Ingenier\u00eda"
+            },
+            {
+                "Nombre": "C\u00e1lculo III",
+                "CodSigla": "MAT1630",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1203",
+                            "Nombre": "\u00c1lgebra Lineal",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "MAT1620",
+                            "Nombre": "C\u00e1lculo II",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "Ciencias B\u00e1sicas (m\u00ednimos) (LISTA 1)",
+                "CodSigla": null,
+                "CodLista": "C8924",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Laboratorio de Termodin\u00e1mica",
+                "CodSigla": "FIS0152",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1523",
+                            "Nombre": "Termodin\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Corequisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Ecuaciones Diferenciales",
+                "CodSigla": "MAT1640",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1203",
+                            "Nombre": "\u00c1lgebra Lineal",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "MAT1620",
+                            "Nombre": "C\u00e1lculo II",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "Optativo de Exploraci\u00f3n de Major",
+                "CodSigla": null,
+                "CodLista": "L11",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "Cursos formaci\u00f3n teol\u00f3gica",
+                "CodSigla": null,
+                "CodLista": "L2",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 6,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Probabilidades y Estad\u00edstica",
+                "CodSigla": "EYP1113",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1523",
+                            "Nombre": "Calculo III",
+                            "Semestralidad": null,
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Ciencias B\u00e1sicas (m\u00ednimos) (LISTA 2)",
+                "CodSigla": null,
+                "CodLista": "C8927",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Laboratorio de Electricidad y Magnetismo",
+                "CodSigla": "FIS0153",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1533",
+                            "Nombre": "Electricidad y Magnetismo",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Corequisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Fundamentos de Rob\u00f3tica",
+                "CodSigla": "IRB2001",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1514",
+                            "Nombre": "Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "null",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Din\u00e1mica de Sistemas Mec\u00e1nicos",
+                "CodSigla": "ICM2803",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1514",
+                            "Nombre": "Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 6,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Sistemas Digitales",
+                "CodSigla": "IEE2713",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [{
+                        "Sigla": "MAT1203",
+                        "Nombre": "\u00c1lgebra Lineal",
+                        "Semestralidad": "I y II",
+                        "Creditos": 10,
+                        "TipoRequisito": "Requisito"
+                    }]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Optativo Biol\u00f3gico",
+                "CodSigla": null,
+                "CodLista": "L10",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Optativo de Fundamentos de Ciencias o Ingenier\u00eda ",
+                "CodSigla": null,
+                "CodLista": "C8932",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Investigaci\u00f3n, Innovaci\u00f3n y Emprendimiento",
+                "CodSigla": "ING2030",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 4,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIE2001",
+                            "Nombre": "Investigaci\u00f3n, Innovaci\u00f3n y Emprendimiento",
+                            "Semestralidad": null,
+                            "Creditos": 10
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Procesos de Manufactura",
+                "CodSigla": "ICM2503",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 6,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IRB2001",
+                            "Nombre": "Fundamentos de Rob\u00f3tica",
+                            "Semestralidad": "II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Diseño de Sistemas Robóticos (Capstone)",
+                "CodSigla": "IRB2002",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 6,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IRB2001",
+                            "Nombre": "Fundamentos de Rob\u00f3tica",
+                            "Semestralidad": "II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Optativos Major",
+                "CodSigla": null,
+                "CodLista": "C8900",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 6,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 6,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Optativos Major",
+                "CodSigla": null,
+                "CodLista": "C8901",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 7,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Optativos Major",
+                "CodSigla": null,
+                "CodLista": "C8902",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 7,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Optativos Major",
+                "CodSigla": null,
+                "CodLista": "C8903",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 7,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 7,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Optativos Major",
+                "CodSigla": null,
+                "CodLista": "C8904",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 8,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 8,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Estructuras de Datos y Algoritmos",
+                "CodSigla": "IIC2133",
+                "CodLista": null,
+                "Programa": "Minor de Amplitud en Programaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 9,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null, "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIC1222",
+                            "Nombre": "Programacion Avanzada",
+                            "Semestralidad": null,
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "IIC1253",
+                            "Nombre": "Matem\u00e1ticas Discretas",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Minor de Amplitud en Programaci\u00f3n"
+            },
+            {
+                "Nombre": "Ingenier\u00eda de Software",
+                "CodSigla": "IIC2143",
+                "CodLista": null,
+                "Programa": "Minor de Amplitud en Programaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 9,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIC2233",
+                            "Nombre": "Programaci\u00f3n Avanzada",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Minor de Amplitud en Programaci\u00f3n"
+            },
+            {
+                "Nombre": "Bases de Datos",
+                "CodSigla": "IIC2413",
+                "CodLista": null,
+                "Programa": "Minor de Amplitud en Programaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 9,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIC2233",
+                            "Nombre": "Programaci\u00f3n Avanzada",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Minor de Amplitud en Programaci\u00f3n"
+            },
+            {
+                "Nombre":"Optativos Complementarios",
+                "CodSigla":  null,
+                "CodLista": "C8767",
+                "Programa": "Minor de Amplitud en Programaci\u00f3n",
+                "Creditos": 20,
+                "SemestreBloque": 9,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Minor de Amplitud en Programaci\u00f3n"
+            }
+        ],
+        "{\"CodCurriculum\": \"C2020\", \"CodMajor\": \"M173\", \"CodMinor\": \"N776\", \"CodTitulo\": \"40007\"}": [
+            {
+                "Nombre": "C\u00e1lculo I",
+                "CodSigla": "MAT1610",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1000",
+                            "Nombre": "Prec\u00e1lculo",
+                            "Semestralidad": null,
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Qu\u00edmica para Ingenier\u00eda",
+                "CodSigla": "QIM100E",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 2,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "QIM100A",
+                            "Nombre": "Qu\u00edmica General II",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Desaf\u00edos de la Ingenier\u00eda",
+                "CodSigla": "ING1004",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "\u00c1lgebra Lineal",
+                "CodSigla": "MAT1203",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1600",
+                            "Nombre": "Introducci\u00f3n al C\u00e1lculo",
+                            "Semestralidad": null,
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "\u00c9tica para Ingenieros",
+                "CodSigla": "FIL188",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Examen de Comunicaci\u00f3n Escrita (Ece)",
+                "CodSigla": "VRA100C",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 6,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Requisitos adicionales para obtener el grado de Licenciado en Ciencias de la Ingenier\u00eda"
+            },
+            {
+                "Nombre": "Introducci\u00f3n al Aprendizaje Universitario",
+                "CodSigla": "ING1111",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 1,
+                "OrdenSemestre": 7,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "ING1100",
+                            "Nombre": "Taller de Habitos y Estrategias de Estudio",
+                            "Semestralidad": null,
+                            "Creditos": 5
+                        },
+                        {
+                            "Sigla": "ING1110",
+                            "Nombre": "Taller de H\u00e1bitos y Estrategias de Estudio",
+                            "Semestralidad": null,
+                            "Creditos": 0
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Requisitos adicionales para obtener el grado de Licenciado en Ciencias de la Ingenier\u00eda"
+            },
+            {
+                "Nombre": "C\u00e1lculo II",
+                "CodSigla": "MAT1620",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1610",
+                            "Nombre": "C\u00e1lculo I",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Din\u00e1mica",
+                "CodSigla": "FIS1514",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 2,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1513",
+                            "Nombre": "Est\u00e1tica y Din\u00e1mica",
+                            "Semestralidad": null,
+                            "Creditos": 10
+                        },
+                        {
+                            "Sigla": "ICE1513",
+                            "Nombre": "Estatica y Dinamica",
+                            "Semestralidad": null,
+                            "Creditos": 10
+                        },
+                        {
+                            "Sigla": "ICE1514",
+                            "Nombre": "Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1610",
+                            "Nombre": "C\u00e1lculo I",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "FIS0154",
+                            "Nombre": "Laboratorio de Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 0,
+                            "TipoRequisito": "Corequisito"
+                        },
+                        {
+                            "Sigla": "MAT1203",
+                            "Nombre": "\u00c1lgebra Lineal",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Corequisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Laboratorio de Din\u00e1mica",
+                "CodSigla": "FIS0154",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 3,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS0151",
+                            "Nombre": "Laboratorio de Estatica y Dinamica",
+                            "Semestralidad": null,
+                            "Creditos": 0
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1514",
+                            "Nombre": "Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Corequisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Introducci\u00f3n a la Econom\u00eda",
+                "CodSigla": "ICS1513",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Introducci\u00f3n a la Programaci\u00f3n",
+                "CodSigla": "IIC1103",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Desarrollo de Habilidades Comunicativas para Ingenieros",
+                "CodSigla": "LET0003",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 6,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "English Test (Sufficiency Alte 3)",
+                "CodSigla": "VRA3010",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 7,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "RII7000",
+                            "Nombre": "Exit English (Alte3)",
+                            "Semestralidad": null,
+                            "Creditos": 5
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "RII6000",
+                            "Nombre": "English VI (Alte 3)",
+                            "Semestralidad": null,
+                            "Creditos": 5,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Requisitos adicionales para obtener el grado de Licenciado en Ciencias de la Ingenier\u00eda"
+            },
+            {
+                "Nombre": "Pr\u00e1ctica I",
+                "CodSigla": "ING1001",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 2,
+                "OrdenSemestre": 8,
+                "Equivalencias": null,
+                "Restricciones": {
+                    "Restricciones": [
+                        {
+                            "Nombre": "70 Cr. aprobados",
+                            "CreditoMin": 70
+                        }
+                    ]
+                },
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Requisitos adicionales para obtener el grado de Licenciado en Ciencias de la Ingenier\u00eda"
+            },
+            {
+                "Nombre": "C\u00e1lculo III",
+                "CodSigla": "MAT1630",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1203",
+                            "Nombre": "\u00c1lgebra Lineal",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "MAT1620",
+                            "Nombre": "C\u00e1lculo II",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "Ciencias B\u00e1sicas (m\u00ednimos) (LISTA 1)",
+                "CodSigla": null,
+                "CodLista": "C8924",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Laboratorio de Termodin\u00e1mica",
+                "CodSigla": "FIS0152",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1523",
+                            "Nombre": "Termodin\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Corequisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Ecuaciones Diferenciales",
+                "CodSigla": "MAT1640",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1203",
+                            "Nombre": "\u00c1lgebra Lineal",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "MAT1620",
+                            "Nombre": "C\u00e1lculo II",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "Optativo de Exploraci\u00f3n de Major",
+                "CodSigla": null,
+                "CodLista": "L11",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Base General para Major"
+            },
+            {
+                "Nombre": "Cursos formaci\u00f3n teol\u00f3gica",
+                "CodSigla": null,
+                "CodLista": "L2",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 3,
+                "OrdenSemestre": 6,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Probabilidades y Estad\u00edstica",
+                "CodSigla": "EYP1113",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1523",
+                            "Nombre": "Calculo III",
+                            "Semestralidad": null,
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Ciencias B\u00e1sicas (m\u00ednimos) (LISTA 2)",
+                "CodSigla": null,
+                "CodLista": "C8927",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Laboratorio de Electricidad y Magnetismo",
+                "CodSigla": "FIS0153",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 0,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1533",
+                            "Nombre": "Electricidad y Magnetismo",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Corequisito"
+                        }
+                    ]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Fundamentos de Rob\u00f3tica",
+                "CodSigla": "IRB2001",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1514",
+                            "Nombre": "Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "null",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Din\u00e1mica de Sistemas Mec\u00e1nicos",
+                "CodSigla": "ICM2803",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "FIS1514",
+                            "Nombre": "Din\u00e1mica",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 4,
+                "OrdenSemestre": 6,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Sistemas Digitales",
+                "CodSigla": "IEE2713",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [{
+                        "Sigla": "MAT1203",
+                        "Nombre": "\u00c1lgebra Lineal",
+                        "Semestralidad": "I y II",
+                        "Creditos": 10,
+                        "TipoRequisito": "Requisito"
+                    }]
+                },
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Optativo Biol\u00f3gico",
+                "CodSigla": null,
+                "CodLista": "L10",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Optativo de Fundamentos de Ciencias o Ingenier\u00eda ",
+                "CodSigla": null,
+                "CodLista": "C8932",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Investigaci\u00f3n, Innovaci\u00f3n y Emprendimiento",
+                "CodSigla": "ING2030",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 4,
+                "Equivalencias": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIE2001",
+                            "Nombre": "Investigaci\u00f3n, Innovaci\u00f3n y Emprendimiento",
+                            "Semestralidad": null,
+                            "Creditos": 10
+                        }
+                    ]
+                },
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ciencias B\u00e1sicas (m\u00ednimos)"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 5,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Procesos de Manufactura",
+                "CodSigla": "ICM2503",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 6,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IRB2001",
+                            "Nombre": "Fundamentos de Rob\u00f3tica",
+                            "Semestralidad": "II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Diseño de Sistemas Robóticos (Capstone)",
+                "CodSigla": "IRB2002",
+                "CodLista": null,
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 6,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IRB2001",
+                            "Nombre": "Fundamentos de Rob\u00f3tica",
+                            "Semestralidad": "II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Optativos Major",
+                "CodSigla": null,
+                "CodLista": "C8900",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 6,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 6,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Optativos Major",
+                "CodSigla": null,
+                "CodLista": "C8901",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 7,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Optativos Major",
+                "CodSigla": null,
+                "CodLista": "C8902",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 7,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Optativos Major",
+                "CodSigla": null,
+                "CodLista": "C8903",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 7,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 7,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Optativos Major",
+                "CodSigla": null,
+                "CodLista": "C8904",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 8,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Major"
+            },
+            {
+                "Nombre": "Cursos electivos (Formaci\u00f3n general)",
+                "CodSigla": null,
+                "CodLista": "L1",
+                "Programa": "Major en Ingenier\u00eda Rob\u00f3tica",
+                "Creditos": 10,
+                "SemestreBloque": 8,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Formaci\u00f3n General"
+            },
+            {
+                "Nombre": "Estructuras de Datos y Algoritmos",
+                "CodSigla": "IIC2133",
+                "CodLista": null,
+                "Programa": "Minor de Amplitud en Programaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 9,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null, "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIC1222",
+                            "Nombre": "Programacion Avanzada",
+                            "Semestralidad": null,
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        },
+                        {
+                            "Sigla": "IIC1253",
+                            "Nombre": "Matem\u00e1ticas Discretas",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Minor de Amplitud en Programaci\u00f3n"
+            },
+            {
+                "Nombre": "Ingenier\u00eda de Software",
+                "CodSigla": "IIC2143",
+                "CodLista": null,
+                "Programa": "Minor de Amplitud en Programaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 9,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIC2233",
+                            "Nombre": "Programaci\u00f3n Avanzada",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Minor de Amplitud en Programaci\u00f3n"
+            },
+            {
+                "Nombre": "Bases de Datos",
+                "CodSigla": "IIC2413",
+                "CodLista": null,
+                "Programa": "Minor de Amplitud en Programaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 9,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": {
+                    "Cursos": [
+                        {
+                            "Sigla": "IIC2233",
+                            "Nombre": "Programaci\u00f3n Avanzada",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
+                },
+                "Tipocurso": "Laboratorio",
+                "BloqueAcademico": "Minor de Amplitud en Programaci\u00f3n"
+            },
+            {
+                "Nombre":"Optativos Complementarios",
+                "CodSigla":  null,
+                "CodLista": "C8767",
+                "Programa": "Minor de Amplitud en Programaci\u00f3n",
+                "Creditos": 20,
+                "SemestreBloque": 9,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Minor de Amplitud en Programaci\u00f3n"
+            },
+            {
+                "Nombre": "Optimizaci\u00f3n",
+                "CodSigla": null,
+                "CodLista": "C10129",
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 10,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ingeniero Civil de Computación"
+            },
+            {
+                "Nombre": "Logica para Ciencias de la Computacion",
+                "CodSigla": "IIC2213",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 10,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ingeniero Civil de Computación"
+            },
+            {
+                "Nombre": "Teoria de Automatas y Lenguajes Formales",
+                "CodSigla": "IIC2223",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 10,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ingeniero Civil de Computación"
+            },
+            {
+                "Nombre": "Dise\u00f1o y An\u00e1lisis de Algoritmos",
+                "CodSigla": "IIC2283",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 10,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ingeniero Civil de Computación"
+            },
+            {
+                "Nombre": "Sistemas Distribuidos",
+                "CodSigla": "IIC2523",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 10,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ingeniero Civil de Computación"
+            },
+            {
+                "Nombre": "Tecnolog\u00edas y Aplicaciones Web",
+                "CodSigla": "IIC2513",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 10,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ingeniero Civil de Computación"
+            },
+            {
+                "Nombre": "Inteligencia Artificial",
+                "CodSigla": "IIC2613",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 11,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ingeniero Civil de Computación"
+            },
+            {
+                "Nombre": "Gesti\u00f3n de Proyectos de Tecnolog\u00edas de Informaci\u00f3n",
+                "CodSigla": "IIC3113",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 11,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ingeniero Civil de Computación"
+            },
+            {
+                "Nombre": "Criptograf\u00eda y Seguridad Computacional",
+                "CodSigla": "IIC3253",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 11,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ingeniero Civil de Computación"
+            },
+            {
+                "Nombre": "Computaci\u00f3n de Alto Rendimiento",
+                "CodSigla": "IIC3533",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 11,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ingeniero Civil de Computación"
+            },
+            {
+                "Nombre": "Desarrollo de Sistemas Complejos (Proyecto de T\u00edtulo)",
+                "CodSigla": "IIC3964",
+                "CodLista": null,
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 11,
+                "OrdenSemestre": 5,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ingeniero Civil de Computación"
+            },
+            {
+                "Nombre": "Inteligencia de M\u00e1quina",
+                "CodSigla": null,
+                "CodLista": "C10157",
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 12,
+                "OrdenSemestre": 1,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ingeniero Civil de Computación"
+            },
+            {
+                "Nombre": "Ingenier\u00eda de Software",
+                "CodSigla": null,
+                "CodLista": "C10158",
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 12,
+                "OrdenSemestre": 2,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ingeniero Civil de Computación"
+            },
+            {
+                "Nombre": "Manejo de Datos",
+                "CodSigla": null,
+                "CodLista": "C10159",
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 12,
+                "OrdenSemestre": 3,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ingeniero Civil de Computación"
+            },
+            {
+                "Nombre": "Teor\u00eda de la Computaci\u00f3n",
+                "CodSigla": null,
+                "CodLista": "C10160",
+                "Programa": "Ingeniero Civil de Computaci\u00f3n",
+                "Creditos": 10,
+                "SemestreBloque": 12,
+                "OrdenSemestre": 4,
+                "Equivalencias": null,
+                "Restricciones": null,
+                "Requisitos": null,
+                "Tipocurso": null,
+                "BloqueAcademico": "Ingeniero Civil de Computación"
+            }
         ]
     },
     "getListaPredefinida": {
@@ -21323,6 +24294,52 @@
                 "Semestralidad": null,
                 "Creditos": 10
             }
+        ],
+        "{\"CodLista\": \"C8767\"}": [
+            {
+                "Sigla": "IIC2713",
+                "Nombre": "Sistemas de Información",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC2513",
+                "Nombre": "Tecnologías y Aplicaciones Web",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+
+                "Sigla": "IIC1253",
+                "Nombre": "Matem\u00e1ticas Discretas",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC2343",
+                "Nombre": "Arquitectura de Computadores",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC2613",
+                "Nombre": "Inteligencia Artificial",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC2333",
+                "Nombre": "Sistemas Operativos y Redes",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC2283",
+                "Nombre": "Diseño y Análisis de Algoritmos",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            }
+
         ],
         "{\"CodLista\": \"L11\"}": [
             {
@@ -39092,6 +42109,84 @@
             {
                 "Sigla": "SUS1000",
                 "Nombre": "CMD Sustentabilidad",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            }
+        ],
+        "{\"CodLista\": \"C8932\"}": [
+            {
+                "Sigla": "IIC2233",
+                "Nombre": "Programaci\u00f3n Avanzada",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            }
+        ],
+        "{\"CodLista\": \"C8900\"}": [
+            {
+                "Sigla": "ICM2003",
+                "Nombre": "Sistemas Electromec\u00e1nicos",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2123",
+                "Nombre": "Circuitos El\u00e9ctricos",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            }
+        ],
+        "{\"CodLista\": \"C8901\"}": [
+            {
+                "Sigla": "IIC2613",
+                "Nombre": "Inteligencia Artificial",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC2685",
+                "Nombre": "Rob\u00f3tica M\u00f3vil",
+                "Semestralidad": "I",
+                "Creditos": 10
+            }
+        ],
+        "{\"CodLista\": \"C8902\"}": [
+            {
+                "Sigla": "IEE2103",
+                "Nombre": "Se\u00f1ales y Sistemas",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC1253",
+                "Nombre": "Matem\u00e1ticas Discretas",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            }
+        ],
+        "{\"CodLista\": \"C8903\"}": [
+            {
+                "Sigla": "ICM2813",
+                "Nombre": "Control de Sistemas Mec\u00e1nicos",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IEE2613",
+                "Nombre": "Control Autom\u00e1tico",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            }
+        ],
+        "{\"CodLista\": \"C8904\"}": [
+            {
+                "Sigla": "IEE2463",
+                "Nombre": "Sistemas Electr\u00f3nicos Programables",
+                "Semestralidad": "I y II",
+                "Creditos": 10
+            },
+            {
+                "Sigla": "IIC2343",
+                "Nombre": "Arquitectura de Computadores",
                 "Semestralidad": "I y II",
                 "Creditos": 10
             }
