@@ -44,7 +44,7 @@ const Selector = memo(function _Selector ({
         leaveFrom="opacity-100"
         leaveTo="opacity-0"
       >
-        <Listbox.Options className="curriculumOptions" style={{ zIndex: 1 }}>
+        <Listbox.Options className="curriculumOptions overflow-visible z-40">
           {Object.keys(data).map((key) => (
             <Listbox.Option
               className={({ active }) =>

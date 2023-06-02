@@ -22,7 +22,7 @@
     @apply text-base pl-1 pr-1 text-left;
   }
   .curriculumSelector .selectorElement .curriculumOptions {
-    @apply absolute mt-1 max-h-96 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm;
+    @apply fixed mt-1 max-h-96 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm;
   }
   .curriculumSelector .selectorElement .curriculumOptions .curriculumOption{
     @apply relative cursor-default select-none py-1.5 pl-8 pr-4 ;
