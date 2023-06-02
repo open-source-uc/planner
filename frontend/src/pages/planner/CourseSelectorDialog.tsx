@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, Fragment, memo } from 'react'
 import { Dialog, Transition, Switch } from '@headlessui/react'
 import { DefaultService, EquivDetails, CourseOverview, CourseDetails, CancelablePromise } from '../../client'
 import { Spinner } from '../../components/Spinner'
@@ -391,4 +391,4 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   )
 }
 
-export default CourseSelectorDialog
+export default memo(CourseSelectorDialog)
