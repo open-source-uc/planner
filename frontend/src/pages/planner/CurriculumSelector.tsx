@@ -136,7 +136,7 @@ const CurriculumSelector = memo(function CurriculumSelector ({
             />
           }
         </li>
-        {planName !== '' && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {planName}</li>}
+        {planName !== '' && <li className={'inline text-md ml-3 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {planName}</li>}
       </ul>
   )
 })

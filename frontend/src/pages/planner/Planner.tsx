@@ -314,8 +314,10 @@ const Planner = (): JSX.Element => {
     // its not ok to use `validatablePlan` directly
     setValidatablePlan(prev => {
       if (prev === null) return null
-      const newClases = prev.classes
-      newClases[semIdx].splice(index, 1)
+      const newClases = [...prev.classes]
+      const newClasesSem = [...prev.classes[semIdx]]
+      newClasesSem.splice(index, 1)
+      newClases[semIdx] = newClasesSem
       while (newClases[newClases.length - 1].length === 0) {
         newClases.pop()
       }
@@ -573,7 +575,7 @@ const Planner = (): JSX.Element => {
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
       <AlertModal title={popUpAlert.title} desc={popUpAlert.desc} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}/>
       {plannerStatus === 'LOADING' && (
-        <div className="fixed left-0 w-screen h-full z-50 bg-white flex justify-center items-center">
+        <div className="fixed left-0 w-screen h-full z-50 bg-white flex flex-col justify-center items-center">
           <Spinner message='Cargando planificación...' />
         </div>
       )}
