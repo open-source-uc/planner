@@ -2,7 +2,7 @@
 import { memo, useCallback } from 'react'
 import { useDrop } from 'react-dnd'
 import { useAuth } from '../../../contexts/auth.context'
-import { CourseValidationDigest, PseudoCourseDetail, PseudoCourseId } from '../Planner'
+import { CourseValidationDigest, PseudoCourseDetail, PseudoCourseId, SemesterValidationDigest } from '../Planner'
 import CourseCard from './CourseCard'
 import deepEqual from 'fast-deep-equal'
 
@@ -14,12 +14,13 @@ interface SemesterColumnProps {
   remCourse: Function
   openModal: Function
   classes: PseudoCourseId[]
-  validationDigest: CourseValidationDigest[]
+  validationCourses: CourseValidationDigest[]
+  validationSemester: SemesterValidationDigest | null
   isDragging: boolean
   setIsDragging: Function
 }
 
-const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCourse, openModal, classes, validationDigest, isDragging, setIsDragging }: SemesterColumnProps): JSX.Element => {
+const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCourse, openModal, classes, validationCourses, validationSemester, isDragging, setIsDragging }: SemesterColumnProps): JSX.Element => {
   const authState = useAuth()
   const conditionPassed = ((authState?.student) != null) && (semester < authState.student.current_semester)
   const conditionNotPassed = ((authState?.student) != null) && (semester >= authState.student.current_semester)
@@ -36,8 +37,11 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
     if ('equivalence' in course) openModal(course.equivalence, semester, index)
     else openModal(course, semester, index)
   }, [])
+  let border = 'border-transparent'
+  if (validationSemester != null && validationSemester.errorIndices.length > 0) border = 'border-solid border-red-300'
+  else if (validationSemester != null && validationSemester.warningIndices.length > 0) border = 'border-solid border-yellow-300'
   return (
-    <div className={'drop-shadow-xl w-[165px] shrink-0 bg-base-200 rounded-lg flex flex-col'}>
+    <div className={`drop-shadow-xl w-[161px] shrink-0 bg-base-200 rounded-lg flex flex-col border-2 ${border}`}>
       {conditionPassed
         ? <span className='line-through decoration-black/40'><h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2></span>
         : <h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2>
@@ -54,11 +58,11 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
               isDragging={setIsDragging}
               moveCourse={moveCourse}
               remCourse={remCourse}
-              courseBlock={validationDigest[index]?.superblock ?? ''}
+              courseBlock={validationCourses[index]?.superblock ?? ''}
               openSelector={() => openSelector(course, semester, index)}
               hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
-              hasError={validationDigest[index]?.errorIndices?.[0] != null}
-              hasWarning={validationDigest[index]?.warningIndices?.[0] != null}
+              hasError={validationCourses[index]?.errorIndices?.[0] != null}
+              hasWarning={validationCourses[index]?.warningIndices?.[0] != null}
             />
           ))
         }
