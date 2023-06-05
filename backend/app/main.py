@@ -415,7 +415,7 @@ async def get_curriculum_validation_graph(plan: ValidatablePlan) -> str:
     courseinfo = await course_info()
     curriculum = await sync.get_curriculum(plan.curriculum)
     g = solve_curriculum(courseinfo, curriculum, plan.classes)
-    return g.dump_graphviz(plan.classes)
+    return g.dump_graphviz()
 
 
 @app.post("/plan/generate", response_model=ValidatablePlan)

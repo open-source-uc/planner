@@ -100,9 +100,9 @@ class ValidationContext:
                 credit_acc += courseinfo.get_credits(course) or 0
             self.approved_credits.append(credit_acc)
 
-        # The current semester (or the next semester if in vacation)
+        # The first semester where courses have not yet been taken
         self.start_validation_from = (
-            0 if user_ctx is None else user_ctx.current_semester
+            0 if user_ctx is None else user_ctx.next_semester
         )
 
         # Context

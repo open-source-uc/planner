@@ -142,11 +142,13 @@ class CurriculumErr(DiagnosticErr):
 
 class UnassignedWarn(DiagnosticWarn):
     """
-    Indicates that some courses (`associated_to`) have no use in the curriculum.
+    Indicates that some courses (in total `unassigned_credits` credits) have no use in
+    the curriculum.
     """
 
     kind: Literal["useless"] = Field("useless", const=True)
-    associated_to: list[ClassId]
+    associated_to: None = None
+    unassigned_credits: int
 
 
 class NoMajorMinorWarn(DiagnosticWarn):

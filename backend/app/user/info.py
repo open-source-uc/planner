@@ -38,4 +38,7 @@ class StudentContext(BaseModel):
     current_semester: int
     # The index of the next semester (ie. if the student is currently coursing a
     # semester, it points to the semester after this one).
+    # This is the index of the first semester where courses have not yet been taken.
+    # (This property is useful because we do not want to generate errors for semesters
+    # where their courses have already been taken)
     next_semester: int

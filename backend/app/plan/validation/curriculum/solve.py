@@ -109,6 +109,8 @@ class SolvedCurriculum:
     root: int
     # A dictionary from layer ids to a (list of node ids for each course).
     layers: dict[str, LayerCourses]
+    # Taken courses.
+    taken: TakenCourses
 
     def __init__(self):
         self.nodes = [Node(), Node()]
@@ -117,6 +119,7 @@ class SolvedCurriculum:
         self.sink = 1
         self.root = 1
         self.layers = {}
+        self.taken = TakenCourses(flat=[], mapped={})
 
     def add(self, node: Node) -> int:
         id = len(self.nodes)
@@ -156,7 +159,7 @@ class SolvedCurriculum:
         self.connect(self.source, id, credits)
         return id
 
-    def dump_graphviz(self, taken: list[list[PseudoCourse]]) -> str:  # noqa: C901
+    def dump_graphviz(self) -> str:  # noqa: C901
         """
         Dump the graph representation as a Graphviz DOT file.
         """
@@ -248,9 +251,7 @@ def _connect_course(
     g.connect(subid, superid, credits, cost)
 
 
-def _build_visit(
-    courseinfo: CourseInfo, g: SolvedCurriculum, taken: TakenCourses, block: Block
-) -> int:
+def _build_visit(courseinfo: CourseInfo, g: SolvedCurriculum, block: Block) -> int:
     superid = g.add(Node(origin=block))
     if isinstance(block, Leaf):
         # A list of courses
@@ -258,20 +259,20 @@ def _build_visit(
 
         # For performance, iterate through the taken courses or through the accepted
         # codes, whichever is shorter
-        if len(block.codes) < len(taken.flat):
+        if len(block.codes) < len(g.taken.flat):
             # There is a small amount of courses in this block
             # Iterate through this list, in taken order
             minitaken: list[TakenCourse] = []
             for code in block.codes:
-                if code in taken.mapped:
-                    minitaken.extend(taken.mapped[code])
+                if code in g.taken.mapped:
+                    minitaken.extend(g.taken.mapped[code])
             minitaken.sort(key=lambda c: c.flat_index)
             for c in minitaken:
                 _connect_course(courseinfo, g, block, superid, c)
         else:
             # There are way too many codes in this block
             # Iterate through taken courses instead
-            for c in taken.flat:
+            for c in g.taken.flat:
                 if c.course.code in block.codes:
                     _connect_course(courseinfo, g, block, superid, c)
 
@@ -281,7 +282,7 @@ def _build_visit(
             code = rec.course.code
             if code not in recommend_index:
                 recommend_index[code] = (
-                    len(taken.mapped[code]) if code in taken.mapped else 0
+                    len(g.taken.mapped[code]) if code in g.taken.mapped else 0
                 )
             repeat_index = recommend_index[code]
             recommended = RecommendedCourse(rec=rec, repeat_index=repeat_index)
@@ -290,7 +291,7 @@ def _build_visit(
     else:
         # A combination of blocks
         for c in block.children:
-            subid = _build_visit(courseinfo, g, taken, c)
+            subid = _build_visit(courseinfo, g, c)
             g.connect(subid, superid, c.cap)
     return superid
 
@@ -330,7 +331,8 @@ def _build_graph(
             taken.flat.append(c)
 
     g = SolvedCurriculum()
-    g.root = _build_visit(courseinfo, g, taken, curriculum.root)
+    g.taken = taken
+    g.root = _build_visit(courseinfo, g, curriculum.root)
     g.connect(g.root, g.sink, curriculum.root.cap)
     return g
 
@@ -407,7 +409,7 @@ def solve_curriculum(
         raise Exception(
             "maximizing flow does not satisfy the root demand,"
             + " even with filler recommendations"
-            + f":\n{g.dump_graphviz(taken)}"
+            + f":\n{g.dump_graphviz()}"
         )
     # Make sure that there is no split flow (ie. there is no course that splits its
     # outgoing flow between two blocks)
@@ -425,6 +427,6 @@ def solve_curriculum(
             raise Exception(
                 "min cost max flow produced invalid split-flow"
                 + " (ie. there is some node with 2+ non-zero-flow outgoing edges)"
-                + f":\n{g.dump_graphviz(taken)}"
+                + f":\n{g.dump_graphviz()}"
             )
     return g

@@ -103,7 +103,7 @@ const formatMessage = (diag: Diagnostic): string => {
     case 'sem': {
       const sem = diag.only_available_on === 0 ? 'primeros' : diag.only_available_on === 1 ? 'segundos' : '?'
       const s = diag.associated_to.length !== 1
-      return `${s ? 'El' : 'Los'} curso${s ? 's' : ''} ${listCourses(diag.associated_to)} solo se dictan los ${sem} semestres.`
+      return `${s ? 'Los' : 'El'} curso${s ? 's' : ''} ${listCourses(diag.associated_to)} solo se dicta${s ? 'n' : ''} los ${sem} semestres.`
     }
     case 'unavail': {
       const s = diag.associated_to.length !== 1
@@ -114,8 +114,8 @@ const formatMessage = (diag: Diagnostic): string => {
       return `Código${s} de curso desconocido${s}: ${listCourses(diag.associated_to)}`
     }
     case 'useless': {
-      const s = diag.associated_to.length !== 1
-      return `${diag.associated_to.length} curso${s ? 's' : ''} ${listCourses(diag.associated_to)} no cuenta${s ? 'n' : ''} para tu curriculum: ${listCourses(diag.associated_to)}`
+      const creds: number = diag.unassigned_credits
+      return `Tienes ${creds} cŕeditos que no cuentan para tu curriculum.`
     }
     case undefined:
       return '?'

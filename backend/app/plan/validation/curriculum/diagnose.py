@@ -1,6 +1,9 @@
+from typing import Optional
+
+from ....user.info import StudentContext
 from ...course import PseudoCourse
 from .solve import RecommendedCourse, SolvedCurriculum, TakenCourse, solve_curriculum
-from ...plan import ClassId, ValidatablePlan
+from ...plan import ValidatablePlan
 from ..diagnostic import (
     CurriculumErr,
     NoMajorMinorWarn,
@@ -88,6 +91,7 @@ def diagnose_curriculum(
     courseinfo: CourseInfo,
     curriculum: Curriculum,
     plan: ValidatablePlan,
+    user_ctx: Optional[StudentContext],
     out: ValidationResult,
 ):
     # Produce a warning if no major/minor is selected
@@ -108,11 +112,17 @@ def diagnose_curriculum(
         if isinstance(node.origin, Block) and node.origin.name is not None:
             _tag_superblock(node.origin.name, out, g, edge.src)
 
-    # Send warning for each unassigned course (including passed courses)
-    unassigned: list[ClassId] = []
+    # Count unassigned credits (including passed courses)
+    # However, only emit the warning if there is at least 1 not-yet-passed unassigned
+    # course
+    unassigned: int = 0
+    notpassed_unassigned: bool = False
     for code, instances in out.course_superblocks.items():
         for rep_idx, superblock in enumerate(instances):
             if superblock == "":
-                unassigned.append(ClassId(code=code, instance=rep_idx))
-    if unassigned:
-        out.add(UnassignedWarn(associated_to=unassigned))
+                course = g.taken.mapped[code][rep_idx]
+                unassigned += courseinfo.get_credits(course.course) or 0
+                if user_ctx is None or course.sem >= user_ctx.next_semester:
+                    notpassed_unassigned = True
+    if notpassed_unassigned:
+        out.add(UnassignedWarn(unassigned_credits=unassigned))

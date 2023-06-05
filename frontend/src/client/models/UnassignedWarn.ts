@@ -2,14 +2,14 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import type { ClassId } from './ClassId';
-
 /**
- * Indicates that some courses (`associated_to`) have no use in the curriculum.
+ * Indicates that some courses (in total `unassigned_credits` credits) have no use in
+ * the curriculum.
  */
 export type UnassignedWarn = {
     kind?: 'useless';
-    associated_to: Array<ClassId>;
+    associated_to?: null;
     is_err?: boolean;
+    unassigned_credits: number;
 };
 

@@ -160,7 +160,7 @@ const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSele
   const editIcon = blockId === 'FG' ? editWhiteIcon : editBlackIcon
 
   // Turns out animations are a big source of lag
-  const allowAnimations = true && blockId !== 'FG'
+  const allowAnimations = false && blockId !== 'FG'
 
   return (
     <div className={`card group block-${blockId} ${cardData.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
