@@ -8,6 +8,8 @@ import type { CurriculumErr } from './CurriculumErr';
 import type { MismatchedCurriculumSelectionWarn } from './MismatchedCurriculumSelectionWarn';
 import type { MismatchedCyearErr } from './MismatchedCyearErr';
 import type { NoMajorMinorWarn } from './NoMajorMinorWarn';
+import type { OutdatedCurrentSemesterErr } from './OutdatedCurrentSemesterErr';
+import type { OutdatedPlanErr } from './OutdatedPlanErr';
 import type { SemesterCreditsErr } from './SemesterCreditsErr';
 import type { SemesterCreditsWarn } from './SemesterCreditsWarn';
 import type { SemestralityWarn } from './SemestralityWarn';
@@ -16,7 +18,7 @@ import type { UnavailableCourseWarn } from './UnavailableCourseWarn';
 import type { UnknownCourseErr } from './UnknownCourseErr';
 
 export type ValidationResult = {
-    diagnostics: Array<(CourseRequirementErr | UnknownCourseErr | MismatchedCyearErr | MismatchedCurriculumSelectionWarn | SemestralityWarn | UnavailableCourseWarn | AmbiguousCourseErr | SemesterCreditsWarn | SemesterCreditsErr | CurriculumErr | UnassignedWarn | NoMajorMinorWarn)>;
+    diagnostics: Array<(CourseRequirementErr | UnknownCourseErr | MismatchedCyearErr | MismatchedCurriculumSelectionWarn | OutdatedPlanErr | OutdatedCurrentSemesterErr | SemestralityWarn | UnavailableCourseWarn | AmbiguousCourseErr | SemesterCreditsWarn | SemesterCreditsErr | CurriculumErr | UnassignedWarn | NoMajorMinorWarn)>;
     course_superblocks: Record<string, Array<string>>;
 };
 

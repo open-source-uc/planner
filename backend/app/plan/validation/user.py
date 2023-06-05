@@ -6,14 +6,51 @@ since guests (with no associated user context) can also validate plans.
 
 
 from typing import Optional
+from ..course import EquivalenceId, PseudoCourse
 from .curriculum.tree import CurriculumSpec
 from .diagnostic import (
     MismatchedCurriculumSelectionWarn,
+    OutdatedCurrentSemesterErr,
+    OutdatedPlanErr,
     ValidationResult,
     MismatchedCyearErr,
 )
 from ...user.info import StudentContext
 from ..plan import ValidatablePlan
+
+
+def _check_sem_eq(sem1: list[PseudoCourse], sem2: list[PseudoCourse]) -> bool:
+    # Important not to modify the original `sem1` and `sem2` lists here
+    sem1 = sorted(sem1, key=lambda c: c.code)
+    sem2 = sorted(sem2, key=lambda c: c.code)
+    if len(sem1) != len(sem2):
+        return False
+    for c1, c2 in zip(sem1, sem2):
+        if (
+            isinstance(c1, EquivalenceId)
+            or isinstance(c2, EquivalenceId)
+            or c1.code != c2.code
+        ):
+            return False
+    return True
+
+
+def _validate_possibly_outdated(
+    plan: ValidatablePlan, user_ctx: StudentContext, out: ValidationResult
+):
+    """
+    Check whether the plan is in sync with the courses that `user_ctx` has passed.
+    """
+
+    unsynced_sems: list[int] = []
+    for sem_i in range(user_ctx.next_semester):
+        if not _check_sem_eq(plan.classes[sem_i], user_ctx.passed_courses[sem_i]):
+            unsynced_sems.append(sem_i)
+    if unsynced_sems:
+        if len(unsynced_sems) == 1 and unsynced_sems[0] == user_ctx.current_semester:
+            out.add(OutdatedCurrentSemesterErr(associated_to=unsynced_sems))
+        else:
+            out.add(OutdatedPlanErr(associated_to=unsynced_sems))
 
 
 def _is_mismatched(selected: Optional[str], reported: Optional[str]):
@@ -45,3 +82,5 @@ def validate_against_owner(
                 ),
             )
         )
+
+    _validate_possibly_outdated(plan, user_ctx, out)

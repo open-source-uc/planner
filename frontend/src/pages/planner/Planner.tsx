@@ -67,6 +67,9 @@ export interface ValidationDigest {
   semesters: SemesterValidationDigest[]
   // Information associated to each course.
   courses: CourseValidationDigest[][]
+  // If `true`, the plan is outdated with respect to the courses that the user has taken.
+  // This is computed from the presence of "outdated" diagnostics.
+  isOutdated: boolean
 }
 
 /**
@@ -118,7 +121,8 @@ const Planner = (): JSX.Element => {
   const validationDigest = useMemo((): ValidationDigest => {
     const digest: ValidationDigest = {
       courses: [],
-      semesters: []
+      semesters: [],
+      isOutdated: false
     }
     if (validatablePlan != null) {
       // Initialize course information
@@ -145,6 +149,9 @@ const Planner = (): JSX.Element => {
         // Fill course and semester information with their associated errors
         for (let k = 0; k < validationResult.diagnostics.length; k++) {
           const diag = validationResult.diagnostics[k]
+          if (diag.kind === 'outdated' || diag.kind === 'outdatedcurrent') {
+            digest.isOutdated = true
+          }
           if (diag.associated_to != null) {
             for (const assoc of diag.associated_to) {
               if (typeof assoc === 'number') {

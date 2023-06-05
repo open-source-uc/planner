@@ -31,6 +31,8 @@ export type { MismatchedCurriculumSelectionWarn } from './models/MismatchedCurri
 export type { MismatchedCyearErr } from './models/MismatchedCyearErr';
 export type { NoMajorMinorWarn } from './models/NoMajorMinorWarn';
 export type { Or } from './models/Or';
+export type { OutdatedCurrentSemesterErr } from './models/OutdatedCurrentSemesterErr';
+export type { OutdatedPlanErr } from './models/OutdatedPlanErr';
 export type { PlanView } from './models/PlanView';
 export type { ReqCareer } from './models/ReqCareer';
 export type { ReqCourse } from './models/ReqCourse';

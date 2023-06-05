@@ -98,6 +98,10 @@ const formatMessage = (diag: Diagnostic): string => {
       }
       return `Debes seleccionar ${missing} para validar correctamente tu plan.`
     }
+    case 'outdated':
+      return 'Esta malla no está actualizada con los cursos que has tomado'
+    case 'outdatedcurrent':
+      return 'Esta malla no está actualizada con los cursos que estás tomando'
     case 'req':
       return `Faltan requisitos para el curso ${diag.associated_to[0]?.code}: ${formatReqExpr(diag.missing)}`
     case 'sem': {

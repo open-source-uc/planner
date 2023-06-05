@@ -68,6 +68,32 @@ class MismatchedCurriculumSelectionWarn(DiagnosticWarn):
     user: CurriculumSpec
 
 
+class OutdatedPlanErr(DiagnosticErr):
+    """
+    Indicates that the plan does not reflect the courses that the user has taken.
+    This could happen if the user planned ahead, but didn't follow their plan.
+    Afterwards, when they take different courses than they planned, their plan becomes
+    outdated.
+    The semesters that are mismatched are included in `associated_to`.
+    """
+
+    kind: Literal["outdated"] = Field("outdated", const=True)
+    associated_to: list[int]
+
+
+class OutdatedCurrentSemesterErr(DiagnosticErr):
+    """
+    Indicates that the current semester in the plan does not reflect the courses that
+    the user is currently taken.
+    This could be because the user is experimenting with modifying their current
+    semester (ie. removing courses that they don't expect to pass).
+    This is the "smaller version" of `OutdatedPlanErr`.
+    """
+
+    kind: Literal["outdatedcurrent"] = Field("outdatedcurrent", const=True)
+    associated_to: list[int]
+
+
 class SemestralityWarn(DiagnosticWarn):
     """
     Indicates that some courses (`associated_to`) are not normally given in the
@@ -168,6 +194,8 @@ Diagnostic = Annotated[
         UnknownCourseErr,
         MismatchedCyearErr,
         MismatchedCurriculumSelectionWarn,
+        OutdatedPlanErr,
+        OutdatedCurrentSemesterErr,
         SemestralityWarn,
         UnavailableCourseWarn,
         AmbiguousCourseErr,
