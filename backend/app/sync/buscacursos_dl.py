@@ -304,9 +304,12 @@ async def fetch_to_database():
             # Parse and simplify dependencies
             deps = simplify(parse_deps(c))
             # Figure out semestrality
-            available_in_semester = [False, False, False]
+            available_in_semester = [False, False]
             for period in c.instances.keys():
                 sem = periods[period][1] - 1
+                if sem == 2:
+                    # Consider TAV to be in the second semester
+                    sem = 1
                 available_in_semester[sem] = True
             # Use names from buscacursos if available, because they have accents
             name = max(c.instances.items())[1].name if c.instances else c.name
@@ -326,7 +329,6 @@ async def fetch_to_database():
                     "is_available": any(available_in_semester),
                     "semestrality_first": available_in_semester[0],
                     "semestrality_second": available_in_semester[1],
-                    "semestrality_tav": available_in_semester[2],
                 }
             )
         except Exception:

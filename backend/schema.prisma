@@ -52,7 +52,6 @@ model Course {
   // WARNING: The availability in these semesters is not guaranteed!
   semestrality_first  Boolean
   semestrality_second Boolean
-  semestrality_tav    Boolean
   equivs              EquivalenceCourse[]
 }
 
