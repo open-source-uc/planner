@@ -6,45 +6,14 @@ since guests (with no associated user context) can also validate plans.
 
 
 from typing import Optional
-from .curriculum.tree import Cyear
-from .diagnostic import DiagnosticErr, DiagnosticWarn, ValidationResult
+from .curriculum.tree import CurriculumSpec
+from .diagnostic import (
+    MismatchedCurriculumSelectionWarn,
+    ValidationResult,
+    MismatchedCyearErr,
+)
 from ...user.info import StudentContext
 from ..plan import ValidatablePlan
-
-
-class MismatchedCyearErr(DiagnosticErr):
-    plan: Cyear
-    user: str
-
-    def message(self) -> str:
-        return (
-            f"Este plan esta configurado para el curriculum {self.plan}, pero segun "
-            + f"tu año de ingreso te corresponde {self.user}"
-        )
-
-
-class MismatchedCurriculumSelectionWarn(DiagnosticWarn):
-    wrong_major: bool
-    wrong_minor: bool
-    wrong_title: bool
-
-    def message(self) -> str:
-        missing: list[str] = []
-        if self.wrong_major:
-            missing.append("major")
-        if self.wrong_minor:
-            missing.append("minor")
-        if self.wrong_title:
-            missing.append("título")
-        missing_str = ""
-        for i in range(len(missing)):
-            if i > 0:
-                if i == len(missing) - 1:
-                    missing_str += " y "
-                else:
-                    missing_str += ", "
-            missing_str += missing[i]
-        return f"El {missing_str} elegido no es el que tienes inscrito oficialmente"
 
 
 def _is_mismatched(selected: Optional[str], reported: Optional[str]):
@@ -59,13 +28,20 @@ def validate_against_owner(
             MismatchedCyearErr(plan=plan.curriculum.cyear, user=user_ctx.info.cyear)
         )
 
-    mismatch = MismatchedCurriculumSelectionWarn(
-        wrong_major=_is_mismatched(plan.curriculum.major, user_ctx.info.reported_major),
-        wrong_minor=_is_mismatched(plan.curriculum.minor, user_ctx.info.reported_minor),
-        wrong_title=(
-            plan.curriculum.title is None and user_ctx.info.reported_title is not None
+    if (
+        _is_mismatched(plan.curriculum.major, user_ctx.info.reported_major)
+        or _is_mismatched(plan.curriculum.minor, user_ctx.info.reported_minor)
+        or _is_mismatched(plan.curriculum.title, user_ctx.info.reported_title)
+        or (plan.curriculum.title is None and user_ctx.info.reported_title is not None)
+    ):
+        out.add(
+            MismatchedCurriculumSelectionWarn(
+                plan=plan.curriculum,
+                user=CurriculumSpec(
+                    cyear=plan.curriculum.cyear,
+                    major=user_ctx.info.reported_major,
+                    minor=user_ctx.info.reported_minor,
+                    title=user_ctx.info.reported_title,
+                ),
+            )
         )
-        or _is_mismatched(plan.curriculum.title, user_ctx.info.reported_title),
-    )
-    if mismatch.wrong_major or mismatch.wrong_minor or mismatch.wrong_title:
-        out.add(mismatch)

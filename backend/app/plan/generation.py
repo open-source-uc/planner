@@ -237,11 +237,9 @@ async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan
     from this function, except for manually crafted plans).
     """
     classes: list[list[PseudoCourse]]
-    next_semester: int
     curriculum: CurriculumSpec
     if user is None:
         classes = []
-        next_semester = 0
         curriculum = CurriculumSpec(
             cyear=LATEST_CYEAR,
             major=None,
@@ -259,7 +257,6 @@ async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan
                 status_code=501, detail="Your curriculum version is unsupported"
             )
         classes = student.passed_courses
-        next_semester = len(classes)
         curriculum = CurriculumSpec(
             cyear=cyear,
             major=student.info.reported_major,
@@ -268,7 +265,6 @@ async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan
         )
     return ValidatablePlan(
         classes=classes,
-        next_semester=next_semester,
         level=Level.PREGRADO,
         school="Ingenieria",
         program=None,

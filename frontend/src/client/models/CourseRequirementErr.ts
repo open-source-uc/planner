@@ -2,6 +2,8 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { And } from './And';
+import type { ClassId } from './ClassId';
 import type { Const } from './Const';
 import type { MinCredits } from './MinCredits';
 import type { Or } from './Or';
@@ -12,12 +14,12 @@ import type { ReqProgram } from './ReqProgram';
 import type { ReqSchool } from './ReqSchool';
 
 /**
- * Logical AND connector.
- * Only satisfied if all of its children are satisfied.
+ * Indicates that a course (`associated_to`) is missing some requirements (`missing`).
  */
-export type And = {
-    hash?: Blob;
-    children: Array<(And | Or | Const | MinCredits | ReqLevel | ReqSchool | ReqProgram | ReqCareer | ReqCourse)>;
-    expr?: 'and';
+export type CourseRequirementErr = {
+    kind?: 'req';
+    associated_to: Array<ClassId>;
+    is_err?: boolean;
+    missing: (And | Or | Const | MinCredits | ReqLevel | ReqSchool | ReqProgram | ReqCareer | ReqCourse);
 };
 

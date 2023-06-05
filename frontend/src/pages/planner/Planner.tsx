@@ -9,7 +9,7 @@ import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, CourseDetails, EquivDetails, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
+import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, CourseDetails, EquivDetails, ConcreteId, EquivalenceId, ValidationResult, PlanView } from '../../client'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -55,7 +55,19 @@ export interface CourseValidationDigest {
   warningIndices: number[]
 }
 
-export type ValidationDigest = CourseValidationDigest[][]
+export interface SemesterValidationDigest {
+  // Contains the indices of any errors associated with this semester.
+  errorIndices: number[]
+  // Contains the indices of any warnings associated with this semester.
+  warningIndices: number[]
+}
+
+export interface ValidationDigest {
+  // Information associated to each semester.
+  semesters: SemesterValidationDigest[]
+  // Information associated to each course.
+  courses: CourseValidationDigest[][]
+}
 
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
@@ -68,7 +80,7 @@ const Planner = (): JSX.Element => {
   const [modalData, setModalData] = useState<ModalData>()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [plannerStatus, setPlannerStatus] = useState<PlannerStatus>(PlannerStatus.LOADING)
-  const [validationResult, setValidationResult] = useState<FlatValidationResult | null>(null)
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
   const [error, setError] = useState<String | null>(null)
   const [popUpAlert, setPopUpAlert] = useState<{ title: string, major: string, desc: string, isOpen: boolean }>({ title: '', major: '', desc: '', isOpen: false })
 
@@ -102,10 +114,15 @@ const Planner = (): JSX.Element => {
     return digest
   }, [validatablePlan])
 
+  // Calcular informacion util sobre la validacion cada vez que cambia
   const validationDigest = useMemo((): ValidationDigest => {
-    let digest: ValidationDigest = []
+    const digest: ValidationDigest = {
+      courses: [],
+      semesters: []
+    }
     if (validatablePlan != null) {
-      digest = validatablePlan.classes.map((semester, i) => {
+      // Initialize course information
+      digest.courses = validatablePlan.classes.map((semester, i) => {
         return semester.map((course, j) => {
           const { code, instance } = planDigest.indexToId[i][j]
           const rawSuperblock = validationResult?.course_superblocks?.[code]?.[instance] ?? null
@@ -117,15 +134,34 @@ const Planner = (): JSX.Element => {
           }
         })
       })
+      // Initialize semester information to an empty state
+      digest.semesters = validatablePlan.classes.map(() => {
+        return {
+          errorIndices: [],
+          warningIndices: []
+        }
+      })
       if (validationResult != null) {
+        // Fill course and semester information with their associated errors
         for (let k = 0; k < validationResult.diagnostics.length; k++) {
           const diag = validationResult.diagnostics[k]
-          if (diag.class_id != null) {
-            const semAndIdx = planDigest.idToIndex[diag.class_id.code]?.[diag.class_id.instance] ?? null
-            if (semAndIdx != null) {
-              const [sem, idx] = semAndIdx
-              const diagIndices = diag.is_warning ? digest[sem][idx].warningIndices : digest[sem][idx].errorIndices
-              diagIndices.push(k)
+          if (diag.associated_to != null) {
+            for (const assoc of diag.associated_to) {
+              if (typeof assoc === 'number') {
+                // This error is associated to a semester
+                const semDigest = digest.semesters[assoc]
+                const diagIndices = diag.is_err ?? true ? semDigest.errorIndices : semDigest.warningIndices
+                diagIndices.push(k)
+              } else {
+                // This error is associated to a course
+                const semAndIdx = planDigest.idToIndex[assoc.code]?.[assoc.instance] ?? null
+                if (semAndIdx != null) {
+                  const [sem, idx] = semAndIdx
+                  const courseDigest = digest.courses[sem][idx]
+                  const diagIndices = diag.is_err ?? true ? courseDigest.errorIndices : courseDigest.warningIndices
+                  diagIndices.push(k)
+                }
+              }
             }
           }
         }
@@ -489,7 +525,7 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = { ...prev.curriculum, major: majorCode }
-      prev.classes.splice(prev.next_semester)
+      prev.classes.splice(authState?.passed?.length ?? 0)
       if (!isMinorValid) {
         newCurriculum.minor = undefined
       }
@@ -501,7 +537,7 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = { ...prev.curriculum, minor: minor.code }
-      prev.classes.splice(prev.next_semester)
+      prev.classes.splice(authState?.passed?.length ?? 0)
       return { ...prev, curriculum: newCurriculum }
     })
   }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
@@ -510,7 +546,7 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = { ...prev.curriculum, title: title.code }
-      prev.classes.splice(prev.next_semester)
+      prev.classes.splice(authState?.passed?.length ?? 0)
       return { ...prev, curriculum: newCurriculum }
     })
   }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes

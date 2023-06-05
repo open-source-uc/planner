@@ -84,7 +84,7 @@ class And(BaseOp):
     Only satisfied if all of its children are satisfied.
     """
 
-    expr: Literal["and"] = "and"
+    expr: Literal["and"] = Field("and", const=True)
     neutral: ClassVar[bool] = True
 
     @staticmethod
@@ -98,7 +98,7 @@ class Or(BaseOp):
     Only satisfied if at least one of its children is satisfied.
     """
 
-    expr: Literal["or"] = "or"
+    expr: Literal["or"] = Field("or", const=True)
     neutral: ClassVar[bool] = False
 
     @staticmethod
@@ -111,7 +111,7 @@ class Const(BaseExpr):
     A constant, fixed value of True or False.
     """
 
-    expr: Literal["const"] = "const"
+    expr: Literal["const"] = Field("const", const=True)
     value: bool
 
     def __str__(self):
@@ -128,7 +128,7 @@ class MinCredits(BaseExpr):
     semesters is over a certain threshold.
     """
 
-    expr: Literal["cred"] = "cred"
+    expr: Literal["cred"] = Field("cred", const=True)
 
     min_credits: int
 
@@ -146,7 +146,7 @@ class ReqLevel(BaseExpr):
     Express that this course requires a certain academic level.
     """
 
-    expr: Literal["lvl"] = "lvl"
+    expr: Literal["lvl"] = Field("lvl", const=True)
 
     min_level: Level
 
@@ -164,7 +164,7 @@ class ReqSchool(BaseExpr):
     Express that this course requires the student to belong to a particular school.
     """
 
-    expr: Literal["school"] = "school"
+    expr: Literal["school"] = Field("school", const=True)
 
     school: str
 
@@ -187,7 +187,7 @@ class ReqProgram(BaseExpr):
     Express that this course requires the student to belong to a particular program.
     """
 
-    expr: Literal["program"] = "program"
+    expr: Literal["program"] = Field("program", const=True)
 
     program: str
 
@@ -210,7 +210,7 @@ class ReqCareer(BaseExpr):
     Express that this course requires the student to belong to a particular career.
     """
 
-    expr: Literal["career"] = "career"
+    expr: Literal["career"] = Field("career", const=True)
 
     career: str
 
@@ -233,7 +233,7 @@ class ReqCourse(BaseExpr):
     Require the student to have taken a course in the previous semesters.
     """
 
-    expr: Literal["req"] = "req"
+    expr: Literal["req"] = Field("req", const=True)
 
     code: str
 

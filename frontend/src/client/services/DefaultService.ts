@@ -6,7 +6,6 @@ import type { CourseDetails } from '../models/CourseDetails';
 import type { CourseFilter } from '../models/CourseFilter';
 import type { CourseOverview } from '../models/CourseOverview';
 import type { EquivDetails } from '../models/EquivDetails';
-import type { FlatValidationResult } from '../models/FlatValidationResult';
 import type { LowDetailPlanView } from '../models/LowDetailPlanView';
 import type { Major } from '../models/Major';
 import type { Minor } from '../models/Minor';
@@ -14,6 +13,7 @@ import type { PlanView } from '../models/PlanView';
 import type { StudentContext } from '../models/StudentContext';
 import type { Title } from '../models/Title';
 import type { ValidatablePlan } from '../models/ValidatablePlan';
+import type { ValidationResult } from '../models/ValidationResult';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -355,12 +355,12 @@ export class DefaultService {
      * Validate Guest Plan
      * Validate a plan, generating diagnostics.
      * @param requestBody
-     * @returns FlatValidationResult Successful Response
+     * @returns ValidationResult Successful Response
      * @throws ApiError
      */
     public static validateGuestPlan(
         requestBody: ValidatablePlan,
-    ): CancelablePromise<FlatValidationResult> {
+    ): CancelablePromise<ValidationResult> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/plan/validate',
@@ -375,14 +375,15 @@ export class DefaultService {
     /**
      * Validate Plan For User
      * Validate a plan, generating diagnostics.
-     * Includes warnings tailored for the given user.
+     * Includes diagnostics tailored for the given user and skips diagnostics that do not
+     * apply to the particular student.
      * @param requestBody
-     * @returns FlatValidationResult Successful Response
+     * @returns ValidationResult Successful Response
      * @throws ApiError
      */
     public static validatePlanForUser(
         requestBody: ValidatablePlan,
-    ): CancelablePromise<FlatValidationResult> {
+    ): CancelablePromise<ValidationResult> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/plan/validate_for',

@@ -31,8 +31,8 @@ class CourseDetails(BaseModel):
     area: Optional[str]
     category: Optional[str]
     is_available: bool
-    # First semester, second semester, TAV
-    semestrality: tuple[bool, bool, bool]
+    # First semester, second semester (including TAV)
+    semestrality: tuple[bool, bool]
 
     @staticmethod
     def from_db(db: Course) -> "CourseDetails":
@@ -52,7 +52,6 @@ class CourseDetails(BaseModel):
             semestrality=(
                 db.semestrality_first,
                 db.semestrality_second,
-                db.semestrality_tav,
             ),
         )
 

@@ -1,6 +1,6 @@
 from .plan.validation.curriculum.solve import solve_curriculum
 from .user.info import StudentContext
-from .plan.validation.diagnostic import FlatValidationResult
+from .plan.validation.diagnostic import ValidationResult
 from .plan.validation.validate import diagnose_plan
 from .plan.plan import ValidatablePlan
 from .plan.generation import generate_empty_plan, generate_recommended_plan
@@ -385,24 +385,25 @@ async def empty_guest_plan():
     return await generate_empty_plan(None)
 
 
-@app.post("/plan/validate", response_model=FlatValidationResult)
+@app.post("/plan/validate", response_model=ValidationResult)
 async def validate_guest_plan(plan: ValidatablePlan):
     """
     Validate a plan, generating diagnostics.
     """
-    return (await diagnose_plan(plan, user_ctx=None)).flatten(plan)
+    return await diagnose_plan(plan, user_ctx=None)
 
 
-@app.post("/plan/validate_for", response_model=FlatValidationResult)
+@app.post("/plan/validate_for", response_model=ValidationResult)
 async def validate_plan_for_user(
     plan: ValidatablePlan, user: UserKey = Depends(require_authentication)
 ):
     """
     Validate a plan, generating diagnostics.
-    Includes warnings tailored for the given user.
+    Includes diagnostics tailored for the given user and skips diagnostics that do not
+    apply to the particular student.
     """
     user_ctx = await sync.get_student_data(user)
-    return (await diagnose_plan(plan, user_ctx)).flatten(plan)
+    return await diagnose_plan(plan, user_ctx)
 
 
 @app.post("/plan/curriculum_graph")

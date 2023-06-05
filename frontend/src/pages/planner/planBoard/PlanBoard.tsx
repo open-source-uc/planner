@@ -36,7 +36,7 @@ const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCour
                 openModal={openModal}
                 classes={classes}
                 classesDetails={classesDetails}
-                validationDigest={validationDigest[semester]}
+                validationDigest={validationDigest.courses[semester]}
                 isDragging={isDragging}
                 setIsDragging={setIsDragging}
               />

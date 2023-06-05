@@ -7,17 +7,8 @@
  */
 export type ReqCareer = {
     hash?: Blob;
-    expr?: ReqCareer.expr;
+    expr?: 'career';
     career: string;
     equal: boolean;
 };
-
-export namespace ReqCareer {
-
-    export enum expr {
-        CAREER = 'career',
-    }
-
-
-}
 
