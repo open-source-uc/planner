@@ -65,7 +65,7 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
   const ref = useRef(null)
   const authState = useAuth()
 
-  const conditionPassed = authState?.passed?.[cardData.semester]?.find(o => o.code === cardData.code) !== undefined
+  const conditionPassed = authState?.student != null && semester < authState.student.current_semester
 
   const [collected = { isDragging: false }, drag] = useDrag(() => ({
     type: 'card',
@@ -155,7 +155,7 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
 
 const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError }: CardProps): JSX.Element => {
   const authState = useAuth()
-  const conditionPassed = authState?.passed?.[cardData.semester]?.find(o => o.code === cardData.code) !== undefined
+  const conditionPassed = authState?.student != null && semester < authState.student.current_semester
   const blockId = BlockInitials(courseBlock)
   const editIcon = blockId === 'FG' ? editWhiteIcon : editBlackIcon
 

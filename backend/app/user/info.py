@@ -29,5 +29,13 @@ class StudentInfo(BaseModel):
 
 
 class StudentContext(BaseModel):
+    # Basic student metadata.
     info: StudentInfo
+    # The student's taken courses up to now.
     passed_courses: list[list[PseudoCourse]]
+    # The index of the current semester (or the next semester if currently in between
+    # semesters).
+    current_semester: int
+    # The index of the next semester (ie. if the student is currently coursing a
+    # semester, it points to the semester after this one).
+    next_semester: int

@@ -1,5 +1,5 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react'
-import { DefaultService, StudentInfo, ConcreteId, EquivalenceId } from '../client'
+import { DefaultService, StudentContext } from '../client'
 
 export interface UserData {
   token: string
@@ -8,8 +8,7 @@ export interface UserData {
 export interface AuthState {
   user: UserData | null
   setUser: Dispatch<SetStateAction<UserData | null>> | null
-  info: StudentInfo | null
-  passed: Array<Array<(ConcreteId | EquivalenceId)>> | null
+  student: StudentContext | null
 }
 
 interface Props {
@@ -21,13 +20,11 @@ const AuthContext = React.createContext<AuthState | null>(null)
 
 export function AuthProvider ({ children, userData }: Props): JSX.Element {
   const [user, setUser] = React.useState<UserData | null>(userData)
-  const [info, setInfo] = useState <StudentInfo | null>(null)
-  const [passed, setPassed] = useState <Array<Array<(ConcreteId | EquivalenceId)>>>([])
+  const [student, setStudent] = useState<StudentContext | null>(null)
 
   const getInfo = async (): Promise<void> => {
     const response = await DefaultService.getStudentInfo()
-    setInfo(response.info)
-    setPassed(response.passed_courses)
+    setStudent(response)
   }
 
   useEffect(() => {
@@ -40,7 +37,7 @@ export function AuthProvider ({ children, userData }: Props): JSX.Element {
   }, [user])
 
   return (
-    <AuthContext.Provider value={{ user, setUser, info, passed }}>
+    <AuthContext.Provider value={{ user, setUser, student }}>
       {children}
     </AuthContext.Provider>
   )
