@@ -53,6 +53,9 @@ export interface CourseValidationDigest {
   errorIndices: number[]
   // Contains the indices of any warnings associated with this course
   warningIndices: number[]
+  // Contains the error or warning message associated with this course
+  // The empty string if no error or warning is found
+  message: string
 }
 
 export type ValidationDigest = CourseValidationDigest[][]
@@ -112,6 +115,7 @@ const Planner = (): JSX.Element => {
           const superblock = rawSuperblock === null ? '' : rawSuperblock.normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(' ')[0]
           return {
             superblock,
+            message: '',
             errorIndices: [],
             warningIndices: []
           }
@@ -126,6 +130,7 @@ const Planner = (): JSX.Element => {
               const [sem, idx] = semAndIdx
               const diagIndices = diag.is_warning ? digest[sem][idx].warningIndices : digest[sem][idx].errorIndices
               diagIndices.push(k)
+              digest[sem][idx].message = validationResult.diagnostics[k].message
             }
           }
         }

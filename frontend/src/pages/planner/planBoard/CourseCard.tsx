@@ -17,6 +17,7 @@ interface CourseCardProps {
   hasEquivalence?: boolean
   hasError: boolean
   hasWarning: boolean
+  errorMessage: string
 }
 interface CardProps {
   semester: number
@@ -61,7 +62,7 @@ const ConditionalWrapper = ({ condition, wrapperPassed, wrapperNotPassed, childr
   )
 }
 
-const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCourse, courseBlock, openSelector, hasEquivalence, hasError, hasWarning }: CourseCardProps): JSX.Element => {
+const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCourse, courseBlock, openSelector, hasEquivalence, hasError, hasWarning, errorMessage }: CourseCardProps): JSX.Element => {
   const ref = useRef(null)
   const authState = useAuth()
 

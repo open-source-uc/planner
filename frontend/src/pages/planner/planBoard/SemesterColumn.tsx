@@ -35,6 +35,7 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
     if ('equivalence' in course) openModal(course.equivalence, semester, index)
     else openModal(course, semester, index)
   }, [])
+
   return (
     <div className={'drop-shadow-xl w-[165px] shrink-0 bg-base-200 rounded-lg flex flex-col'}>
       {conditionPassed
@@ -58,6 +59,7 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
               hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
               hasError={validationDigest[index]?.errorIndices?.[0] != null}
               hasWarning={validationDigest[index]?.warningIndices?.[0] != null}
+              errorMessage={validationDigest[index]?.message}
             />
           ))
         }
