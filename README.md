@@ -32,12 +32,15 @@ Tras varios años en ideación, este proyecto se lanzó como [una propuesta conj
 La forma óptima de correr el proyecto, sin tener que instalar todas las dependencias, es utilizar el devcontainer directo en VSCode, con acciones para correr el backend, frontend y servidor CAS mock. Existen tareas para reiniciar o migrar la base de datos y otras de utilidad.
 
 ### Pasos sugeridos
+
 1. Teniendo Docker instalado, al abrir el proyecto en VSCode la extensión [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) debería reconocer la carpeta `.devcontainer` presente en el repo y aparece un _pop up_ entregando la opción de "Reabrir en el contenedor".
-2. Se deben crear los archivos `.env` para las variables de entorno a partir de los `.env.example` y reemplazar los valores según corresponda.
-- Es **necesario** agregar manualmente la contrasena de Siding (no disponible en este repo por temas de seguridad) al `.env` del backend para que se carguen las mallas y otros datos de la API de SIDING.
-3. También se debe agregar `cas-mock-users.json` a partir del archivo `.json.example`.
-4. Al correr el comando `Tasks: Run Task` en VSCode se abren una serie de tareas útiles como: instalar dependencias del backend, dependencias del frontend, crear migraciones en la db, reiniciar la db, etc.
-5. En la sección "Run and Debug" de VSCode aparecerán acciones para correr cada servicio de la app por separado, o todos al mismo tiempo (`Launch all 🚀`).
+2. Espera a que se corra la tarea de inicio `just init`. Esto instala las depedencias y crea archivos como `.env` y `cas-mock-users.json`, que son necesarios para correr el proyecto.
+   - El proyecto se integra con dos servicios externos: SIDING (para acceder a mallas y datos de estudiantes) y CAS (para el login UC). Ambos son configurables por medio de variables de entorno.
+   - Se proveen mocks para ambos servicios en caso de no tener credenciales para acceder a ellos.
+   - Para SIDING se provee un mock que se activa automáticamente en ausencia de credenciales.
+   - Para CAS, se provee el servicio `cas-server-mock` que corre automáticamente junto a la app. Las cuentas de usuario disponibles son configurables en el archivo `data/cas-mock-users.json`.
+3. Al correr el comando `Tasks: Run Task` en VSCode se abren una serie de tareas útiles como: instalar dependencias del backend, dependencias del frontend, crear migraciones en la db, reiniciar la db, etc.
+4. En la sección "Run and Debug" de VSCode aparecerán acciones para correr cada servicio de la app por separado, o todos al mismo tiempo (`Launch all 🚀`).
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
 
