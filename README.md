@@ -37,7 +37,7 @@ La forma óptima de correr el proyecto, sin tener que instalar todas las depende
 2. Espera a que se corra la tarea de inicio `just init`. Esto instala las depedencias y crea archivos como `.env` y `cas-mock-users.json`, que son necesarios para correr el proyecto.
    - El proyecto se integra con dos servicios externos: SIDING (para acceder a mallas y datos de estudiantes) y CAS (para el login UC). Ambos son configurables por medio de variables de entorno.
    - Se proveen mocks para ambos servicios en caso de no tener credenciales para acceder a ellos.
-   - Para SIDING se provee un mock que se activa automáticamente en ausencia de credenciales.
+   - Para SIDING se provee un mock que se activa automáticamente en ausencia de credenciales. El mock es limitado, y solo permite probar algunas combinaciones de malla.
    - Para CAS, se provee el servicio `cas-server-mock` que corre automáticamente junto a la app. Las cuentas de usuario disponibles son configurables en el archivo `data/cas-mock-users.json`.
 3. Al correr el comando `Tasks: Run Task` en VSCode se abren una serie de tareas útiles como: instalar dependencias del backend, dependencias del frontend, crear migraciones en la db, reiniciar la db, etc.
 4. En la sección "Run and Debug" de VSCode aparecerán acciones para correr cada servicio de la app por separado, o todos al mismo tiempo (`Launch all 🚀`).
