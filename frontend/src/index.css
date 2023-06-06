@@ -31,7 +31,7 @@
   .card {
     background-color: #D8D8D8;
     height: 90px;
-    border-radius: theme('borderRadius.lg');
+    border-radius: theme('borderRadius.md');
     padding: theme('spacing.1');
     box-shadow: theme('boxShadow.lg');
     position: relative;
@@ -41,7 +41,7 @@
     transition: opacity 0.5s ease;
   }
   .darkBlue{
-    background-color: #3D4451;
+    background-color: #00345E; /*#3D4451*/
   }
   .btn{
     @apply font-semibold py-2 px-4 rounded;
@@ -71,24 +71,34 @@
 }
 
 .block-PC{
-  background-color: #93F6E8; /*#FFC840*/
+  /*background-color: #FEC60D;*/
+  background-color: #93F6E8;
 }
 
 .block-FG{
-  background-color: #355484; /*#483D8B*/
+  background-color: #355484;  
+  /*background-color: #00345E;*/ 
   color: white;
 }
 
 .block-M{
-  background-color: #B3A9E4; /*#F74F23*/
+  /*background-color: #F74F23; */
+  /*background-color: #D91E0E;*/
+  /*background-color: #FF4136 ;*/
+  background-color:#B3A9E4;
 }
 
 .block-m{
-  background-color: #13CDB2; /*#32CD33*/
+  /*background-color: #32CD33; */
+  /*background-color: #2ECC40;*/
+  background-color:#13CDB2;
 }
 
 .block-T{
   background-color: #9966CC;
+  /*background-color: #B10DC9;*/
+  /*color: white;*/
+  /*background-color:/*#9966cc;*/
 }
 
 .hover-text {
