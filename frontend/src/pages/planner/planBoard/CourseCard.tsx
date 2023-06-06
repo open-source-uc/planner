@@ -2,6 +2,7 @@ import { memo, ReactNode, useRef } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
 import editWhiteIcon from '../../../assets/editWhite.svg'
 import editBlackIcon from '../../../assets/editBlack.svg'
+import currentIcon from '../../../assets/calendar-clock.svg'
 import { useAuth } from '../../../contexts/auth.context'
 import deepEqual from 'fast-deep-equal'
 
@@ -66,6 +67,8 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
   const authState = useAuth()
 
   const conditionPassed = authState?.student != null && semester < authState.student.current_semester
+  const checkInClass = ((authState?.student) != null) && (authState.student.current_semester === authState.student.next_semester - 1)
+  const checkCurrent = (checkInClass && (semester === authState?.student?.current_semester)) || semester === 3
 
   const [collected = { isDragging: false }, drag] = useDrag(() => ({
     type: 'card',
@@ -93,7 +96,7 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
     })
   }))
 
-  if (!conditionPassed) {
+  if (!conditionPassed && !checkCurrent) {
     drag(drop(ref))
   }
 
@@ -156,6 +159,9 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
 const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError }: CardProps): JSX.Element => {
   const authState = useAuth()
   const conditionPassed = authState?.student != null && semester < authState.student.current_semester
+  const checkInClass = ((authState?.student) != null) && (authState.student.current_semester === authState.student.next_semester - 1)
+  const checkCurrent = (checkInClass && (semester === authState?.student?.current_semester)) || semester === 3
+
   const blockId = BlockInitials(courseBlock)
   const editIcon = blockId === 'FG' ? editWhiteIcon : editBlackIcon
 
@@ -177,6 +183,8 @@ const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSele
         <div className='text-[0.6rem] opacity-75'>{cardData.is_concrete !== true ? 'Seleccionar Curso' : cardData.code}</div>
       </div>
       <div className='absolute bottom-2 left-2 text-[0.5rem] opacity-75'>{cardData.credits} créd.</div>
+      { checkCurrent ? <img className='opacity-60 absolute w-3 bottom-2 right-2' src={currentIcon} alt="Curso en curso" /> : null}
+
       {hasError && <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
         <span className={`${allowAnimations ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-red-300 opacity-90`}></span>
         <span className="relative inline-flex rounded-full h-3 w-3 bg-red-400"></span>
