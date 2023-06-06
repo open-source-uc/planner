@@ -3,11 +3,10 @@ Fill the slots of a curriculum with courses, making sure that there is no overla
 within a block and respecting exclusivity rules.
 """
 
-from typing import Optional
-
+from typing import Any, Optional
 from ...course import ConcreteId, EquivalenceId, PseudoCourse
-
 from ...courseinfo import CourseInfo
+from heapq import heappush, heappop
 from .tree import CourseRecommendation, Leaf, Curriculum, Block
 from dataclasses import dataclass, field
 
@@ -51,6 +50,7 @@ class TakenCourses:
 
 @dataclass
 class Edge:
+    id: int
     cap: int
     flow: int
     src: int
@@ -129,11 +129,13 @@ class SolvedCurriculum:
     def connect(self, src_id: int, dst_id: int, cap: int, cost: int = 0):
         src = self.nodes[src_id]
         dst = self.nodes[dst_id]
+        fw_id = len(self.edges)
+        bk_id = len(self.edges) + 1
         edge_fw = Edge(
-            cap=cap, flow=0, src=src_id, dst=dst_id, rev=len(dst.outgoing), cost=cost
+            id=fw_id, cap=cap, flow=0, src=src_id, dst=dst_id, rev=bk_id, cost=cost
         )
         edge_rev = Edge(
-            cap=0, flow=0, src=dst_id, dst=src_id, rev=len(src.outgoing), cost=-cost
+            id=bk_id, cap=0, flow=0, src=dst_id, dst=src_id, rev=fw_id, cost=-cost
         )
         src.outgoing.append(edge_fw)
         dst.incoming.append(edge_fw)
@@ -198,7 +200,40 @@ class SolvedCurriculum:
         for edge in self.edges:
             if edge.cap == 0 or edge.src == self.source or edge.dst == self.sink:
                 continue
-            attrs = f'label="{edge.flow}/{edge.cap}"'
+            label = f"{edge.flow}/{edge.cap}"
+            if edge.cost != 0:
+                label += f" (${edge.cost})"
+            attrs = f'label="{label}"'
+            if edge.flow == 0:
+                attrs += " style=dotted"
+            out += f"  v{edge.src} -> v{edge.dst} [{attrs}];\n"
+        out += "}"
+        return out
+
+    def dump_raw_graphviz(self, node_labels: Optional[list[Any]] = None) -> str:
+        """
+        Dump the raw graphviz representation using node and edge indices instead of
+        names.
+        """
+        out = "digraph {\n"
+        for id, _node in enumerate(self.nodes):
+            label = f"v{id}"
+            if id == self.source:
+                label += "(s)"
+            elif id == self.sink:
+                label += "(t)"
+            if node_labels is not None:
+                label += f" {node_labels[id]}"
+            out += f'  v{id} [label="{label}"];\n'
+        for id, edge in enumerate(self.edges):
+            if edge.cap == 0:
+                continue
+            rev = self.edges[edge.rev]
+            assert rev.flow == -edge.flow and rev.cap == 0 and rev.cost == -edge.cost
+            label = f"e{id} {edge.flow}/{edge.cap}"
+            if edge.cost != 0:
+                label += f" ${edge.cost}"
+            attrs = f'label="{label}"'
             if edge.flow == 0:
                 attrs += " style=dotted"
             out += f"  v{edge.src} -> v{edge.dst} [{attrs}];\n"
@@ -341,7 +376,7 @@ INFINITY: int = 10**18
 
 
 def _compute_shortest_path(
-    g: SolvedCurriculum, src: int, dst: int
+    g: SolvedCurriculum, src: int, dst: int, counter: list[int]
 ) -> Optional[list[Edge]]:
     # Bellman-Ford
     n = len(g.nodes)
@@ -357,6 +392,7 @@ def _compute_shortest_path(
                     costs[edge.dst] = new_cost
                     parent[edge.dst] = edge
                     stop = False
+        counter[0] += 1
         if stop:
             break
 
@@ -374,11 +410,37 @@ def _compute_shortest_path(
     return path
 
 
+def _make_weights_positive(g: SolvedCurriculum):
+    # Bellman-Ford
+    n = len(g.nodes)
+    costs = [0 for _i in range(n)]
+    stop = True
+    for _stage in range(n - 1):
+        stop = True
+        for edge in g.edges:
+            new_cost = costs[edge.src] + edge.cost
+            if new_cost < costs[edge.dst]:
+                costs[edge.dst] = new_cost
+                stop = False
+        if stop:
+            break
+    # if not stop:
+    #     raise Exception("negative-cost cycles in curriculum graph")
+
+    # Apply cost transformation
+    for edge in g.edges:
+        edge.cost += costs[edge.src] - costs[edge.dst]
+        assert edge.cost >= 0
+
+
 def _max_flow_min_cost(g: SolvedCurriculum):
     # Iteratively improve flow
+    iterations = 0
+    bf_iterations = [0]
     while True:
+        iterations += 1
         # Find shortest path from source to sink
-        path = _compute_shortest_path(g, g.source, g.sink)
+        path = _compute_shortest_path(g, g.source, g.sink, bf_iterations)
         if path is None:
             break
 
@@ -392,17 +454,390 @@ def _max_flow_min_cost(g: SolvedCurriculum):
         # Apply flow to path
         for edge in path:
             edge.flow += flow
-            g.nodes[edge.dst].outgoing[edge.rev].flow -= flow
+            g.edges[edge.rev].flow -= flow
+    print(f"      {iterations} flow iterations, {bf_iterations[0]} bellman-ford stages")
+
+
+def _max_flow_min_cost_2(g: SolvedCurriculum):
+    # Iteratively improve flow
+    queue: dict[int, None] = {}
+    parent: list[Edge] = [g.edges[0] for _node in g.nodes]
+    iters = 0
+    spfa_iters = 0
+    while True:
+        iters += 1
+        # Find shortest path from source to sink
+        # Shortest-Path-Faster-Algorithm (SPFA)
+        dists: list[int] = [INFINITY for _node in g.nodes]
+        dists[g.source] = 0
+        queue.clear()
+        queue[g.source] = None
+        spfa_budget = len(g.nodes) ** 2
+        while queue:
+            spfa_iters += 1
+            spfa_budget -= 1
+            if spfa_budget < 0:
+                raise Exception("negative cycle detected in flow graph")
+            id = next(iter(queue.keys()))
+            del queue[id]
+            for edge in g.nodes[id].outgoing:
+                src = edge.src
+                dst = edge.dst
+                if edge.flow < edge.cap:
+                    newdist = dists[src] + edge.cost
+                    if newdist < dists[dst]:
+                        dists[dst] = newdist
+                        parent[dst] = edge
+                        queue[dst] = None
+
+        # If no path from source to sink is found, the flow is maximal
+        if dists[g.sink] == INFINITY:
+            break
+
+        # Find the maximum flow that can go through the path
+        flow = INFINITY
+        cur = g.sink
+        while cur != g.source:
+            edge = parent[cur]
+            f = edge.cap - edge.flow
+            if f < flow:
+                flow = f
+            cur = edge.src
+
+        # Apply flow to the path
+        cur = g.sink
+        while cur != g.source:
+            edge = parent[cur]
+            edge.flow += flow
+            g.edges[edge.rev].flow -= flow
+            cur = edge.src
+
+    print(f"{iters} flow iterations, {spfa_iters} spfa iterations")
+
+
+def _max_flow_min_cost_3(g: SolvedCurriculum):
+    # Make sure that all active edges have nonnegative cost
+    for edge in g.edges:
+        if edge.flow >= edge.cap:
+            continue
+        assert edge.cost >= 0
+
+    # Iteratively improve flow
+    queue: list[tuple[int, int]] = []
+    parent: list[Optional[Edge]] = [None for _node in g.nodes]
+    children: list[set[Edge]] = [set() for _node in g.nodes]
+    iter = 0
+    dijkstra_iter = 0
+    pot_dijkstra_iter = 0
+    # The cost of a node (C[u]) is the cost of the path between the source and the node
+    # (D[path from source to u]).
+    # The potential of a node is an arbitrary value, such that all edges satisfy:
+    #   forall (u -> v): W[u, v] + P[u] - P[v] >= 0
+    # We also define P[source] = 0
+    # The distance of a node is the distance from source to the node in the reweighted
+    # graph:
+    #   W'[u, v] = W[u, v] + P[u] - P[v]
+    # All reweighted edges have nonnegative weight, so we can run Dijkstra.
+    # Ie. iteratively enforce the following:
+    #   (u -> v): D[v] <- min(D[v], D[u] + W[u, v] + P[u] - P[v])
+    # The following is true:
+    #   D[v] = W[path from source to v] + P[source] - P[v]
+    # Remember that P[source] = 0, and C[v] is the weight of the path in the original
+    # graph:
+    #   D[v] = C[v] - P[v]
+    #   C[v] = D[v] + P[v]
+
+    potentials: list[int] = [0 for _node in g.nodes]
+    costs: list[int] = [INFINITY for _node in g.nodes]
+    costs[g.source] = 0
+    queue.clear()
+    queue.append((0, g.source))
+
+    def relax_edge(edge: Edge):
+        # This edge has been "added" to the graph
+        src = edge.src
+        dst = edge.dst
+        newcost = costs[src] + edge.cost
+        if newcost < costs[dst]:
+            costs[dst] = newcost
+            oldparent = parent[dst]
+            if oldparent is not None:
+                children[oldparent.src].remove(edge)
+            children[src].add(edge)
+            parent[dst] = edge
+            heappush(queue, (newcost - potentials[dst], dst))
+
+    def tighten_edge(edge: Edge):
+        # This edge has been "removed" from the graph
+        src = edge.src
+        dst = edge.dst
+        if parent[dst] is edge:
+            pass
+
+    while True:
+        # Find shortest path from source to sink
+        # Dijkstra
+        found_sink = False
+        while queue:
+            dijkstra_iter += 1
+            if not found_sink:
+                pot_dijkstra_iter += 1
+            dist, id = heappop(queue)
+            if dist + potentials[id] > costs[id]:
+                continue
+            for edge in g.nodes[id].outgoing:
+                if edge.flow < edge.cap:
+                    relax_edge(edge)
+        iter += 1
+
+        # If no path from source to sink is found, the flow is maximal
+        if costs[g.sink] == INFINITY:
+            break
+
+        # Use shortest costs as potentials
+        potentials = costs.copy()
+
+        # Find the maximum flow that can go through the path
+        flow = INFINITY
+        cur = parent[g.sink]
+        while cur is not None:
+            f = cur.cap - cur.flow
+            if f < flow:
+                flow = f
+            cur = parent[cur.src]
+
+        # Apply flow to the path
+        cur = parent[g.sink]
+        while cur is not None:
+            rev = g.edges[cur.rev]
+            cur.flow += flow
+            if cur.flow == cur.cap:
+                # This edge is removed from the graph
+                pass
+            if rev.flow == cur.cap:
+                # This edge is added to the graph
+                relax_edge(rev)
+            rev.flow -= flow
+            cur = parent[cur.src]
+
+    print(
+        f"      {iter} flow iterations, {dijkstra_iter} dijkstra iterations, {pot_dijkstra_iter} useful dijkstra iterations"
+    )
+
+
+def _max_flow_min_cost_4(g: SolvedCurriculum):
+    with open("testout.txt", "a") as file:
+        print(
+            f"---------------------------- on graph with {len(g.nodes)} and {len(g.edges)} edges ------------------------------",
+            file=file,
+        )
+
+        # Make sure that all active edges have nonnegative cost
+        for edge in g.edges:
+            if edge.flow < edge.cap:
+                assert edge.cost >= 0
+
+        # Keep the cost from the source node to all nodes
+        costs = [INFINITY for _node in g.nodes]
+        costs[g.source] = 0
+        # Keep a priority queue (heap) of nodes that should propagate their cost
+        # The first value is distance (**Not** cost! They are different concepts)
+        # Distance[u] = Cost[u] - Potential[u]
+        # Cost[u] = Distance[u] + Potential[u]
+        # The reason for using distance is that Dijkstra does not normally work with
+        # negative weights.
+        # However, we if we use distance, defined in terms of a potential, we can use the
+        # fact that the "distance weight" of all edges is always positive and Dijkstra
+        # magically works.
+        # The neat part about distance is that Dijkstra works with negative costs as long
+        # as we use distance instead (with a valid potential).
+        # The second value is a node ID.
+        queue: list[tuple[int, int]] = []
+        heappush(queue, (0, g.source))
+        # Keep a "potential"
+        # A potential is a value P[u] assigned to each node u such that:
+        #   forall edge (u -> v): W[u, v] + P[u] - P[v] >= 0
+        # Because at the start all edges have nonnegative weight, an all-zero potential is
+        # valid.
+        potential = [0 for _node in g.nodes]
+        # Keep a "minimum cost tree" (ie. the shortest path from the source to any node
+        # follows edges from this tree)
+        # The values are edge ids
+        # The parent array maps node indices to edge indices (the edge that connects its parent to itself)
+        parent: list[Optional[int]] = [None for _node in g.nodes]
+        # The children array maps node indices to sets of **node** indices (!)
+        children: list[set[int]] = [set() for _node in g.nodes]
+
+        def relax_edge(edge: Edge):
+            id = edge.id
+            src = edge.src
+            dst = edge.dst
+            newcost = costs[src] + edge.cost
+            if newcost < costs[dst]:
+                costs[dst] = newcost
+                oldparent = parent[dst]
+                if oldparent is not None:
+                    children[g.edges[oldparent].src].remove(dst)
+                children[src].add(dst)
+                parent[dst] = id
+                return True
+            return False
+
+        def remove_subtree(nodeid: int):
+            costs[nodeid] = INFINITY
+            oldparent = parent[nodeid]
+            if oldparent is not None:
+                children[g.edges[oldparent].src].remove(nodeid)
+            parent[nodeid] = None
+            for child_id in list(children[nodeid]):
+                remove_subtree(child_id)
+            relaxed = False
+            for in_edge in g.nodes[nodeid].incoming:
+                if in_edge.flow < in_edge.cap:
+                    if relax_edge(in_edge):
+                        relaxed = True
+            if relaxed:
+                heappush(queue, (costs[nodeid] - potential[nodeid], nodeid))
+            print(f"    tightened cost of node {nodeid} to {costs[nodeid]}", file=file)
+            print("      marking as dirty", file=file)
+
+        flow_iters = 0
+        dijkstra_iters = 0
+
+        # Iteratively improve flow
+        while True:
+            flow_iters += 1
+
+            cstr = list(map(lambda c: "inf" if c >= INFINITY // 2 else c, costs))
+            print(
+                f"before iteration {flow_iters}: {g.dump_raw_graphviz(cstr)}", file=file
+            )
+
+            # Update the shortest paths from the source to all nodes
+            while queue:
+                dijkstra_iters += 1
+
+                dist, id = heappop(queue)
+                if dist + potential[id] > costs[id]:
+                    continue
+                for edge in g.nodes[id].outgoing:
+                    if edge.flow < edge.cap:
+                        if relax_edge(edge):
+                            dst = edge.dst
+                            heappush(queue, (costs[dst] - potential[dst], dst))
+
+            cstr = list(map(lambda c: "inf" if c >= INFINITY // 2 else c, costs))
+            print(
+                f"after dijkstra of iteration {flow_iters}: {g.dump_raw_graphviz(cstr)}",
+                file=file,
+            )
+
+            # If no path is found, the flow is maximal
+            if parent[g.sink] is None:
+                print("done", file=file)
+                break
+
+            # Use the new shortest distances as a potential.
+            # These shortest distances just turn out to be a valid potential:
+            # - All edges that are removed don't matter, because they only relax the
+            #   potential-condition.
+            #   (Remember the potential-condition:
+            #   forall edge (u -> v): W[u, v] + P[u] - P[v] >= 0 )
+            # - The edges that are added to the graph (v -> u) are reverse-edges of edges
+            #   that already exist in the graph (u -> v).
+            #   (They must be reverse edges because in order to add a new edge to the graph,
+            #   its flow must decrease. In order to decrease a flow, it must be in the
+            #   shortest path of the graph, which only includes edges that are *in* the
+            #   graph).
+            #   Each edge (v -> u) adds an additional restriction:
+            #   W[v, u] + P[v] - P[u] >= 0
+            #   This can be rearranged as:
+            #   P[v] >= P[u] - W[v, u]
+            #   Because of the definition of the cost of reverse-edges, W[v, u] = -W[u, v]:
+            #   P[v] >= P[u] + W[u, v]
+            #   But this condition holds true, because we know that (u -> v) was in the
+            #   shortest path from source to v, so P[v] = P[u] + W[u, v].
+            # Therefore, the shortest costs is a valid potential.
+            potential = costs.copy()
+
+            # Find the maximum flow that we can send along the path
+            flow = INFINITY
+            cur = parent[g.sink]
+            while cur is not None:
+                edge = g.edges[cur]
+                f = edge.cap - edge.flow
+                if f < flow:
+                    flow = f
+                cur = parent[edge.src]
+
+            # Send the flow along the path
+            cur = parent[g.sink]
+            remove_root = None
+            print(f"adding {flow} flow along path:", file=file)
+            while cur is not None:
+                # Send flow along the forward edge
+                edge = g.edges[cur]
+                print(f"  {edge.src} -> {edge.dst}", file=file)
+                edge.flow += flow
+                if edge.flow >= edge.cap:
+                    # If the forward edge reached its capacity, it is removed from the graph
+                    # Therefore, any nodes whose shortest path to the source passed through
+                    # this edge now have their costs incorrect in `costs`
+                    # We need to re-update all nodes that are in the subtree of some edge
+                    # that was removed
+                    # Because in this `while` loop we visit nodes in a shortest path, the
+                    # least deep edge that is removed contains all other removed edges
+                    remove_root = edge
+                # Remove flow from the backward edge
+                rev = g.edges[edge.rev]
+                if rev.flow >= rev.cap:
+                    # If the backward edge was full before, it will have space now
+                    # Naively, we would check this and add the edge
+                    # However, because the forward edge is part of the shortest path, the
+                    # backward edge does not improve the cost!
+                    # In fact, going forward and backward should have the exact same cost
+                    # as not moving
+                    assert costs[rev.dst] == costs[rev.src] + rev.cost
+
+                    # If the backward edge was full before, it will have space now
+                    # Therefore, it will be added to the graph and must update the costs
+                    # if relax_edge(rev):
+                    #     dst = rev.dst
+                    #     heappush(queue, (costs[dst] - potential[dst], dst))
+                rev.flow -= flow
+                cur = parent[edge.src]
+
+            # All of the nodes in the subtree of `remove_root` should have their parent
+            # cleared, their cost reset to some upper bound, and added to the update queue.
+            if remove_root is not None:
+                print(
+                    f"  some edges became saturated, removing entire subtree of node {remove_root.dst}",
+                    file=file,
+                )
+                remove_subtree(remove_root.dst)
+
+        print(
+            f"{flow_iters} flow iterations, {dijkstra_iters} dijkstra iterations",
+            file=file,
+        )
 
 
 def solve_curriculum(
     courseinfo: CourseInfo, curriculum: Curriculum, taken: list[list[PseudoCourse]]
 ) -> SolvedCurriculum:
+    import time
+
     # Take the curriculum blueprint, and produce a graph for this student
+    start = time.monotonic()
     g = _build_graph(courseinfo, curriculum, taken)
+    print(f"      build: {(time.monotonic() - start)*1000}ms")
+    print(f"      built graph with {len(g.nodes)} nodes and {len(g.edges)} edges")
     # Solve the flow problem on the produced graph
-    _max_flow_min_cost(g)
+    start = time.monotonic()
+    _max_flow_min_cost_4(g)
+    print(f"      flow: {(time.monotonic() - start)*1000}ms")
     # Ensure that demand is satisfied
+    start = time.monotonic()
     # Recommended courses should always fill in missing demand
     # It's a bug if they cannot fill in the demand
     if g.nodes[g.root].flow() < g.nodes[g.root].cap():
@@ -429,4 +864,5 @@ def solve_curriculum(
                 + " (ie. there is some node with 2+ non-zero-flow outgoing edges)"
                 + f":\n{g.dump_graphviz()}"
             )
+    print(f"      checks: {(time.monotonic() - start)*1000}ms")
     return g

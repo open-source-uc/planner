@@ -402,8 +402,14 @@ async def validate_plan_for_user(
     Includes diagnostics tailored for the given user and skips diagnostics that do not
     apply to the particular student.
     """
+    import time
+
+    start = time.monotonic()
     user_ctx = await sync.get_student_data(user)
-    return await diagnose_plan(plan, user_ctx)
+    res = await diagnose_plan(plan, user_ctx)
+    t = time.monotonic() - start
+    print(f"validate plan: {t*1000}ms")
+    return res
 
 
 @app.post("/plan/curriculum_graph")

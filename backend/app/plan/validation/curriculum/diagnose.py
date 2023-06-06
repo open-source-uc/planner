@@ -94,13 +94,18 @@ def diagnose_curriculum(
     user_ctx: Optional[StudentContext],
     out: ValidationResult,
 ):
+    import time
+
     # Produce a warning if no major/minor is selected
     if plan.curriculum.major is None or plan.curriculum.minor is None:
         out.add(NoMajorMinorWarn(plan=plan.curriculum))
 
     # Solve plan
+    start = time.monotonic()
     g = solve_curriculum(courseinfo, curriculum, plan.classes)
+    print(f"    solve: {(time.monotonic() - start)*1000}ms")
 
+    start = time.monotonic()
     # Generate diagnostics
     _diagnose_block(courseinfo, {}, out, g, g.root, "")
 
@@ -126,3 +131,4 @@ def diagnose_curriculum(
                     notpassed_unassigned = True
     if notpassed_unassigned:
         out.add(UnassignedWarn(unassigned_credits=unassigned))
+    print(f"    rest: {(time.monotonic() - start)*1000}ms")
