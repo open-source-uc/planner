@@ -23,6 +23,14 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
   const authState = useAuth()
   const conditionPassed = ((authState?.student) != null) && (semester < authState.student.current_semester)
   const conditionNotPassed = ((authState?.student) != null) && (semester >= authState.student.current_semester)
+
+  const checkInClass = ((authState?.student) != null) && (authState.student.current_semester === authState.student.next_semester - 1)
+  const checkCurrent = (checkInClass && (semester === authState?.student?.current_semester)) || semester === 3
+
+  console.log(authState?.student)
+  console.log(checkCurrent)
+  console.log(checkInClass)
+
   const [dropProps, drop] = useDrop(() => ({
     accept: 'card',
     drop (course: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }) {
@@ -62,11 +70,11 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
             />
           ))
         }
-        {conditionNotPassed && !isDragging && <div className="h-10 mx-2 bg-slate-300 card">
+        {conditionNotPassed && !checkCurrent && !isDragging && <div className="h-10 mx-2 bg-slate-300 card">
         <button key="+" className="w-full" onClick={() => addCourse(semester)}>+</button>
         </div>}
       </div>
-      {conditionPassed
+      {conditionPassed || checkCurrent
         ? null
         : <div ref={drop} className={'px-2 flex min-h-[90px] flex-grow'}>
             {dropProps.isOver &&
