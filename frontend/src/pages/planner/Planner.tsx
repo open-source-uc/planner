@@ -330,7 +330,7 @@ const Planner = (): JSX.Element => {
     setValidatablePlan(prev => {
       if (prev === null) return prev
       const dragCourse = prev.classes[drag.semester][drag.index]
-      if (dragCourse.is_concrete === true && drop.semester !== drag.semester && prev.classes[drop.semester].map(course => course.code).includes(dragCourse.code)) {
+      if (dragCourse.is_concrete === true && drop.semester !== drag.semester && drop.semester < prev.classes.length && prev.classes[drop.semester].map(course => course.code).includes(dragCourse.code)) {
         toast.error('No se puede tener dos cursos iguales en un mismo semestre')
         return prev
       }
@@ -344,10 +344,11 @@ const Planner = (): JSX.Element => {
       } else {
         newClasses[drag.semester].splice(drag.index, 1)
       }
+      console.log(newClasses, newClasses[newClasses.length - 1], newClasses[newClasses.length - 1].length === 0)
       while (newClasses[newClasses.length - 1].length === 0) {
         newClasses.pop()
       }
-      return { ...prev, classe: newClasses }
+      return { ...prev, classes: newClasses }
     })
   }, []) // moveCourse should not depend on `validatablePlan`, so that memoing does its work
 
