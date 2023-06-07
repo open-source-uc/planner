@@ -376,6 +376,19 @@ async def empty_plan_for_user(user_data: UserKey = Depends(require_authenticatio
     return await generate_empty_plan(user_data)
 
 
+@app.get("/plan/empty_for_any", response_model=ValidatablePlan)
+async def empty_plan_for_any_user(
+    user_rut: str,
+    user_data: ModKey = Depends(require_mod_auth),
+):
+    """
+    Same functionality as `empty_plan_for_user`, but works for any user identified by
+    their RUT with `user_rut`.
+    Moderator access is required.
+    """
+    return await generate_empty_plan(UserKey("", user_rut))
+
+
 @app.get("/plan/empty_guest", response_model=ValidatablePlan)
 async def empty_guest_plan():
     """
@@ -395,13 +408,29 @@ async def validate_guest_plan(plan: ValidatablePlan):
 
 @app.post("/plan/validate_for", response_model=FlatValidationResult)
 async def validate_plan_for_user(
-    plan: ValidatablePlan, user: UserKey = Depends(require_authentication)
+    plan: ValidatablePlan,
+    user: UserKey = Depends(require_authentication),
 ):
     """
     Validate a plan, generating diagnostics.
     Includes warnings tailored for the given user.
     """
     user_ctx = await sync.get_student_data(user)
+    return (await diagnose_plan(plan, user_ctx)).flatten(plan)
+
+
+@app.post("/plan/validate_for_any", response_model=FlatValidationResult)
+async def validate_plan_for_any_user(
+    plan: ValidatablePlan,
+    user_rut: str,
+    user: ModKey = Depends(require_mod_auth),
+):
+    """
+    Same functionality as `validate_plan_for_user`, but works for any user identified by
+    their RUT with `user_rut`.
+    Moderator access is required.
+    """
+    user_ctx = await sync.get_student_data(UserKey("", user_rut))
     return (await diagnose_plan(plan, user_ctx)).flatten(plan)
 
 
@@ -435,9 +464,26 @@ async def save_plan(
 ) -> PlanView:
     """
     Save a plan with the given name in the storage of the current user.
-    Fails if the user is not logged  in.
+    Fails if the user is not logged in.
     """
     return await store_plan(plan_name=name, user=user, plan=plan)
+
+
+@app.post("/plan/storage/any", response_model=PlanView)
+async def save_any_plan(
+    name: str,
+    plan: ValidatablePlan,
+    user_rut: str,
+    user: ModKey = Depends(require_mod_auth),
+) -> PlanView:
+    """
+    Same functionality as `save_plan`, but works for any user identified by
+    their RUT with `user_rut`.
+    Moderator access is required.
+    All `/plan/storage/any` endpoints (and sub-resources) should require
+    moderator access.
+    """
+    return await store_plan(plan_name=name, user=UserKey("", user_rut), plan=plan)
 
 
 @app.get("/plan/storage", response_model=list[LowDetailPlanView])
@@ -453,15 +499,42 @@ async def read_plans(
     return await get_user_plans(user)
 
 
+@app.get("/plan/storage/any", response_model=list[LowDetailPlanView])
+async def read_any_plans(
+    user_rut: str,
+    user: ModKey = Depends(require_mod_auth),
+) -> list[LowDetailPlanView]:
+    """
+    Same functionality as `read_plans`, but works for any user identified by
+    their RUT with `user_rut`.
+    Moderator access is required.
+    """
+    return await get_user_plans(UserKey("", user_rut))
+
+
 @app.get("/plan/storage/details", response_model=PlanView)
 async def read_plan(
-    plan_id: str, user: UserKey = Depends(require_authentication)
+    plan_id: str,
+    user: UserKey = Depends(require_authentication),
 ) -> PlanView:
     """
     Fetch the plan details for a given plan id.
     Requires the current user to be the plan owner.
     """
     return await get_plan_details(user=user, plan_id=plan_id)
+
+
+@app.get("/plan/storage/any/details", response_model=PlanView)
+async def read_any_plan(
+    plan_id: str,
+    user: ModKey = Depends(require_mod_auth),
+) -> PlanView:
+    """
+    Same functionality as `read_plan`, but works for any plan of any user
+    identified by their RUT.
+    Moderator access is required.
+    """
+    return await get_plan_details(user=user, plan_id=plan_id, mod_access=True)
 
 
 @app.put("/plan/storage", response_model=PlanView)
@@ -476,6 +549,22 @@ async def update_plan(
     Returns the updated plan.
     """
     return await modify_validatable_plan(user=user, plan_id=plan_id, new_plan=new_plan)
+
+
+@app.put("/plan/storage/any", response_model=PlanView)
+async def update_any_plan(
+    plan_id: str,
+    new_plan: ValidatablePlan,
+    user: ModKey = Depends(require_mod_auth),
+) -> PlanView:
+    """
+    Same functionality as `update_plan`, but works for any plan of any user
+    identified by their RUT.
+    Moderator access is required.
+    """
+    return await modify_validatable_plan(
+        user=user, plan_id=plan_id, new_plan=new_plan, mod_access=True
+    )
 
 
 @app.put("/plan/storage/metadata", response_model=PlanView)
@@ -500,6 +589,28 @@ async def update_plan_metadata(
     )
 
 
+@app.put("/plan/storage/any/metadata", response_model=PlanView)
+async def update_any_plan_metadata(
+    plan_id: str,
+    set_name: Union[str, None] = None,
+    set_favorite: Union[bool, None] = None,
+    user: ModKey = Depends(require_mod_auth),
+) -> PlanView:
+    """
+    Same functionality as `update_plan_metadata`, but works for any plan of any user
+    identified by their RUT.
+    Moderator access is required.
+    """
+
+    return await modify_plan_metadata(
+        user=user,
+        plan_id=plan_id,
+        set_name=set_name,
+        set_favorite=set_favorite,
+        mod_access=True,
+    )
+
+
 @app.delete("/plan/storage", response_model=PlanView)
 async def delete_plan(
     plan_id: str,
@@ -511,6 +622,19 @@ async def delete_plan(
     Returns the removed plan.
     """
     return await remove_plan(user=user, plan_id=plan_id)
+
+
+@app.delete("/plan/storage/any", response_model=PlanView)
+async def delete_any_plan(
+    plan_id: str,
+    user: ModKey = Depends(require_mod_auth),
+) -> PlanView:
+    """
+    Same functionality as `delete_plan`, but works for any plan of any user
+    identified by their RUT.
+    Moderator access is required.
+    """
+    return await remove_plan(user=user, plan_id=plan_id, mod_access=True)
 
 
 @app.get("/offer/major", response_model=list[DbMajor])
