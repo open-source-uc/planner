@@ -111,7 +111,7 @@ async def authenticate(next: Optional[str] = None, ticket: Optional[str] = None)
 
 
 @app.get("/auth/check")
-async def check_auth(user_data: UserKey = Depends(require_authentication)):
+async def check_auth(user: UserKey = Depends(require_authentication)):
     """
     Request succeeds if user authentication was successful.
     Otherwise, the request fails with 401 Unauthorized.
@@ -120,7 +120,7 @@ async def check_auth(user_data: UserKey = Depends(require_authentication)):
 
 
 @app.get("/auth/check/mod")
-async def check_mod(user_data: ModKey = Depends(require_mod_auth)):
+async def check_mod(user: ModKey = Depends(require_mod_auth)):
     """
     Request succeeds if user authentication and mod authorization were successful.
     Otherwise, the request fails with 401 Unauthorized or 403 Forbidden.
@@ -129,7 +129,7 @@ async def check_mod(user_data: ModKey = Depends(require_mod_auth)):
 
 
 @app.get("/auth/check/admin")
-async def check_admin(user_data: AdminKey = Depends(require_admin_auth)):
+async def check_admin(user: AdminKey = Depends(require_admin_auth)):
     """
     Request succeeds if user authentication and admin authorization were successful.
     Otherwise, the request fails with 401 Unauthorized or 403 Forbidden.
@@ -138,7 +138,7 @@ async def check_admin(user_data: AdminKey = Depends(require_admin_auth)):
 
 
 @app.get("/auth/mod", response_model=list[AccessLevelOverview])
-async def view_mods(user_data: AdminKey = Depends(require_admin_auth)):
+async def view_mods(user: AdminKey = Depends(require_admin_auth)):
     """
     Show a list of all current mods with username and RUT. Up to 50 records.
     """
@@ -160,7 +160,7 @@ async def view_mods(user_data: AdminKey = Depends(require_admin_auth)):
 
 
 @app.post("/auth/mod")
-async def add_mod(rut: str, user_data: AdminKey = Depends(require_admin_auth)):
+async def add_mod(rut: str, user: AdminKey = Depends(require_admin_auth)):
     """
     Give mod access to a user with the specified RUT.
     """
@@ -181,7 +181,7 @@ async def add_mod(rut: str, user_data: AdminKey = Depends(require_admin_auth)):
 
 
 @app.delete("/auth/mod")
-async def remove_mod(rut: str, user_data: AdminKey = Depends(require_admin_auth)):
+async def remove_mod(rut: str, user: AdminKey = Depends(require_admin_auth)):
     """
     Remove mod access from a user with the specified RUT.
 
@@ -364,7 +364,7 @@ async def rebuild_validation_rules():
 
 
 @app.get("/plan/empty_for", response_model=ValidatablePlan)
-async def empty_plan_for_user(user_data: UserKey = Depends(require_authentication)):
+async def empty_plan_for_user(user: UserKey = Depends(require_authentication)):
     """
     Generate an empty plan using the current user as context.
     For example, the created plan includes all passed courses, uses the curriculum
@@ -373,13 +373,12 @@ async def empty_plan_for_user(user_data: UserKey = Depends(require_authenticatio
 
     (Currently this is equivalent to `empty_guest_plan()` until we get user data)
     """
-    return await generate_empty_plan(user_data)
+    return await generate_empty_plan(user)
 
 
 @app.get("/plan/empty_for_any", response_model=ValidatablePlan)
 async def empty_plan_for_any_user(
-    user_rut: str,
-    user_data: ModKey = Depends(require_mod_auth),
+    user_rut: str, user: ModKey = Depends(require_mod_auth)
 ):
     """
     Same functionality as `empty_plan_for_user`, but works for any user identified by
@@ -408,8 +407,7 @@ async def validate_guest_plan(plan: ValidatablePlan):
 
 @app.post("/plan/validate_for", response_model=FlatValidationResult)
 async def validate_plan_for_user(
-    plan: ValidatablePlan,
-    user: UserKey = Depends(require_authentication),
+    plan: ValidatablePlan, user: UserKey = Depends(require_authentication)
 ):
     """
     Validate a plan, generating diagnostics.
@@ -421,9 +419,7 @@ async def validate_plan_for_user(
 
 @app.post("/plan/validate_for_any", response_model=FlatValidationResult)
 async def validate_plan_for_any_user(
-    plan: ValidatablePlan,
-    user_rut: str,
-    user: ModKey = Depends(require_mod_auth),
+    plan: ValidatablePlan, user_rut: str, user: ModKey = Depends(require_mod_auth)
 ):
     """
     Same functionality as `validate_plan_for_user`, but works for any user identified by
@@ -458,9 +454,7 @@ async def generate_plan(passed: ValidatablePlan):
 
 @app.post("/plan/storage", response_model=PlanView)
 async def save_plan(
-    name: str,
-    plan: ValidatablePlan,
-    user: UserKey = Depends(require_authentication),
+    name: str, plan: ValidatablePlan, user: UserKey = Depends(require_authentication)
 ) -> PlanView:
     """
     Save a plan with the given name in the storage of the current user.
@@ -501,8 +495,7 @@ async def read_plans(
 
 @app.get("/plan/storage/any", response_model=list[LowDetailPlanView])
 async def read_any_plans(
-    user_rut: str,
-    user: ModKey = Depends(require_mod_auth),
+    user_rut: str, user: ModKey = Depends(require_mod_auth)
 ) -> list[LowDetailPlanView]:
     """
     Same functionality as `read_plans`, but works for any user identified by
@@ -514,8 +507,7 @@ async def read_any_plans(
 
 @app.get("/plan/storage/details", response_model=PlanView)
 async def read_plan(
-    plan_id: str,
-    user: UserKey = Depends(require_authentication),
+    plan_id: str, user: UserKey = Depends(require_authentication)
 ) -> PlanView:
     """
     Fetch the plan details for a given plan id.
@@ -526,8 +518,7 @@ async def read_plan(
 
 @app.get("/plan/storage/any/details", response_model=PlanView)
 async def read_any_plan(
-    plan_id: str,
-    user: ModKey = Depends(require_mod_auth),
+    plan_id: str, user: ModKey = Depends(require_mod_auth)
 ) -> PlanView:
     """
     Same functionality as `read_plan`, but works for any plan of any user
@@ -553,9 +544,7 @@ async def update_plan(
 
 @app.put("/plan/storage/any", response_model=PlanView)
 async def update_any_plan(
-    plan_id: str,
-    new_plan: ValidatablePlan,
-    user: ModKey = Depends(require_mod_auth),
+    plan_id: str, new_plan: ValidatablePlan, user: ModKey = Depends(require_mod_auth)
 ) -> PlanView:
     """
     Same functionality as `update_plan`, but works for any plan of any user
@@ -613,8 +602,7 @@ async def update_any_plan_metadata(
 
 @app.delete("/plan/storage", response_model=PlanView)
 async def delete_plan(
-    plan_id: str,
-    user: UserKey = Depends(require_authentication),
+    plan_id: str, user: UserKey = Depends(require_authentication)
 ) -> PlanView:
     """
     Deletes a plan by ID.
@@ -626,8 +614,7 @@ async def delete_plan(
 
 @app.delete("/plan/storage/any", response_model=PlanView)
 async def delete_any_plan(
-    plan_id: str,
-    user: ModKey = Depends(require_mod_auth),
+    plan_id: str, user: ModKey = Depends(require_mod_auth)
 ) -> PlanView:
     """
     Same functionality as `delete_plan`, but works for any plan of any user
