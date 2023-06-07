@@ -289,6 +289,7 @@ const Planner = (): JSX.Element => {
       setPlannerStatus(PlannerStatus.VALIDATING)
       try {
         const res = await DefaultService.savePlan(planName, validatablePlan)
+        console.log(res)
         toast.success('Plan guardado exitosamente, redireccionando...', {
           toastId: 'newPlanSaved',
           data: { planId: res.id }
