@@ -289,7 +289,6 @@ const Planner = (): JSX.Element => {
       setPlannerStatus(PlannerStatus.VALIDATING)
       try {
         const res = await DefaultService.savePlan(planName, validatablePlan)
-        console.log(res)
         toast.success('Plan guardado exitosamente, redireccionando...', {
           toastId: 'newPlanSaved',
           data: { planId: res.id }
@@ -572,15 +571,14 @@ const Planner = (): JSX.Element => {
     }
   }, [validatablePlan])
   return (
-    <div className={`w-full h-full p-3 flex flex-grow overflow-hidden flex-row ${(plannerStatus !== 'ERROR' && plannerStatus !== 'READY') ? 'cursor-wait' : ''}`}>
+    <div className={`w-full relative h-full p-3 flex flex-grow overflow-hidden flex-row ${(plannerStatus !== 'ERROR' && plannerStatus !== 'READY') ? 'cursor-wait' : ''}`}>
       <DebugGraph validatablePlan={validatablePlan} />
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
       <AlertModal title={popUpAlert.title} desc={popUpAlert.desc} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}/>
-      {plannerStatus === 'LOADING' && (
-        <div className="fixed left-0 w-screen h-full z-50 bg-white flex flex-col justify-center items-center">
+
+        <div className="absolute p-3 w-screen h-full z-50 flex flex-col justify-center items-center">
           <Spinner message='Cargando planificación...' />
         </div>
-      )}
 
       {plannerStatus === 'ERROR'
         ? (<div className={'w-full h-full flex flex-col justify-center items-center'}>
