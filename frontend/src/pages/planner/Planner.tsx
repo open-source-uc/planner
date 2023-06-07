@@ -9,7 +9,7 @@ import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, CourseDetails, EquivDetails, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
+import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, CourseDetails, EquivDetails, ConcreteId, EquivalenceId, FlatValidationResult, PlanView, CancelablePromise } from '../../client'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -74,6 +74,8 @@ const Planner = (): JSX.Element => {
 
   const previousCurriculum = useRef<{ major: String | undefined, minor: String | undefined, title: String | undefined }>({ major: '', minor: '', title: '' })
   const previousClasses = useRef<PseudoCourseId[][]>([[]])
+
+  const [validationPromise, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
 
   const params = useParams()
   const authState = useAuth()
@@ -248,7 +250,15 @@ const Planner = (): JSX.Element => {
 
   async function validate (validatablePlan: ValidatablePlan): Promise<void> {
     try {
-      const response = authState?.user == null ? await DefaultService.validateGuestPlan(validatablePlan) : await DefaultService.validatePlanForUser(validatablePlan)
+      if (validationPromise != null) {
+        validationPromise.cancel()
+        setValidationPromise(null)
+      }
+
+      const promise = authState?.user == null ? DefaultService.validateGuestPlan(validatablePlan) : DefaultService.validatePlanForUser(validatablePlan)
+      setValidationPromise(promise)
+      const response = await promise
+      setValidationPromise(null)
       previousCurriculum.current = {
         major: validatablePlan.curriculum.major,
         minor: validatablePlan.curriculum.minor,
@@ -338,13 +348,16 @@ const Planner = (): JSX.Element => {
       while (drop.semester >= newClasses.length) {
         newClasses.push([])
       }
-      newClasses[drop.semester].splice(drop.index, 0, newClasses[drag.semester][drag.index])
+      const dragSemester = [...newClasses[drag.semester]]
+      const dropSemester = [...newClasses[drop.semester]]
+      dropSemester.splice(drop.index, 0, dragCourse)
       if (drop.semester === drag.semester && drop.index < drag.index) {
-        newClasses[drag.semester].splice(drag.index + 1, 1)
+        dragSemester.splice(drag.index + 1, 1)
       } else {
-        newClasses[drag.semester].splice(drag.index, 1)
+        dragSemester.splice(drag.index, 1)
       }
-      console.log(newClasses, newClasses[newClasses.length - 1], newClasses[newClasses.length - 1].length === 0)
+      newClasses[drag.semester] = dragSemester
+      newClasses[drop.semester] = dropSemester
       while (newClasses[newClasses.length - 1].length === 0) {
         newClasses.pop()
       }
@@ -587,7 +600,7 @@ const Planner = (): JSX.Element => {
             <p className={'text-sm font-normal'}>{error}</p>
           </div>)
         : <div className={'flex w-full'}>
-            <div className={`flex flex-col overflow-auto flex-grow  ${plannerStatus !== PlannerStatus.READY ? 'pointer-events-none' : ''} `}>
+            <div className={'flex flex-col overflow-auto flex-grow'}>
               <CurriculumSelector
                 planName={planName}
                 curriculumData={curriculumData}
@@ -599,7 +612,6 @@ const Planner = (): JSX.Element => {
               <ControlTopBar
                 reset={reset}
                 save={savePlan}
-                validating={plannerStatus !== 'READY'}
               />
               <DndProvider backend={HTML5Backend}>
                 {(validatablePlan != null) &&
