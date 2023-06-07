@@ -575,10 +575,11 @@ const Planner = (): JSX.Element => {
       <DebugGraph validatablePlan={validatablePlan} />
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
       <AlertModal title={popUpAlert.title} desc={popUpAlert.desc} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}/>
-
-        <div className="absolute p-3 w-screen h-full z-50 flex flex-col justify-center items-center">
+      {plannerStatus === 'LOADING' &&
+        <div className="absolute p-3 w-screen h-full z-50 bg-white flex flex-col justify-center items-center">
           <Spinner message='Cargando planificación...' />
         </div>
+      }
 
       {plannerStatus === 'ERROR'
         ? (<div className={'w-full h-full flex flex-col justify-center items-center'}>
