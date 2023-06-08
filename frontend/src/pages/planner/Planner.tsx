@@ -275,6 +275,10 @@ const Planner = (): JSX.Element => {
       // Al contrario, si se vuelve necesario hacer una copia profunda significa que hay un bug en algun lado porque se estan mutando datos que debieran ser inmutables.
       previousClasses.current = validatablePlan.classes
     } catch (err) {
+      console.log(err)
+      if (err.name === 'CancelError') {
+        return
+      }
       handleErrors(err)
     }
   }
@@ -350,14 +354,19 @@ const Planner = (): JSX.Element => {
       }
       const dragSemester = [...newClasses[drag.semester]]
       const dropSemester = [...newClasses[drop.semester]]
-      dropSemester.splice(drop.index, 0, dragCourse)
-      if (drop.semester === drag.semester && drop.index < drag.index) {
-        dragSemester.splice(drag.index + 1, 1)
+      if (drop.semester === drag.semester) {
+        dragSemester.splice(drop.index, 0, dragCourse)
+        if (drop.index < drag.index) {
+          dragSemester.splice(drag.index + 1, 1)
+        } else {
+          dragSemester.splice(drag.index, 1)
+        }
       } else {
+        dropSemester.splice(drop.index, 0, dragCourse)
         dragSemester.splice(drag.index, 1)
+        newClasses[drop.semester] = dropSemester
       }
       newClasses[drag.semester] = dragSemester
-      newClasses[drop.semester] = dropSemester
       while (newClasses[newClasses.length - 1].length === 0) {
         newClasses.pop()
       }

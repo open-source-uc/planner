@@ -9,6 +9,10 @@ import { OpenAPI } from './client'
 
 import router from './router'
 
+import { toastConfig } from './utils/toastConfig'
+
+toastConfig()
+
 function App (): JSX.Element {
   return (
     <AuthProvider userData={useToken()}>
