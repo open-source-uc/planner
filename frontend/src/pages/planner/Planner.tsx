@@ -231,7 +231,9 @@ const Planner = (): JSX.Element => {
     const coursesCodes = new Set<string>()
     const equivalenceCodes = new Set<string>()
     for (const courseid of courses) {
-      if (courseid.is_concrete === true) { coursesCodes.add(courseid.code) } else { equivalenceCodes.add(courseid.code) }
+      if (!Object.keys(courseDetails).some((loadedCourseCode: string) => loadedCourseCode === courseid.code)) {
+        if (courseid.is_concrete === true) { coursesCodes.add(courseid.code) } else { equivalenceCodes.add(courseid.code) }
+      }
     }
     try {
       const promises = []
@@ -510,7 +512,7 @@ const Planner = (): JSX.Element => {
     setPlannerStatus(PlannerStatus.LOADING)
   }
 
-  const selectMajor = useCallback(async (majorCode: string, isMinorValid: boolean): Promise<void> => {
+  const selectMajor = useCallback(async (majorCode: string | undefined, isMinorValid: boolean): Promise<void> => {
     setValidatablePlan((prev) => {
       if (prev == null) return prev
       const newCurriculum = { ...prev.curriculum, major: majorCode }
@@ -522,19 +524,19 @@ const Planner = (): JSX.Element => {
     })
   }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
 
-  const selectMinor = useCallback((minor: Minor): void => {
+  const selectMinor = useCallback((minorCode: string | undefined): void => {
     setValidatablePlan((prev) => {
       if (prev == null) return prev
-      const newCurriculum = { ...prev.curriculum, minor: minor.code }
+      const newCurriculum = { ...prev.curriculum, minor: minorCode }
       prev.classes.splice(prev.next_semester)
       return { ...prev, curriculum: newCurriculum }
     })
   }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
 
-  const selectTitle = useCallback((title: Title): void => {
+  const selectTitle = useCallback((titleCode: string | undefined): void => {
     setValidatablePlan((prev) => {
       if (prev == null) return prev
-      const newCurriculum = { ...prev.curriculum, title: title.code }
+      const newCurriculum = { ...prev.curriculum, title: titleCode }
       prev.classes.splice(prev.next_semester)
       return { ...prev, curriculum: newCurriculum }
     })
