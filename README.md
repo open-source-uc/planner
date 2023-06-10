@@ -29,7 +29,7 @@ Tras varios años en ideación, este proyecto se lanzó como [una propuesta conj
 
 ## Instalación y desarrollo
 
-La forma óptima de correr el proyecto, sin tener que instalar todas las dependencias, es utilizar el [developement container](https://containers.dev/) para VSCode. El contenedor viene completamente configurado y listo para correr el proyecto.
+La forma óptima de correr el proyecto, sin tener que instalar todas las dependencias, es utilizar el [development container](https://containers.dev/) para VSCode. El contenedor viene completamente configurado y listo para correr el proyecto.
 
 ### Pasos sugeridos
 
@@ -56,7 +56,7 @@ Hay dos excepciones a esto: cambios en la estructura de la API y cambios en el e
 
 ### Workflow
 
-> El workflow es PR a development -> Revisar preview y checks -> Asignar reviewers -> Aprobación -> Merge a development
+> El workflow es abrir PR a main -> Revisar preview y checks -> Asignar reviewers -> Aprobación -> Merge a main
 
 La información detallada sobre cómo contribuir se puede encontrar en [contributing.md](contributing.md).
 
