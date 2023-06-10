@@ -509,6 +509,7 @@ const Planner = (): JSX.Element => {
   }
 
   function reset (): void {
+    setValidatablePlan(null)
     setPlannerStatus(PlannerStatus.LOADING)
   }
 
