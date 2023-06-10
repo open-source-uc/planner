@@ -38,6 +38,10 @@ const isApiError = (err: any): err is ApiError => {
   return err.status !== undefined
 }
 
+const isCancelError = (err: any): boolean => {
+  return err.name !== undefined && err.name === 'CancelError'
+}
+
 export interface PlanDigest {
   // Maps `(code, course instance index)` to `(semester, index within semester)`
   idToIndex: { [code: string]: Array<[number, number]> }
@@ -137,9 +141,9 @@ const Planner = (): JSX.Element => {
   }, [validatablePlan, planDigest, validationResult])
 
   function handleErrors (err: unknown): void {
-    console.log(err)
-    setPlannerStatus(PlannerStatus.ERROR)
     if (isApiError(err)) {
+      console.error(err)
+      setPlannerStatus(PlannerStatus.ERROR)
       switch (err.status) {
         case 401:
           console.log('token invalid or expired, loading re-login page')
@@ -161,14 +165,16 @@ const Planner = (): JSX.Element => {
           setError('error desconocido')
           break
       }
-    } else {
+    } else if (!isCancelError(err)) {
       setError('error desconocido')
+      console.error(err)
+      setPlannerStatus(PlannerStatus.ERROR)
     }
   }
 
   async function getDefaultPlan (ValidatablePlan?: ValidatablePlan): Promise<void> {
     try {
-      console.log('getting Basic Plan...')
+      console.log('Getting Basic Plan...')
       if (ValidatablePlan === undefined) {
         ValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
       } else {
@@ -193,7 +199,7 @@ const Planner = (): JSX.Element => {
 
   async function getPlanById (id: string): Promise<void> {
     try {
-      console.log('getting Plan by Id...')
+      console.log('Getting Plan by Id...')
       const response: PlanView = await DefaultService.readPlan(id)
       await Promise.all([
         getCourseDetails(response.validatable_plan.classes.flat()),
@@ -277,10 +283,6 @@ const Planner = (): JSX.Element => {
       // Al contrario, si se vuelve necesario hacer una copia profunda significa que hay un bug en algun lado porque se estan mutando datos que debieran ser inmutables.
       previousClasses.current = validatablePlan.classes
     } catch (err) {
-      console.log(err)
-      if (err.name === 'CancelError') {
-        return
-      }
       handleErrors(err)
     }
   }
@@ -509,13 +511,13 @@ const Planner = (): JSX.Element => {
   }
 
   function reset (): void {
-    setValidatablePlan(null)
     setPlannerStatus(PlannerStatus.LOADING)
+    setValidatablePlan(null)
   }
 
   const selectMajor = useCallback(async (majorCode: string | undefined, isMinorValid: boolean): Promise<void> => {
     setValidatablePlan((prev) => {
-      if (prev == null) return prev
+      if (prev == null || prev.curriculum.major === majorCode) return prev
       const newCurriculum = { ...prev.curriculum, major: majorCode }
       prev.classes.splice(prev.next_semester)
       if (!isMinorValid) {
@@ -527,7 +529,7 @@ const Planner = (): JSX.Element => {
 
   const selectMinor = useCallback((minorCode: string | undefined): void => {
     setValidatablePlan((prev) => {
-      if (prev == null) return prev
+      if (prev == null || prev.curriculum.minor === minorCode) return prev
       const newCurriculum = { ...prev.curriculum, minor: minorCode }
       prev.classes.splice(prev.next_semester)
       return { ...prev, curriculum: newCurriculum }
@@ -536,7 +538,7 @@ const Planner = (): JSX.Element => {
 
   const selectTitle = useCallback((titleCode: string | undefined): void => {
     setValidatablePlan((prev) => {
-      if (prev == null) return prev
+      if (prev == null || prev.curriculum.title === titleCode) return prev
       const newCurriculum = { ...prev.curriculum, title: titleCode }
       prev.classes.splice(prev.next_semester)
       return { ...prev, curriculum: newCurriculum }
@@ -574,10 +576,6 @@ const Planner = (): JSX.Element => {
     console.log(plannerStatus)
     if (plannerStatus === 'LOADING') {
       void fetchData()
-    } else if (plannerStatus === 'VALIDATING' && validatablePlan != null) {
-      validate(validatablePlan).catch(err => {
-        handleErrors(err)
-      })
     }
   }, [plannerStatus])
 
@@ -592,16 +590,20 @@ const Planner = (): JSX.Element => {
         setPlannerStatus(PlannerStatus.LOADING)
       } else {
         setPlannerStatus(PlannerStatus.VALIDATING)
+        validate(validatablePlan).catch(err => {
+          handleErrors(err)
+        })
       }
     }
   }, [validatablePlan])
+
   return (
-    <div className={`w-full relative h-full p-3 flex flex-grow overflow-hidden flex-row ${(plannerStatus !== 'ERROR' && plannerStatus !== 'READY') ? 'cursor-wait' : ''}`}>
+    <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
       <DebugGraph validatablePlan={validatablePlan} />
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
       <AlertModal title={popUpAlert.title} desc={popUpAlert.desc} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}/>
       {plannerStatus === 'LOADING' &&
-        <div className="absolute p-3 w-screen h-full z-50 bg-white flex flex-col justify-center items-center">
+        <div className="absolute w-screen h-full z-50 bg-white flex flex-col justify-center items-center">
           <Spinner message='Cargando planificación...' />
         </div>
       }
@@ -611,7 +613,7 @@ const Planner = (): JSX.Element => {
             <p className={'text-2xl font-semibold mb-4'}>Error al cargar plan</p>
             <p className={'text-sm font-normal'}>{error}</p>
           </div>)
-        : <div className={'flex w-full'}>
+        : <div className={'flex w-full m-3'}>
             <div className={'flex flex-col overflow-auto flex-grow'}>
               <CurriculumSelector
                 planName={planName}
