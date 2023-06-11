@@ -106,7 +106,7 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
       >
         {!collected.isDragging && <>{dropProps.isOver
           ? <div className={'card bg-place-holder'} />
-          : <div> {!collected.isDragging && ((cardData.is_concrete !== true && courseBlock != null)
+          : <div> {((cardData.is_concrete !== true && courseBlock != null)
             ? <button className='w-full' onClick={() => openSelector()}>
                 <Card
                   semester={semester}

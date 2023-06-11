@@ -28,7 +28,7 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
       moveCourse({ semester: course.semester, index: course.index }, { semester, index: classes.length })
     },
     collect: monitor => ({
-      isOver: !!monitor.isOver()
+      isOver: monitor.isOver()
     })
   }))
   const openSelector = useCallback((course: PseudoCourseId, semester: number, index: number) => {
@@ -76,7 +76,6 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
     </div>
   )
 }
-
 function checkPropEq (prev: any, next: any): boolean {
   for (const key of Object.keys(next)) {
     const nxt = next[key]

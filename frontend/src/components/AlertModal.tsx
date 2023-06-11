@@ -1,4 +1,4 @@
-import { Fragment, useRef } from 'react'
+import { Fragment, useRef, memo } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 
 const AlertModal = ({ title, desc, isOpen, close }: { title: string, desc: string, isOpen: boolean, close: Function }): JSX.Element => {
@@ -6,7 +6,7 @@ const AlertModal = ({ title, desc, isOpen, close }: { title: string, desc: strin
 
   return (
     <Transition.Root show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-10" initialFocus={cancelButtonRef} onClose={() => console.log('alert closed')}>
+      <Dialog as="div" className="modal relative" initialFocus={cancelButtonRef} onClose={() => console.log('alert closed')}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -19,7 +19,7 @@ const AlertModal = ({ title, desc, isOpen, close }: { title: string, desc: strin
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
         </Transition.Child>
 
-        <div className="fixed inset-0 z-10 overflow-y-auto">
+        <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
             <Transition.Child
               as={Fragment}
@@ -71,4 +71,4 @@ const AlertModal = ({ title, desc, isOpen, close }: { title: string, desc: strin
   )
 }
 
-export default AlertModal
+export default memo(AlertModal)
