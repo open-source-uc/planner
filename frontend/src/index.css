@@ -62,7 +62,8 @@
   @apply z-50;
 }
 .animated {
-  animation: opacity-animation 1s infinite alternate;;
+  /*transform: rotateZ(360deg);*/
+  animation: opacity-animation 1s infinite alternate;
 }
 
 @keyframes opacity-animation {

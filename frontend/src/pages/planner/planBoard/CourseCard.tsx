@@ -87,9 +87,7 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
       return course
     },
     collect: monitor => ({
-      isOver: !!monitor.isOver(),
-      canDrop: !!monitor.canDrop(),
-      item: monitor.getItem()
+      isOver: monitor.isOver()
     })
   }))
 
