@@ -12,7 +12,6 @@ import { HTML5Backend } from 'react-dnd-html5-backend'
 import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, CourseDetails, EquivDetails, ConcreteId, EquivalenceId, FlatValidationResult, PlanView, CancelablePromise } from '../../client'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
 import DebugGraph from '../../components/DebugGraph'
 import deepEqual from 'fast-deep-equal'
 
@@ -147,7 +146,7 @@ const Planner = (): JSX.Element => {
       switch (err.status) {
         case 401:
           console.log('token invalid or expired, loading re-login page')
-          toast.error('Token invalido. Redireccionando a pagina de inicio...', {
+          toast.error('Tu session a expirado. Redireccionando a pagina de inicio de sesion...', {
             toastId: 'ERROR401'
           })
           break
@@ -613,7 +612,7 @@ const Planner = (): JSX.Element => {
             <p className={'text-2xl font-semibold mb-4'}>Error al cargar plan</p>
             <p className={'text-sm font-normal'}>{error}</p>
           </div>)
-        : <div className={'flex w-full m-3'}>
+        : <div className={'flex w-full p-3 pb-0'}>
             <div className={'flex flex-col overflow-auto flex-grow'}>
               <CurriculumSelector
                 planName={planName}

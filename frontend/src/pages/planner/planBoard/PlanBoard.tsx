@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import SemesterColumn from './SemesterColumn'
 import { PseudoCourseId, PseudoCourseDetail, ValidationDigest } from '../Planner'
+import { useDndScrolling, createVerticalStrength, createHorizontalStrength } from 'react-dnd-scrolling'
 import 'react-toastify/dist/ReactToastify.css'
 
 interface PlanBoardProps {
@@ -13,6 +14,9 @@ interface PlanBoardProps {
   validationDigest: ValidationDigest
 }
 
+// Estos parametros controlan a cuantos pixeles de distancia al borde de la pantalla se activa el scroll
+const vStrength = createVerticalStrength(60)
+const hStrength = createHorizontalStrength(250)
 /**
  * The main drag-n-drop planner interface.
  * Displays several semesters, as well as several classes per semester.
@@ -20,9 +24,11 @@ interface PlanBoardProps {
 
 const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCourse, remCourse, validationDigest }: PlanBoardProps): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false)
+  const boardRef = useRef(null)
+  useDndScrolling(boardRef, { horizontalStrength: hStrength, verticalStrength: vStrength })
 
   return (
-    <div className= {'overflow-auto grid grid-rows-[fit-content] grid-flow-col justify-start'}>
+    <div ref={boardRef} className= {'overflow-auto grid grid-rows-[fit-content] grid-flow-col justify-start '}>
       {classesGrid === null
         ? <h1>elija plan</h1>
         : <>

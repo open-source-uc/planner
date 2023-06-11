@@ -67,9 +67,9 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
       </div>
       {conditionPassed
         ? null
-        : <div ref={drop} className={'px-2 flex min-h-[90px] flex-grow'}>
+        : <div ref={drop} className={'px-2 flex flex-grow min-h-[90px]'}>
             {dropProps.isOver &&
-                <div className={'bg-place-holder card w-full'} />
+              <div className={'bg-place-holder card w-full'} />
             }
           </div>
       }
