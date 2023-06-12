@@ -8,11 +8,10 @@
 </p>
 
 <p align="center">
-  <a href="#Descripción">Descripción</a> •
-  <a href="#Uso">Uso</a> •
-  <a href="#Contribuir">Contribuir</a> •
-  <a href="#Equipo">Equipo</a> •
-  <a href="#Licencia">Licencia</a>
+  <a href="#descripción">Descripción</a> •
+  <a href="#instalación-y-desarrollo">Instalación</a> •
+  <a href="#equipo">Equipo</a> •
+  <a href="#licencia">Licencia</a>
 </p>
 
 <h4 align="center">
@@ -28,10 +27,6 @@ Este es el hogar para el desarrollo del nuevo Planner de Ingeniería UC, hecho p
 Tras varios años en ideación, este proyecto se lanzó como [una propuesta conjunta](https://drive.google.com/file/d/1IxAJ8cCzDkayPwnju5kgc2oKc7g9fvwf/view) entre la Consejería Académica de Ingeniería y Open Source UC, con el propósito de reemplazar el [actual planner de Ingeniería](https://planner.ing.puc.cl/). La propuesta, tras ser aprobada por la Escuela de Ingeniería, dió comienzo al proyecto en modalidad de marcha blanca. A principios del 2023, y con un MVP listo, la Dirección de Pregrado oficialmente aprobó la continuación del desarrollo del proyecto.
 
 ## Instalación y desarrollo
-
-La forma óptima de correr el proyecto, sin tener que instalar todas las dependencias, es utilizar el [development container](https://containers.dev/) para VSCode. El contenedor viene completamente configurado y listo para correr el proyecto.
-
-### Pasos sugeridos
 
 El proyecto está configurado para ser desarrollado en [Visual Studio Code](https://code.visualstudio.com/) con [Dev Containers](https://code.visualstudio.com/docs/remote/containers). Puedes [instalar VSCode aquí](https://code.visualstudio.com/download). Existen 2 maneras de correr Dev Containers: GitHub Codespaces y localmente.
 
@@ -72,6 +67,13 @@ Es important que cuando:
 - Cambias la extructura de la API, corras la tarea _"Generate client"_ (también disponible en modo watch).
 - Cambies el esquema de la base de datos, corras la tarea _"Create/apply migrations"_ para que los cambios se reflejen en la base de datos.
 
+Para realizar contribuciones, revisa [contributing.md](contributing.md).
+
+### Bug Reports & Feature Requests
+
+> **Nota:** Este proyecto usa [Linear](https://linear.app/) para rastrear el progreso del proyecto. Por ahora, el Linear no es público, pero de todas formas se revisan los issues y features creados en GitHub.
+
+La app aún está en una etapa muy temprana del desarrollo por lo que podrían haber cosas que no funcionan correctamente o difieren de la documentación, por lo que cualquier lector siéntase libre a colaborar :rocket:. Toda ayuda es bienvenida :)
 
 ## Mocks
 
@@ -79,22 +81,6 @@ El proyecto se integra con dos servicios externos: SIDING (para acceder a mallas
 
 - Para SIDING se provee un mock que se activa automáticamente en ausencia de credenciales. El mock es limitado, y solo permite probar algunas combinaciones de malla.
 - Para CAS, se provee el servicio `cas-server-mock` que corre automáticamente junto a la app. Las cuentas de usuario disponibles son configurables en el archivo `data/cas-mock-users.json`.
-
-<p align="right">(<a href="#readme-top">volver arriba</a>)</p>
-
-## Contribuir
-
-### Workflow
-
-> El workflow es abrir PR a main -> Revisar preview y checks -> Asignar reviewers -> Aprobación -> Merge a main
-
-La información detallada sobre cómo contribuir se puede encontrar en [contributing.md](contributing.md).
-
-### Bug Reports & Feature Requests
-
-> **Nota:** Este proyecto usa [Linear](https://linear.app/) para rastrear el progreso del proyecto. Por ahora, el Linear no es público, pero de todas formas se revisan los issues y features creados en GitHub.
-
-La app aún está en una etapa muy temprana del desarrollo por lo que podrían haber cosas que no funcionan correctamente o difieren de la documentación, por lo que cualquier lector siéntase libre a colaborar :rocket:. Toda ayuda es bienvenida :)
 
 ## Equipo
 
