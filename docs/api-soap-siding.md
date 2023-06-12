@@ -20,10 +20,6 @@ El archivo `.wsdl` tal como es proveido no funciona con otro cliente que no sea 
 
 Actualmente, solo hay 1 problema, que en teoria esta en proceso de ser arreglado:
 
-- Se hace referencia a un tipo `stringArray` que no se define.
-
-No soy experto en WSDL, pero este tipo es compatible con algo como lo siguiente:
-
 - El atributo `location` del servicio esta mal definido, le falta un `/`:
 
 Original:
@@ -38,10 +34,10 @@ Arreglado:
 <soap:address location="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/" />
 ```
 
-Mientras no se hagan estos arreglos remotamente no se puede comparar la version local con la version remota.
-
 ## Observaciones de la API
 
 - El endpoint `getConcentracionCursos` lanza un XML invalido para combinaciones invalidas de major-minor-titulo (pero arroja status 200 OK). Tambien lo lanza para algunas combinaciones validas (eg. `C2020-M073-N206-40006`).
-- Todas las combinaciones excepto `C2020-M170-N776-40082` entregan una lista vacia en `getMallaSugerida`.
-- Hay majors sin minors asociados? `M186 - Major en Ingenieria Civil - Track en Diseno y Construccion de Obras`. Es version `Vs.02` y ademas sirve para curriculum `C2013`, `C2020` y `C2022`.
+- Faltan muchos datos.
+    Casi todas las combinaciones excepto algunas como `C2020-M170-N776-40082` entregan una lista vacia en `getMallaSugerida`.
+- Hay majors sin minors asociados, como `M186 - Major en Ingenieria Civil - Track en Diseno y Construccion de Obras`.
+    Esto es correcto segun nuestra reunion con Daniela: algunos majors ya tienen los minors "incluidos".

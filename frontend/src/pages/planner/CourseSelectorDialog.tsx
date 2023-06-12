@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, Fragment, memo } from 'react'
 import { Dialog, Transition, Switch } from '@headlessui/react'
 import { DefaultService, EquivDetails, CourseOverview, CourseDetails, CancelablePromise } from '../../client'
 import { Spinner } from '../../components/Spinner'
@@ -180,7 +180,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
 
   return (
     <Transition.Root show={open} as={Fragment}>
-    <Dialog as="div" className="relative z-10" onClose={() => { setSelectedCourse(undefined); onClose() }}>
+    <Dialog as="div" className="relative z-50" onClose={() => { setSelectedCourse(undefined); onClose() }}>
       <Transition.Child
           as={Fragment}
           enter="ease-out duration-200"
@@ -391,4 +391,4 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   )
 }
 
-export default CourseSelectorDialog
+export default memo(CourseSelectorDialog)
