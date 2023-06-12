@@ -40,6 +40,8 @@ Provee una cantidad limitada de horas de uso, que puede ser [expandida activando
 
 Sigue en la sección [Desarrollo general](#desarrollo-general).
 
+- Una vez terminado de desarrollar, [detén el Codespace](https://docs.github.com/es/codespaces/developing-in-codespaces/stopping-and-starting-a-codespace) para no consumir horas de uso. También puedes usar un [timeout para que se detenga automáticamente](https://docs.github.com/es/codespaces/customizing-your-codespace/setting-your-timeout-period-for-github-codespaces).
+
 ### Desarrollo local
 
 - Instala [Docker](https://www.docker.com/). Asegurate que esté corriendo.
