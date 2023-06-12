@@ -33,7 +33,7 @@ El proyecto está configurado para ser desarrollado en [Visual Studio Code](http
 #### Desarrollo en GitHub Codespaces
 
 Codespaces es un servicio de GitHub que permite correr VSCode en la nube.
-Provee una cantidad limitada de horas de uso, que puede ser [expandida activando la cuenta Pro gratis a esrtudiantes](https://education.github.com/discount_requests/application).
+Provee una cantidad limitada de horas de uso, que puede ser [expandida activando la cuenta Pro gratis a estudiantes](https://education.github.com/discount_requests/application).
 
 - Instala la extensión de [GitHub Codespaces](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces).
 - Crea o abre un Codespace desde el botón en la esquina superior derecha de este repositorio (o desde el menú de VSCode). Si no lo has creado, ingresa `open-source-uc/planner` como el repositorio a abrir.
@@ -65,8 +65,8 @@ Para realizar acciones sobre el repositorio (migraciones, generación de código
 - el task runner de VSCode (<kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> -> _"Tasks: Run Task"_).
 - `just` en la linea de comandos. Para ver comandos disponibles, corre `just` desde cualquier carpeta.
 
-Es important que cuando:
-- Cambias la extructura de la API, corras la tarea _"Generate client"_ (también disponible en modo watch).
+Es importante que cuando:
+- Cambias la estructura de la API, corras la tarea _"Generate client"_ (también disponible en modo watch).
 - Cambies el esquema de la base de datos, corras la tarea _"Create/apply migrations"_ para que los cambios se reflejen en la base de datos.
 
 Para realizar contribuciones, revisa [contributing.md](contributing.md).
