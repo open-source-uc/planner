@@ -33,22 +33,52 @@ La forma óptima de correr el proyecto, sin tener que instalar todas las depende
 
 ### Pasos sugeridos
 
-1. Instala [Visual Studio Code](https://code.visualstudio.com/) y [Docker](https://www.docker.com/). En VSCode, instala la extensión [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
-   - También puedes abrir este repositorio con [GitHub Codespaces](https://github.com/features/codespaces). Esto no requiere configuración.
-2. Al abrir el proyecto en VSCode, la extensión Dev Containers debería aparecer un _pop up_ con la opción de "Reabrir en contenedor".
-3. Espera a que se corra la tarea de inicio `just init`. Esto instala las depedencias y crea archivos como `.env` y `cas-mock-users.json`, que son necesarios para correr el proyecto.
-   - El proyecto se integra con dos servicios externos: SIDING (para acceder a mallas y datos de estudiantes) y CAS (para el login UC). Ambos son configurables por medio de variables de entorno.
-   - Se proveen mocks para ambos servicios en caso de no tener credenciales para acceder a ellos.
-   - Para SIDING se provee un mock que se activa automáticamente en ausencia de credenciales. El mock es limitado, y solo permite probar algunas combinaciones de malla.
-   - Para CAS, se provee el servicio `cas-server-mock` que corre automáticamente junto a la app. Las cuentas de usuario disponibles son configurables en el archivo `data/cas-mock-users.json`.
-4. En la sección "Run and Debug" de VSCode aparecerán acciones para correr cada servicio de la app por separado, o todos al mismo tiempo (`Launch all 🚀`).
-   - Adicional a esto, se proveen tareas para distintas acciones de utilidad, como resetear   migrar la base de datos, generar el cliente de la API, abrir [Prisma Studio](https://www.prisma.io/studio), etc. 
-   - Puedes ver las tareas disponibles con el comando `"Tasks: Run Task"` (Ctrl/Cmd + Shift + P).
-   - También se dispone de un [task runner](https://github.com/casey/just) en la linea de comandos. Para ver comandos disponibles, corre `just` desde cualquier carpeta.
+El proyecto está configurado para ser desarrollado en [Visual Studio Code](https://code.visualstudio.com/) con [Dev Containers](https://code.visualstudio.com/docs/remote/containers). Puedes [instalar VSCode aquí](https://code.visualstudio.com/download). Existen 2 maneras de correr Dev Containers: GitHub Codespaces y localmente.
 
-Una vez abierto, todos los cambios en el código debiesen reflejarse automáticamente en tu navegador, sin necesidad de recargar la página.
+#### Desarrollo en GitHub Codespaces
 
-Hay dos excepciones a esto: cambios en la estructura de la API y cambios en el esquema de la base de datos. En el primer caso, debes correr la tarea "Generate client" (también disponible en modo watch). En el segundo caso, debes correr la tarea "Create/apply migrations" para que los cambios se reflejen en la base de datos.
+Codespaces es un servicio de GitHub que permite correr VSCode en la nube.
+Provee una cantidad limitada de horas de uso, que puede ser [expandida activando la cuenta Pro gratis a esrtudiantes](https://education.github.com/discount_requests/application).
+
+- Instala la extensión de [GitHub Codespaces](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces).
+- Crea o abre un Codespace desde el botón en la esquina superior derecha de este repositorio (o desde el menú de VSCode). Si no lo has creado, ingresa `open-source-uc/planner` como el repositorio a abrir.
+
+Sigue en la sección [Desarrollo general](#desarrollo-general).
+
+### Desarrollo local
+
+- Instala [Docker](https://www.docker.com/). Asegurate que esté corriendo.
+- Instala la extensión [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
+- Clona este repositorio y abre el proyecto en VSCode.
+- Corre el comando `Dev Containers: Open Folder in Container` o has click en el popup que saldrá al abrir el proyecto.
+
+Sigue en la sección [Desarrollo general](#desarrollo-general).
+
+### Desarrollo general
+
+- El Dev Container correrá automaticamente el setup necesario con `just init`. Espera que termine para continuar.
+- Utiliza `Run and Debug` de VSCode con `Launch all 🚀` para correr todos los servicios al mismo tiempo. Espera que el backend (que puedes inspeccionar en `Python Debug Console`) termine de correr para continuar (cuando se muestre _"Aplication startup complete"_).
+
+Una vez listo, podrás entrar a la app en [http://localhost:3000](http://localhost:3000) 🎉
+
+Necesitaras un nombre de usuario para acceder a CAS. Puedes acceder con `testuser` o con otros usuarios definidos en `cas-mock-users.json`. 
+
+
+Para realizar acciones sobre el repositorio (migraciones, generación de código, etc) puedes usar:
+- el task runner de VSCode (<kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> -> _"Tasks: Run Task"_).
+- `just` en la linea de comandos. Para ver comandos disponibles, corre `just` desde cualquier carpeta.
+
+Es important que cuando:
+- Cambias la extructura de la API, corras la tarea _"Generate client"_ (también disponible en modo watch).
+- Cambies el esquema de la base de datos, corras la tarea _"Create/apply migrations"_ para que los cambios se reflejen en la base de datos.
+
+
+## Mocks
+
+El proyecto se integra con dos servicios externos: SIDING (para acceder a mallas y datos de estudiantes) y CAS (para el login UC). Ambos son configurables por medio de variables de entorno, y se proveen mocks para ambos servicios en caso de no tener credenciales para acceder a ellos.
+
+- Para SIDING se provee un mock que se activa automáticamente en ausencia de credenciales. El mock es limitado, y solo permite probar algunas combinaciones de malla.
+- Para CAS, se provee el servicio `cas-server-mock` que corre automáticamente junto a la app. Las cuentas de usuario disponibles son configurables en el archivo `data/cas-mock-users.json`.
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
 
