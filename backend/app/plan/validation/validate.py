@@ -19,27 +19,20 @@ async def diagnose_plan(
     (ie. validate their dependencies), and also check that if the plan is followed the
     user will get their set major/minor/title degree.
     """
-    import time
     courseinfo = await course_info()
     curriculum = await get_curriculum(plan.curriculum)
     out = ValidationResult.empty(plan)
 
     # Ensure course requirements are met
-    start = time.monotonic()
     course_ctx = ValidationContext(courseinfo, plan, user_ctx)
     course_ctx.validate_all(out)
-    print(f"  course: {(time.monotonic()-start)*1000}ms")
 
     # Ensure the given curriculum is fulfilled
-    start = time.monotonic()
     diagnose_curriculum(courseinfo, curriculum, plan, user_ctx, out)
-    print(f"  curriculum: {(time.monotonic()-start)*1000}ms")
 
     # Validate against user context, if there is any context
-    start = time.monotonic()
     if user_ctx is not None:
         validate_against_owner(plan, user_ctx, out)
-    print(f"  user: {(time.monotonic() - start)*1000}ms")
 
     return out
 
