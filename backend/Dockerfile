@@ -57,23 +57,18 @@ RUN curl -L https://install.prisma.io/cli/ -sSL | bash
 # Set working directory
 WORKDIR /code
 
-# Copy the virtual environment and Prisma client from the builder
+# Copy the virtual environment and entrypoint script from the builder
 COPY --from=builder /venv /venv
-
-# Copy Prisma files
-COPY --from=builder /tmp/prisma /code/prisma
-
-# Generate Prisma client
-RUN prisma generate
-
-# Copy entrypoint script
 COPY --from=builder /tmp/entrypoint.sh /entrypoint.sh
 
-# Copy .env file from the builder
-COPY --from=builder /tmp/.env /code/.env
+# Copy Prisma files and generate client
+COPY --from=builder /tmp/prisma /code/prisma
+RUN prisma generate
 
-# Copy the rest of the application code
+# Copy the .env file, mock-data folder and app code from the builder
+COPY --from=builder /tmp/.env /code/.env
 COPY --from=builder /tmp/app /code/app
+COPY --from=builder /tmp/mock-data /code/mock-data
 
 # Setup entrypoint
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]

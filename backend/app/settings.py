@@ -53,13 +53,13 @@ class Settings(BaseSettings):
     # Siding mock database file.
     # If "", it does not load any mock data.
     # Failing to read the mock database is not a fatal error, only a warning.
-    siding_mock_path: str = "../data/siding-mock.json"
+    siding_mock_path: str = "./mock-data/siding-mock.json"
 
     # Where to store recorded SIDING responses.
     # If "", responses are not recorded.
     # Steps to record SIDING responses:
     # 1. Set SIDING_RECORD_PATH in the `.env` file to some path
-    #   (eg. "../data/siding-mock.json").
+    #   (eg. "./mock-data/siding-mock.json").
     # 2. Run the backend. You may want to clear some caches to force the SIDING
     #   requests to execute and be recorded.
     # 3. Close the backend **with CTRL+C**.
