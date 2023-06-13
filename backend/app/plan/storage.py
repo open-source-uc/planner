@@ -1,5 +1,5 @@
 from datetime import datetime
-from ..user.auth import UserKey
+from ..user.key import UserKey, ModKey
 from fastapi import HTTPException
 from prisma import Json
 from prisma.models import Plan as DbPlan
@@ -72,8 +72,9 @@ class LowDetailPlanView(BaseModel):
 
 
 async def authorize_plan_access(
-    user: UserKey, plan_id: str, mod_access: bool
+    user: UserKey, plan_id: str, try_mod_access: bool
 ) -> DbPlan:
+    mod_access = try_mod_access and isinstance(user, ModKey)
     plan = await DbPlan.prisma().find_unique(where={"id": plan_id})
     if not plan or (not mod_access and plan.user_rut != user.rut):
         raise HTTPException(status_code=404, detail="Plan not found in user storage")

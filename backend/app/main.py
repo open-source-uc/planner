@@ -212,7 +212,7 @@ async def get_student_info(user: UserKey = Depends(require_authentication)):
 async def sync_database(
     courses: bool = False,
     offer: bool = False,
-    admin_key: AdminKey = Depends(require_admin_auth),
+    admin: AdminKey = Depends(require_admin_auth),
 ):
     """
     Initiate a synchronization of the internal database from external sources.
@@ -378,14 +378,14 @@ async def empty_plan_for_user(user: UserKey = Depends(require_authentication)):
 
 @app.get("/plan/empty_for_any", response_model=ValidatablePlan)
 async def empty_plan_for_any_user(
-    user_rut: str, user: ModKey = Depends(require_mod_auth)
+    user_rut: str, mod: ModKey = Depends(require_mod_auth)
 ):
     """
     Same functionality as `empty_plan_for_user`, but works for any user identified by
     their RUT with `user_rut`.
     Moderator access is required.
     """
-    return await generate_empty_plan(UserKey("", user_rut))
+    return await generate_empty_plan(mod.as_any_user(user_rut))
 
 
 @app.get("/plan/empty_guest", response_model=ValidatablePlan)
@@ -419,14 +419,14 @@ async def validate_plan_for_user(
 
 @app.post("/plan/validate_for_any", response_model=FlatValidationResult)
 async def validate_plan_for_any_user(
-    plan: ValidatablePlan, user_rut: str, user: ModKey = Depends(require_mod_auth)
+    plan: ValidatablePlan, user_rut: str, mod: ModKey = Depends(require_mod_auth)
 ):
     """
     Same functionality as `validate_plan_for_user`, but works for any user identified by
     their RUT with `user_rut`.
     Moderator access is required.
     """
-    user_ctx = await sync.get_student_data(UserKey("", user_rut))
+    user_ctx = await sync.get_student_data(mod.as_any_user(user_rut))
     return (await diagnose_plan(plan, user_ctx)).flatten(plan)
 
 
@@ -468,7 +468,7 @@ async def save_any_plan(
     name: str,
     plan: ValidatablePlan,
     user_rut: str,
-    user: ModKey = Depends(require_mod_auth),
+    mod: ModKey = Depends(require_mod_auth),
 ) -> PlanView:
     """
     Same functionality as `save_plan`, but works for any user identified by
@@ -477,7 +477,7 @@ async def save_any_plan(
     All `/plan/storage/any` endpoints (and sub-resources) should require
     moderator access.
     """
-    return await store_plan(plan_name=name, user=UserKey("", user_rut), plan=plan)
+    return await store_plan(plan_name=name, user=mod.as_any_user(user_rut), plan=plan)
 
 
 @app.get("/plan/storage", response_model=list[LowDetailPlanView])
@@ -495,14 +495,14 @@ async def read_plans(
 
 @app.get("/plan/storage/any", response_model=list[LowDetailPlanView])
 async def read_any_plans(
-    user_rut: str, user: ModKey = Depends(require_mod_auth)
+    user_rut: str, mod: ModKey = Depends(require_mod_auth)
 ) -> list[LowDetailPlanView]:
     """
     Same functionality as `read_plans`, but works for any user identified by
     their RUT with `user_rut`.
     Moderator access is required.
     """
-    return await get_user_plans(UserKey("", user_rut))
+    return await get_user_plans(mod.as_any_user(user_rut))
 
 
 @app.get("/plan/storage/details", response_model=PlanView)
@@ -583,7 +583,7 @@ async def update_any_plan_metadata(
     plan_id: str,
     set_name: Union[str, None] = None,
     set_favorite: Union[bool, None] = None,
-    user: ModKey = Depends(require_mod_auth),
+    mod: ModKey = Depends(require_mod_auth),
 ) -> PlanView:
     """
     Same functionality as `update_plan_metadata`, but works for any plan of any user
@@ -592,7 +592,7 @@ async def update_any_plan_metadata(
     """
 
     return await modify_plan_metadata(
-        user=user,
+        user=mod,
         plan_id=plan_id,
         set_name=set_name,
         set_favorite=set_favorite,
@@ -614,14 +614,14 @@ async def delete_plan(
 
 @app.delete("/plan/storage/any", response_model=PlanView)
 async def delete_any_plan(
-    plan_id: str, user: ModKey = Depends(require_mod_auth)
+    plan_id: str, mod: ModKey = Depends(require_mod_auth)
 ) -> PlanView:
     """
     Same functionality as `delete_plan`, but works for any plan of any user
     identified by their RUT.
     Moderator access is required.
     """
-    return await remove_plan(user=user, plan_id=plan_id, mod_access=True)
+    return await remove_plan(user=mod, plan_id=plan_id, mod_access=True)
 
 
 @app.get("/offer/major", response_model=list[DbMajor])
