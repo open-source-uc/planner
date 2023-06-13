@@ -82,13 +82,13 @@ def decode_token(token: str):
     if not isinstance(payload["rut"], str):
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    if "is_admin" in payload.keys():
+    if "is_admin" in payload:
         if not isinstance(payload["is_admin"], bool):
             raise HTTPException(status_code=401, detail="Invalid token")
         if payload["is_admin"]:
             return AdminKey(payload["sub"], payload["rut"])
 
-    if "is_mod" in payload.keys():
+    if "is_mod" in payload:
         if not isinstance(payload["is_mod"], bool):
             raise HTTPException(status_code=401, detail="Invalid token")
         if payload["is_mod"]:
