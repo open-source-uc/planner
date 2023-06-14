@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { ClassId, CourseRequirementErr, CurriculumSpec, ValidatablePlan, ValidationResult } from '../../client'
+import { ClassId, CourseRequirementErr, CurriculumSpec, ValidationResult } from '../../client'
 import { Spinner } from '../../components/Spinner'
-import { useAuth } from '../../contexts/auth.context'
+import AutoFix from './AutoFix'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
 type RequirementExpr = CourseRequirementErr['missing']
@@ -50,20 +50,6 @@ const formatReqExpr = (expr: RequirementExpr): string => {
     case undefined:
       return '?'
   }
-}
-
-const extractRequiredCourses = (expr: RequirementExpr, out: Record<string, 'req' | 'coreq'> = {}): Record<string, 'req' | 'coreq'> => {
-  switch (expr.expr) {
-    case 'req':
-      out[expr.code] = expr.coreq ? 'coreq' : 'req'
-      break
-    case 'and':
-    case 'or':
-      for (const sub of expr.children) {
-        extractRequiredCourses(sub, out)
-      }
-  }
-  return out
 }
 
 /**
@@ -144,118 +130,6 @@ const formatMessage = (diag: Diagnostic): string => {
   }
 }
 
-/**
- * Get the quick fixed for some diagnostic, if any.
- */
-const QuickFixes = ({ diag, setValidatablePlan }: { diag: Diagnostic, setValidatablePlan: any }): JSX.Element => {
-  const auth = useAuth()
-  switch (diag.kind) {
-    case 'curr':
-      return <button onClick={() => {
-        setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
-          if (plan == null) return null
-          // Add the recommended courses to the last semester
-          const newClasses = [...plan.classes]
-          const semIdx = newClasses.length - 1
-          newClasses[semIdx] = [...newClasses[semIdx]]
-          for (const recommendation of diag.recommend) {
-            newClasses[semIdx].push(recommendation)
-          }
-          return { ...plan, classes: newClasses }
-        })
-      }}>Agregar {diag.recommend.map(c => c.code).join(', ')}</button>
-    case 'cyear':
-      return <button onClick={() => {
-        setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
-          if (plan == null) return null
-          if (diag.user === 'C2020') {
-            return { ...plan, curriculum: { ...plan.curriculum, cyear: { raw: diag.user } } }
-          } else {
-            return plan
-          }
-        })
-      }}>Cambiar a {diag.user}</button>
-    case 'outdated':
-    case 'outdatedcurrent':
-      if (auth != null) {
-        return <button onClick={() => {
-          setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
-            if (plan == null) return null
-            // Update all outdated semesters
-            const newClasses = [...plan.classes]
-            for (const semIdx of diag.associated_to) {
-              const passedSem = auth.student?.passed_courses?.[semIdx]
-              if (passedSem != null) {
-                newClasses[semIdx] = passedSem
-              }
-            }
-            return { ...plan, classes: newClasses }
-          })
-        }}>Actualizar semestres {diag.associated_to.map(s => s + 1).join(', ')}</button>
-      } else {
-        return <></>
-      }
-    case 'req': {
-      const missing = extractRequiredCourses(diag.missing)
-      const buttons = []
-      for (const code in missing) {
-        const type = missing[code]
-        buttons.push(<button onClick={() => {
-          setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
-            if (plan == null) return null
-            // Add the missing requirement
-            const newClasses = [...plan.classes]
-            const semIdx = newClasses.length - 1
-            newClasses[semIdx] = [...newClasses[semIdx]]
-            newClasses[semIdx].push({
-              is_concrete: true,
-              code
-            })
-            return { ...plan, classes: newClasses }
-          })
-        }}>
-          Agregar {type === 'req' ? 'requisito' : 'corequisito'} {code}
-        </button>)
-      }
-      return <>
-        {buttons}
-      </>
-    }
-    case 'unknown':
-      return <button onClick={() => {
-        setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
-          if (plan == null) return null
-          const remCodes = new Set<string>()
-          for (const id of diag.associated_to) {
-            remCodes.add(id.code)
-          }
-          // Remove the referenced courses
-          const newClasses = []
-          for (const sem of plan.classes) {
-            const newSem = []
-            for (const course of sem) {
-              if (!remCodes.has(course.code)) {
-                newSem.push(course)
-              }
-            }
-            newClasses.push(newSem)
-          }
-          return { ...plan, classes: newClasses }
-        })
-      }}>Eliminar cursos desconocidos</button>
-    case 'equiv':
-    case 'useless':
-    case 'unavail':
-    case 'sem':
-    case 'nomajor':
-    case 'currdecl':
-    case 'creditserr':
-    case 'creditswarn':
-    case undefined:
-      return <></>
-  }
-}
-
 interface MessageProps {
   setValidatablePlan: any
   diag: Diagnostic
@@ -276,7 +150,7 @@ const Message = ({ setValidatablePlan, diag, key, open }: MessageProps): JSX.Ele
     <div className={`min-w-[14rem] ml-2 ${open ? '' : 'hidden'} `}>
       <span className={'font-semibold '}>{`${w ? 'Advertencia' : 'Error'}: `}</span>
       {formatMessage(diag)}
-      <QuickFixes setValidatablePlan={setValidatablePlan} diag={diag}/>
+      <AutoFix setValidatablePlan={setValidatablePlan} diag={diag}/>
     </div>
   </div>)
 }
