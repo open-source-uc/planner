@@ -6,7 +6,7 @@ import CourseSelectorDialog from './CourseSelectorDialog'
 import CurriculumSelector from './CurriculumSelector'
 import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, CourseDetails, EquivDetails, ConcreteId, EquivalenceId, ValidationResult, PlanView } from '../../client'
@@ -72,13 +72,17 @@ export interface ValidationDigest {
   isOutdated: boolean
 }
 
+const reduceCourseDetails = (old: { [code: string]: PseudoCourseDetail }, add: { [code: string]: PseudoCourseDetail }): { [code: string]: PseudoCourseDetail } => {
+  return { ...old, ...add }
+}
+
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
 const Planner = (): JSX.Element => {
   const [planName, setPlanName] = useState<string>('')
   const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null >(null)
-  const [courseDetails, setCourseDetails] = useState<{ [code: string]: PseudoCourseDetail }>({})
+  const [courseDetails, addCourseDetails] = useReducer(reduceCourseDetails, {})
   const [curriculumData, setCurriculumData] = useState<CurriculumData | null>(null)
   const [modalData, setModalData] = useState<ModalData>()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -283,7 +287,7 @@ const Planner = (): JSX.Element => {
         acc[curr.code] = curr
         return acc
       }, {})
-      setCourseDetails((prev) => { return { ...prev, ...dict } })
+      addCourseDetails(dict)
     } catch (err) {
       handleErrors(err)
     }
@@ -453,7 +457,7 @@ const Planner = (): JSX.Element => {
         }
       }
       const details = (await DefaultService.getCourseDetails([selection]))[0]
-      setCourseDetails((prev) => { return { ...prev, [details.code]: details } })
+      addCourseDetails({ [details.code]: details })
 
       const newValidatablePlan = { ...validatablePlan, classes: [...validatablePlan.classes] }
       newValidatablePlan.classes[modalData.semester] = [...newValidatablePlan.classes[modalData.semester]]

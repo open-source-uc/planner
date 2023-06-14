@@ -23,7 +23,6 @@ interface SemesterColumnProps {
 const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCourse, openModal, classes, validationCourses, validationSemester, isDragging, setIsDragging }: SemesterColumnProps): JSX.Element => {
   const authState = useAuth()
   const conditionPassed = ((authState?.student) != null) && (semester < authState.student.current_semester)
-  const conditionNotPassed = ((authState?.student) != null) && (semester >= authState.student.current_semester)
   const [dropProps, drop] = useDrop(() => ({
     accept: 'card',
     drop (course: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }) {
@@ -66,7 +65,7 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
             />
           ))
         }
-        {conditionNotPassed && !isDragging && <div className="h-10 mx-2 bg-slate-300 card">
+        {!conditionPassed && !isDragging && <div className="h-10 mx-2 bg-slate-300 card">
         <button key="+" className="w-full" onClick={() => addCourse(semester)}>+</button>
         </div>}
       </div>
