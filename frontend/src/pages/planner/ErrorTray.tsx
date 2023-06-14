@@ -1,5 +1,6 @@
-import { ClassId, CourseRequirementErr, CurriculumSpec, ValidationResult } from '../../client'
+import { ClassId, CourseRequirementErr, CurriculumSpec, ValidatablePlan, ValidationResult } from '../../client'
 import { Spinner } from '../../components/Spinner'
+import { useAuth } from '../../contexts/auth.context'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
 type RequirementExpr = CourseRequirementErr['missing']
@@ -46,6 +47,20 @@ const formatReqExpr = (expr: RequirementExpr): string => {
     case undefined:
       return '?'
   }
+}
+
+const extractRequiredCourses = (expr: RequirementExpr, out: Record<string, 'req' | 'coreq'> = {}): Record<string, 'req' | 'coreq'> => {
+  switch (expr.expr) {
+    case 'req':
+      out[expr.code] = expr.coreq ? 'coreq' : 'req'
+      break
+    case 'and':
+    case 'or':
+      for (const sub of expr.children) {
+        extractRequiredCourses(sub, out)
+      }
+  }
+  return out
 }
 
 /**
@@ -127,23 +142,142 @@ const formatMessage = (diag: Diagnostic): string => {
 }
 
 /**
+ * Get the quick fixed for some diagnostic, if any.
+ */
+const QuickFixes = ({ diag, setValidatablePlan }: { diag: Diagnostic, setValidatablePlan: any }): JSX.Element => {
+  const auth = useAuth()
+  switch (diag.kind) {
+    case 'curr':
+      return <button onClick={() => {
+        setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+          if (plan == null) return null
+          // Add the recommended courses to the last semester
+          const newClasses = [...plan.classes]
+          const semIdx = newClasses.length - 1
+          newClasses[semIdx] = [...newClasses[semIdx]]
+          for (const recommendation of diag.recommend) {
+            newClasses[semIdx].push(recommendation)
+          }
+          return { ...plan, classes: newClasses }
+        })
+      }}>Agregar {diag.recommend.map(c => c.code).join(', ')}</button>
+    case 'cyear':
+      return <button onClick={() => {
+        setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+          if (plan == null) return null
+          if (diag.user === 'C2020') {
+            return { ...plan, curriculum: { ...plan.curriculum, cyear: { raw: diag.user } } }
+          } else {
+            return plan
+          }
+        })
+      }}>Cambiar a {diag.user}</button>
+    case 'outdated':
+    case 'outdatedcurrent':
+      if (auth != null) {
+        return <button onClick={() => {
+          setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+            if (plan == null) return null
+            // Update all outdated semesters
+            const newClasses = [...plan.classes]
+            for (const semIdx of diag.associated_to) {
+              const passedSem = auth.student?.passed_courses?.[semIdx]
+              if (passedSem != null) {
+                newClasses[semIdx] = passedSem
+              }
+            }
+            return { ...plan, classes: newClasses }
+          })
+        }}>Actualizar semestres {diag.associated_to.map(s => s + 1).join(', ')}</button>
+      } else {
+        return <></>
+      }
+    case 'req': {
+      const missing = extractRequiredCourses(diag.missing)
+      const buttons = []
+      for (const code in missing) {
+        const type = missing[code]
+        buttons.push(<button onClick={() => {
+          setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+            if (plan == null) return null
+            // Add the missing requirement
+            const newClasses = [...plan.classes]
+            const semIdx = newClasses.length - 1
+            newClasses[semIdx] = [...newClasses[semIdx]]
+            newClasses[semIdx].push({
+              is_concrete: true,
+              code
+            })
+            return { ...plan, classes: newClasses }
+          })
+        }}>
+          Agregar {type === 'req' ? 'requisito' : 'corequisito'} {code}
+        </button>)
+      }
+      return <>
+        {buttons}
+      </>
+    }
+    case 'unknown':
+      return <button onClick={() => {
+        setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+          if (plan == null) return null
+          const remCodes = new Set<string>()
+          for (const id of diag.associated_to) {
+            remCodes.add(id.code)
+          }
+          // Remove the referenced courses
+          const newClasses = []
+          for (const sem of plan.classes) {
+            const newSem = []
+            for (const course of sem) {
+              if (!remCodes.has(course.code)) {
+                newSem.push(course)
+              }
+            }
+            newClasses.push(newSem)
+          }
+          return { ...plan, classes: newClasses }
+        })
+      }}>Eliminar cursos desconocidos</button>
+    case 'equiv':
+    case 'useless':
+    case 'unavail':
+    case 'sem':
+    case 'nomajor':
+    case 'currdecl':
+    case 'creditserr':
+    case 'creditswarn':
+    case undefined:
+      return <></>
+  }
+}
+
+/**
  * A single error/warning message.
  */
-const Message = (diag: Diagnostic, key: number): JSX.Element => {
+const Message = (setValidatablePlan: any, diag: Diagnostic, key: number): JSX.Element => {
   const w = !(diag.is_err ?? true)
   return (<div key={key} className={`flex p-3 text-sm rounded-lg border ${w ? 'text-yellow-700 border-yellow-300 bg-yellow-50' : 'text-red-800 border-red-300 bg-red-50'}`} role="alert">
   <svg aria-hidden="true" className="flex-shrink-0 inline w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path></svg>
   <span className="sr-only">Info</span>
   <div>
     <span className="font-semibold">{`${w ? 'Advertencia' : 'Error'}: `}</span> {formatMessage(diag)}
+    <QuickFixes setValidatablePlan={setValidatablePlan} diag={diag}/>
   </div>
 </div>)
+}
+
+interface ErrorTrayProps {
+  setValidatablePlan: any
+  diagnostics: Diagnostic[]
+  validating: boolean
 }
 
 /**
  * The error tray shows errors and warnings about the current plan that come from the validation backend.
  */
-const ErrorTray = ({ diagnostics, validating }: { diagnostics: Diagnostic[], validating: boolean }): JSX.Element => {
+const ErrorTray = ({ setValidatablePlan, diagnostics, validating }: ErrorTrayProps): JSX.Element => {
   // Order diagnostics by putting errors first, then warnings.
   diagnostics.sort((a, b) => {
     if (a.is_err === b.is_err) {
@@ -154,7 +288,7 @@ const ErrorTray = ({ diagnostics, validating }: { diagnostics: Diagnostic[], val
       return 1
     }
   })
-  const messageList: JSX.Element[] = diagnostics.map((diag, index) => Message(diag, index))
+  const messageList: JSX.Element[] = diagnostics.map((diag, index) => Message(setValidatablePlan, diag, index))
   return (<div className="w-80 min-w-[200px] h-[95%] mb-6 overflow-y-auto px-5 py-6 bg-slate-100 border-slate-300 border-2 rounded-lg shadow-lg">
     <p className="text-xl font-semibold mb-4 text-center">Errores y advertencias</p>
   <div className="flex flex-col gap-2">

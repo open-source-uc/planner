@@ -654,7 +654,11 @@ const Planner = (): JSX.Element => {
                   />}
               </DndProvider>
             </div>
-          <ErrorTray diagnostics={validationResult?.diagnostics ?? []} validating={plannerStatus === 'VALIDATING'}/>
+          <ErrorTray
+            setValidatablePlan={setValidatablePlan}
+            diagnostics={validationResult?.diagnostics ?? []}
+            validating={plannerStatus === 'VALIDATING'}
+          />
         </div>
       }
     </div>
