@@ -153,11 +153,11 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
   )
 }
 
-const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError }: CardProps): JSX.Element => {
+const Card = memo(function _Card ({ semester, index, courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError }: CardProps): JSX.Element {
   const authState = useAuth()
   const conditionPassed = authState?.student != null && semester < authState.student.current_semester
   const blockId = BlockInitials(courseBlock)
-  const editIcon = blockId === 'FG' ? editWhiteIcon : editBlackIcon
+  const editIcon = (blockId === 'FG') ? editWhiteIcon : editBlackIcon
 
   // Turns out animations are a big source of lag
   const allowAnimations = true && blockId !== 'FG'
@@ -187,6 +187,6 @@ const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSele
       </span> }
   </div>
   )
-}
+})
 
 export default memo(CourseCard, deepEqual)

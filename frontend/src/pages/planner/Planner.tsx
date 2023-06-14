@@ -357,8 +357,10 @@ const Planner = (): JSX.Element => {
     // its not ok to use `validatablePlan` directly
     setValidatablePlan(prev => {
       if (prev === null) return null
-      const newClases = prev.classes
-      newClases[semIdx].splice(index, 1)
+      const newClases = [...prev.classes]
+      const newClasesSem = [...prev.classes[semIdx]]
+      newClasesSem.splice(index, 1)
+      newClases[semIdx] = newClasesSem
       while (newClases[newClases.length - 1].length === 0) {
         newClases.pop()
       }
@@ -371,7 +373,7 @@ const Planner = (): JSX.Element => {
     setValidatablePlan(prev => {
       if (prev === null) return prev
       const dragCourse = prev.classes[drag.semester][drag.index]
-      if (dragCourse.is_concrete === true && drop.semester !== drag.semester && prev.classes[drop.semester].map(course => course.code).includes(dragCourse.code)) {
+      if (dragCourse.is_concrete === true && drop.semester !== drag.semester && drop.semester < prev.classes.length && prev.classes[drop.semester].map(course => course.code).includes(dragCourse.code)) {
         toast.error('No se puede tener dos cursos iguales en un mismo semestre')
         return prev
       }
@@ -385,10 +387,11 @@ const Planner = (): JSX.Element => {
       } else {
         newClasses[drag.semester].splice(drag.index, 1)
       }
+      console.log(newClasses, newClasses[newClasses.length - 1], newClasses[newClasses.length - 1].length === 0)
       while (newClasses[newClasses.length - 1].length === 0) {
         newClasses.pop()
       }
-      return { ...prev, classe: newClasses }
+      return { ...prev, classes: newClasses }
     })
   }, []) // moveCourse should not depend on `validatablePlan`, so that memoing does its work
 
@@ -611,15 +614,15 @@ const Planner = (): JSX.Element => {
     }
   }, [validatablePlan])
   return (
-    <div className={`w-full h-full p-3 flex flex-grow overflow-hidden flex-row ${(plannerStatus !== 'ERROR' && plannerStatus !== 'READY') ? 'cursor-wait' : ''}`}>
+    <div className={`w-full relative h-full p-3 flex flex-grow overflow-hidden flex-row ${(plannerStatus !== 'ERROR' && plannerStatus !== 'READY') ? 'cursor-wait' : ''}`}>
       <DebugGraph validatablePlan={validatablePlan} />
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
       <AlertModal title={popUpAlert.title} desc={popUpAlert.desc} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}/>
-      {plannerStatus === 'LOADING' && (
-        <div className="fixed left-0 w-screen h-full z-50 bg-white flex justify-center items-center">
+      {plannerStatus === 'LOADING' &&
+        <div className="absolute p-3 w-screen h-full z-50 bg-white flex flex-col justify-center items-center">
           <Spinner message='Cargando planificación...' />
         </div>
-      )}
+      }
 
       {plannerStatus === 'ERROR'
         ? (<div className={'w-full h-full flex flex-col justify-center items-center'}>
