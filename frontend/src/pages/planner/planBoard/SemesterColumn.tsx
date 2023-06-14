@@ -61,7 +61,7 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
             />
           ))
         }
-        {((authState?.passed?.length) != null) && (semester >= authState?.passed?.length) && !isDragging && <div className="h-10 mx-2 bg-slate-300 card">
+        {((authState?.passed?.length) != null) && (semester >= authState?.passed?.length) && !isDragging && <div className="h-10 mx-2 bg-block- card">
         <button key="+" className="w-full" onClick={() => addCourse(semester)}>+</button>
         </div>}
       </div>

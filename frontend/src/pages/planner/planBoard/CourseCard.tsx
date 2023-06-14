@@ -161,7 +161,7 @@ const Card = memo(function _Card ({ semester, index, courseBlock, cardData, hasE
   const allowAnimations = false && blockId !== 'FG'
 
   return (
-    <div className={`card group block-${blockId} ${cardData.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
+    <div className={`card group bg-block-${blockId} ${blockId === 'FG' ? 'text-white' : ''} ${cardData.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
       { hasEquivalence === true && (cardData.is_concrete === true
         ? <button onClick={() => openSelector()}><img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" /></button>
         : <img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" />

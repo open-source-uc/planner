@@ -3,8 +3,43 @@
 @tailwind utilities;
 
 @layer base {
-  html {
-    font-family: Inter, system-ui, sans-serif;
+  html[data-theme='siding'] {
+    --blockPC: #FEC60D;
+    --placeHolder: #ebeba8;
+    --titulo: #9966CC;
+    --major: #F74F23;
+    --minor: #32CD33;
+    --blockFG: #355484;
+    --plus: #D8D8D8;
+    --otro: #D8D8D8;
+  }
+
+  html[data-theme='MVP'] {
+    --blockPC: #93F6E8;
+    --placeHolder: #ebeba8;
+    --titulo: #9966CC;
+    --major: #B3A9E4;
+    --minor: #13CDB2;
+    --blockFG: #355484;
+    --plus: #D8D8D8;
+    --otro: #D8D8D8;
+  }
+
+  html[data-theme='default'] {
+    --blockPC: #FEC60D;
+    --placeHolder: #ebeba8;
+    --titulo: #93F6E8;
+    --major: #13CDB2;
+    --minor: #B3A9E4;
+    --blockFG: #355484;
+    --plus: #D8D8D8;
+    --otro: #D8D8D8;
+  }
+
+  html[data-theme='dark'] {
+  }
+  
+  html[data-theme='light'] {
   }
 }
 
@@ -29,7 +64,6 @@
   }
 
   .card {
-    background-color: #D8D8D8;
     height: 90px;
     border-radius: theme('borderRadius.md');
     padding: theme('spacing.1');
@@ -73,37 +107,6 @@
   100%{
     opacity: 0.5;
   }
-}
-
-.block-PC{
-  /*background-color: #FEC60D;*/
-  background-color: #93F6E8;
-}
-
-.block-FG{
-  background-color: #355484;  
-  /*background-color: #00345E;*/ 
-  color: white;
-}
-
-.block-M{
-  /*background-color: #F74F23; */
-  /*background-color: #D91E0E;*/
-  /*background-color: #FF4136 ;*/
-  background-color:#B3A9E4;
-}
-
-.block-m{
-  /*background-color: #32CD33; */
-  /*background-color: #2ECC40;*/
-  background-color:#13CDB2;
-}
-
-.block-T{
-  background-color: #9966CC;
-  /*background-color: #B10DC9;*/
-  /*color: white;*/
-  /*background-color:/*#9966cc;*/
 }
 
 .hover-text {
