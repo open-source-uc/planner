@@ -611,6 +611,7 @@ const Planner = (): JSX.Element => {
         ? (<div className={'w-full h-full flex flex-col justify-center items-center'}>
             <p className={'text-2xl font-semibold mb-4'}>Error al cargar plan</p>
             <p className={'text-sm font-normal'}>{error}</p>
+            <a href="https://github.com/open-source-uc/planner/issues?q=is%3Aopen+is%3Aissue+label%3Abug" className={'text-blue-700 underline text-sm'} rel="noreferrer" target="_blank">Reportar error</a>
           </div>)
         : <div className={'flex w-full p-3 pb-0'}>
             <div className={'flex flex-col overflow-auto flex-grow'}>
