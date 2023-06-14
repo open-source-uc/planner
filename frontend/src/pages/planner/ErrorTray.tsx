@@ -293,18 +293,8 @@ interface ErrorTrayProps {
 const ErrorTray = ({ setValidatablePlan, diagnostics, validating }: ErrorTrayProps): JSX.Element => {
   const [open, setOpen] = useState(true)
   const hasError = diagnostics.some(diag => diag.is_err)
-  // Order diagnostics by putting errors first, then warnings.
-  // FIXME: Move this to the validation endpoint
-  diagnostics.sort((a, b) => {
-    if (a.is_err === b.is_err) {
-      return 0
-    } else if (a.is_err ?? true) {
-      return -1
-    } else {
-      return 1
-    }
-  })
   const messageList: JSX.Element[] = diagnostics.map((diag, index) => Message({ setValidatablePlan, diag, key: index, open: open || hasError }))
+
   return (
     <div className={`h-[95%] z-20 flex flex-col relative border-slate-300 border-2 rounded-lg bg-slate-100 shadow-lg mb-2 py-4  motion-reduce:transition-none transition-all ${hasError || open ? 'w-80 min-w-[20rem]' : 'min-w-[4.5rem]'}`}>
       <div className='flex mb-4 mx-6'>

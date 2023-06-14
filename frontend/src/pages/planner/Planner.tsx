@@ -297,6 +297,16 @@ const Planner = (): JSX.Element => {
         minor: validatablePlan.curriculum.minor,
         title: validatablePlan.curriculum.title
       }
+      // Order diagnostics by putting errors first, then warnings.
+      response.diagnostics.sort((a, b) => {
+        if (a.is_err === b.is_err) {
+          return 0
+        } else if (a.is_err ?? true) {
+          return -1
+        } else {
+          return 1
+        }
+      })
       setValidationResult(prev => {
         // Validation often gives the same results after small changes
         // Avoid triggering changes if this happens
