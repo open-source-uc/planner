@@ -107,7 +107,7 @@ const formatMessage = (diag: Diagnostic): string => {
     case 'outdatedcurrent':
       return 'Esta malla no está actualizada con los cursos que estás tomando'
     case 'req':
-      return `Faltan requisitos para el curso ${diag.associated_to[0]?.code}: ${formatReqExpr(diag.missing)}`
+      return `Faltan requisitos para el curso ${diag.associated_to[0]?.code}: ${formatReqExpr(diag.modernized_missing)}`
     case 'sem': {
       const sem = diag.only_available_on === 0 ? 'primeros' : diag.only_available_on === 1 ? 'segundos' : '?'
       const s = diag.associated_to.length !== 1

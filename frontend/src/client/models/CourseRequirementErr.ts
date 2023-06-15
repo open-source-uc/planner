@@ -21,5 +21,6 @@ export type CourseRequirementErr = {
     associated_to: Array<ClassId>;
     is_err?: boolean;
     missing: (And | Or | Const | MinCredits | ReqLevel | ReqSchool | ReqProgram | ReqCareer | ReqCourse);
+    modernized_missing: (And | Or | Const | MinCredits | ReqLevel | ReqSchool | ReqProgram | ReqCareer | ReqCourse);
 };
 

@@ -22,16 +22,34 @@ _CACHED_COURSES_ID: str = "cached-course-info"
 
 
 class CourseDetails(BaseModel):
+    # The unique code identifying this course.
     code: str
+    # An informative, short course name.
     name: str
+    # The nonnegative amount of credits.
     credits: int
+    # The requirements that must be true in order to take this course.
     deps: Expr
+    # The list of courses that are equivalent to this course (in terms of requirements).
+    # Taking this course is equivalent to having taken any course in this list.
+    banner_equivs: list[str]
+    # For old course codes that were replaced by equivalent courses, this is hopefully
+    # the code of that newer course.
+    # For valid, relevant courses that are still available for students to take, this
+    # is the same as `code`.
+    canonical_equiv: str
+    # The course program.
+    # A long, textual description.
     program: str
+    # "Facultad" that teaches the course.
     school: str
+    # "Area de Formacion General"?
     area: Optional[str]
     category: Optional[str]
+    # Heuristic indicating if the course is still available for students to take.
     is_available: bool
-    # First semester, second semester (including TAV)
+    # Booleans indicating on what semesters is the course available.
+    # First semester (odd semesters), second semester (even semesters) (including TAV)
     semestrality: tuple[bool, bool]
 
     @staticmethod
@@ -44,6 +62,8 @@ class CourseDetails(BaseModel):
             name=db.name,
             credits=db.credits,
             deps=deps,
+            banner_equivs=db.banner_equivs,
+            canonical_equiv=db.canonical_equiv,
             program=db.program,
             school=db.school,
             area=db.area,
@@ -97,12 +117,6 @@ class CourseInfo:
 
     def try_equiv(self, code: str) -> Optional[EquivDetails]:
         return self.equivs.get(code)
-
-    def is_course_available(self, code: str) -> bool:
-        info = self.try_course(code)
-        if info is None:
-            return False
-        return info.is_available
 
     def get_credits(self, course: PseudoCourse) -> Optional[int]:
         if isinstance(course, EquivalenceId):

@@ -119,6 +119,8 @@ const fixMissingRequirement = (plan: ValidatablePlan, diag: CourseRequirementErr
  * Get the quick fixed for some diagnostic, if any.
  */
 const AutoFix = ({ diag, setValidatablePlan }: { diag: Diagnostic, setValidatablePlan: any }): JSX.Element => {
+  // FIXME: TODO: Los cursos añadidos a traves del autofix les faltan los CourseDetails.
+  // No me manejo bien con la implementación del frontend, lo dejo en mejores manos.
   const auth = useAuth()
   switch (diag.kind) {
     case 'curr':
@@ -148,7 +150,7 @@ const AutoFix = ({ diag, setValidatablePlan }: { diag: Diagnostic, setValidatabl
         return <></>
       }
     case 'req': {
-      const missing = extractRequiredCourses(diag.missing)
+      const missing = extractRequiredCourses(diag.modernized_missing)
       const buttons = []
       for (const code in missing) {
         const type = missing[code]

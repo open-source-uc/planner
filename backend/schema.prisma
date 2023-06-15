@@ -36,6 +36,8 @@ model Course {
   searchable_name     String
   credits             Int
   deps                Json
+  banner_equivs       String[]
+  canonical_equiv     String
   program             String
   school              String
   area                String?
