@@ -11,6 +11,11 @@ cumplir al tomar ramos en la UC:
 
 - Banner: Al tomar ramos, el sistema Banner le puede impedir fisicamente tomar
     un ramo si no cumple los requisitos o restricciones.
+    Banner es un sistema closed-source desarrollado por la
+    empresa estadounidense Ellucian.
+    La UC compra este servicio.
+    Por ende, no tenemos un contacto a quien preguntar sobre el funcionamiento
+    preciso de Banner.
 - Seguimiento Curricular: Al terminar la carrera, funcionarios de la UC juzgan
     si el alumno cumple los requisitos para licenciarse o titularse.
     Este es un proceso complejo, pero gran parte del proceso es mirar la app
@@ -88,14 +93,22 @@ Segun https://registrosacademicos.uc.cl/wp-content/uploads/2022/07/Inscripcion-d
 
 Propiedades observadas del [catalogo UC](https://catalogo.uc.cl/):
 - La relacion pareciera ser conmutativa, al menos en los 4000+ cursos dictados el 2022-2.
-  **Pero no en los cursos obsoletos!**: La sigla ING1001 (practica I) es
-  equivalente con IPP1000 (practica 1 obsoleta), pero IPP1000 no es equivalente con
-  ING1001.
-  De manera anecdotica, tomar ING1001 hace que IPP1000 cuente como aprobado.
-  Falta determinar los detalles del funcionamiento de las equivalencias no
-  conmutativas.
+    **Pero no en los cursos obsoletos!**: La sigla ING1001 (practica I) es
+    equivalente con IPP1000 (practica 1 obsoleta), pero IPP1000 no es equivalente con
+    ING1001.
+    Por evidencia empirica, tomar ING1001 hace que IPP1000 cuente como aprobado
+    para efectos de requisitos.
+    Por ende, hay dos escenarios posibles:
+    1. Solo sirven las equivalencias "inversas".
+    2. Sirven las equivalencias "directas" y las equivalencias "inversas".
+    De todas formas, no hay ningun requisito que se cumpla bajo el escenario
+    *2* pero no bajo el escenario *1*, por lo que en la practica no importa
+    cual implementemos.
 - La relacion no es transitiva. Eg: FIS1512 es equivalente a ICE1003, y ICE1003 es
     equivalente a FIS1513, pero FIS1512 no es equivalente a FIS1513.
+    Es posible que Banner automaticamente "propague" las equivalencias
+    transitivas.
+    TODO: Hacer una prueba experimental.
 
 ### Equivalencias SIDING
 
