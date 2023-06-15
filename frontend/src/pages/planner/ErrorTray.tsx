@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ClassId, CourseRequirementErr, CurriculumSpec, ValidationResult } from '../../client'
 import { Spinner } from '../../components/Spinner'
-import AutoFix from './AutoFix'
+import AutoFix, { validateCyear } from './AutoFix'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
 type RequirementExpr = CourseRequirementErr['missing']
@@ -88,7 +88,11 @@ const formatMessage = (diag: Diagnostic): string => {
     case 'currdecl':
       return `El curriculum elegido (${formatCurriculum(diag.plan)}) no es el mismo que el que tienes declarado oficialmente (${formatCurriculum(diag.user)})`
     case 'cyear':
-      return `Tu versión de curriculum es ${diag.user}, pero el plan esta siendo validado para ${diag.plan.raw}.`
+      if (validateCyear(diag.user) != null) {
+        return `Tu versión de curriculum es ${diag.user}, pero el plan esta siendo validado para ${diag.plan.raw}.`
+      } else {
+        return `Tu versión del curriculum es ${diag.user} pero no es soportada. El plan esta siendo validado para la versión de curriculum ${diag.plan.raw}.`
+      }
     case 'equiv': {
       const s = diag.associated_to.length === 1 ? '' : 's'
       return `Falta desambiguar la${s} equivalencia${s} ${listCourses(diag.associated_to)} para validar correctamente tu plan.`

@@ -5,7 +5,6 @@ from .validation.curriculum.solve import (
     solve_curriculum,
 )
 
-from fastapi import HTTPException
 from ..user.auth import UserKey
 from ..sync import get_curriculum
 from .validation.courses.logic import And, Expr, Or, ReqCourse
@@ -261,12 +260,9 @@ async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan
         student = await sync.get_student_data(user)
         cyear = Cyear.from_str(student.info.cyear)
         if cyear is None:
-            # HTTP error 501: Unimplemented
-            # TODO: The frontend could recognize this code and show a nice error message
-            # maybe?
-            raise HTTPException(
-                status_code=501, detail="Your curriculum version is unsupported"
-            )
+            # Just plow forward, after all the validation endpoint will generate an
+            # error about the mismatched cyear
+            cyear = LATEST_CYEAR
         classes = student.passed_courses
         curriculum = CurriculumSpec(
             cyear=cyear,

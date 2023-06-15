@@ -131,12 +131,16 @@ const AutoFix = ({ diag, setValidatablePlan }: { diag: Diagnostic, setValidatabl
         })
       }}>Agregar {diag.recommend.map(c => c.code).join(', ')}</button>
     case 'cyear':
-      return <button onClick={() => {
-        setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
-          if (plan == null) return null
-          return fixIncorrectCyear(plan, diag)
-        })
-      }}>Cambiar a {diag.user}</button>
+      if (validateCyear(diag.user) != null) {
+        return <button onClick={() => {
+          setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+            if (plan == null) return null
+            return fixIncorrectCyear(plan, diag)
+          })
+        }}>Cambiar a {diag.user}</button>
+      } else {
+        return <></>
+      }
     case 'outdated':
     case 'outdatedcurrent':
       if (auth != null) {
@@ -203,3 +207,4 @@ const AutoFix = ({ diag, setValidatablePlan }: { diag: Diagnostic, setValidatabl
 }
 
 export default AutoFix
+export { validateCyear }
