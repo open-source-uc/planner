@@ -144,7 +144,7 @@ class ValidationContext:
             for i, course in enumerate(sem):
                 if isinstance(course, EquivalenceId):
                     info = self.courseinfo.try_equiv(course.code)
-                    if info is not None and not info.is_homogeneous:
+                    if info is not None and not info.is_unessential:
                         ambiguous.append(self.class_ids[sem_i][i])
         if ambiguous:
             out.add(AmbiguousCourseErr(associated_to=ambiguous))

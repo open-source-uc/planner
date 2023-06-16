@@ -77,15 +77,27 @@ class CourseDetails(BaseModel):
 
 
 class EquivDetails(BaseModel):
+    """
+    Details about an equivalence.
+    - code: Unique code identifying this equivalence.
+        Unique across course and equivalence codes (ie. course and equivalence names
+        live in the same namespace).
+    - name: Informative name of this equivalence.
+    - is_homogeneous: Indicates whether this equivalence is "homogeneous".
+        A homogeneous equivalence is one where all of its concrete courses have the
+        same requirements and reverse requirements (eg. "Dinamica" is homogeneous, but
+        "OFG" is not).
+        The requirement validator gives up on non-homogeneous equivalences, but tries
+        to validate homogeneous dependencies.
+    - is_unessential: Whether the equivalence can go unspecified without raising an
+        error.
+    - courses: List of concrete course codes that make up this equivalence.
+    """
+
     code: str
     name: str
-    # Indicates whether this equivalence is "homogeneous".
-    # A homogeneous equivalence is one where all of its concrete courses have the same
-    # requirements and reverse requirements (eg. "Dinamica" is homogeneous, but "OFG"
-    # is not).
-    # The requirement validator gives up on non-homogeneous equivalences, but tries to
-    # validate homogeneous dependencies.
     is_homogeneous: bool
+    is_unessential: bool
     courses: list[str]
 
     @staticmethod
@@ -103,6 +115,7 @@ class EquivDetails(BaseModel):
             code=db.code,
             name=db.name,
             is_homogeneous=db.is_homogeneous,
+            is_unessential=db.is_unessential,
             courses=courses,
         )
 
@@ -142,14 +155,15 @@ async def add_equivalence(equiv: EquivDetails):
     # Add equivalence to database
     await Equivalence.prisma().query_raw(
         """
-        INSERT INTO "Equivalence" (code, name, is_homogeneous)
-        VALUES($1, $2, $3)
+        INSERT INTO "Equivalence" (code, name, is_homogeneous, is_unessential)
+        VALUES($1, $2, $3, $4)
         ON CONFLICT (code)
-        DO UPDATE SET name = $2, is_homogeneous = $3
+        DO UPDATE SET name = $2, is_homogeneous = $3, is_unessential = $4
         """,
         equiv.code,
         equiv.name,
         equiv.is_homogeneous,
+        equiv.is_unessential,
     )
     # Clear previous equivalence courses
     await EquivalenceCourse.prisma().delete_many(where={"equiv_code": equiv.code})

@@ -63,6 +63,7 @@ model Equivalence {
   code           String              @id
   name           String
   is_homogeneous Boolean
+  is_unessential Boolean
   courses        EquivalenceCourse[]
 }
 

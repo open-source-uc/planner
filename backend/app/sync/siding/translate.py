@@ -109,6 +109,7 @@ async def _fetch_raw_blocks(
                 code=code,
                 name=raw_block.Nombre,
                 is_homogeneous=False,
+                is_unessential=False,
                 courses=codes,
             )
         elif raw_block.CodSigla is not None and raw_block.Equivalencias is not None:
@@ -119,7 +120,11 @@ async def _fetch_raw_blocks(
             for equiv in raw_block.Equivalencias.Cursos:
                 codes.append(equiv.Sigla)
             equiv = EquivDetails(
-                code=code, name=raw_block.Nombre, is_homogeneous=True, courses=codes
+                code=code,
+                name=raw_block.Nombre,
+                is_homogeneous=True,
+                is_unessential=True,
+                courses=codes,
             )
         if equiv is not None:
             equiv = await siding_rules.apply_equivalence_rules(courseinfo, spec, equiv)
