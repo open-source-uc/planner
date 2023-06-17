@@ -70,7 +70,6 @@ class Node:
     outgoing: list[Edge] = field(default_factory=list)
     incoming: list[Edge] = field(default_factory=list)
     outgoing_active: set[int] = field(default_factory=set)
-    incoming_active: set[int] = field(default_factory=set)
 
     def flow(self) -> int:
         f = 0
@@ -394,36 +393,39 @@ INFINITY: int = 10**18
 
 
 def _max_flow_min_cost(g: SolvedCurriculum):
+    # Check that there are no negative cycles in the residual graph
+    # To simplify this check, we just check that there are no negative cost edges in
+    # the residual graph
+    for edge in g.edges:
+        if edge.flow < edge.cap:
+            if edge.cost < 0:
+                raise Exception(
+                    "curriculum residual flow graph has negative cost edges"
+                )
+    if len(g.edges) == 0:
+        return
+
     # Iteratively improve flow
     queue: dict[int, None] = {}
     parent: list[Edge] = [g.edges[0] for _node in g.nodes]
-    iters = 0
-    spfa_iters = 0
     while True:
-        iters += 1
         # Find shortest path from source to sink
         # Shortest-Path-Faster-Algorithm (SPFA)
         dists: list[int] = [INFINITY for _node in g.nodes]
         dists[g.source] = 0
         queue.clear()
         queue[g.source] = None
-        spfa_budget = len(g.nodes) ** 2
         while queue:
-            spfa_iters += 1
-            spfa_budget -= 1
-            if spfa_budget < 0:
-                raise Exception("negative cycle detected in flow graph")
             id = next(iter(queue.keys()))
             del queue[id]
-            for edge in g.nodes[id].outgoing:
-                src = edge.src
+            for edgeid in g.nodes[id].outgoing_active:
+                edge = g.edges[edgeid]
                 dst = edge.dst
-                if edge.flow < edge.cap:
-                    newdist = dists[src] + edge.cost
-                    if newdist < dists[dst]:
-                        dists[dst] = newdist
-                        parent[dst] = edge
-                        queue[dst] = None
+                newdist = dists[edge.src] + edge.cost
+                if newdist < dists[dst]:
+                    dists[dst] = newdist
+                    parent[dst] = edge
+                    queue[dst] = None
 
         # If no path from source to sink is found, the flow is maximal
         if dists[g.sink] == INFINITY:
@@ -443,8 +445,17 @@ def _max_flow_min_cost(g: SolvedCurriculum):
         cur = g.sink
         while cur != g.source:
             edge = parent[cur]
+            rev = g.edges[edge.rev]
             edge.flow += flow
-            g.edges[edge.rev].flow -= flow
+            if edge.flow == edge.cap:
+                # This edge reached max capacity, so it is no longer in the residual
+                # graph
+                g.nodes[edge.src].outgoing_active.remove(edge.id)
+            if rev.flow == rev.cap:
+                # This edge is about to have some spare capacity, so it will go back
+                # into the residual graph
+                g.nodes[rev.src].outgoing_active.add(rev.id)
+            rev.flow -= flow
             cur = edge.src
 
 
