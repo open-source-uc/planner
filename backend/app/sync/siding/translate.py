@@ -104,7 +104,15 @@ async def _fetch_raw_blocks(
             if courseinfo.try_equiv(code) is not None:
                 continue
             raw_courses = await client.get_predefined_list(raw_block.CodLista)
-            codes = list(map(lambda c: c.Sigla, raw_courses))
+            codes: list[str] = []
+            for c in raw_courses:
+                if courseinfo.try_course(c.Sigla) is None:
+                    print(
+                        f"unknown course {c.Sigla} in SIDING list"
+                        + f" {raw_block.CodLista} ({raw_block.Nombre})"
+                    )
+                else:
+                    codes.append(c.Sigla)
             equiv = EquivDetails(
                 code=code,
                 name=raw_block.Nombre,
