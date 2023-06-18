@@ -2,7 +2,8 @@ import { memo, ReactNode, useRef } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
 import editWhiteIcon from '../../../assets/editWhite.svg'
 import editBlackIcon from '../../../assets/editBlack.svg'
-import currentIcon from '../../../assets/calendar-clock.svg'
+import currentWhiteIcon from '../../../assets/currentWhite.svg'
+import currentBlackIcon from '../../../assets/currentBlack.svg'
 import { useAuth } from '../../../contexts/auth.context'
 import deepEqual from 'fast-deep-equal'
 
@@ -32,7 +33,9 @@ interface CardProps {
 }
 
 interface ConditionalWrapperProps {
-  condition: boolean
+  conditionPassed: boolean
+  conditionCurrent: boolean
+  wrapperCurrent: Function
   wrapperPassed: Function
   wrapperNotPassed: Function
   children: ReactNode
@@ -56,9 +59,9 @@ const BlockInitials = (courseBlock: string): string => {
   return ''
 }
 
-const ConditionalWrapper = ({ condition, wrapperPassed, wrapperNotPassed, children }: ConditionalWrapperProps): JSX.Element => {
+const ConditionalWrapper = ({ conditionPassed, conditionCurrent, wrapperCurrent, wrapperPassed, wrapperNotPassed, children }: ConditionalWrapperProps): JSX.Element => {
   return (
-    condition ? wrapperPassed(children) : wrapperNotPassed(children)
+    conditionCurrent ? wrapperCurrent(children) : conditionPassed ? wrapperPassed(children) : wrapperNotPassed(children)
   )
 }
 
@@ -68,7 +71,7 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
 
   const conditionPassed = authState?.student != null && semester < authState.student.current_semester
   const checkInClass = ((authState?.student) != null) && (authState.student.current_semester === authState.student.next_semester - 1)
-  const checkCurrent = (checkInClass && (semester === authState?.student?.current_semester)) || semester === 3
+  const checkCurrent = (checkInClass && (semester === authState?.student?.current_semester))
 
   const [collected = { isDragging: false }, drag] = useDrag(() => ({
     type: 'card',
@@ -103,7 +106,9 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
   return (
     <>
       <ConditionalWrapper
-        condition={conditionPassed}
+        conditionPassed={conditionPassed}
+        conditionCurrent={checkCurrent}
+        wrapperCurrent={(children: ReactNode) => <div ref={ref} draggable={false} className={'px-2 opacity-75 pb-3 cursor-not-allowed'}>{children}</div>}
         wrapperPassed={(children: ReactNode) => <div ref={ref} draggable={false} className={'px-2 opacity-50 pb-3 cursor-not-allowed'}>{children}</div>}
         wrapperNotPassed={(children: ReactNode) => <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3 cursor-grab' : 'cursor-grabbing'} `}>{children}</div>}
       >
@@ -160,10 +165,11 @@ const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSele
   const authState = useAuth()
   const conditionPassed = authState?.student != null && semester < authState.student.current_semester
   const checkInClass = ((authState?.student) != null) && (authState.student.current_semester === authState.student.next_semester - 1)
-  const checkCurrent = (checkInClass && (semester === authState?.student?.current_semester)) || semester === 3
+  const checkCurrent = (checkInClass && (semester === authState?.student?.current_semester))
 
   const blockId = BlockInitials(courseBlock)
   const editIcon = blockId === 'FG' ? editWhiteIcon : editBlackIcon
+  const currentIcon = blockId === 'FG' ? currentWhiteIcon : currentBlackIcon
 
   // Turns out animations are a big source of lag
   const allowAnimations = true && blockId !== 'FG'
@@ -175,7 +181,7 @@ const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSele
         : <img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" />
       )}
       {blockId === ''
-        ? <>{conditionPassed ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse(semester, index)}>x</button>}</>
+        ? <>{conditionPassed || checkCurrent ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse(semester, index)}>x</button>}</>
         : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{blockId}</div>
       }
       <div className='flex items-center justify-center text-center flex-col'>
