@@ -23,13 +23,8 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
   const authState = useAuth()
   const conditionPassed = ((authState?.student) != null) && (semester < authState.student.current_semester)
   const conditionNotPassed = ((authState?.student) != null) && (semester >= authState.student.current_semester)
-
   const checkInClass = ((authState?.student) != null) && (authState.student.current_semester === authState.student.next_semester - 1)
-  const checkCurrent = (checkInClass && (semester === authState?.student?.current_semester)) || semester === 3
-
-  console.log(authState?.student)
-  console.log(checkCurrent)
-  console.log(checkInClass)
+  const checkCurrent = (checkInClass && (semester === authState?.student?.current_semester))
 
   const [dropProps, drop] = useDrop(() => ({
     accept: 'card',
@@ -47,10 +42,9 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
   return (
     <div className={'drop-shadow-xl w-[165px] shrink-0 bg-base-200 rounded-lg flex flex-col'}>
       {conditionPassed
-        ? <span className='line-through decoration-black/40'><h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2></span>
-        : <h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2>
+        ? <><span className='line-through decoration-black/40'><h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2></span><div className="my-3 divider"></div></>
+        : checkCurrent ? <div className='flex flex-col text-center'><h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2><p className='text-xs'>En curso</p><div className="my-1 divider"></div></div> : <><h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2><div className="my-3 divider"></div></>
       }
-      <div className="my-2 divider"></div>
       <div>
         {
           classes.map((course: PseudoCourseId, index: number) => (
