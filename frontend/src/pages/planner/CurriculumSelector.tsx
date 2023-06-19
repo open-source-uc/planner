@@ -58,7 +58,7 @@ const Selector = memo(function _Selector ({
             {({ selected }) => (
               <>
                 <span className={`block truncate ${selected ? 'font-medium text-black' : 'font-normal'}`}>
-                  Por Seleccionar
+                  Eliminar selección
                 </span>
                 {selected ? <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-800">*</span> : null}
               </>
