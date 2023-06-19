@@ -180,7 +180,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
 
   return (
     <Transition.Root show={open} as={Fragment}>
-    <Dialog as="div" className="relative z-50" onClose={() => { setSelectedCourse(undefined); onClose() }}>
+    <Dialog as="div" className="modal relative" onClose={() => { setSelectedCourse(undefined); onClose() }}>
       <Transition.Child
           as={Fragment}
           enter="ease-out duration-200"
