@@ -8,10 +8,10 @@ function Layout (): JSX.Element {
         <Navbar/>
         <ToastContainer
           position="top-center"
-          autoClose={3000}
+          autoClose={2500}
           hideProgressBar={false}
           newestOnTop={false}
-          closeOnClick={false}
+          closeOnClick={true}
           draggable={false}
           pauseOnFocusLoss={false}
           pauseOnHover={false}

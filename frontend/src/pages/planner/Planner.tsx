@@ -65,6 +65,7 @@ export type ValidationDigest = CourseValidationDigest[][]
  */
 const Planner = (): JSX.Element => {
   const [planName, setPlanName] = useState<string>('')
+  const [planID, setPlanID] = useState<string | undefined>(useParams()?.plannerId)
   const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null >(null)
   const [courseDetails, setCourseDetails] = useState<{ [code: string]: PseudoCourseDetail }>({})
   const [curriculumData, setCurriculumData] = useState<CurriculumData | null>(null)
@@ -80,7 +81,6 @@ const Planner = (): JSX.Element => {
 
   const [validationPromise, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
 
-  const params = useParams()
   const authState = useAuth()
 
   const planDigest = useMemo((): PlanDigest => {
@@ -215,11 +215,11 @@ const Planner = (): JSX.Element => {
 
   async function fetchData (): Promise<void> {
     try {
-      if (params?.plannerId != null) {
+      if (planID !== null && planID !== undefined) {
         if (validatablePlan !== null) {
           await getDefaultPlan(validatablePlan)
         } else {
-          await getPlanById(params.plannerId)
+          await getPlanById(planID)
         }
       } else {
         await getDefaultPlan(validatablePlan ?? undefined)
@@ -291,10 +291,10 @@ const Planner = (): JSX.Element => {
       toast.error('No se ha generado un plan aun')
       return
     }
-    if (params?.plannerId != null) {
+    if (planID !== null && planID !== undefined) {
       setPlannerStatus(PlannerStatus.VALIDATING)
       try {
-        await DefaultService.updatePlan(params.plannerId, validatablePlan)
+        await DefaultService.updatePlan(planID, validatablePlan)
         toast.success('Plan actualizado exitosamente.')
       } catch (err) {
         handleErrors(err)
@@ -306,10 +306,9 @@ const Planner = (): JSX.Element => {
       setPlannerStatus(PlannerStatus.VALIDATING)
       try {
         const res = await DefaultService.savePlan(planName, validatablePlan)
-        toast.success('Plan guardado exitosamente, redireccionando...', {
-          toastId: 'newPlanSaved',
-          data: { planId: res.id }
-        })
+        setPlanID(res.id)
+        setPlanName(res.name)
+        toast.success('Plan guardado exitosamente')
       } catch (err) {
         handleErrors(err)
       }
