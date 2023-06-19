@@ -47,7 +47,7 @@ const Selector = memo(function _Selector ({
         leaveFrom="opacity-100"
         leaveTo="opacity-0"
       >
-        <Listbox.Options className="curriculumOptions overflow-visible z-40">
+        <Listbox.Options className="curriculumOptions z-40">
         {canDeselect && value !== undefined && value !== null &&
             <Listbox.Option
               className={({ active }) =>
@@ -57,7 +57,7 @@ const Selector = memo(function _Selector ({
             >
             {({ selected }) => (
               <>
-                <span className={`block truncate ${selected ? 'font-medium text-black' : 'font-normal'}`}>
+                <span className={'block truncate font-medium  '}>
                   Eliminar selección
                 </span>
                 {selected ? <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-800">*</span> : null}
@@ -65,6 +65,7 @@ const Selector = memo(function _Selector ({
             )}
           </Listbox.Option>
         }
+        <div className="overflow-auto">
         {Object.keys(data).map((key) => (
           <Listbox.Option
             className={({ active }) =>
@@ -88,7 +89,7 @@ const Selector = memo(function _Selector ({
               </>
             )}
           </Listbox.Option>
-        ))}
+        ))}</div>
         </Listbox.Options>
       </Transition>
     </Listbox>
