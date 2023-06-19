@@ -48,7 +48,7 @@ const Selector = memo(function _Selector ({
         leaveTo="opacity-0"
       >
         <Listbox.Options className="curriculumOptions overflow-visible z-40">
-        {canDeselect &&
+        {canDeselect && value !== undefined && value !== null &&
             <Listbox.Option
               className={({ active }) =>
                 `curriculumOption ${active ? 'bg-place-holder text-amber-800' : 'text-gray-900'}`
