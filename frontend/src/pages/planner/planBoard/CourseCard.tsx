@@ -8,7 +8,7 @@ import deepEqual from 'fast-deep-equal'
 interface CourseCardProps {
   semester: number
   index: number
-  cardData: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }
+  cardData: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean, isFailed: boolean }
   isDragging: Function
   moveCourse: Function
   remCourse: Function
@@ -21,7 +21,7 @@ interface CourseCardProps {
 interface CardProps {
   semester: number
   index: number
-  cardData: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }
+  cardData: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean, isFailed: boolean }
   remCourse: Function
   courseBlock: string
   openSelector: Function
@@ -173,7 +173,7 @@ const Card = memo(function _Card ({ semester, index, courseBlock, cardData, hasE
         : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{blockId}</div>
       }
       <div className='flex items-center justify-center text-center flex-col'>
-        <div className='text-xs line-clamp-2'>{cardData.name}</div>
+        <div className={`text-xs line-clamp-2 ${cardData.isFailed ? 'line-through' : ''}`}>{cardData.name}</div>
         <div className='text-[0.6rem] opacity-75'>{cardData.is_concrete !== true ? 'Seleccionar Curso' : cardData.code}</div>
       </div>
       <div className='absolute bottom-2 left-2 text-[0.5rem] opacity-75'>{cardData.credits} créd.</div>
