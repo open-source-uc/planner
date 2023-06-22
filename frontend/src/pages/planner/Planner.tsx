@@ -3,6 +3,7 @@ import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
 import CourseSelectorDialog from './CourseSelectorDialog'
+import LegendModal from './LegendModal'
 import CurriculumSelector from './CurriculumSelector'
 import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
@@ -71,6 +72,7 @@ const Planner = (): JSX.Element => {
   const [curriculumData, setCurriculumData] = useState<CurriculumData | null>(null)
   const [modalData, setModalData] = useState<ModalData>()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isLegendModalOpen, setIsLegendModalOpen] = useState(false)
   const [plannerStatus, setPlannerStatus] = useState<PlannerStatus>(PlannerStatus.LOADING)
   const [validationResult, setValidationResult] = useState<FlatValidationResult | null>(null)
   const [error, setError] = useState<String | null>(null)
@@ -508,6 +510,14 @@ const Planner = (): JSX.Element => {
     setIsModalOpen(false)
   }
 
+  function openInfoModal (): void {
+    setIsLegendModalOpen(true)
+  }
+
+  function closeInfoModal (): void {
+    setIsLegendModalOpen(false)
+  }
+
   function reset (): void {
     setPlannerStatus(PlannerStatus.LOADING)
     setValidatablePlan(null)
@@ -599,6 +609,7 @@ const Planner = (): JSX.Element => {
     <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
       <DebugGraph validatablePlan={validatablePlan} />
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
+      <LegendModal open={isLegendModalOpen} onClose={closeInfoModal}/>
       <AlertModal title={popUpAlert.title} desc={popUpAlert.desc} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}/>
       {plannerStatus === 'LOADING' &&
         <div className="absolute w-screen h-full z-50 bg-white flex flex-col justify-center items-center">
@@ -625,6 +636,7 @@ const Planner = (): JSX.Element => {
               <ControlTopBar
                 reset={reset}
                 save={savePlan}
+                openModal={openInfoModal}
               />
               <DndProvider backend={HTML5Backend}>
                 {(validatablePlan != null) &&
