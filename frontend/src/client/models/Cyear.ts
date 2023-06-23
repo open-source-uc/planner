@@ -10,15 +10,6 @@
  * new curriculum version is added.
  */
 export type Cyear = {
-    raw: Cyear.raw;
+    raw: 'C2020';
 };
-
-export namespace Cyear {
-
-    export enum raw {
-        C2020 = 'C2020',
-    }
-
-
-}
 

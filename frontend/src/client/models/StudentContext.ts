@@ -9,5 +9,7 @@ import type { StudentInfo } from './StudentInfo';
 export type StudentContext = {
     info: StudentInfo;
     passed_courses: Array<Array<(ConcreteId | EquivalenceId)>>;
+    current_semester: number;
+    next_semester: number;
 };
 

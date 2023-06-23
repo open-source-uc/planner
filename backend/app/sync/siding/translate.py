@@ -7,7 +7,7 @@ from typing import Optional
 from ...user.info import StudentInfo
 from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
 from ...plan.course import ConcreteId, EquivalenceId, PseudoCourse
-from . import client, curriculum_rules
+from . import client, siding_rules
 from .client import (
     BloqueMalla,
     PlanEstudios,
@@ -98,21 +98,27 @@ async def _fetch_raw_blocks(
 
     # Fetch data for unseen equivalences
     for raw_block in raw_blocks:
+        equiv = None
         if raw_block.CodLista is not None:
             code = f"!{raw_block.CodLista}"
             if courseinfo.try_equiv(code) is not None:
                 continue
             raw_courses = await client.get_predefined_list(raw_block.CodLista)
-            codes = list(map(lambda c: c.Sigla, raw_courses))
-            await add_equivalence(
-                EquivDetails(
-                    code=code,
-                    name=raw_block.Nombre,
-                    # TODO: Do some deeper analysis to determine if an equivalency is
-                    # homogeneous
-                    is_homogeneous=len(codes) < 5,
-                    courses=codes,
-                )
+            codes: list[str] = []
+            for c in raw_courses:
+                if courseinfo.try_course(c.Sigla) is None:
+                    print(
+                        f"unknown course {c.Sigla} in SIDING list"
+                        + f" {raw_block.CodLista} ({raw_block.Nombre})"
+                    )
+                else:
+                    codes.append(c.Sigla)
+            equiv = EquivDetails(
+                code=code,
+                name=raw_block.Nombre,
+                is_homogeneous=False,
+                is_unessential=False,
+                courses=codes,
             )
         elif raw_block.CodSigla is not None and raw_block.Equivalencias is not None:
             code = f"?{raw_block.CodSigla}"
@@ -121,11 +127,16 @@ async def _fetch_raw_blocks(
             codes = [raw_block.CodSigla]
             for equiv in raw_block.Equivalencias.Cursos:
                 codes.append(equiv.Sigla)
-            await add_equivalence(
-                EquivDetails(
-                    code=code, name=raw_block.Nombre, is_homogeneous=True, courses=codes
-                )
+            equiv = EquivDetails(
+                code=code,
+                name=raw_block.Nombre,
+                is_homogeneous=True,
+                is_unessential=True,
+                courses=codes,
             )
+        if equiv is not None:
+            equiv = await siding_rules.apply_equivalence_rules(courseinfo, spec, equiv)
+            await add_equivalence(equiv)
 
     return raw_blocks
 
@@ -202,9 +213,7 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
     curriculum = Curriculum(root=root)
 
     # Apply custom cyear-dependent transformations
-    curriculum = await curriculum_rules.apply_curriculum_rules(
-        courseinfo, spec, curriculum
-    )
+    curriculum = await siding_rules.apply_curriculum_rules(courseinfo, spec, curriculum)
 
     # Patch any `-1` capacities to be the sum of child capacities
     _patch_capacities(curriculum.root)

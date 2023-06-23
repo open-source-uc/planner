@@ -8,16 +8,7 @@
  */
 export type MinCredits = {
     hash?: Blob;
-    expr?: MinCredits.expr;
+    expr?: 'cred';
     min_credits: number;
 };
-
-export namespace MinCredits {
-
-    export enum expr {
-        CRED = 'cred',
-    }
-
-
-}
 

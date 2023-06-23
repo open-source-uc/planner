@@ -7,17 +7,8 @@
  */
 export type ReqCourse = {
     hash?: Blob;
-    expr?: ReqCourse.expr;
+    expr?: 'req';
     code: string;
     coreq: boolean;
 };
-
-export namespace ReqCourse {
-
-    export enum expr {
-        REQ = 'req',
-    }
-
-
-}
 

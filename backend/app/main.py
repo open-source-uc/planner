@@ -1,6 +1,6 @@
 from .plan.validation.curriculum.solve import solve_curriculum
 from .user.info import StudentContext
-from .plan.validation.diagnostic import FlatValidationResult
+from .plan.validation.diagnostic import ValidationResult
 from .plan.validation.validate import diagnose_plan
 from .plan.plan import ValidatablePlan
 from .plan.generation import generate_empty_plan, generate_recommended_plan
@@ -111,7 +111,7 @@ async def authenticate(next: Optional[str] = None, ticket: Optional[str] = None)
 
 
 @app.get("/auth/check")
-async def check_auth(user_data: UserKey = Depends(require_authentication)):
+async def check_auth(user: UserKey = Depends(require_authentication)):
     """
     Request succeeds if user authentication was successful.
     Otherwise, the request fails with 401 Unauthorized.
@@ -120,7 +120,7 @@ async def check_auth(user_data: UserKey = Depends(require_authentication)):
 
 
 @app.get("/auth/check/mod")
-async def check_mod(user_data: ModKey = Depends(require_mod_auth)):
+async def check_mod(user: ModKey = Depends(require_mod_auth)):
     """
     Request succeeds if user authentication and mod authorization were successful.
     Otherwise, the request fails with 401 Unauthorized or 403 Forbidden.
@@ -129,7 +129,7 @@ async def check_mod(user_data: ModKey = Depends(require_mod_auth)):
 
 
 @app.get("/auth/check/admin")
-async def check_admin(user_data: AdminKey = Depends(require_admin_auth)):
+async def check_admin(user: AdminKey = Depends(require_admin_auth)):
     """
     Request succeeds if user authentication and admin authorization were successful.
     Otherwise, the request fails with 401 Unauthorized or 403 Forbidden.
@@ -138,7 +138,7 @@ async def check_admin(user_data: AdminKey = Depends(require_admin_auth)):
 
 
 @app.get("/auth/mod", response_model=list[AccessLevelOverview])
-async def view_mods(user_data: AdminKey = Depends(require_admin_auth)):
+async def view_mods(user: AdminKey = Depends(require_admin_auth)):
     """
     Show a list of all current mods with username and RUT. Up to 50 records.
     """
@@ -160,7 +160,7 @@ async def view_mods(user_data: AdminKey = Depends(require_admin_auth)):
 
 
 @app.post("/auth/mod")
-async def add_mod(rut: str, user_data: AdminKey = Depends(require_admin_auth)):
+async def add_mod(rut: str, user: AdminKey = Depends(require_admin_auth)):
     """
     Give mod access to a user with the specified RUT.
     """
@@ -181,7 +181,7 @@ async def add_mod(rut: str, user_data: AdminKey = Depends(require_admin_auth)):
 
 
 @app.delete("/auth/mod")
-async def remove_mod(rut: str, user_data: AdminKey = Depends(require_admin_auth)):
+async def remove_mod(rut: str, user: AdminKey = Depends(require_admin_auth)):
     """
     Remove mod access from a user with the specified RUT.
 
@@ -212,7 +212,7 @@ async def get_student_info(user: UserKey = Depends(require_authentication)):
 async def sync_database(
     courses: bool = False,
     offer: bool = False,
-    admin_key: AdminKey = Depends(require_admin_auth),
+    admin: AdminKey = Depends(require_admin_auth),
 ):
     """
     Initiate a synchronization of the internal database from external sources.
@@ -364,7 +364,7 @@ async def rebuild_validation_rules():
 
 
 @app.get("/plan/empty_for", response_model=ValidatablePlan)
-async def empty_plan_for_user(user_data: UserKey = Depends(require_authentication)):
+async def empty_plan_for_user(user: UserKey = Depends(require_authentication)):
     """
     Generate an empty plan using the current user as context.
     For example, the created plan includes all passed courses, uses the curriculum
@@ -373,7 +373,19 @@ async def empty_plan_for_user(user_data: UserKey = Depends(require_authenticatio
 
     (Currently this is equivalent to `empty_guest_plan()` until we get user data)
     """
-    return await generate_empty_plan(user_data)
+    return await generate_empty_plan(user)
+
+
+@app.get("/plan/empty_for_any", response_model=ValidatablePlan)
+async def empty_plan_for_any_user(
+    user_rut: str, mod: ModKey = Depends(require_mod_auth)
+):
+    """
+    Same functionality as `empty_plan_for_user`, but works for any user identified by
+    their RUT with `user_rut`.
+    Moderator access is required.
+    """
+    return await generate_empty_plan(mod.as_any_user(user_rut))
 
 
 @app.get("/plan/empty_guest", response_model=ValidatablePlan)
@@ -385,24 +397,38 @@ async def empty_guest_plan():
     return await generate_empty_plan(None)
 
 
-@app.post("/plan/validate", response_model=FlatValidationResult)
+@app.post("/plan/validate", response_model=ValidationResult)
 async def validate_guest_plan(plan: ValidatablePlan):
     """
     Validate a plan, generating diagnostics.
     """
-    return (await diagnose_plan(plan, user_ctx=None)).flatten(plan)
+    return await diagnose_plan(plan, user_ctx=None)
 
 
-@app.post("/plan/validate_for", response_model=FlatValidationResult)
+@app.post("/plan/validate_for", response_model=ValidationResult)
 async def validate_plan_for_user(
     plan: ValidatablePlan, user: UserKey = Depends(require_authentication)
 ):
     """
     Validate a plan, generating diagnostics.
-    Includes warnings tailored for the given user.
+    Includes diagnostics tailored for the given user and skips diagnostics that do not
+    apply to the particular student.
     """
     user_ctx = await sync.get_student_data(user)
-    return (await diagnose_plan(plan, user_ctx)).flatten(plan)
+    return await diagnose_plan(plan, user_ctx)
+
+
+@app.post("/plan/validate_for_any", response_model=ValidationResult)
+async def validate_plan_for_any_user(
+    plan: ValidatablePlan, user_rut: str, mod: ModKey = Depends(require_mod_auth)
+):
+    """
+    Same functionality as `validate_plan_for_user`, but works for any user identified by
+    their RUT with `user_rut`.
+    Moderator access is required.
+    """
+    user_ctx = await sync.get_student_data(mod.as_any_user(user_rut))
+    return await diagnose_plan(plan, user_ctx)
 
 
 @app.post("/plan/curriculum_graph")
@@ -414,7 +440,7 @@ async def get_curriculum_validation_graph(plan: ValidatablePlan) -> str:
     courseinfo = await course_info()
     curriculum = await sync.get_curriculum(plan.curriculum)
     g = solve_curriculum(courseinfo, curriculum, plan.classes)
-    return g.dump_graphviz(plan.classes)
+    return g.dump_graphviz()
 
 
 @app.post("/plan/generate", response_model=ValidatablePlan)
@@ -429,15 +455,30 @@ async def generate_plan(passed: ValidatablePlan):
 
 @app.post("/plan/storage", response_model=PlanView)
 async def save_plan(
-    name: str,
-    plan: ValidatablePlan,
-    user: UserKey = Depends(require_authentication),
+    name: str, plan: ValidatablePlan, user: UserKey = Depends(require_authentication)
 ) -> PlanView:
     """
     Save a plan with the given name in the storage of the current user.
-    Fails if the user is not logged  in.
+    Fails if the user is not logged in.
     """
     return await store_plan(plan_name=name, user=user, plan=plan)
+
+
+@app.post("/plan/storage/any", response_model=PlanView)
+async def save_any_plan(
+    name: str,
+    plan: ValidatablePlan,
+    user_rut: str,
+    mod: ModKey = Depends(require_mod_auth),
+) -> PlanView:
+    """
+    Same functionality as `save_plan`, but works for any user identified by
+    their RUT with `user_rut`.
+    Moderator access is required.
+    All `/plan/storage/any` endpoints (and sub-resources) should require
+    moderator access.
+    """
+    return await store_plan(plan_name=name, user=mod.as_any_user(user_rut), plan=plan)
 
 
 @app.get("/plan/storage", response_model=list[LowDetailPlanView])
@@ -453,6 +494,18 @@ async def read_plans(
     return await get_user_plans(user)
 
 
+@app.get("/plan/storage/any", response_model=list[LowDetailPlanView])
+async def read_any_plans(
+    user_rut: str, mod: ModKey = Depends(require_mod_auth)
+) -> list[LowDetailPlanView]:
+    """
+    Same functionality as `read_plans`, but works for any user identified by
+    their RUT with `user_rut`.
+    Moderator access is required.
+    """
+    return await get_user_plans(mod.as_any_user(user_rut))
+
+
 @app.get("/plan/storage/details", response_model=PlanView)
 async def read_plan(
     plan_id: str, user: UserKey = Depends(require_authentication)
@@ -462,6 +515,18 @@ async def read_plan(
     Requires the current user to be the plan owner.
     """
     return await get_plan_details(user=user, plan_id=plan_id)
+
+
+@app.get("/plan/storage/any/details", response_model=PlanView)
+async def read_any_plan(
+    plan_id: str, user: ModKey = Depends(require_mod_auth)
+) -> PlanView:
+    """
+    Same functionality as `read_plan`, but works for any plan of any user
+    identified by their RUT.
+    Moderator access is required.
+    """
+    return await get_plan_details(user=user, plan_id=plan_id, mod_access=True)
 
 
 @app.put("/plan/storage", response_model=PlanView)
@@ -476,6 +541,20 @@ async def update_plan(
     Returns the updated plan.
     """
     return await modify_validatable_plan(user=user, plan_id=plan_id, new_plan=new_plan)
+
+
+@app.put("/plan/storage/any", response_model=PlanView)
+async def update_any_plan(
+    plan_id: str, new_plan: ValidatablePlan, user: ModKey = Depends(require_mod_auth)
+) -> PlanView:
+    """
+    Same functionality as `update_plan`, but works for any plan of any user
+    identified by their RUT.
+    Moderator access is required.
+    """
+    return await modify_validatable_plan(
+        user=user, plan_id=plan_id, new_plan=new_plan, mod_access=True
+    )
 
 
 @app.put("/plan/storage/metadata", response_model=PlanView)
@@ -500,10 +579,31 @@ async def update_plan_metadata(
     )
 
 
+@app.put("/plan/storage/any/metadata", response_model=PlanView)
+async def update_any_plan_metadata(
+    plan_id: str,
+    set_name: Union[str, None] = None,
+    set_favorite: Union[bool, None] = None,
+    mod: ModKey = Depends(require_mod_auth),
+) -> PlanView:
+    """
+    Same functionality as `update_plan_metadata`, but works for any plan of any user
+    identified by their RUT.
+    Moderator access is required.
+    """
+
+    return await modify_plan_metadata(
+        user=mod,
+        plan_id=plan_id,
+        set_name=set_name,
+        set_favorite=set_favorite,
+        mod_access=True,
+    )
+
+
 @app.delete("/plan/storage", response_model=PlanView)
 async def delete_plan(
-    plan_id: str,
-    user: UserKey = Depends(require_authentication),
+    plan_id: str, user: UserKey = Depends(require_authentication)
 ) -> PlanView:
     """
     Deletes a plan by ID.
@@ -511,6 +611,18 @@ async def delete_plan(
     Returns the removed plan.
     """
     return await remove_plan(user=user, plan_id=plan_id)
+
+
+@app.delete("/plan/storage/any", response_model=PlanView)
+async def delete_any_plan(
+    plan_id: str, mod: ModKey = Depends(require_mod_auth)
+) -> PlanView:
+    """
+    Same functionality as `delete_plan`, but works for any plan of any user
+    identified by their RUT.
+    Moderator access is required.
+    """
+    return await remove_plan(user=mod, plan_id=plan_id, mod_access=True)
 
 
 @app.get("/offer/major", response_model=list[DbMajor])

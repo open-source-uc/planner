@@ -7,17 +7,8 @@
  */
 export type ReqProgram = {
     hash?: Blob;
-    expr?: ReqProgram.expr;
+    expr?: 'program';
     program: string;
     equal: boolean;
 };
-
-export namespace ReqProgram {
-
-    export enum expr {
-        PROGRAM = 'program',
-    }
-
-
-}
 

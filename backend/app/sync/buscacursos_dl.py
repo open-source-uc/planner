@@ -1,3 +1,4 @@
+from collections import defaultdict
 import lzma
 import traceback
 
@@ -267,6 +268,74 @@ def parse_deps(c: BcCourse) -> Expr:
     return deps
 
 
+def _translate_courses(data: BcData) -> list[CourseCreateWithoutRelationsInput]:
+    # Determine which semesters are scanned
+    print("  collecting course periods...")
+    period_set: set[str] = set()
+    for c in data.values():
+        period_set.update(c.instances.keys())
+    periods: dict[str, tuple[int, int]] = {}
+    for period in sorted(period_set):
+        year, semester = map(int, period.split("-"))
+        periods[period] = (year, semester)
+
+    # Process courses to place into database
+    print("  processing courses...")
+    db_input: list[CourseCreateWithoutRelationsInput] = []
+    for code, c in data.items():
+        try:
+            # Parse and simplify dependencies
+            deps = simplify(parse_deps(c))
+            # Parse equivalencies
+            equivs: list[str] = []
+            if c.equiv != "No tiene":
+                equiv_expr = parse_reqs(c.equiv)
+                if isinstance(equiv_expr, ReqCourse):
+                    assert not equiv_expr.coreq
+                    equivs.append(equiv_expr.code)
+                else:
+                    assert isinstance(equiv_expr, Or)
+                    for equiv_subexpr in equiv_expr.children:
+                        assert isinstance(equiv_subexpr, ReqCourse)
+                        assert not equiv_subexpr.coreq
+                        equivs.append(equiv_subexpr.code)
+            # Figure out semestrality
+            available_in_semester = [False, False]
+            for period in c.instances.keys():
+                sem = periods[period][1] - 1
+                if sem == 2:
+                    # Consider TAV to be in the second semester
+                    sem = 1
+                available_in_semester[sem] = True
+            # Use names from buscacursos if available, because they have accents
+            name = max(c.instances.items())[1].name if c.instances else c.name
+            # Queue for adding to database
+            db_input.append(
+                {
+                    "code": code,
+                    "name": name,
+                    "searchable_name": make_searchable_name(name),
+                    "credits": c.credits,
+                    "deps": Json(deps.json()),
+                    "banner_equivs": equivs,
+                    "canonical_equiv": code,
+                    "program": c.program,
+                    "school": c.school,
+                    "area": None if c.area == "" else c.area,
+                    "category": None if c.category == "" else c.category,
+                    "is_relevant": c.relevance == "Vigente",
+                    "is_available": any(available_in_semester),
+                    "semestrality_first": available_in_semester[0],
+                    "semestrality_second": available_in_semester[1],
+                }
+            )
+        except Exception:
+            print(f"failed to process course {code}:")
+            print(traceback.format_exc())
+
+    return db_input
+
+
 async def fetch_to_database():
     # Fetch json blob from an unofficial source
     dl_url = (
@@ -286,52 +355,27 @@ async def fetch_to_database():
     print("  parsing JSON...")
     data = pydantic.parse_raw_as(BcData, resptext)
 
-    # Determine which semesters are scanned
-    print("  collecting course periods...")
-    period_set: set[str] = set()
-    for c in data.values():
-        period_set.update(c.instances.keys())
-    periods: dict[str, tuple[int, int]] = {}
-    for period in sorted(period_set):
-        year, semester = map(int, period.split("-"))
-        periods[period] = (year, semester)
+    # Translate buscacursos_dl data into the local format
+    db_input = _translate_courses(data)
 
-    # Process courses to place into database
-    print("  processing courses...")
-    db_input: list[CourseCreateWithoutRelationsInput] = []
-    for code, c in data.items():
-        try:
-            # Parse and simplify dependencies
-            deps = simplify(parse_deps(c))
-            # Figure out semestrality
-            available_in_semester = [False, False, False]
-            for period in c.instances.keys():
-                sem = periods[period][1] - 1
-                available_in_semester[sem] = True
-            # Use names from buscacursos if available, because they have accents
-            name = max(c.instances.items())[1].name if c.instances else c.name
-            # Queue for adding to database
-            db_input.append(
-                {
-                    "code": code,
-                    "name": name,
-                    "searchable_name": make_searchable_name(name),
-                    "credits": c.credits,
-                    "deps": Json(deps.json()),
-                    "program": c.program,
-                    "school": c.school,
-                    "area": None if c.area == "" else c.area,
-                    "category": None if c.category == "" else c.category,
-                    "is_relevant": c.relevance == "Vigente",
-                    "is_available": any(available_in_semester),
-                    "semestrality_first": available_in_semester[0],
-                    "semestrality_second": available_in_semester[1],
-                    "semestrality_tav": available_in_semester[2],
-                }
-            )
-        except Exception:
-            print(f"failed to process course {code}:")
-            print(traceback.format_exc())
+    # Figure out canonical equivalence for each course
+    print("  finding newest versions of each course...")
+    rev_equivs: defaultdict[str, list[str]] = defaultdict(list)
+    available_courses: set[str] = set()
+    for c in db_input:
+        if "banner_equivs" in c:
+            for equiv in c["banner_equivs"]:
+                rev_equivs[equiv].append(c["code"])
+        if c["is_available"]:
+            available_courses.add(c["code"])
+    for c in db_input:
+        canonical = c["code"]
+        if not c["is_available"]:
+            for equiv in rev_equivs[c["code"]]:
+                if equiv in available_courses:
+                    canonical = equiv
+                    break
+            c["canonical_equiv"] = canonical
 
     # Put courses in database
     print("  storing courses in db...")

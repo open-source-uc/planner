@@ -12,6 +12,7 @@ el que habra que tocar.
 
 from typing import Optional
 
+
 from ...plan.course import EquivalenceId
 from ...plan.validation.curriculum.tree import (
     Block,
@@ -233,6 +234,7 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
             code=opi_code,
             name=opi_name,
             is_homogeneous=False,
+            is_unessential=True,
             courses=opis,
         )
         await add_equivalence(opi_equiv)
@@ -305,3 +307,43 @@ async def apply_curriculum_rules(
             #   correctamente.
             pass
     return curriculum
+
+
+def _fix_nonhomogeneous_equivs(courseinfo: CourseInfo, equiv: EquivDetails):
+    # Algunos bloques estan definidos de forma rara
+    # Por ejemplo, Termodinamica y Electricidad y Magnetismo estan definidos como una
+    # lista de cursos (estilo `!C1234`) en lugar de como una equivalencia (estilo
+    # `?FIS1523`).
+    # Ademas, tienen nombres raros como "Minimos Major (LISTA 1)" en lugar de
+    # "Termodinamica".
+    # Lo parcharemos para que estas sean listas homogeneas y con el nombre correcto.
+    # Tambien, parcharemos "Optimizacion" como una equivalencia homogenea
+    if ("(LISTA " in equiv.name and ")" in equiv.name) or (
+        len(equiv.courses) >= 1 and equiv.courses[0] == "ICS1113"
+    ):
+        equiv.is_homogeneous = True
+        equiv.is_unessential = True
+        if len(equiv.courses) >= 1:
+            info = courseinfo.try_course(equiv.courses[0])
+            if info is not None:
+                equiv.name = info.name
+
+
+def _mark_unessential_equivs(equiv: EquivDetails):
+    # Hacer que los OFGs y los teologicos sean no-esenciales (ie. que no emitan un
+    # error cuando no se selecciona un OFG o un teologico)
+    if equiv.code == "!L1" or equiv.code == "!L2":
+        equiv.is_unessential = True
+
+
+async def apply_equivalence_rules(
+    courseinfo: CourseInfo,
+    spec: CurriculumSpec,
+    equiv: EquivDetails,
+) -> EquivDetails:
+    # Arreglar Termodinamica y Electricidad y Magnetismo
+    _fix_nonhomogeneous_equivs(courseinfo, equiv)
+    # Hacer que los OFGs no emitan un diagnostico de "falta desambiguar"
+    _mark_unessential_equivs(equiv)
+
+    return equiv

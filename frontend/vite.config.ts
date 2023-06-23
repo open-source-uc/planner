@@ -14,6 +14,9 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
+    watch: {
+      usePolling: true
+    }
   },
   plugins: [react(), eslintPlugin(), svgr()]
 })

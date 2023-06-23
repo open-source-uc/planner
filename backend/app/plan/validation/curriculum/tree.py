@@ -33,6 +33,35 @@ class Combination(BaseBlock):
     # Children nodes that supply flow to this block.
     children: list["Block"]
 
+    def simplify_in_place(self):
+        """
+        Remove unnecessary nodes, connecting the grandchildren directly to the parents
+        if it can be done without changing the maximum flow or its cost.
+        """
+        new_children: list[Block] = []
+        for child in self.children:
+            if isinstance(child, Combination):
+                child.simplify_in_place()
+                grandchild_output = 0
+                for grandchild in child.children:
+                    grandchild_output += grandchild.cap
+                if grandchild_output <= child.cap:
+                    # If this condition holds, then raising the capacity of the child
+                    # won't increase the amount of flow that can be sent from the
+                    # grandchildren to us, because the total max output of the
+                    # grandchildren is still less than the capacity of the child.
+                    # Therefore, we can just connect the grandchildren to us directly
+                    # and remove a node
+                    for grandchild in child.children:
+                        if child.name is not None:
+                            grandchild.name = f"{child.name} -> {grandchild.name}"
+                        new_children.append(grandchild)
+                    # This `continue` statement avoids the child from getting into the
+                    # `new_children`` list
+                    continue
+            new_children.append(child)
+        self.children = new_children
+
 
 class Leaf(BaseBlock):
     # A set of course codes that comprise this leaf.

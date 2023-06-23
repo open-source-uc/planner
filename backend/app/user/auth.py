@@ -26,7 +26,7 @@ cas_redirect_client: CASClientV3 = CASClientV3(
 )
 
 
-def _is_admin(rut: str):
+async def _is_admin(rut: str):
     """
     Checks if user with given RUT is an admin.
     """
@@ -61,17 +61,13 @@ async def generate_token(user: str, rut: str, expire_delta: Optional[float] = No
         "sub": user,
         "rut": rut,
     }
-    if _is_admin(rut):
-        payload["is_admin"] = True
-    elif await _is_mod(rut):
-        payload["is_mod"] = True
     token = jwt.encode(
         payload, settings.jwt_secret.get_secret_value(), settings.jwt_algorithm
     )
     return token
 
 
-def decode_token(token: str):
+def decode_token(token: str) -> UserKey:
     """
     Verify a token and extract the user data within it.
     """
@@ -88,24 +84,12 @@ def decode_token(token: str):
     if not isinstance(payload["rut"], str):
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    if "is_admin" in payload.keys():
-        if not isinstance(payload["is_admin"], bool):
-            raise HTTPException(status_code=401, detail="Invalid token")
-        if payload["is_admin"]:
-            return AdminKey(payload["sub"], payload["rut"])
-
-    if "is_mod" in payload.keys():
-        if not isinstance(payload["is_mod"], bool):
-            raise HTTPException(status_code=401, detail="Invalid token")
-        if payload["is_mod"]:
-            return ModKey(payload["sub"], payload["rut"])
-
     return UserKey(payload["sub"], payload["rut"])
 
 
 def require_authentication(
     bearer: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
-):
+) -> UserKey:
     """
     Intended for API endpoints that requires user authentication.
 
@@ -116,9 +100,9 @@ def require_authentication(
     return decode_token(bearer.credentials)
 
 
-def require_mod_auth(
+async def require_mod_auth(
     bearer: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
-):
+) -> ModKey:
     """
     Intended for API endpoints that requires authentication with mod access.
 
@@ -127,14 +111,14 @@ def require_mod_auth(
         pass
     """
     key = require_authentication(bearer=bearer)
-    if not key.is_mod:
+    if not await _is_mod(key.rut):
         raise HTTPException(status_code=403, detail="Insufficient access")
-    return key
+    return ModKey(key.username, key.rut)
 
 
-def require_admin_auth(
+async def require_admin_auth(
     bearer: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
-):
+) -> AdminKey:
     """
     Intended for API endpoints that requires authentication with admin access.
 
@@ -143,9 +127,9 @@ def require_admin_auth(
         pass
     """
     key = require_authentication(bearer=bearer)
-    if not key.is_admin:
+    if not await _is_admin(key.rut):
         raise HTTPException(status_code=403, detail="Insufficient access")
-    return key
+    return AdminKey(key.username, key.rut)
 
 
 async def login_cas(next: Optional[str] = None, ticket: Optional[str] = None):

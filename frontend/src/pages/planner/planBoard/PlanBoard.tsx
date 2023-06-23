@@ -28,7 +28,7 @@ const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCour
   useDndScrolling(boardRef, { horizontalStrength: hStrength, verticalStrength: vStrength })
 
   return (
-    <div ref={boardRef} className= {'overflow-auto grid grid-rows-[fit-content] grid-flow-col justify-start '}>
+    <div ref={boardRef} className= {'overflow-auto grid grid-rows-[fit-content] grid-flow-col justify-start gap-1'}>
       {classesGrid === null
         ? <h1>elija plan</h1>
         : <>
@@ -42,7 +42,8 @@ const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCour
                 openModal={openModal}
                 classes={classes}
                 classesDetails={classesDetails}
-                validationDigest={validationDigest[semester]}
+                validationCourses={validationDigest.courses[semester]}
+                validationSemester={validationDigest.semesters[semester]}
                 isDragging={isDragging}
                 setIsDragging={setIsDragging}
               />
@@ -57,7 +58,8 @@ const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCour
               openModal={openModal}
               classes={[]}
               classesDetails={classesDetails}
-              validationDigest={[]}
+              validationCourses={[]}
+              validationSemester={null}
               isDragging={isDragging}
               setIsDragging={setIsDragging}
             />
