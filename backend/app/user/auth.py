@@ -16,13 +16,13 @@ from prisma.models import AccessLevel as DbAccessLevel
 # so we are using the versioned class directly
 cas_verify_client: CASClientV3 = CASClientV3(
     service_url=settings.login_endpoint,
-    server_url=settings.cas_verification_url,
+    server_url=settings.cas_server_url,
 )
 
 # Use a separate dummy CAS client instance to get the login URL.
 cas_redirect_client: CASClientV3 = CASClientV3(
     service_url=settings.login_endpoint,
-    server_url=settings.cas_redirection_url,
+    server_url=settings.cas_login_redirection_url or settings.cas_server_url,
 )
 
 

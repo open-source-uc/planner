@@ -12,17 +12,17 @@ from .database import prisma  # pyright: ignore[reportUnusedImport], # noqa: F40
 
 
 class Settings(BaseSettings):
-    # URL to the CAS login server.
-    # The client's browser is redirected to this URL when they want to log in.
-    cas_redirection_url: str = Field(...)
-
     # URL to the CAS verification server.
     # When a user arrives with a CAS token the backend verifies the token directly with
     # this server.
-    # Usually the same URL as `cas_login_redirection_url`, unless the backend server is
-    # in a different network than the client's browser and therefore needs to use a
-    # different address to reach the CAS server.
-    cas_verification_url: str = Field(...)
+    cas_server_url: str = Field(...)
+
+    # URL to the CAS login server.
+    # The client's browser is redirected to this URL when they want to log in.
+    # If left empty, the same URL as `cas_server_url` is used.
+    # If the backend server is in a different network than the client's browser, it may
+    # need to use a different address to reach the CAS server.
+    cas_login_redirection_url: str = ""
 
     # URL to the backend endpoint that performs authentication.
     # This URL needs to be whitelisted in the CAS server.
