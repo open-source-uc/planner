@@ -93,9 +93,7 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
       return course
     },
     collect: monitor => ({
-      isOver: !!monitor.isOver(),
-      canDrop: !!monitor.canDrop(),
-      item: monitor.getItem()
+      isOver: monitor.isOver()
     })
   }))
 
@@ -114,7 +112,7 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
       >
         {!collected.isDragging && <>{dropProps.isOver
           ? <div className={'card bg-place-holder'} />
-          : <div> {!collected.isDragging && ((cardData.is_concrete !== true && courseBlock != null)
+          : <div> {((cardData.is_concrete !== true && courseBlock != null)
             ? <button className='w-full' onClick={() => openSelector()}>
                 <Card
                   semester={semester}
@@ -161,7 +159,7 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
   )
 }
 
-const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError }: CardProps): JSX.Element => {
+const Card = memo(function _Card ({ semester, index, courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError }: CardProps): JSX.Element {
   const authState = useAuth()
   const conditionPassed = authState?.student != null && semester < authState.student.current_semester
   const checkInClass = ((authState?.student) != null) && (authState.student.current_semester === authState.student.next_semester - 1)
@@ -172,10 +170,10 @@ const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSele
   const currentIcon = blockId === 'FG' ? currentWhiteIcon : currentBlackIcon
 
   // Turns out animations are a big source of lag
-  const allowAnimations = true && blockId !== 'FG'
+  const allowAnimations = false && blockId !== 'FG'
 
   return (
-    <div className={`card group block-${blockId} ${cardData.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
+    <div className={`card group bg-block-${blockId} ${blockId === 'FG' ? 'text-white' : ''} ${cardData.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
       { hasEquivalence === true && (cardData.is_concrete === true
         ? <button onClick={() => openSelector()}><img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" /></button>
         : <img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" />
@@ -201,6 +199,6 @@ const Card = ({ semester, index, courseBlock, cardData, hasEquivalence, openSele
       </span> }
   </div>
   )
-}
+})
 
 export default memo(CourseCard, deepEqual)

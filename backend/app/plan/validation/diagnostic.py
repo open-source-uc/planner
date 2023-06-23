@@ -33,6 +33,7 @@ class CourseRequirementErr(DiagnosticErr):
     kind: Literal["req"] = Field("req", const=True)
     associated_to: list[ClassId]
     missing: Expr
+    modernized_missing: Expr
 
 
 class UnknownCourseErr(DiagnosticErr):

@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { ClassId, CourseRequirementErr, CurriculumSpec, ValidationResult } from '../../client'
 import { Spinner } from '../../components/Spinner'
+import AutoFix, { validateCyear } from './AutoFix'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
 type RequirementExpr = CourseRequirementErr['missing']
@@ -7,14 +9,16 @@ type RequirementExpr = CourseRequirementErr['missing']
 /**
  * This is what is displayed when there are no errors or warnings.
  */
-const NoMessages = (): JSX.Element => {
-  return (<div className="flex p-4 mb-4 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50 " role="alert">
-  <svg aria-hidden="true" className="flex-shrink-0 inline w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path></svg>
-  <span className="sr-only">Info</span>
-  <div>
-    <span className='font-medium'>Felicitaciones!</span> No hay errores o advertencias.
-  </div>
-</div>)
+const NoMessages = ({ open }: { open: boolean }): JSX.Element => {
+  return (
+    <div className="w-fit flex p-3 mb-4 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50 " role="alert">
+      <svg aria-hidden="true" className="flex-shrink-0 inline-flex w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path></svg>
+      <span className="sr-only">Info</span>
+      <div className={`min-w-[14rem] ml-2 s${open ? '' : 'hidden'} `}>
+        <span className='font-medium'>Felicitaciones!</span> No hay errores o advertencias.
+      </div>
+    </div>
+  )
 }
 
 /**
@@ -84,7 +88,11 @@ const formatMessage = (diag: Diagnostic): string => {
     case 'currdecl':
       return `El curriculum elegido (${formatCurriculum(diag.plan)}) no es el mismo que el que tienes declarado oficialmente (${formatCurriculum(diag.user)})`
     case 'cyear':
-      return `Tu versión de curriculum es ${diag.user}, pero el plan esta siendo validado para ${diag.plan.raw}.`
+      if (validateCyear(diag.user) != null) {
+        return `Tu versión de curriculum es ${diag.user}, pero el plan esta siendo validado para ${diag.plan.raw}.`
+      } else {
+        return `Tu versión del curriculum es ${diag.user} pero no es soportada. El plan esta siendo validado para la versión de curriculum ${diag.plan.raw}.`
+      }
     case 'equiv': {
       const s = diag.associated_to.length === 1 ? '' : 's'
       return `Falta desambiguar la${s} equivalencia${s} ${listCourses(diag.associated_to)} para validar correctamente tu plan.`
@@ -103,7 +111,7 @@ const formatMessage = (diag: Diagnostic): string => {
     case 'outdatedcurrent':
       return 'Esta malla no está actualizada con los cursos que estás tomando'
     case 'req':
-      return `Faltan requisitos para el curso ${diag.associated_to[0]?.code}: ${formatReqExpr(diag.missing)}`
+      return `Faltan requisitos para el curso ${diag.associated_to[0]?.code}: ${formatReqExpr(diag.modernized_missing)}`
     case 'sem': {
       const sem = diag.only_available_on === 0 ? 'primeros' : diag.only_available_on === 1 ? 'segundos' : '?'
       const s = diag.associated_to.length !== 1
@@ -126,41 +134,68 @@ const formatMessage = (diag: Diagnostic): string => {
   }
 }
 
+interface MessageProps {
+  setValidatablePlan: any
+  diag: Diagnostic
+  key: number
+  open: boolean
+}
+
 /**
  * A single error/warning message.
  */
-const Message = (diag: Diagnostic, key: number): JSX.Element => {
+const Message = ({ setValidatablePlan, diag, key, open }: MessageProps): JSX.Element => {
   const w = !(diag.is_err ?? true)
-  return (<div key={key} className={`flex p-3 text-sm rounded-lg border ${w ? 'text-yellow-700 border-yellow-300 bg-yellow-50' : 'text-red-800 border-red-300 bg-red-50'}`} role="alert">
-  <svg aria-hidden="true" className="flex-shrink-0 inline w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path></svg>
-  <span className="sr-only">Info</span>
-  <div>
-    <span className="font-semibold">{`${w ? 'Advertencia' : 'Error'}: `}</span> {formatMessage(diag)}
-  </div>
-</div>)
+
+  return (
+  <div key={key} className={`w-fit flex p-3 text-sm rounded-lg border ${w ? 'text-yellow-700 border-yellow-300 bg-yellow-50' : 'text-red-800 border-red-300 bg-red-50'}`} role="alert">
+    <svg aria-hidden="true" className="flex-shrink-0 inline-flex w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path></svg>
+    <span className="sr-only">Info</span>
+    <div className={`min-w-[14rem] ml-2 ${open ? '' : 'hidden'} `}>
+      <span className={'font-semibold '}>{`${w ? 'Advertencia' : 'Error'}: `}</span>
+      {formatMessage(diag)}
+      <AutoFix setValidatablePlan={setValidatablePlan} diag={diag}/>
+    </div>
+  </div>)
+}
+
+interface ErrorTrayProps {
+  setValidatablePlan: any
+  diagnostics: Diagnostic[]
+  validating: boolean
 }
 
 /**
  * The error tray shows errors and warnings about the current plan that come from the validation backend.
  */
-const ErrorTray = ({ diagnostics, validating }: { diagnostics: Diagnostic[], validating: boolean }): JSX.Element => {
-  // Order diagnostics by putting errors first, then warnings.
-  diagnostics.sort((a, b) => {
-    if (a.is_err === b.is_err) {
-      return 0
-    } else if (a.is_err ?? true) {
-      return -1
-    } else {
-      return 1
-    }
-  })
-  const messageList: JSX.Element[] = diagnostics.map((diag, index) => Message(diag, index))
-  return (<div className="w-80 min-w-[200px] h-[95%] mb-6 overflow-y-auto px-5 py-6 bg-slate-100 border-slate-300 border-2 rounded-lg shadow-lg">
-    <p className="text-xl font-semibold mb-4 text-center">Errores y advertencias</p>
-  <div className="flex flex-col gap-2">
-    {validating ? <Spinner message='Validando...'/> : <>{messageList.length > 0 ? messageList : <NoMessages/>}</>}
-  </div>
-  </div>)
+const ErrorTray = ({ setValidatablePlan, diagnostics, validating }: ErrorTrayProps): JSX.Element => {
+  const [open, setOpen] = useState(true)
+  const hasError = diagnostics.some(diag => diag.is_err)
+  const messageList: JSX.Element[] = diagnostics.map((diag, index) => Message({ setValidatablePlan, diag, key: index, open: open || hasError }))
+
+  return (
+    <div className={`h-[95%] z-20 flex flex-col relative border-slate-300 border-2 rounded-lg bg-slate-100 shadow-lg mb-2 py-4  motion-reduce:transition-none transition-all ${hasError || open ? 'w-80 min-w-[20rem]' : 'min-w-[4.5rem]'}`}>
+      <div className='flex mb-4 mx-6'>
+        <div className='group relative flex'>
+          <span className={`fixed z-10 transition-all motion-reduce:transition-none scale-0 ${hasError ? 'group-hover:scale-100' : ''}`}>
+            <div className="absolute right-2.5 top-1 w-4 h-4 bg-gray-800 rotate-45 rounded" />
+            <span className={'absolute right-4 -top-1 w-48 z-10 rounded bg-gray-800 p-2 text-xs text-white'}>
+              Es necesario resolver todos los errores existentes para minimizar la bandeja de Errores y Advertencias.
+            </span>
+          </span>
+          <button className={`${hasError ? 'cursor-not-allowed stroke-slate-400' : 'stroke-current'}`} disabled={hasError} onClick={() => setOpen(prev => !prev)}>
+            <svg className="w-5 h-5 flex " xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 12h20M2 6h20M2 18h20"></path>
+            </svg>
+          </button>
+        </div>
+        {(hasError || open) && <p className="whitespace-nowrap ml-2 text-xl font-semibold text-center h-7 overflow-hidden">Errores y Advertencias </p>}
+      </div>
+      <div className="h-full flex flex-col gap-2 px-3 overflow-y-auto overflow-x-hidden ">
+          {validating ? <div> <Spinner message={`${hasError || open ? 'Validando...' : ''}`}/></div> : <>{messageList.length > 0 ? messageList : <NoMessages open={hasError || open}/>}</>}
+      </div>
+    </div>
+  )
 }
 
 export default ErrorTray

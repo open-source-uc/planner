@@ -36,6 +36,8 @@ model Course {
   searchable_name     String
   credits             Int
   deps                Json
+  banner_equivs       String[]
+  canonical_equiv     String
   program             String
   school              String
   area                String?
@@ -61,6 +63,7 @@ model Equivalence {
   code           String              @id
   name           String
   is_homogeneous Boolean
+  is_unessential Boolean
   courses        EquivalenceCourse[]
 }
 

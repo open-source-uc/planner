@@ -49,7 +49,9 @@ class ValidationContext:
     """
 
     courseinfo: CourseInfo
-    # A dictionary from course code to the first time the course appears in the plan
+    # A dictionary from course code to the first time the course appears in the plan.
+    # This dictionary considers equivalencies (ie. some codes map to equivalent
+    # courses).
     by_code: dict[str, CourseInstance]
     # Map from (semester, index) positions to class ids.
     class_ids: list[list[ClassId]]
@@ -76,10 +78,18 @@ class ValidationContext:
         self.by_code = {}
         for sem_i, sem in enumerate(plan.classes):
             for i, course in enumerate(sem):
-                if course.code not in self.by_code:
-                    self.by_code[course.code] = CourseInstance(
-                        code=course.code, sem=sem_i, index=i
-                    )
+                # Determine which courses are equivalent to this course
+                equiv_codes = [course.code]
+                info = courseinfo.try_course(course.code)
+                if info is not None:
+                    for equiv in info.banner_equivs:
+                        equiv_codes.append(equiv)
+
+                # Map the equivalent courses to this course instance
+                course_inst = CourseInstance(code=course.code, sem=sem_i, index=i)
+                for code in equiv_codes:
+                    if code not in self.by_code:
+                        self.by_code[code] = course_inst
 
         # Map from class positions to class ids
         rep_counts: dict[str, int] = {}
@@ -101,9 +111,7 @@ class ValidationContext:
             self.approved_credits.append(credit_acc)
 
         # The first semester where courses have not yet been taken
-        self.start_validation_from = (
-            0 if user_ctx is None else user_ctx.next_semester
-        )
+        self.start_validation_from = 0 if user_ctx is None else user_ctx.next_semester
 
         # Context
         self.courseinfo = courseinfo
@@ -136,7 +144,7 @@ class ValidationContext:
             for i, course in enumerate(sem):
                 if isinstance(course, EquivalenceId):
                     info = self.courseinfo.try_equiv(course.code)
-                    if info is not None and not info.is_homogeneous:
+                    if info is not None and not info.is_unessential:
                         ambiguous.append(self.class_ids[sem_i][i])
         if ambiguous:
             out.add(AmbiguousCourseErr(associated_to=ambiguous))
@@ -264,7 +272,7 @@ class ValidationContext:
                 or isinstance(atom, (ReqSchool, ReqProgram, ReqCareer))
                 or (
                     isinstance(atom, ReqCourse)
-                    and not self.courseinfo.is_course_available(atom.code)
+                    and not is_course_indirectly_available(self.courseinfo, atom.code)
                 ),
             )
         )
@@ -286,12 +294,23 @@ class ValidationContext:
             missing = simplify(
                 set_atoms_in_stone_if(self, inst, expr, lambda atom, sat: sat)
             )
+        # Map missing courses to their newest equivalent versions
+        missing_equivalents = map_atoms(missing, self.map_to_equivalent)
         # Show this expression
         out.add(
             CourseRequirementErr(
-                associated_to=[self.class_ids[inst.sem][inst.index]], missing=missing
+                associated_to=[self.class_ids[inst.sem][inst.index]],
+                missing=missing,
+                modernized_missing=missing_equivalents,
             )
         )
+
+    def map_to_equivalent(self, atom: Atom) -> Atom:
+        if isinstance(atom, ReqCourse):
+            info = self.courseinfo.try_course(atom.code)
+            if info is not None and info.canonical_equiv != atom.code:
+                return ReqCourse(code=info.canonical_equiv, coreq=atom.coreq)
+        return atom
 
 
 def is_satisfied(ctx: ValidationContext, cl: CourseInstance, expr: Expr) -> bool:
@@ -361,3 +380,38 @@ def set_atoms_in_stone_if(
             # Fold this atom into its constant truth value
             return Const(value=truth)
     return expr
+
+
+def is_course_indirectly_available(courseinfo: CourseInfo, code: str):
+    info = courseinfo.try_course(code)
+    if info is None:
+        return False
+    if info.is_available:
+        return True
+    modernized_info = courseinfo.try_course(info.canonical_equiv)
+    if modernized_info is not None and modernized_info.is_available:
+        return True
+    return False
+
+
+def map_atoms(expr: Expr, map: Callable[[Atom], Atom]):
+    """
+    Replace the atoms of the expression according to `apply`.
+    Returns a new expression, leaving the original unmodified.
+    """
+    if isinstance(expr, Operator):
+        # Recursively replace atoms
+        changed = False
+        new_children: list[Expr] = []
+        for child in expr.children:
+            new_child = map_atoms(child, map)
+            new_children.append(new_child)
+            if new_child is not child:
+                changed = True
+        if changed:
+            return BaseOp.create(expr.neutral, tuple(new_children))
+        else:
+            return expr
+    else:
+        # Replace this atom
+        return map(expr)

@@ -12,21 +12,24 @@ interface CurriculumSelectorProps {
   selectTitle: Function
 }
 interface SelectorProps {
+  canDeselect: boolean
   data: { [code: string]: Major | Minor | Title }
   value: string | null | undefined
   onChange: (value: string) => void
 }
 
 const Selector = memo(function _Selector ({
+  canDeselect,
   data,
   value,
   onChange
 }: SelectorProps): JSX.Element {
+  const selectedOption = value !== undefined && value !== null ? data[value] : { name: 'Por Seleccionar', code: null }
   return (
-    <Listbox value={value !== undefined && value !== null ? data[value] : {}} onChange={onChange}>
+    <Listbox value={selectedOption.code} onChange={onChange}>
       <Listbox.Button className="selectorButton">
         <span className="inline truncate">
-          {value !== undefined && value !== null ? `${data[value]?.name} (${value})` : 'Por elegir'}
+          {selectedOption.name} {selectedOption.code !== null && `(${selectedOption.code})`}
         </span>
         <svg
           className="inline"
@@ -44,31 +47,49 @@ const Selector = memo(function _Selector ({
         leaveFrom="opacity-100"
         leaveTo="opacity-0"
       >
-        <Listbox.Options className="curriculumOptions" style={{ zIndex: 1 }}>
-          {Object.keys(data).map((key) => (
+        <Listbox.Options className="curriculumOptions z-40">
+        {canDeselect && value !== undefined && value !== null &&
             <Listbox.Option
               className={({ active }) =>
                 `curriculumOption ${active ? 'bg-place-holder text-amber-800' : 'text-gray-900'}`
               }
-              key={key}
-              value={data[key]}
+              value={undefined}
             >
-              {({ selected }) => (
-                <>
-                  <span
-                    className={`block truncate ${selected ? 'font-medium text-black' : 'font-normal'}`}
-                  >
-                    {data[key].name} ({key})
-                  </span>
-                  {selected
-                    ? (
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-800">*</span>
-                      )
-                    : null}
-                </>
-              )}
-            </Listbox.Option>
-          ))}
+            {({ selected }) => (
+              <>
+                <span className={'block truncate font-medium  '}>
+                  Eliminar selección
+                </span>
+                {selected ? <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-800">*</span> : null}
+              </>
+            )}
+          </Listbox.Option>
+        }
+        <div className="overflow-auto">
+        {Object.keys(data).map((key) => (
+          <Listbox.Option
+            className={({ active }) =>
+              `curriculumOption ${active ? 'bg-place-holder text-amber-800' : 'text-gray-900'}`
+            }
+            key={key}
+            value={key}
+          >
+            {({ selected }) => (
+              <>
+                <span
+                  className={`block truncate ${selected ? 'font-medium text-black' : 'font-normal'}`}
+                >
+                  {data[key].name} ({key})
+                </span>
+                {selected
+                  ? (
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-800">*</span>
+                    )
+                  : null}
+              </>
+            )}
+          </Listbox.Option>
+        ))}</div>
         </Listbox.Options>
       </Transition>
     </Listbox>
@@ -92,9 +113,10 @@ const CurriculumSelector = memo(function CurriculumSelector ({
           <div className={'selectorName'}>Major:</div>
           {curriculumData != null
             ? <Selector
+              canDeselect={false}
               data={curriculumData.majors}
               value={curriculumSpec.major}
-              onChange={(t) => selectMajor(t)}
+              onChange={(t) => selectMajor({ cyear: curriculumData.majors[t].cyear, code: t })}
             />
             : <svg
               className="inline"
@@ -111,6 +133,7 @@ const CurriculumSelector = memo(function CurriculumSelector ({
           <div className={'selectorName'}>Minor:</div>
           {curriculumData != null
             ? <Selector
+              canDeselect={true}
               data={curriculumData.minors}
               value={curriculumSpec.minor}
               onChange={(t) => selectMinor(t)}
@@ -130,13 +153,14 @@ const CurriculumSelector = memo(function CurriculumSelector ({
           <div className={'selectorName'}>Titulo:</div>
           {curriculumData != null &&
             <Selector
+            canDeselect={true}
               data={curriculumData.titles}
               value={curriculumSpec.title}
               onChange={(t) => selectTitle(t)}
             />
           }
         </li>
-        {planName !== '' && <li className={'inline text-md ml-5 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {planName}</li>}
+        {planName !== '' && <li className={'inline text-md ml-3 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {planName}</li>}
       </ul>
   )
 })

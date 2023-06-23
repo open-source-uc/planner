@@ -3,8 +3,43 @@
 @tailwind utilities;
 
 @layer base {
-  html {
-    font-family: Inter, system-ui, sans-serif;
+  html[data-theme='siding'] {
+    --blockPC: #FEC60D;
+    --placeHolder: #ebeba8;
+    --titulo: #9966CC;
+    --major: #F74F23;
+    --minor: #32CD33;
+    --blockFG: #355484;
+    --plus: #D8D8D8;
+    --otro: #D8D8D8;
+  }
+
+  html[data-theme='MVP'] {
+    --blockPC: #93F6E8;
+    --placeHolder: #ebeba8;
+    --titulo: #9966CC;
+    --major: #B3A9E4;
+    --minor: #13CDB2;
+    --blockFG: #355484;
+    --plus: #D8D8D8;
+    --otro: #D8D8D8;
+  }
+
+  html[data-theme='default'] {
+    --blockPC: #FEC60D;
+    --placeHolder: #ebeba8;
+    --titulo: #93F6E8;
+    --major: #13CDB2;
+    --minor: #B3A9E4;
+    --blockFG: #355484;
+    --plus: #D8D8D8;
+    --otro: #D8D8D8;
+  }
+
+  html[data-theme='dark'] {
+  }
+  
+  html[data-theme='light'] {
   }
 }
 
@@ -22,18 +57,18 @@
     @apply text-base pl-1 pr-1 text-left;
   }
   .curriculumSelector .selectorElement .curriculumOptions {
-    @apply absolute mt-1 max-h-96 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm;
+    @apply fixed mt-1 max-h-96 flex flex-col rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm;
   }
   .curriculumSelector .selectorElement .curriculumOptions .curriculumOption{
     @apply relative cursor-default select-none py-1.5 pl-8 pr-4 ;
   }
 
   .card {
-    background-color: #D8D8D8;
     height: 90px;
-    border-radius: theme('borderRadius.lg');
+    border-radius: theme('borderRadius.md');
     padding: theme('spacing.1');
-    box-shadow: theme('boxShadow.lg');
+    box-shadow: theme('boxShadow.md');
+    /*box-shadow: 0px 0px 8px rgba(136, 136, 136, 0.18);*/
     position: relative;
     display: flex;
     justify-content: center;
@@ -41,7 +76,7 @@
     transition: opacity 0.5s ease;
   }
   .darkBlue{
-    background-color: #3D4451;
+    background-color: #00345E; /*#3D4451*/
   }
   .btn{
     @apply font-semibold py-2 px-4 rounded;
@@ -56,9 +91,13 @@
     background-color: #25282D;
   }
 }
-
+.modal{
+  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.18);
+  @apply z-50;
+}
 .animated {
-  animation: opacity-animation 1s infinite alternate;;
+  /*transform: rotateZ(360deg);*/
+  animation: opacity-animation 1s infinite alternate;
 }
 
 @keyframes opacity-animation {
@@ -68,27 +107,6 @@
   100%{
     opacity: 0.5;
   }
-}
-
-.block-PC{
-  background-color: #93F6E8; /*#FFC840*/
-}
-
-.block-FG{
-  background-color: #355484; /*#483D8B*/
-  color: white;
-}
-
-.block-M{
-  background-color: #B3A9E4; /*#F74F23*/
-}
-
-.block-m{
-  background-color: #13CDB2; /*#32CD33*/
-}
-
-.block-T{
-  background-color: #9966CC;
 }
 
 .hover-text {

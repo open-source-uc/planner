@@ -1,11 +1,10 @@
-from typing import Literal, Optional
+from typing import Optional
 from .validation.curriculum.solve import (
     RecommendedCourse,
     SolvedCurriculum,
     solve_curriculum,
 )
 
-from fastapi import HTTPException
 from ..user.auth import UserKey
 from ..sync import get_curriculum
 from .validation.courses.logic import And, Expr, Or, ReqCourse
@@ -187,19 +186,30 @@ def _try_add_course_group(
     courses_to_pass: list[PseudoCourse],
     current_credits: int,
     course_group: list[PseudoCourse],
-) -> Literal["credits", "deps", "added"]:
+) -> bool:
     """
     Attempt to add a group of courses to the last semester of the given plan.
     Fails if they cannot be added.
     Assumes all courses in the group are not present in the given plan.
+    Returns `True` if the courses could be added.
     """
+
+    # Bail if the semestrality is wrong for any course (but it could be right in
+    # another semester)
+    sem_i = len(plan.classes) - 1
+    for course in course_group:
+        info = courseinfo.try_course(course.code)
+        if info is None:
+            continue
+        if not info.semestrality[sem_i % 2] and info.semestrality[(sem_i + 1) % 2]:
+            return False
 
     # Determine total credits of this group
     group_credits = sum(map(lambda c: _get_credits(courseinfo, c), course_group))
 
     # Bail if there is not enough space in this semester
     if current_credits + group_credits > RECOMMENDED_CREDITS_PER_SEMESTER:
-        return "credits"
+        return False
 
     # Temporarily add to plan
     semester = plan.classes[-1]
@@ -218,14 +228,14 @@ def _try_add_course_group(
             # Undo changes and cancel
             while len(semester) > original_length:
                 semester.pop()
-            return "deps"
+            return False
 
     # Added course successfully
     # Remove added courses from `courses_to_pass`
     for course in course_group:
         courses_to_pass.remove(course)
 
-    return "added"
+    return True
 
 
 async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan:
@@ -250,12 +260,9 @@ async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan
         student = await sync.get_student_data(user)
         cyear = Cyear.from_str(student.info.cyear)
         if cyear is None:
-            # HTTP error 501: Unimplemented
-            # TODO: The frontend could recognize this code and show a nice error message
-            # maybe?
-            raise HTTPException(
-                status_code=501, detail="Your curriculum version is unsupported"
-            )
+            # Just plow forward, after all the validation endpoint will generate an
+            # error about the mismatched cyear
+            cyear = LATEST_CYEAR
         classes = student.passed_courses
         curriculum = CurriculumSpec(
             cyear=cyear,
@@ -298,45 +305,33 @@ async def generate_recommended_plan(passed: ValidatablePlan):
 
         # Go in order, attempting to add each course to the semester
         added_course = False
-        could_use_more_credits = False
-        some_requirements_missing = False
         for try_course in courses_to_pass:
             course_group = coreq_components[try_course]
 
-            status = _try_add_course_group(
+            could_add = _try_add_course_group(
                 courseinfo, plan, courses_to_pass, credits, course_group
             )
-            if status == "added":
+            if could_add:
                 # Successfully added a course, finish
                 added_course = True
                 break
-            elif status == "credits":
-                # Keep track of the case when there are some courses that need more
-                # credit-space
-                could_use_more_credits = True
-            elif status == "deps":
-                # Keep track on when we need more requirements
-                some_requirements_missing = True
 
         if added_course:
             # Made some progress!
             # Continue adding courses
             continue
 
-        if could_use_more_credits:
-            # Maybe we couldn't make progress because there is no space for any more
-            # courses
-            plan.classes.append([])
-            continue
+        # We could not add any course, try adding another semester
+        # However, we do not want to enter an infinite loop if nothing can be added, so
+        # only do this if we cannot add courses for 2 empty semesters
+        if len(plan.classes) >= 2 and not plan.classes[-1] and not plan.classes[-2]:
+            # Stuck :(
+            break
 
-        if some_requirements_missing and len(plan.classes[-1]) != 0:
-            # Last chance: maybe we can't make progress because there's a course that
-            # depends on the courses on this very semester
-            plan.classes.append([])
-            continue
-
-        # Stuck! :(
-        break
+        # Maybe some requirements are not met, maybe the semestrality is wrong, maybe
+        # we reached the credit limit for this semester
+        # Anyway, if we are stuck let's try adding a new semester and see if it helps
+        plan.classes.append([])
 
     # Remove empty semesters at the end (if any)
     while plan.classes and not plan.classes[-1]:

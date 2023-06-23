@@ -3,16 +3,25 @@ module.exports = {
   content: [
     './src/**/*.{js,jsx,ts,tsx}'
   ],
+  safelist: [
+    'bg-block-PC',
+    'bg-place-holder',
+    'bg-block-T',
+    'bg-block-M',
+    'bg-block-m',
+    'bg-block-FG',
+    'bg-block-'
+  ],
   theme: {
     extend: {
       colors: {
-        'plan-comun': '#93F6E8',
-        'place-holder': '#ebeba8',
-        titulo: '#9966CC',
-        major: '#B3A9E4',
-        minor: '#13CDB2',
-        ofg: '#355484',
-        otro: '#D8D8D8'
+        'block-PC': 'var(--blockPC)',
+        'place-holder': 'var(--placeHolder)',
+        'block-T': 'var(--titulo)',
+        'block-M': 'var(--major)',
+        'block-m': 'var(--minor)',
+        'block-FG': 'var(--blockFG)',
+        'block-': 'var(--otro)'
       }
     }
   },
