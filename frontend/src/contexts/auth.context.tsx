@@ -25,9 +25,14 @@ export function AuthProvider ({ children, userData }: Props): JSX.Element {
   const [passed, setPassed] = useState <Array<Array<(ConcreteId | EquivalenceId)>>>([])
 
   const getInfo = async (): Promise<void> => {
-    const response = await DefaultService.getStudentInfo()
-    setInfo(response.info)
-    setPassed(response.passed_courses)
+    if (user != null) {
+      const response = await DefaultService.getStudentInfo()
+      setInfo(response.info)
+      setPassed(response.passed_courses)
+    } else {
+      setInfo(null)
+      setPassed([])
+    }
   }
 
   useEffect(() => {

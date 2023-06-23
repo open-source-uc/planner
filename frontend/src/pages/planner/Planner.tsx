@@ -9,10 +9,9 @@ import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, CourseDetails, EquivDetails, ConcreteId, EquivalenceId, FlatValidationResult, PlanView } from '../../client'
+import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, CourseDetails, EquivDetails, ConcreteId, EquivalenceId, FlatValidationResult, PlanView, CancelablePromise } from '../../client'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
 import DebugGraph from '../../components/DebugGraph'
 import deepEqual from 'fast-deep-equal'
 
@@ -36,6 +35,10 @@ enum PlannerStatus {
 
 const isApiError = (err: any): err is ApiError => {
   return err.status !== undefined
+}
+
+const isCancelError = (err: any): boolean => {
+  return err.name !== undefined && err.name === 'CancelError'
 }
 
 export interface PlanDigest {
@@ -62,6 +65,7 @@ export type ValidationDigest = CourseValidationDigest[][]
  */
 const Planner = (): JSX.Element => {
   const [planName, setPlanName] = useState<string>('')
+  const [planID, setPlanID] = useState<string | undefined>(useParams()?.plannerId)
   const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null >(null)
   const [courseDetails, setCourseDetails] = useState<{ [code: string]: PseudoCourseDetail }>({})
   const [curriculumData, setCurriculumData] = useState<CurriculumData | null>(null)
@@ -75,7 +79,8 @@ const Planner = (): JSX.Element => {
   const previousCurriculum = useRef<{ major: String | undefined, minor: String | undefined, title: String | undefined }>({ major: '', minor: '', title: '' })
   const previousClasses = useRef<PseudoCourseId[][]>([[]])
 
-  const params = useParams()
+  const [validationPromise, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
+
   const authState = useAuth()
 
   const planDigest = useMemo((): PlanDigest => {
@@ -135,13 +140,13 @@ const Planner = (): JSX.Element => {
   }, [validatablePlan, planDigest, validationResult])
 
   function handleErrors (err: unknown): void {
-    console.log(err)
-    setPlannerStatus(PlannerStatus.ERROR)
     if (isApiError(err)) {
+      console.error(err)
+      setPlannerStatus(PlannerStatus.ERROR)
       switch (err.status) {
         case 401:
           console.log('token invalid or expired, loading re-login page')
-          toast.error('Token invalido. Redireccionando a pagina de inicio...', {
+          toast.error('Tu session a expirado. Redireccionando a pagina de inicio de sesion...', {
             toastId: 'ERROR401'
           })
           break
@@ -159,14 +164,16 @@ const Planner = (): JSX.Element => {
           setError('error desconocido')
           break
       }
-    } else {
+    } else if (!isCancelError(err)) {
       setError('error desconocido')
+      console.error(err)
+      setPlannerStatus(PlannerStatus.ERROR)
     }
   }
 
   async function getDefaultPlan (ValidatablePlan?: ValidatablePlan): Promise<void> {
     try {
-      console.log('getting Basic Plan...')
+      console.log('Getting Basic Plan...')
       if (ValidatablePlan === undefined) {
         ValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
       } else {
@@ -191,7 +198,7 @@ const Planner = (): JSX.Element => {
 
   async function getPlanById (id: string): Promise<void> {
     try {
-      console.log('getting Plan by Id...')
+      console.log('Getting Plan by Id...')
       const response: PlanView = await DefaultService.readPlan(id)
       await Promise.all([
         getCourseDetails(response.validatable_plan.classes.flat()),
@@ -208,11 +215,11 @@ const Planner = (): JSX.Element => {
 
   async function fetchData (): Promise<void> {
     try {
-      if (params?.plannerId != null) {
+      if (planID !== null && planID !== undefined) {
         if (validatablePlan !== null) {
           await getDefaultPlan(validatablePlan)
         } else {
-          await getPlanById(params.plannerId)
+          await getPlanById(planID)
         }
       } else {
         await getDefaultPlan(validatablePlan ?? undefined)
@@ -229,7 +236,9 @@ const Planner = (): JSX.Element => {
     const coursesCodes = new Set<string>()
     const equivalenceCodes = new Set<string>()
     for (const courseid of courses) {
-      if (courseid.is_concrete === true) { coursesCodes.add(courseid.code) } else { equivalenceCodes.add(courseid.code) }
+      if (!Object.keys(courseDetails).some((loadedCourseCode: string) => loadedCourseCode === courseid.code)) {
+        if (courseid.is_concrete === true) { coursesCodes.add(courseid.code) } else { equivalenceCodes.add(courseid.code) }
+      }
     }
     try {
       const promises = []
@@ -248,7 +257,15 @@ const Planner = (): JSX.Element => {
 
   async function validate (validatablePlan: ValidatablePlan): Promise<void> {
     try {
-      const response = authState?.user == null ? await DefaultService.validateGuestPlan(validatablePlan) : await DefaultService.validatePlanForUser(validatablePlan)
+      if (validationPromise != null) {
+        validationPromise.cancel()
+        setValidationPromise(null)
+      }
+
+      const promise = authState?.user == null ? DefaultService.validateGuestPlan(validatablePlan) : DefaultService.validatePlanForUser(validatablePlan)
+      setValidationPromise(promise)
+      const response = await promise
+      setValidationPromise(null)
       previousCurriculum.current = {
         major: validatablePlan.curriculum.major,
         minor: validatablePlan.curriculum.minor,
@@ -274,10 +291,10 @@ const Planner = (): JSX.Element => {
       toast.error('No se ha generado un plan aun')
       return
     }
-    if (params?.plannerId != null) {
+    if (planID !== null && planID !== undefined) {
       setPlannerStatus(PlannerStatus.VALIDATING)
       try {
-        await DefaultService.updatePlan(params.plannerId, validatablePlan)
+        await DefaultService.updatePlan(planID, validatablePlan)
         toast.success('Plan actualizado exitosamente.')
       } catch (err) {
         handleErrors(err)
@@ -289,10 +306,9 @@ const Planner = (): JSX.Element => {
       setPlannerStatus(PlannerStatus.VALIDATING)
       try {
         const res = await DefaultService.savePlan(planName, validatablePlan)
-        toast.success('Plan guardado exitosamente, redireccionando...', {
-          toastId: 'newPlanSaved',
-          data: { planId: res.id }
-        })
+        setPlanID(res.id)
+        setPlanName(res.name)
+        toast.success('Plan guardado exitosamente')
       } catch (err) {
         handleErrors(err)
       }
@@ -338,13 +354,21 @@ const Planner = (): JSX.Element => {
       while (drop.semester >= newClasses.length) {
         newClasses.push([])
       }
-      newClasses[drop.semester].splice(drop.index, 0, newClasses[drag.semester][drag.index])
-      if (drop.semester === drag.semester && drop.index < drag.index) {
-        newClasses[drag.semester].splice(drag.index + 1, 1)
+      const dragSemester = [...newClasses[drag.semester]]
+      const dropSemester = [...newClasses[drop.semester]]
+      if (drop.semester === drag.semester) {
+        dragSemester.splice(drop.index, 0, dragCourse)
+        if (drop.index < drag.index) {
+          dragSemester.splice(drag.index + 1, 1)
+        } else {
+          dragSemester.splice(drag.index, 1)
+        }
       } else {
-        newClasses[drag.semester].splice(drag.index, 1)
+        dropSemester.splice(drop.index, 0, dragCourse)
+        dragSemester.splice(drag.index, 1)
+        newClasses[drop.semester] = dropSemester
       }
-      console.log(newClasses, newClasses[newClasses.length - 1], newClasses[newClasses.length - 1].length === 0)
+      newClasses[drag.semester] = dragSemester
       while (newClasses[newClasses.length - 1].length === 0) {
         newClasses.pop()
       }
@@ -486,11 +510,12 @@ const Planner = (): JSX.Element => {
 
   function reset (): void {
     setPlannerStatus(PlannerStatus.LOADING)
+    setValidatablePlan(null)
   }
 
-  const selectMajor = useCallback(async (majorCode: string, isMinorValid: boolean): Promise<void> => {
+  const selectMajor = useCallback(async (majorCode: string | undefined, isMinorValid: boolean): Promise<void> => {
     setValidatablePlan((prev) => {
-      if (prev == null) return prev
+      if (prev == null || prev.curriculum.major === majorCode) return prev
       const newCurriculum = { ...prev.curriculum, major: majorCode }
       prev.classes.splice(prev.next_semester)
       if (!isMinorValid) {
@@ -500,19 +525,19 @@ const Planner = (): JSX.Element => {
     })
   }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
 
-  const selectMinor = useCallback((minor: Minor): void => {
+  const selectMinor = useCallback((minorCode: string | undefined): void => {
     setValidatablePlan((prev) => {
-      if (prev == null) return prev
-      const newCurriculum = { ...prev.curriculum, minor: minor.code }
+      if (prev == null || prev.curriculum.minor === minorCode) return prev
+      const newCurriculum = { ...prev.curriculum, minor: minorCode }
       prev.classes.splice(prev.next_semester)
       return { ...prev, curriculum: newCurriculum }
     })
   }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
 
-  const selectTitle = useCallback((title: Title): void => {
+  const selectTitle = useCallback((titleCode: string | undefined): void => {
     setValidatablePlan((prev) => {
-      if (prev == null) return prev
-      const newCurriculum = { ...prev.curriculum, title: title.code }
+      if (prev == null || prev.curriculum.title === titleCode) return prev
+      const newCurriculum = { ...prev.curriculum, title: titleCode }
       prev.classes.splice(prev.next_semester)
       return { ...prev, curriculum: newCurriculum }
     })
@@ -549,10 +574,6 @@ const Planner = (): JSX.Element => {
     console.log(plannerStatus)
     if (plannerStatus === 'LOADING') {
       void fetchData()
-    } else if (plannerStatus === 'VALIDATING' && validatablePlan != null) {
-      validate(validatablePlan).catch(err => {
-        handleErrors(err)
-      })
     }
   }, [plannerStatus])
 
@@ -567,16 +588,20 @@ const Planner = (): JSX.Element => {
         setPlannerStatus(PlannerStatus.LOADING)
       } else {
         setPlannerStatus(PlannerStatus.VALIDATING)
+        validate(validatablePlan).catch(err => {
+          handleErrors(err)
+        })
       }
     }
   }, [validatablePlan])
+
   return (
-    <div className={`w-full relative h-full p-3 flex flex-grow overflow-hidden flex-row ${(plannerStatus !== 'ERROR' && plannerStatus !== 'READY') ? 'cursor-wait' : ''}`}>
+    <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
       <DebugGraph validatablePlan={validatablePlan} />
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
       <AlertModal title={popUpAlert.title} desc={popUpAlert.desc} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}/>
       {plannerStatus === 'LOADING' &&
-        <div className="absolute p-3 w-screen h-full z-50 bg-white flex flex-col justify-center items-center">
+        <div className="absolute w-screen h-full z-50 bg-white flex flex-col justify-center items-center">
           <Spinner message='Cargando planificación...' />
         </div>
       }
@@ -585,9 +610,10 @@ const Planner = (): JSX.Element => {
         ? (<div className={'w-full h-full flex flex-col justify-center items-center'}>
             <p className={'text-2xl font-semibold mb-4'}>Error al cargar plan</p>
             <p className={'text-sm font-normal'}>{error}</p>
+            <a href="https://github.com/open-source-uc/planner/issues?q=is%3Aopen+is%3Aissue+label%3Abug" className={'text-blue-700 underline text-sm'} rel="noreferrer" target="_blank">Reportar error</a>
           </div>)
-        : <div className={'flex w-full'}>
-            <div className={`flex flex-col overflow-auto flex-grow  ${plannerStatus !== PlannerStatus.READY ? 'pointer-events-none' : ''} `}>
+        : <div className={'flex w-full p-3 pb-0'}>
+            <div className={'flex flex-col overflow-auto flex-grow'}>
               <CurriculumSelector
                 planName={planName}
                 curriculumData={curriculumData}
@@ -599,7 +625,6 @@ const Planner = (): JSX.Element => {
               <ControlTopBar
                 reset={reset}
                 save={savePlan}
-                validating={plannerStatus !== 'READY'}
               />
               <DndProvider backend={HTML5Backend}>
                 {(validatablePlan != null) &&

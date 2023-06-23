@@ -28,7 +28,7 @@ async function authenticateRoute (): Promise<void> {
 function onAuthenticationError (err: ApiError): void {
   if (err.status === 401) {
     console.log('token invalid or expired, loading re-login page')
-    toast.error('Token invalido. Redireccionando a pagina de inicio...', {
+    toast.error('Tu session a expirado. Redireccionando a pagina de inicio de sesion...', {
       toastId: 'ERROR401'
     })
   }
