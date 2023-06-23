@@ -76,11 +76,7 @@ export interface ValidationDigest {
 }
 
 const reduceCourseDetails = (old: { [code: string]: PseudoCourseDetail }, add: { [code: string]: PseudoCourseDetail }): { [code: string]: PseudoCourseDetail } => {
-  const failed: { [code: string]: PseudoCourseDetail } = {}
-  for (const code in add) {
-    failed['~' + code] = add[code]
-  }
-  return { ...old, ...failed, ...add }
+  return { ...old, ...add }
 }
 
 /**
@@ -287,8 +283,7 @@ const Planner = (): JSX.Element => {
     const coursesCodes = new Set<string>()
     const equivalenceCodes = new Set<string>()
     for (const courseid of courses) {
-      let code = courseid.code
-      if (code.startsWith('~')) code = code.slice(1)
+      const code = courseid.code.replace('~', '')
       if (!(code in courseDetails)) {
         if (courseid.is_concrete === true) { coursesCodes.add(code) } else { equivalenceCodes.add(code) }
       }
