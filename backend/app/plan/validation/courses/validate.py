@@ -1,10 +1,18 @@
-from abc import ABC
 from dataclasses import dataclass
-
-from ...course import EquivalenceId
-from ..diagnostic import DiagnosticErr, DiagnosticWarn, ValidationResult
-from ...plan import PseudoCourse, ValidatablePlan
-from ...courseinfo import CourseDetails, CourseInfo
+from ....user.info import StudentContext
+from ...course import ConcreteId, EquivalenceId
+from ..diagnostic import (
+    AmbiguousCourseErr,
+    CourseRequirementErr,
+    SemesterCreditsErr,
+    SemesterCreditsWarn,
+    SemestralityWarn,
+    UnavailableCourseWarn,
+    UnknownCourseErr,
+    ValidationResult,
+)
+from ...plan import ClassId, ValidatablePlan
+from ...courseinfo import CourseInfo
 from .logic import (
     Atom,
     BaseOp,
@@ -18,131 +26,237 @@ from .logic import (
     ReqProgram,
     ReqSchool,
 )
-from typing import Callable, Optional, Type, Union, ClassVar
+from typing import Callable, Optional
 from .simplify import simplify
 
 
 @dataclass
 class CourseInstance:
     """
-    An instance of a course, with a student and semester associated with it.
+    An instance of a course within a plan.
+    Has a position (semester, index) within the plan.
     """
 
-    course: PseudoCourse
+    code: str
     sem: int
     index: int
 
 
-class PlanContext:
+class ValidationContext:
     """
-    Basically a `ValidatablePlan` augmented with context that the `CourseRules` provide,
-    and with some additional preprocessing to make validation convenient.
-    For example, `PlanContext` has a dictionary from course code to
-    semester-in-which-the-course-is-taken, a dict that is useful when validating.
+    Pre-processing of a validatable plan, created once and used to validate the course
+    rules for all classes.
     """
 
     courseinfo: CourseInfo
-    # A dictionary from course code to the first time the course appears in the plan
-    classes: dict[str, CourseInstance]
+    # A dictionary from course code to the first time the course appears in the plan.
+    # This dictionary considers equivalencies (ie. some codes map to equivalent
+    # courses).
+    by_code: dict[str, CourseInstance]
+    # Map from (semester, index) positions to class ids.
+    class_ids: list[list[ClassId]]
     # A list of accumulated total approved credits per semester
     # approved_credits[i] contains the amount of approved credits in the range [0, i)
     approved_credits: list[int]
     # Original validatable plan object.
     plan: ValidatablePlan
+    # User context, if any
+    user_ctx: Optional[StudentContext]
+    # On which semester to start validating requirements and other associated
+    # validations.
+    # Should be the first semester that has not yet been taken (ie. the semester after
+    # the current one).
+    start_validation_from: int
 
-    def __init__(self, courseinfo: CourseInfo, plan: ValidatablePlan):
+    def __init__(
+        self,
+        courseinfo: CourseInfo,
+        plan: ValidatablePlan,
+        user_ctx: Optional[StudentContext],
+    ):
         # Map from coursecode to course instance
-        classes = {}
-        # List of total approved credits per semester
-        acc_credits = [0]
-        # Iterate over semesters
-        for sem in range(len(plan.classes)):
-            creds = acc_credits[-1]
-            # Iterate over classes in this semester
-            for i, course in enumerate(plan.classes[sem]):
-                # Add this class to the map
-                code = course.code
-                if isinstance(course, EquivalenceId):
-                    equiv = courseinfo.try_equiv(course.code)
-                    if (
-                        equiv is not None
-                        and equiv.is_homogeneous
-                        and len(equiv.courses) >= 1
-                    ):
-                        code = equiv.courses[0]
-                if code not in classes:
-                    classes[code] = CourseInstance(course, sem=sem, index=i)
-                # Accumulate credits
-                creds += courseinfo.get_credits(course) or 0
-            acc_credits.append(creds)
+        self.by_code = {}
+        for sem_i, sem in enumerate(plan.classes):
+            for i, course in enumerate(sem):
+                # Determine which courses are equivalent to this course
+                equiv_codes = [course.code]
+                info = courseinfo.try_course(course.code)
+                if info is not None:
+                    for equiv in info.banner_equivs:
+                        equiv_codes.append(equiv)
+
+                # Map the equivalent courses to this course instance
+                course_inst = CourseInstance(code=course.code, sem=sem_i, index=i)
+                for code in equiv_codes:
+                    if code not in self.by_code:
+                        self.by_code[code] = course_inst
+
+        # Map from class positions to class ids
+        rep_counts: dict[str, int] = {}
+        self.class_ids = []
+        for sem in plan.classes:
+            mapping: list[ClassId] = []
+            for course in sem:
+                rep_idx = rep_counts.get(course.code, 0)
+                mapping.append(ClassId(code=course.code, instance=rep_idx))
+                rep_counts[course.code] = rep_idx + 1
+            self.class_ids.append(mapping)
+
+        # Accumulate approved credits by semester
+        self.approved_credits = [0]
+        credit_acc = 0
+        for sem in plan.classes:
+            for course in sem:
+                credit_acc += courseinfo.get_credits(course) or 0
+            self.approved_credits.append(credit_acc)
+
+        # The first semester where courses have not yet been taken
+        self.start_validation_from = 0 if user_ctx is None else user_ctx.next_semester
+
+        # Context
         self.courseinfo = courseinfo
-        self.classes = classes
-        self.approved_credits = acc_credits
         self.plan = plan
+        self.user_ctx = user_ctx
 
-    def validate(self, out: ValidationResult):
-        ambiguous_codes: list[str] = []
-        for sem in range(self.plan.next_semester, len(self.plan.classes)):
-            sem_credits: int = 0
+    def validate_all_unknown(self, out: ValidationResult):
+        """
+        Generate a diagnostic if there are unknown courses.
+        """
+        unknown: list[ClassId] = []
+        for sem_i, sem in enumerate(self.plan.classes):
+            for i, course in enumerate(sem):
+                if isinstance(course, EquivalenceId):
+                    if self.courseinfo.try_equiv(course.code) is None:
+                        unknown.append(self.class_ids[sem_i][i])
+                else:
+                    if self.courseinfo.try_course(course.code) is None:
+                        unknown.append(self.class_ids[sem_i][i])
+        if unknown:
+            out.add(UnknownCourseErr(associated_to=unknown))
 
-            for i, courseid in enumerate(self.plan.classes[sem]):
-                if isinstance(courseid, EquivalenceId):
-                    equiv = self.courseinfo.try_equiv(courseid.code)
-                    if equiv is None:
-                        out.add(UnknownCourseErr(code=courseid.code, index=(sem, i)))
-                        continue
-                    elif equiv.is_homogeneous and len(equiv.courses) >= 1:
-                        code = equiv.courses[0]
+    def validate_all_ambiguous(self, out: ValidationResult):
+        """
+        Generate a diagnostic if there are ambiguous equivalences that must be
+        disambiguated to guarantee proper validation.
+        """
+        ambiguous: list[ClassId] = []
+        for sem_i, sem in enumerate(self.plan.classes):
+            for i, course in enumerate(sem):
+                if isinstance(course, EquivalenceId):
+                    info = self.courseinfo.try_equiv(course.code)
+                    if info is not None and not info.is_unessential:
+                        ambiguous.append(self.class_ids[sem_i][i])
+        if ambiguous:
+            out.add(AmbiguousCourseErr(associated_to=ambiguous))
+
+    def validate_all_availability(self, out: ValidationResult):
+        """
+        Validate the availability and semestrality of all courses.
+        """
+        unavailable: list[ClassId] = []
+        only_on_sem: list[list[ClassId]] = [[], []]
+        for sem_i in range(self.start_validation_from, len(self.plan.classes)):
+            for i, course in enumerate(self.plan.classes[sem_i]):
+                if isinstance(course, ConcreteId):
+                    info = self.courseinfo.try_course(course.code)
+                    if info is not None:
+                        if not info.is_available:
+                            # This course is plain unavailable
+                            unavailable.append(self.class_ids[sem_i][i])
+                        elif (
+                            not info.semestrality[sem_i % 2]
+                            and info.semestrality[(sem_i + 1) % 2]
+                        ):
+                            # This course is only available on the other semester
+                            only_on_sem[(sem_i + 1) % 2].append(
+                                self.class_ids[sem_i][i]
+                            )
+        if unavailable:
+            out.add(UnavailableCourseWarn(associated_to=unavailable))
+        for k in range(2):
+            if only_on_sem[k]:
+                out.add(
+                    SemestralityWarn(associated_to=only_on_sem[k], only_available_on=k)
+                )
+
+    def validate_max_credits(self, out: ValidationResult):
+        """
+        Validate that there are no semester with an excess of credits.
+        """
+
+        # Students can only take this amount of credits if they meet certain criteria.
+        # Currently, that criteria is not failing any course in the previous X
+        # semesters.
+        # TODO: Actually check this criteria, and apply validations depending on user
+        # context.
+        SOFT_MAX = 55
+        # Students can't take over this amount of credits without special authorization.
+        HARD_MAX = 65
+
+        for sem_i in range(self.start_validation_from, len(self.plan.classes)):
+            sem_credits = 0
+            for course in self.plan.classes[sem_i]:
+                sem_credits += self.courseinfo.get_credits(course) or 0
+                if sem_credits > HARD_MAX:
+                    out.add(
+                        SemesterCreditsErr(
+                            associated_to=[sem_i],
+                            max_allowed=HARD_MAX,
+                            actual=sem_credits,
+                        )
+                    )
+                elif sem_credits > SOFT_MAX:
+                    out.add(
+                        SemesterCreditsWarn(
+                            associated_to=[sem_i],
+                            max_recommended=SOFT_MAX,
+                            actual=sem_credits,
+                        )
+                    )
+
+    def validate_all_dependencies(self, out: ValidationResult):
+        """
+        Validate the dependencies of all non-passed courses.
+        """
+        for sem_i in range(self.start_validation_from, len(self.plan.classes)):
+            for i, course in enumerate(self.plan.classes[sem_i]):
+                # Get a concrete course code from the given courseid
+                if isinstance(course, EquivalenceId):
+                    info = self.courseinfo.try_equiv(course.code)
+                    if (
+                        info is not None
+                        and info.is_homogeneous
+                        and len(info.courses) >= 1
+                    ):
+                        code = info.courses[0]
                     else:
-                        ambiguous_codes.append(courseid.code)
-                        sem_credits += courseid.credits
                         continue
                 else:
-                    code = courseid.code
+                    code = course.code
 
-                course = self.courseinfo.try_course(code)
-                if course is None:
-                    out.add(UnknownCourseErr(code=code, index=(sem, i)))
-                    continue
-
-                inst = self.classes[course.code]
-                self.diagnose(out, inst, course.deps)
-                self.check_availability(out, inst, course)
-                sem_credits += course.credits
-
-            self.check_max_credits(out, semester=sem, credits=sem_credits)
-
-        if ambiguous_codes:
-            out.add(AmbiguousCoursesErr(codes=ambiguous_codes))
-
-    def check_availability(
-        self,
-        out: ValidationResult,
-        inst: CourseInstance,
-        details: CourseDetails,
-    ):
-        if details.is_available:
-            # TODO: check for TAV semester
-            if not details.semestrality[inst.sem % 2]:
-                out.add(
-                    SemestralityWarn(
-                        code=inst.course.code, index=(inst.sem, inst.index)
+                # Validate the dependencies for this course
+                info = self.courseinfo.try_course(code)
+                if info is not None:
+                    self.validate_dependencies_for(
+                        out, CourseInstance(code, sem_i, i), info.deps
                     )
-                )
-        else:
-            out.add(
-                CourseUnavailableWarn(
-                    code=inst.course.code, index=(inst.sem, inst.index)
-                )
-            )
 
-    def check_max_credits(self, out: ValidationResult, semester: int, credits: int):
-        if max_creds_err := SemesterErrHandler.check_error(
-            semester=semester, credits=credits
-        ):
-            out.add(max_creds_err)
+    def validate_all(self, out: ValidationResult):
+        """
+        Execute all validations, shoving any diagnostics into `out`.
+        """
+        self.validate_all_unknown(out)
+        self.validate_all_ambiguous(out)
+        self.validate_all_availability(out)
+        self.validate_max_credits(out)
+        self.validate_all_dependencies(out)
 
-    def diagnose(self, out: ValidationResult, inst: CourseInstance, expr: "Expr"):
+    def validate_dependencies_for(
+        self, out: ValidationResult, inst: CourseInstance, expr: "Expr"
+    ):
+        """
+        Validate the requirements for the course `inst`.
+        """
         if is_satisfied(self, inst, expr):
             return None
         # Some requirement is not satisfied
@@ -150,7 +264,7 @@ class PlanContext:
         # an indication of "what do I have to do in order to satisfy requirements"
         # Stage 1: ignore unavailable courses and fix school/program/career
         missing = simplify(
-            fold_atoms(
+            set_atoms_in_stone_if(
                 self,
                 inst,
                 expr,
@@ -158,14 +272,14 @@ class PlanContext:
                 or isinstance(atom, (ReqSchool, ReqProgram, ReqCareer))
                 or (
                     isinstance(atom, ReqCourse)
-                    and not self.courseinfo.is_course_available(atom.code)
+                    and not is_course_indirectly_available(self.courseinfo, atom.code)
                 ),
             )
         )
         # Stage 2: allow unavailable courses
         if isinstance(missing, Const):
             missing = simplify(
-                fold_atoms(
+                set_atoms_in_stone_if(
                     self,
                     inst,
                     expr,
@@ -175,16 +289,31 @@ class PlanContext:
             )
         # Stage 3: allow changing everything
         if isinstance(missing, Const):
-            missing = simplify(fold_atoms(self, inst, expr, lambda atom, sat: sat))
+            # Only set atoms in stone if they are satisfied (ie. leave all unsatisfied
+            # requirements as free variables)
+            missing = simplify(
+                set_atoms_in_stone_if(self, inst, expr, lambda atom, sat: sat)
+            )
+        # Map missing courses to their newest equivalent versions
+        missing_equivalents = map_atoms(missing, self.map_to_equivalent)
         # Show this expression
         out.add(
-            RequirementErr(
-                code=inst.course.code, index=(inst.sem, inst.index), missing=missing
+            CourseRequirementErr(
+                associated_to=[self.class_ids[inst.sem][inst.index]],
+                missing=missing,
+                modernized_missing=missing_equivalents,
             )
         )
 
+    def map_to_equivalent(self, atom: Atom) -> Atom:
+        if isinstance(atom, ReqCourse):
+            info = self.courseinfo.try_course(atom.code)
+            if info is not None and info.canonical_equiv != atom.code:
+                return ReqCourse(code=info.canonical_equiv, coreq=atom.coreq)
+        return atom
 
-def is_satisfied(ctx: PlanContext, cl: CourseInstance, expr: Expr) -> bool:
+
+def is_satisfied(ctx: ValidationContext, cl: CourseInstance, expr: Expr) -> bool:
     """
     Core logic to check whether an expression is satisfied by a student and their plan.
     """
@@ -209,9 +338,9 @@ def is_satisfied(ctx: PlanContext, cl: CourseInstance, expr: Expr) -> bool:
     if isinstance(expr, ReqCareer):
         return (ctx.plan.career == expr.career) == expr.equal
     if isinstance(expr, ReqCourse):
-        if expr.code not in ctx.classes:
+        if expr.code not in ctx.by_code:
             return False
-        req_cl = ctx.classes[expr.code]
+        req_cl = ctx.by_code[expr.code]
         if expr.coreq:
             return req_cl.sem <= cl.sem
         else:
@@ -220,18 +349,25 @@ def is_satisfied(ctx: PlanContext, cl: CourseInstance, expr: Expr) -> bool:
     return expr.value
 
 
-def fold_atoms(
-    ctx: PlanContext,
+def set_atoms_in_stone_if(
+    ctx: ValidationContext,
     cl: CourseInstance,
     expr: Expr,
-    do_replace: Callable[[Atom, bool], bool],
+    should_set_in_stone: Callable[[Atom, bool], bool],
 ) -> Expr:
+    """
+    Call `should_set_in_stone` on all atoms of the expression (along with a boolean
+    indicating whether they are currently satisfied or not).
+    If it returns `True`, replace the atom with a constant boolean indicating its
+    current satisfaction status ("sets the atom in stone").
+    Returns a modified copy of `expr` (it does **not** modify `expr`).
+    """
     if isinstance(expr, Operator):
         # Recursively replace atoms
         changed = False
         new_children: list[Expr] = []
         for child in expr.children:
-            new_child = fold_atoms(ctx, cl, child, do_replace)
+            new_child = set_atoms_in_stone_if(ctx, cl, child, should_set_in_stone)
             new_children.append(new_child)
             if new_child is not child:
                 changed = True
@@ -240,34 +376,35 @@ def fold_atoms(
     else:
         # Maybe replace this atom by its truth value
         truth = is_satisfied(ctx, cl, expr)
-        if do_replace(expr, truth):
+        if should_set_in_stone(expr, truth):
             # Fold this atom into its constant truth value
             return Const(value=truth)
     return expr
 
 
-def strip_satisfied(
-    ctx: PlanContext,
-    cl: CourseInstance,
-    expr: Expr,
-    fixed_nodes: tuple[Type[Expr], ...] = tuple(),
-) -> Expr:
-    """
-    Replace nodes that are already satisfied by a constant `True`.
-    This results in an expression that represents what remains to be satisfied.
-    Simplify the expression afterwards!
+def is_course_indirectly_available(courseinfo: CourseInfo, code: str):
+    info = courseinfo.try_course(code)
+    if info is None:
+        return False
+    if info.is_available:
+        return True
+    modernized_info = courseinfo.try_course(info.canonical_equiv)
+    if modernized_info is not None and modernized_info.is_available:
+        return True
+    return False
 
-    `fixed_nodes` specifies types of node to consider as un-changeable.
-    For example, the `ReqCareer` node could be fixed, because you do not expect the
-    user to change their career in order to take a course.
+
+def map_atoms(expr: Expr, map: Callable[[Atom], Atom]):
     """
-    if isinstance(expr, fixed_nodes):
-        return Const(value=is_satisfied(ctx, cl, expr))
+    Replace the atoms of the expression according to `apply`.
+    Returns a new expression, leaving the original unmodified.
+    """
     if isinstance(expr, Operator):
+        # Recursively replace atoms
         changed = False
         new_children: list[Expr] = []
         for child in expr.children:
-            new_child = strip_satisfied(ctx, cl, child, fixed_nodes)
+            new_child = map_atoms(child, map)
             new_children.append(new_child)
             if new_child is not child:
                 changed = True
@@ -275,116 +412,6 @@ def strip_satisfied(
             return BaseOp.create(expr.neutral, tuple(new_children))
         else:
             return expr
-    if is_satisfied(ctx, cl, expr):
-        return Const(value=True)
     else:
-        return expr
-
-
-class SemestralityWarn(DiagnosticWarn):
-    index: tuple[int, int]
-    code: str
-
-    def class_index(self) -> Optional[tuple[int, int]]:
-        return self.index
-
-    def message(self) -> str:
-        return (
-            f"El curso {self.code} usualmente no se dicta en"
-            f" {self.semester_type()} semestres."
-        )
-
-    def semester_type(self):
-        if self.index[0] % 2 == 0:
-            return "primeros"
-        return "segundos"
-
-
-class CourseUnavailableWarn(DiagnosticWarn):
-    index: tuple[int, int]
-    code: str
-
-    def class_index(self) -> Optional[tuple[int, int]]:
-        return self.index
-
-    def message(self) -> str:
-        return (
-            f"El curso {self.code} no se ha dictado en mucho tiempo y probablemente"
-            + " no se siga dictando"
-        )
-
-
-class AmbiguousCoursesErr(DiagnosticErr):
-    codes: list[str]
-
-    def first(self) -> str:
-        return self.codes[0]
-
-    def message(self) -> str:
-        if len(self.codes) == 1:
-            return f"Es necesario escoger un curso en el bloque {self.codes[0]}"
-        return f"Es necesario escoger cursos en los bloques {', '.join(self.codes)}"
-
-
-class CourseErr(DiagnosticErr, ABC):
-    code: str
-    index: tuple[int, int]
-
-    def class_index(self) -> Optional[tuple[int, int]]:
-        return self.index
-
-
-class UnknownCourseErr(CourseErr):
-    def message(self) -> str:
-        return f"El curso {self.code} es desconocido. Revisa la sigla."
-
-
-class RequirementErr(CourseErr):
-    missing: Expr
-
-    def message(self) -> str:
-        return f"Requisitos insatisfechos para {self.code}, se necesita: {self.missing}"
-
-
-class SemesterErrHandler:
-    # TODO: the threadhold should depend on the amount of approved/dropped credits
-
-    @staticmethod
-    def check_error(
-        semester: int, credits: int
-    ) -> Union["MaxCreditsErr", "MaxCreditsWarn", None]:
-        if credits > MaxCreditsErr.max_credits:
-            return MaxCreditsErr(semester=semester)
-        if credits > MaxCreditsWarn.max_credits:
-            return MaxCreditsWarn(semester=semester)
-        return None
-
-
-class MaxCreditsErr(DiagnosticErr):
-    """
-    Occurs when the amount of credits in a semester is greater than a certain threshold.
-    """
-
-    max_credits: ClassVar[int] = 65
-    semester: int
-
-    def message(self) -> str:
-        return (
-            f"El semestre {self.semester + 1} sobrepasa el máximo de {self.max_credits}"
-            " créditos permitido"
-        )
-
-
-class MaxCreditsWarn(DiagnosticWarn):
-    """
-    Warns when the amount of credits in a semester is greater than a certain threshold.
-    """
-
-    max_credits: ClassVar[int] = 55
-    semester: int
-
-    def message(self) -> str:
-        return (
-            f"El semestre {self.semester + 1} sobrepasa los {self.max_credits} créditos"
-            " (revisa los requisitos relevantes)"
-        )
+        # Replace this atom
+        return map(expr)

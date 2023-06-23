@@ -18,15 +18,6 @@ import type { ReqSchool } from './ReqSchool';
 export type Or = {
     hash?: Blob;
     children: Array<(And | Or | Const | MinCredits | ReqLevel | ReqSchool | ReqProgram | ReqCareer | ReqCourse)>;
-    expr?: Or.expr;
+    expr?: 'or';
 };
-
-export namespace Or {
-
-    export enum expr {
-        OR = 'or',
-    }
-
-
-}
 

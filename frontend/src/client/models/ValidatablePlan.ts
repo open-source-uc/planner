@@ -18,7 +18,6 @@ import type { Level } from './Level';
  */
 export type ValidatablePlan = {
     classes: Array<Array<(ConcreteId | EquivalenceId)>>;
-    next_semester: number;
     level?: Level;
     school?: string;
     program?: string;
