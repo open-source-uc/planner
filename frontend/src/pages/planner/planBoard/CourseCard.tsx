@@ -19,8 +19,6 @@ interface CourseCardProps {
   hasWarning: boolean
 }
 interface CardProps {
-  semester: number
-  index: number
   cardData: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }
   remCourse: Function
   courseBlock: string
@@ -102,13 +100,11 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
           ? <div className={'card bg-place-holder'} />
           : <ConditionalWrapper condition={cardData.is_concrete !== true && courseBlock != null} wrapper={(children: ReactNode) => <button className='w-full' onClick={() => openSelector()}>{children}</button>}>
               <Card
-                semester={semester}
-                index={index}
                 courseBlock={courseBlock}
                 cardData={cardData}
                 hasEquivalence={hasEquivalence}
                 openSelector={openSelector}
-                remCourse={remCourse}
+                remCourse={() => remCourse(semester, index)}
                 hasWarning={hasWarning}
                 hasError={hasError}
                 isPassed={conditionPassed}
@@ -119,13 +115,11 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
       </div>
       {!collected.isDragging && dropProps.isOver && <div className={'px-2 pb-3'}>
       <Card
-        semester={semester}
-        index={index}
         courseBlock={courseBlock}
         cardData={cardData}
         hasEquivalence={hasEquivalence}
         openSelector={openSelector}
-        remCourse={remCourse}
+        remCourse={() => remCourse(semester, index)}
         hasWarning={hasWarning}
         hasError={hasError}
         isPassed={conditionPassed}
@@ -136,7 +130,7 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
   )
 }
 
-const Card = memo(function _Card ({ semester, index, courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError, isPassed }: CardProps): JSX.Element {
+const Card = memo(function _Card ({ courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError, isPassed }: CardProps): JSX.Element {
   const blockId = BlockInitials(courseBlock)
   const editIcon = (blockId === 'FG') ? editWhiteIcon : editBlackIcon
 
@@ -150,7 +144,7 @@ const Card = memo(function _Card ({ semester, index, courseBlock, cardData, hasE
         : <img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" />
       )}
       {blockId === ''
-        ? isPassed ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse(semester, index)}>x</button>
+        ? isPassed ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>
         : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{blockId}</div>
       }
       <div className='flex items-center justify-center text-center flex-col'>
