@@ -1,16 +1,17 @@
-from fastapi import HTTPException, Depends
-from fastapi.responses import RedirectResponse
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel
-from typing import Optional, Any, Union
-from cas import CASClientV3
-from jose import jwt, JWTError, ExpiredSignatureError
-from datetime import datetime, timedelta
-from ..settings import settings
 import traceback
-from .key import UserKey, ModKey, AdminKey
-from prisma.models import AccessLevel as DbAccessLevel
+from datetime import datetime, timedelta
+from typing import Any, Optional, Union
 
+from cas import CASClientV3
+from fastapi import Depends, HTTPException
+from fastapi.responses import RedirectResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import ExpiredSignatureError, JWTError, jwt
+from prisma.models import AccessLevel as DbAccessLevel
+from pydantic import BaseModel
+
+from ..settings import settings
+from .key import AdminKey, ModKey, UserKey
 
 # CASClient abuses class constructors (__new__),
 # so we are using the versioned class directly

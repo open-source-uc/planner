@@ -1,11 +1,11 @@
 from typing import Annotated, Literal, Union
 
-from ..course import PseudoCourse
-
-from .curriculum.tree import CurriculumSpec, Cyear
-from .courses.logic import Expr
-from ..plan import ClassId, ValidatablePlan
 from pydantic import BaseModel, Field
+
+from ..course import PseudoCourse
+from ..plan import ClassId, ValidatablePlan
+from .courses.logic import Expr
+from .curriculum.tree import CurriculumSpec, Cyear
 
 
 class BaseDiagnostic(BaseModel):

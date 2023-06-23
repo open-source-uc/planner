@@ -2,9 +2,11 @@
 Models a flow network in the context of curriculums.
 """
 
-from ...course import PseudoCourse
-from pydantic import BaseModel
 from typing import Literal, Optional, Union
+
+from pydantic import BaseModel
+
+from ...course import PseudoCourse
 
 
 class CourseRecommendation(BaseModel):

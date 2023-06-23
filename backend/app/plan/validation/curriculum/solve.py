@@ -4,12 +4,12 @@ within a block and respecting exclusivity rules.
 """
 
 from collections import defaultdict
+from dataclasses import dataclass, field
 from typing import Any, Optional
+
 from ...course import ConcreteId, EquivalenceId, PseudoCourse
 from ...courseinfo import CourseInfo
-from .tree import CourseRecommendation, Leaf, Curriculum, Block
-from dataclasses import dataclass, field
-
+from .tree import Block, CourseRecommendation, Curriculum, Leaf
 
 # Print debug messages when solving a curriculum.
 DEBUG_SOLVE = False

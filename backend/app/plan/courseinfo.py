@@ -5,18 +5,21 @@ Cache course info from the database in memory, for easy access.
 from dataclasses import dataclass
 from typing import Optional
 
-from prisma import Json
-from unidecode import unidecode
-from .course import EquivalenceId, PseudoCourse
 import pydantic
-from pydantic import BaseModel
-from .validation.courses.logic import Expr
+from prisma import Json
+from prisma.models import (
+    CachedCourseInfo as DbCachedCourseInfo,
+)
 from prisma.models import (
     Course,
     Equivalence,
     EquivalenceCourse,
-    CachedCourseInfo as DbCachedCourseInfo,
 )
+from pydantic import BaseModel
+from unidecode import unidecode
+
+from .course import EquivalenceId, PseudoCourse
+from .validation.courses.logic import Expr
 
 _CACHED_COURSES_ID: str = "cached-course-info"
 

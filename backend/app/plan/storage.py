@@ -1,13 +1,15 @@
 from datetime import datetime
-from ..user.key import UserKey, ModKey
+from typing import Union
+
+import pydantic
 from fastapi import HTTPException
 from prisma import Json
 from prisma.models import Plan as DbPlan
 from prisma.types import PlanCreateInput
 from pydantic import BaseModel
-import pydantic
+
 from ..plan.plan import ValidatablePlan
-from typing import Union
+from ..user.key import ModKey, UserKey
 
 _plan_model_fields = list(DbPlan.__fields__.keys())
 # automatic definition of low detail to avoid hardcoding attributes

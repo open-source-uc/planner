@@ -12,8 +12,8 @@ el que habra que tocar.
 
 from typing import Optional
 
-
 from ...plan.course import EquivalenceId
+from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
 from ...plan.validation.curriculum.tree import (
     Block,
     Combination,
@@ -22,7 +22,6 @@ from ...plan.validation.curriculum.tree import (
     CurriculumSpec,
     Leaf,
 )
-from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
 
 
 def _skip_extras(curriculum: Curriculum):

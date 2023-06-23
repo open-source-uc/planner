@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field
 from typing import Annotated, Literal, Optional, Union
+
+from pydantic import BaseModel, Field
 
 
 class EquivalenceId(BaseModel, frozen=True):

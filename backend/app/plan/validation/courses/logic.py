@@ -4,10 +4,12 @@ Implements logical expressions in the context of course requirements.
 
 
 from abc import abstractmethod
-from ...plan import Level
-from pydantic import BaseModel, Field
-from typing import Annotated, Any, ClassVar, Literal, Union
 from hashlib import blake2b as good_hash
+from typing import Annotated, Any, ClassVar, Literal, Union
+
+from pydantic import BaseModel, Field
+
+from ...plan import Level
 
 
 class BaseExpr(BaseModel):

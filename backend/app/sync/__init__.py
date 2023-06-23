@@ -3,27 +3,42 @@ Update local database with an official but ugly source.
 Currently using unofficial sources until we get better API access.
 """
 
-from collections import OrderedDict
 import time
+from collections import OrderedDict
 
+from prisma import Json
+from prisma.models import (
+    Course as DbCourse,
+)
+from prisma.models import (
+    Curriculum as DbCurriculum,
+)
+from prisma.models import (
+    Equivalence as DbEquivalence,
+)
+from prisma.models import (
+    EquivalenceCourse as DbEquivalenceCourse,
+)
+from prisma.models import (
+    Major as DbMajor,
+)
+from prisma.models import (
+    MajorMinor as DbMajorMinor,
+)
+from prisma.models import (
+    Minor as DbMinor,
+)
+from prisma.models import (
+    Title as DbTitle,
+)
+
+from ..plan.courseinfo import clear_course_info_cache, course_info
+from ..plan.validation.curriculum.tree import Curriculum, CurriculumSpec
 from ..settings import settings
 from ..user.auth import UserKey
 from ..user.info import StudentContext
-from prisma import Json
-from .siding import translate as siding_translate
-from ..plan.validation.curriculum.tree import Curriculum, CurriculumSpec
-from ..plan.courseinfo import clear_course_info_cache, course_info
 from . import buscacursos_dl
-from prisma.models import (
-    Curriculum as DbCurriculum,
-    Major as DbMajor,
-    Minor as DbMinor,
-    Title as DbTitle,
-    MajorMinor as DbMajorMinor,
-    EquivalenceCourse as DbEquivalenceCourse,
-    Course as DbCourse,
-    Equivalence as DbEquivalence,
-)
+from .siding import translate as siding_translate
 
 
 async def clear_upstream_data(courses: bool = True, offer: bool = True):

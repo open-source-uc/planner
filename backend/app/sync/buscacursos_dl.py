@@ -1,30 +1,30 @@
-from collections import defaultdict
 import lzma
 import traceback
+from collections import defaultdict
+from typing import Callable, NoReturn, Optional
 
+import pydantic
+import requests
+from prisma import Json
+from prisma.models import Course as DbCourse
+from prisma.types import CourseCreateWithoutRelationsInput
+from pydantic import BaseModel
 
 from ..plan.courseinfo import make_searchable_name
-from ..plan.validation.courses.simplify import simplify
+from ..plan.plan import Level
 from ..plan.validation.courses.logic import (
-    Const,
     And,
-    Or,
+    Const,
     Expr,
     MinCredits,
+    Or,
     ReqCareer,
+    ReqCourse,
     ReqLevel,
     ReqProgram,
     ReqSchool,
-    ReqCourse,
 )
-from ..plan.plan import Level
-from prisma.models import Course as DbCourse
-from prisma.types import CourseCreateWithoutRelationsInput
-from prisma import Json
-import requests
-import pydantic
-from pydantic import BaseModel
-from typing import Callable, NoReturn, Optional
+from ..plan.validation.courses.simplify import simplify
 
 
 class BcSection(BaseModel):

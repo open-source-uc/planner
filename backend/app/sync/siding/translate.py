@@ -4,29 +4,36 @@ Transform the Siding format into something usable.
 
 from typing import Optional
 
-from ...user.info import StudentInfo
-from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
-from ...plan.course import ConcreteId, EquivalenceId, PseudoCourse
-from . import client, siding_rules
-from .client import (
-    BloqueMalla,
-    PlanEstudios,
-    StringArray,
-)
 from prisma.models import (
     Major as DbMajor,
-    Minor as DbMinor,
-    Title as DbTitle,
+)
+from prisma.models import (
     MajorMinor as DbMajorMinor,
 )
+from prisma.models import (
+    Minor as DbMinor,
+)
+from prisma.models import (
+    Title as DbTitle,
+)
+
+from ...plan.course import ConcreteId, EquivalenceId, PseudoCourse
+from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
 from ...plan.validation.curriculum.tree import (
+    Block,
     Combination,
     CourseRecommendation,
     Curriculum,
     CurriculumSpec,
     Cyear,
-    Block,
     Leaf,
+)
+from ...user.info import StudentInfo
+from . import client, siding_rules
+from .client import (
+    BloqueMalla,
+    PlanEstudios,
+    StringArray,
 )
 
 

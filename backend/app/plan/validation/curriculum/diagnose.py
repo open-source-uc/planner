@@ -2,7 +2,7 @@ from typing import Optional
 
 from ....user.info import StudentContext
 from ...course import PseudoCourse
-from .solve import RecommendedCourse, SolvedCurriculum, TakenCourse, solve_curriculum
+from ...courseinfo import CourseInfo
 from ...plan import ValidatablePlan
 from ..diagnostic import (
     CurriculumErr,
@@ -10,8 +10,8 @@ from ..diagnostic import (
     UnassignedWarn,
     ValidationResult,
 )
+from .solve import RecommendedCourse, SolvedCurriculum, TakenCourse, solve_curriculum
 from .tree import Block, Curriculum
-from ...courseinfo import CourseInfo
 
 
 def _diagnose_block(

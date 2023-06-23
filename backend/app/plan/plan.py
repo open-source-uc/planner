@@ -1,8 +1,10 @@
-from .validation.curriculum.tree import CurriculumSpec
-from pydantic import BaseModel
-from typing import Optional
-from .course import PseudoCourse
 from enum import Enum
+from typing import Optional
+
+from pydantic import BaseModel
+
+from .course import PseudoCourse
+from .validation.curriculum.tree import CurriculumSpec
 
 
 class Level(int, Enum):

@@ -13,9 +13,9 @@ Requirements: MAT1600 o MAT1207 o (Carrera=Ingenieria) o (Carrera=Lic en Fisica)
 In the context of an engineering student: None
 """
 
-from typing import TypeVar, Callable
-from .logic import And, BaseOp, Const, Expr, Operator, Or
+from typing import Callable, TypeVar
 
+from .logic import And, BaseOp, Const, Expr, Operator, Or
 
 T = TypeVar("T")
 

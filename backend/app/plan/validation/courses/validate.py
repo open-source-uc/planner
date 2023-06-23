@@ -1,6 +1,10 @@
 from dataclasses import dataclass
+from typing import Callable, Optional
+
 from ....user.info import StudentContext
 from ...course import ConcreteId, EquivalenceId
+from ...courseinfo import CourseInfo
+from ...plan import ClassId, ValidatablePlan
 from ..diagnostic import (
     AmbiguousCourseErr,
     CourseRequirementErr,
@@ -11,22 +15,19 @@ from ..diagnostic import (
     UnknownCourseErr,
     ValidationResult,
 )
-from ...plan import ClassId, ValidatablePlan
-from ...courseinfo import CourseInfo
 from .logic import (
     Atom,
     BaseOp,
     Const,
-    ReqCourse,
     Expr,
     MinCredits,
     Operator,
     ReqCareer,
+    ReqCourse,
     ReqLevel,
     ReqProgram,
     ReqSchool,
 )
-from typing import Callable, Optional
 from .simplify import simplify
 
 

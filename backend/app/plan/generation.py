@@ -1,28 +1,28 @@
 from typing import Optional
+
+from .. import sync
+from ..sync import get_curriculum
+from ..user.auth import UserKey
+from .course import EquivalenceId
+from .courseinfo import CourseInfo, course_info
+from .plan import (
+    Level,
+    PseudoCourse,
+    ValidatablePlan,
+)
+from .validation.courses.logic import And, Expr, Or, ReqCourse
 from .validation.curriculum.solve import (
     RecommendedCourse,
     SolvedCurriculum,
     solve_curriculum,
 )
-
-from ..user.auth import UserKey
-from ..sync import get_curriculum
-from .validation.courses.logic import And, Expr, Or, ReqCourse
 from .validation.curriculum.tree import (
     LATEST_CYEAR,
     Curriculum,
     CurriculumSpec,
     Cyear,
 )
-from .plan import (
-    Level,
-    PseudoCourse,
-    ValidatablePlan,
-)
-from .course import EquivalenceId
-from .courseinfo import CourseInfo, course_info
 from .validation.validate import quick_validate_dependencies
-from .. import sync
 
 RECOMMENDED_CREDITS_PER_SEMESTER = 50
 

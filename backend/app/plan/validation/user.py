@@ -6,17 +6,18 @@ since guests (with no associated user context) can also validate plans.
 
 
 from typing import Optional
+
+from ...user.info import StudentContext
 from ..course import EquivalenceId, PseudoCourse
+from ..plan import ValidatablePlan
 from .curriculum.tree import CurriculumSpec
 from .diagnostic import (
     MismatchedCurriculumSelectionWarn,
+    MismatchedCyearErr,
     OutdatedCurrentSemesterErr,
     OutdatedPlanErr,
     ValidationResult,
-    MismatchedCyearErr,
 )
-from ...user.info import StudentContext
-from ..plan import ValidatablePlan
 
 
 def _check_sem_eq(sem1: list[PseudoCourse], sem2: list[PseudoCourse]) -> bool:

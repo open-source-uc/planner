@@ -1,43 +1,29 @@
-from .plan.validation.curriculum.solve import solve_curriculum
-from .user.info import StudentContext
-from .plan.validation.diagnostic import ValidationResult
-from .plan.validation.validate import diagnose_plan
-from .plan.plan import ValidatablePlan
-from .plan.generation import generate_empty_plan, generate_recommended_plan
-from .plan.storage import (
-    PlanView,
-    LowDetailPlanView,
-    store_plan,
-    get_user_plans,
-    get_plan_details,
-    modify_validatable_plan,
-    modify_plan_metadata,
-    remove_plan,
-)
-from .sync.siding import translate as siding_translate
-from fastapi import FastAPI, Query, Depends, HTTPException
+from typing import Optional, Union
+
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
-from .database import prisma
 from prisma.models import (
     AccessLevel as DbAccessLevel,
+)
+from prisma.models import (
     Course as DbCourse,
+)
+from prisma.models import (
     Major as DbMajor,
+)
+from prisma.models import (
     Minor as DbMinor,
+)
+from prisma.models import (
     Title as DbTitle,
 )
 from prisma.types import CourseWhereInput, CourseWhereInputRecursive2
-from .user.auth import (
-    require_authentication,
-    require_mod_auth,
-    require_admin_auth,
-    login_cas,
-    UserKey,
-    ModKey,
-    AdminKey,
-    AccessLevelOverview,
-)
+from pydantic import BaseModel
+from unidecode import unidecode
+
 from . import sync
+from .database import prisma
 from .plan.courseinfo import (
     CourseDetails,
     EquivDetails,
@@ -45,10 +31,34 @@ from .plan.courseinfo import (
     course_info,
     make_searchable_name,
 )
+from .plan.generation import generate_empty_plan, generate_recommended_plan
+from .plan.plan import ValidatablePlan
+from .plan.storage import (
+    LowDetailPlanView,
+    PlanView,
+    get_plan_details,
+    get_user_plans,
+    modify_plan_metadata,
+    modify_validatable_plan,
+    remove_plan,
+    store_plan,
+)
+from .plan.validation.curriculum.solve import solve_curriculum
+from .plan.validation.diagnostic import ValidationResult
+from .plan.validation.validate import diagnose_plan
+from .sync.siding import translate as siding_translate
 from .sync.siding.client import client as siding_soap_client
-from typing import Optional, Union
-from pydantic import BaseModel
-from unidecode import unidecode
+from .user.auth import (
+    AccessLevelOverview,
+    AdminKey,
+    ModKey,
+    UserKey,
+    login_cas,
+    require_admin_auth,
+    require_authentication,
+    require_mod_auth,
+)
+from .user.info import StudentContext
 
 
 # Set-up operation IDs for OpenAPI
