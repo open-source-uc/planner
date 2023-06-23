@@ -2,12 +2,17 @@ import { RouterProvider } from '@tanstack/react-router'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './index.css'
+import 'react-toastify/dist/ReactToastify.css'
 
 import { AuthProvider, useToken } from './contexts/auth.context'
 
 import { OpenAPI } from './client'
 
 import router from './router'
+
+import { toastConfig } from './utils/toastConfig'
+
+toastConfig()
 
 function App (): JSX.Element {
   return (

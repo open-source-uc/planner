@@ -87,9 +87,7 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
       return course
     },
     collect: monitor => ({
-      isOver: !!monitor.isOver(),
-      canDrop: !!monitor.canDrop(),
-      item: monitor.getItem()
+      isOver: monitor.isOver()
     })
   }))
 
@@ -106,7 +104,7 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
       >
         {!collected.isDragging && <>{dropProps.isOver
           ? <div className={'card bg-place-holder'} />
-          : <div> {!collected.isDragging && ((cardData.is_concrete !== true && courseBlock != null)
+          : <div> {((cardData.is_concrete !== true && courseBlock != null)
             ? <button className='w-full' onClick={() => openSelector()}>
                 <Card
                   semester={semester}
@@ -160,10 +158,10 @@ const Card = memo(function _Card ({ semester, index, courseBlock, cardData, hasE
   const editIcon = (blockId === 'FG') ? editWhiteIcon : editBlackIcon
 
   // Turns out animations are a big source of lag
-  const allowAnimations = true && blockId !== 'FG'
+  const allowAnimations = false && blockId !== 'FG'
 
   return (
-    <div className={`card group block-${blockId} ${cardData.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
+    <div className={`card group bg-block-${blockId} ${blockId === 'FG' ? 'text-white' : ''} ${cardData.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
       { hasEquivalence === true && (cardData.is_concrete === true
         ? <button onClick={() => openSelector()}><img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" /></button>
         : <img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" />
