@@ -28,7 +28,7 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
       moveCourse({ semester: course.semester, index: course.index }, { semester, index: classes.length })
     },
     collect: monitor => ({
-      isOver: !!monitor.isOver()
+      isOver: monitor.isOver()
     })
   }))
   const openSelector = useCallback((course: PseudoCourseId, semester: number, index: number) => {
@@ -61,22 +61,21 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
             />
           ))
         }
-        {((authState?.passed?.length) != null) && (semester >= authState?.passed?.length) && !isDragging && <div className="h-10 mx-2 bg-slate-300 card">
+        {((authState?.passed?.length) != null) && (semester >= authState?.passed?.length) && !isDragging && <div className="h-10 mx-2 bg-block- card">
         <button key="+" className="w-full" onClick={() => addCourse(semester)}>+</button>
         </div>}
       </div>
       {conditionPassed
         ? null
-        : <div ref={drop} className={'px-2 flex min-h-[90px] flex-grow'}>
+        : <div ref={drop} className={'px-2 flex flex-grow min-h-[90px]'}>
             {dropProps.isOver &&
-                <div className={'bg-place-holder card w-full'} />
+              <div className={'bg-place-holder card w-full'} />
             }
           </div>
       }
     </div>
   )
 }
-
 function checkPropEq (prev: any, next: any): boolean {
   for (const key of Object.keys(next)) {
     const nxt = next[key]
