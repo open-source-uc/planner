@@ -338,6 +338,30 @@ export class DefaultService {
     }
 
     /**
+     * Empty Plan For Any User
+     * Same functionality as `empty_plan_for_user`, but works for any user identified by
+     * their RUT with `user_rut`.
+     * Moderator access is required.
+     * @param userRut
+     * @returns ValidatablePlan Successful Response
+     * @throws ApiError
+     */
+    public static emptyPlanForAnyUser(
+        userRut: string,
+    ): CancelablePromise<ValidatablePlan> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/plan/empty_for_any',
+            query: {
+                'user_rut': userRut,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
      * Empty Guest Plan
      * Generates a generic empty plan with no user context, using the latest curriculum
      * version.
@@ -387,6 +411,34 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/plan/validate_for',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Validate Plan For Any User
+     * Same functionality as `validate_plan_for_user`, but works for any user identified by
+     * their RUT with `user_rut`.
+     * Moderator access is required.
+     * @param userRut
+     * @param requestBody
+     * @returns ValidationResult Successful Response
+     * @throws ApiError
+     */
+    public static validatePlanForAnyUser(
+        userRut: string,
+        requestBody: ValidatablePlan,
+    ): CancelablePromise<ValidationResult> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/plan/validate_for_any',
+            query: {
+                'user_rut': userRut,
+            },
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -486,7 +538,7 @@ export class DefaultService {
     /**
      * Save Plan
      * Save a plan with the given name in the storage of the current user.
-     * Fails if the user is not logged  in.
+     * Fails if the user is not logged in.
      * @param name
      * @param requestBody
      * @returns PlanView Successful Response
@@ -535,6 +587,115 @@ export class DefaultService {
     }
 
     /**
+     * Read Any Plans
+     * Same functionality as `read_plans`, but works for any user identified by
+     * their RUT with `user_rut`.
+     * Moderator access is required.
+     * @param userRut
+     * @returns LowDetailPlanView Successful Response
+     * @throws ApiError
+     */
+    public static readAnyPlans(
+        userRut: string,
+    ): CancelablePromise<Array<LowDetailPlanView>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/plan/storage/any',
+            query: {
+                'user_rut': userRut,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Update Any Plan
+     * Same functionality as `update_plan`, but works for any plan of any user
+     * identified by their RUT.
+     * Moderator access is required.
+     * @param planId
+     * @param requestBody
+     * @returns PlanView Successful Response
+     * @throws ApiError
+     */
+    public static updateAnyPlan(
+        planId: string,
+        requestBody: ValidatablePlan,
+    ): CancelablePromise<PlanView> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/plan/storage/any',
+            query: {
+                'plan_id': planId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Save Any Plan
+     * Same functionality as `save_plan`, but works for any user identified by
+     * their RUT with `user_rut`.
+     * Moderator access is required.
+     * All `/plan/storage/any` endpoints (and sub-resources) should require
+     * moderator access.
+     * @param name
+     * @param userRut
+     * @param requestBody
+     * @returns PlanView Successful Response
+     * @throws ApiError
+     */
+    public static saveAnyPlan(
+        name: string,
+        userRut: string,
+        requestBody: ValidatablePlan,
+    ): CancelablePromise<PlanView> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/plan/storage/any',
+            query: {
+                'name': name,
+                'user_rut': userRut,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Delete Any Plan
+     * Same functionality as `delete_plan`, but works for any plan of any user
+     * identified by their RUT.
+     * Moderator access is required.
+     * @param planId
+     * @returns PlanView Successful Response
+     * @throws ApiError
+     */
+    public static deleteAnyPlan(
+        planId: string,
+    ): CancelablePromise<PlanView> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/plan/storage/any',
+            query: {
+                'plan_id': planId,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
      * Read Plan
      * Fetch the plan details for a given plan id.
      * Requires the current user to be the plan owner.
@@ -548,6 +709,30 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/plan/storage/details',
+            query: {
+                'plan_id': planId,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Read Any Plan
+     * Same functionality as `read_plan`, but works for any plan of any user
+     * identified by their RUT.
+     * Moderator access is required.
+     * @param planId
+     * @returns PlanView Successful Response
+     * @throws ApiError
+     */
+    public static readAnyPlan(
+        planId: string,
+    ): CancelablePromise<PlanView> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/plan/storage/any/details',
             query: {
                 'plan_id': planId,
             },
@@ -577,6 +762,36 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/plan/storage/metadata',
+            query: {
+                'plan_id': planId,
+                'set_name': setName,
+                'set_favorite': setFavorite,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Update Any Plan Metadata
+     * Same functionality as `update_plan_metadata`, but works for any plan of any user
+     * identified by their RUT.
+     * Moderator access is required.
+     * @param planId
+     * @param setName
+     * @param setFavorite
+     * @returns PlanView Successful Response
+     * @throws ApiError
+     */
+    public static updateAnyPlanMetadata(
+        planId: string,
+        setName?: string,
+        setFavorite?: boolean,
+    ): CancelablePromise<PlanView> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/plan/storage/any/metadata',
             query: {
                 'plan_id': planId,
                 'set_name': setName,
