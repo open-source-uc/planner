@@ -277,7 +277,6 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
 async def apply_curriculum_rules(
     courseinfo: CourseInfo, spec: CurriculumSpec, curriculum: Curriculum
 ) -> Curriculum:
-
     _skip_extras(curriculum)
 
     match spec.cyear.raw:

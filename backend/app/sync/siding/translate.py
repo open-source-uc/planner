@@ -71,7 +71,6 @@ def _semesters_elapsed(start: tuple[int, int], end: tuple[int, int]) -> int:
 async def _fetch_raw_blocks(
     courseinfo: CourseInfo, spec: CurriculumSpec
 ) -> list[BloqueMalla]:
-
     # Use a dummy major and minor if they are not specified
     # Later, remove this information
     major = "M245" if spec.major is None else spec.major
