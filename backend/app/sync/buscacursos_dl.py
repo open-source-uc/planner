@@ -5,7 +5,6 @@ from typing import Callable, NoReturn, Optional
 
 import pydantic
 import requests
-from prisma import Json
 from prisma.models import Course as DbCourse
 from prisma.types import CourseCreateWithoutRelationsInput
 from pydantic import BaseModel
@@ -316,7 +315,7 @@ def _translate_courses(data: BcData) -> list[CourseCreateWithoutRelationsInput]:
                     "name": name,
                     "searchable_name": make_searchable_name(name),
                     "credits": c.credits,
-                    "deps": Json(deps.json()),
+                    "deps": deps.json(),
                     "banner_equivs": equivs,
                     "canonical_equiv": code,
                     "program": c.program,

@@ -18,11 +18,11 @@ class BaseDiagnostic(BaseModel):
 
 
 class DiagnosticErr(BaseDiagnostic):
-    is_err: Literal[True] = Field(True, const=True)
+    is_err: Literal[True] = Field(default=True, const=True)
 
 
 class DiagnosticWarn(BaseDiagnostic):
-    is_err: Literal[False] = Field(False, const=True)
+    is_err: Literal[False] = Field(default=False, const=True)
 
 
 class CourseRequirementErr(DiagnosticErr):
@@ -30,7 +30,7 @@ class CourseRequirementErr(DiagnosticErr):
     Indicates that a course (`associated_to`) is missing some requirements (`missing`).
     """
 
-    kind: Literal["req"] = Field("req", const=True)
+    kind: Literal["req"] = Field(default="req", const=True)
     associated_to: list[ClassId]
     missing: Expr
     modernized_missing: Expr
@@ -41,7 +41,7 @@ class UnknownCourseErr(DiagnosticErr):
     Indicates that some courses (`associated_to`) have unknown/invalid codes.
     """
 
-    kind: Literal["unknown"] = Field("unknown", const=True)
+    kind: Literal["unknown"] = Field(default="unknown", const=True)
     associated_to: list[ClassId]
 
 
@@ -51,7 +51,7 @@ class MismatchedCyearErr(DiagnosticErr):
     user's cyear (`user`).
     """
 
-    kind: Literal["cyear"] = Field("cyear", const=True)
+    kind: Literal["cyear"] = Field(default="cyear", const=True)
     associated_to: None = None
     plan: Cyear
     user: str
@@ -63,7 +63,7 @@ class MismatchedCurriculumSelectionWarn(DiagnosticWarn):
     curriculum declaration.
     """
 
-    kind: Literal["currdecl"] = Field("currdecl", const=True)
+    kind: Literal["currdecl"] = Field(default="currdecl", const=True)
     associated_to: None = None
     plan: CurriculumSpec
     user: CurriculumSpec
@@ -78,7 +78,7 @@ class OutdatedPlanErr(DiagnosticErr):
     The semesters that are mismatched are included in `associated_to`.
     """
 
-    kind: Literal["outdated"] = Field("outdated", const=True)
+    kind: Literal["outdated"] = Field(default="outdated", const=True)
     associated_to: list[int]
 
 
@@ -91,7 +91,7 @@ class OutdatedCurrentSemesterErr(DiagnosticErr):
     This is the "smaller version" of `OutdatedPlanErr`.
     """
 
-    kind: Literal["outdatedcurrent"] = Field("outdatedcurrent", const=True)
+    kind: Literal["outdatedcurrent"] = Field(default="outdatedcurrent", const=True)
     associated_to: list[int]
 
 
@@ -102,7 +102,7 @@ class SemestralityWarn(DiagnosticWarn):
     Instead, they are usually only given in semesters with parity `only_available_on`.
     """
 
-    kind: Literal["sem"] = Field("sem", const=True)
+    kind: Literal["sem"] = Field(default="sem", const=True)
     associated_to: list[ClassId]
     only_available_on: int
 
@@ -113,7 +113,7 @@ class UnavailableCourseWarn(DiagnosticWarn):
     and are probably unavailable.
     """
 
-    kind: Literal["unavail"] = Field("unavail", const=True)
+    kind: Literal["unavail"] = Field(default="unavail", const=True)
     associated_to: list[ClassId]
 
 
@@ -123,7 +123,7 @@ class AmbiguousCourseErr(DiagnosticErr):
     aren't.
     """
 
-    kind: Literal["equiv"] = Field("equiv", const=True)
+    kind: Literal["equiv"] = Field(default="equiv", const=True)
     associated_to: list[ClassId]
 
 
@@ -133,7 +133,7 @@ class SemesterCreditsWarn(DiagnosticWarn):
     amount of credits.
     """
 
-    kind: Literal["creditswarn"] = Field("creditswarn", const=True)
+    kind: Literal["creditswarn"] = Field(default="creditswarn", const=True)
     associated_to: list[int]
     max_recommended: int
     actual: int
@@ -145,7 +145,7 @@ class SemesterCreditsErr(DiagnosticErr):
     of credits.
     """
 
-    kind: Literal["creditserr"] = Field("creditserr", const=True)
+    kind: Literal["creditserr"] = Field(default="creditserr", const=True)
     associated_to: list[int]
     max_allowed: int
     actual: int
@@ -160,7 +160,7 @@ class CurriculumErr(DiagnosticErr):
     `recommend`.
     """
 
-    kind: Literal["curr"] = Field("curr", const=True)
+    kind: Literal["curr"] = Field(default="curr", const=True)
     associated_to: None = None
     block: str
     credits: int
@@ -173,7 +173,7 @@ class UnassignedWarn(DiagnosticWarn):
     the curriculum.
     """
 
-    kind: Literal["useless"] = Field("useless", const=True)
+    kind: Literal["useless"] = Field(default="useless", const=True)
     associated_to: None = None
     unassigned_credits: int
 
@@ -184,7 +184,7 @@ class NoMajorMinorWarn(DiagnosticWarn):
     plan correctly.
     """
 
-    kind: Literal["nomajor"] = Field("nomajor", const=True)
+    kind: Literal["nomajor"] = Field(default="nomajor", const=True)
     associated_to: None = None
     plan: CurriculumSpec
 

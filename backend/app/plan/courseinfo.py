@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Optional
 
 import pydantic
-from prisma import Json
 from prisma.models import (
     CachedCourseInfo as DbCachedCourseInfo,
 )
@@ -221,7 +220,7 @@ async def course_info() -> CourseInfo:
             await DbCachedCourseInfo.prisma().create(
                 {
                     "id": _CACHED_COURSES_ID,
-                    "info": Json(CachedCourseDetailsJson(__root__=courses).json()),
+                    "info": CachedCourseDetailsJson(__root__=courses).json(),
                 }
             )
         print(f"  processed {len(courses)} courses")

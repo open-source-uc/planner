@@ -6,7 +6,6 @@ Currently using unofficial sources until we get better API access.
 import time
 from collections import OrderedDict
 
-from prisma import Json
 from prisma.models import (
     Course as DbCourse,
 )
@@ -112,7 +111,7 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
             spec.major or "",
             spec.minor or "",
             spec.title or "",
-            Json(curr.json()),
+            curr.json(),
         )
         return curr
     else:
