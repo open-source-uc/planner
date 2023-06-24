@@ -1,14 +1,5 @@
+from dotenv import load_dotenv
 from pydantic import BaseSettings, Field, SecretStr
-
-# HACK: When prisma is loaded it loads the correct `.env` file.
-# Therefore, prisma must be loaded before `Settings` is instantiated.
-# TODO: Decide how to fix this.
-# - One solution is using the proper `.env` support that `BaseSettings` implements.
-#   However, Prisma loads the `.env` file separately (to read the `DATABASE_URL`
-#   environment variable), so then we would have to make sure that the 2 ways of
-#   loading the `.env` never diverge.
-# - Another solution is this hack, but it is ugly.
-from .database import prisma  # pyright: ignore[reportUnusedImport], # noqa: F401
 
 
 class Settings(BaseSettings):
@@ -73,5 +64,12 @@ class Settings(BaseSettings):
     student_info_expire: float = 1800
 
 
+# Make sure the `.env` file is loaded before settings are loaded
+load_dotenv()
+
 # Load settings and allow global app access to them
-settings = Settings()
+# NOTE: Pyright reports this line (rightfully) as an error because there are missing
+# arguments.
+# However, we actually want this to fail if there are missing environment variables, so
+# it's ok to ignore.
+settings = Settings()  # pyright: ignore[reportGeneralTypeIssues]
