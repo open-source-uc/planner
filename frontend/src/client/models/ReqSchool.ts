@@ -7,17 +7,8 @@
  */
 export type ReqSchool = {
     hash?: Blob;
-    expr?: ReqSchool.expr;
+    expr?: 'school';
     school: string;
     equal: boolean;
 };
-
-export namespace ReqSchool {
-
-    export enum expr {
-        SCHOOL = 'school',
-    }
-
-
-}
 

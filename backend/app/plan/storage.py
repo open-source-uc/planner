@@ -1,5 +1,5 @@
 from datetime import datetime
-from ..user.auth import UserKey
+from ..user.key import UserKey, ModKey
 from fastapi import HTTPException
 from prisma import Json
 from prisma.models import Plan as DbPlan
@@ -71,9 +71,12 @@ class LowDetailPlanView(BaseModel):
         )
 
 
-async def authorize_plan_access(user: UserKey, plan_id: str) -> DbPlan:
+async def authorize_plan_access(
+    user: UserKey, plan_id: str, try_mod_access: bool
+) -> DbPlan:
+    mod_access = try_mod_access and isinstance(user, ModKey)
     plan = await DbPlan.prisma().find_unique(where={"id": plan_id})
-    if not plan or plan.user_rut != user.rut:
+    if not plan or (not mod_access and plan.user_rut != user.rut):
         raise HTTPException(status_code=404, detail="Plan not found in user storage")
     return plan
 
@@ -97,8 +100,10 @@ async def store_plan(plan_name: str, user: UserKey, plan: ValidatablePlan) -> Pl
     return PlanView.from_db(stored_plan)
 
 
-async def get_plan_details(user: UserKey, plan_id: str) -> PlanView:
-    plan = await authorize_plan_access(user, plan_id)
+async def get_plan_details(
+    user: UserKey, plan_id: str, mod_access: bool = False
+) -> PlanView:
+    plan = await authorize_plan_access(user, plan_id, mod_access)
     return PlanView.from_db(plan)
 
 
@@ -118,9 +123,9 @@ async def get_user_plans(user: UserKey) -> list[LowDetailPlanView]:
 
 
 async def modify_validatable_plan(
-    user: UserKey, plan_id: str, new_plan: ValidatablePlan
+    user: UserKey, plan_id: str, new_plan: ValidatablePlan, mod_access: bool = False
 ) -> PlanView:
-    await authorize_plan_access(user, plan_id)
+    await authorize_plan_access(user, plan_id, mod_access)
 
     updated_plan = await DbPlan.prisma().update(
         where={"id": plan_id}, data={"validatable_plan": Json(new_plan.json())}
@@ -136,8 +141,9 @@ async def modify_plan_metadata(
     plan_id: str,
     set_name: Union[str, None],
     set_favorite: Union[bool, None],
+    mod_access: bool = False,
 ) -> PlanView:
-    await authorize_plan_access(user, plan_id)
+    await authorize_plan_access(user, plan_id, mod_access)
 
     if set_name is not None:
         return await _rename_plan(plan_id=plan_id, new_name=set_name)
@@ -208,8 +214,10 @@ async def _set_favorite_plan(user: UserKey, plan_id: str, favorite: bool):
     return PlanView.from_db(updated_plan)
 
 
-async def remove_plan(user: UserKey, plan_id: str) -> PlanView:
-    await authorize_plan_access(user, plan_id)
+async def remove_plan(
+    user: UserKey, plan_id: str, mod_access: bool = False
+) -> PlanView:
+    await authorize_plan_access(user, plan_id, mod_access)
 
     deleted_plan = await DbPlan.prisma().delete(where={"id": plan_id})
     # Must be true because access was authorized

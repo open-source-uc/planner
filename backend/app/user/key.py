@@ -1,5 +1,4 @@
-from dataclasses import dataclass, field
-from typing import Optional, Literal
+from dataclasses import dataclass
 
 
 @dataclass
@@ -13,33 +12,44 @@ class UserKey:
 
     Example:
     << user = UserKey(username="usuario", rut="12345678-9")
-    >> UserKey(username='usuario', rut='12345678-9', is_admin=False, is_mod=False)
+    >> UserKey(username='usuario', rut='12345678-9')
     """
 
     username: str
     rut: str
-    is_admin: Optional[bool] = field(init=False, default=False)
-    is_mod: Optional[bool] = field(init=False, default=False)
 
 
 class ModKey(UserKey):
     """
+    This key should only be constructed from `require_mod_auth`, which does the
+    necessary authorization.
+    Because this key can only come from a call to `require_mod_auth`, holding an
+    instance of this type is intended to mean "I have mod authorization".
+    Therefore, any function requiring `ModKey` as an argument means "using this
+    function requires mod authorization".
+
     Example:
     << mod = ModKey(username="moderador", rut="12345678-9")
-    >> ModKey(username='moderador', rut='12345678-9', is_admin=False, is_mod=True)
+    >> ModKey(username='moderador', rut='12345678-9')
     """
 
-    is_mod: Literal[True] = True
-
-    def __post_init__(self):
-        self.is_admin = False
+    def as_any_user(self, user_rut: str) -> UserKey:
+        """
+        Moderators can access the resources of any user.
+        """
+        return UserKey("", user_rut)
 
 
 class AdminKey(ModKey):
     """
+    This key should only be constructed from `require_admin_auth`, which does the
+    necessary authorization.
+    Because this key can only come from a call to `require_admin_auth`, holding an
+    instance of this type is intended to mean "I have admin authorization".
+    Therefore, any function requiring `AdminKey` as an argument means "using this
+    function requires admin authorization".
+
     Example:
     << admin = AdminKey(username="administrador", rut="12345678-9")
-    >> AdminKey(username='administrador', rut='12345678-9', is_admin=True, is_mod=True)
+    >> AdminKey(username='administrador', rut='12345678-9')
     """
-
-    is_admin: Literal[True] = True

@@ -35,9 +35,6 @@ class ValidatablePlan(BaseModel):
 
     # Classes per semester.
     classes: list[list[PseudoCourse]]
-    # The first semester to validate.
-    # Semesters before this semester are considered approved.
-    next_semester: int
     # Academic level of the student
     level: Optional[Level]
     # Academic school (facultad) of the student

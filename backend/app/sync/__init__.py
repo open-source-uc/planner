@@ -84,6 +84,7 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
     if db_curr is None:
         courseinfo = await course_info()
         curr = await siding_translate.fetch_curriculum(courseinfo, spec)
+        curr.root.simplify_in_place()
         await DbCurriculum.prisma().query_raw(
             """
             INSERT INTO "Curriculum"
@@ -123,7 +124,12 @@ async def get_student_data(user: UserKey) -> StudentContext:
     print(f"fetching user data for student {user.rut} from SIDING...")
     info = await siding_translate.fetch_student_info(user.rut)
     passed = await siding_translate.fetch_student_previous_courses(user.rut, info)
-    ctx = StudentContext(info=info, passed_courses=passed)
+    ctx = StudentContext(
+        info=info,
+        passed_courses=passed,
+        current_semester=len(passed),
+        next_semester=len(passed),
+    )
 
     # Add to cache and return
     _student_context_cache[user.rut] = (
