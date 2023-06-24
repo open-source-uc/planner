@@ -1,5 +1,5 @@
-import React, { Dispatch, SetStateAction, useEffect, useState } from 'react'
-import { DefaultService, StudentContext } from '../client'
+import React, { type Dispatch, type SetStateAction, useEffect, useState } from 'react'
+import { DefaultService, type StudentContext } from '../client'
 
 export interface UserData {
   token: string

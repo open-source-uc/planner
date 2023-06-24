@@ -9,7 +9,7 @@ import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { ApiError, Major, Minor, Title, DefaultService, ValidatablePlan, CourseDetails, EquivDetails, ConcreteId, EquivalenceId, ValidationResult, PlanView, CancelablePromise } from '../../client'
+import { type ApiError, type Major, type Minor, type Title, DefaultService, type ValidatablePlan, type CourseDetails, type EquivDetails, type ConcreteId, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise } from '../../client'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import DebugGraph from '../../components/DebugGraph'
@@ -18,9 +18,9 @@ import deepEqual from 'fast-deep-equal'
 export type PseudoCourseId = ConcreteId | EquivalenceId
 export type PseudoCourseDetail = CourseDetails | EquivDetails
 export interface CurriculumData {
-  majors: { [code: string]: Major }
-  minors: { [code: string]: Minor }
-  titles: { [code: string]: Title }
+  majors: Record<string, Major>
+  minors: Record<string, Minor>
+  titles: Record<string, Title>
 }
 
 type ModalData = { equivalence: EquivDetails | undefined, selector: boolean, semester: number, index?: number } | undefined
@@ -43,7 +43,7 @@ const isCancelError = (err: any): boolean => {
 
 export interface PlanDigest {
   // Maps `(code, course instance index)` to `(semester, index within semester)`
-  idToIndex: { [code: string]: Array<[number, number]> }
+  idToIndex: Record<string, Array<[number, number]>>
   // Maps `(semester, index within semester)` to `(code, course instance index)`
   indexToId: Array<Array<{ code: string, instance: number }>>
 }
@@ -75,7 +75,7 @@ export interface ValidationDigest {
   isOutdated: boolean
 }
 
-const reduceCourseDetails = (old: { [code: string]: PseudoCourseDetail }, add: { [code: string]: PseudoCourseDetail }): { [code: string]: PseudoCourseDetail } => {
+const reduceCourseDetails = (old: Record<string, PseudoCourseDetail>, add: Record<string, PseudoCourseDetail>): Record<string, PseudoCourseDetail> => {
   return { ...old, ...add }
 }
 
@@ -92,10 +92,10 @@ const Planner = (): JSX.Element => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [plannerStatus, setPlannerStatus] = useState<PlannerStatus>(PlannerStatus.LOADING)
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
-  const [error, setError] = useState<String | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const [popUpAlert, setPopUpAlert] = useState<{ title: string, major: string, desc: string, isOpen: boolean }>({ title: '', major: '', desc: '', isOpen: false })
 
-  const previousCurriculum = useRef<{ major: String | undefined, minor: String | undefined, title: String | undefined }>({ major: '', minor: '', title: '' })
+  const previousCurriculum = useRef<{ major: string | undefined, minor: string | undefined, title: string | undefined }>({ major: '', minor: '', title: '' })
   const previousClasses = useRef<PseudoCourseId[][]>([[]])
 
   const [validationPromise, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
@@ -292,7 +292,7 @@ const Planner = (): JSX.Element => {
       if (coursesCodes.size > 0) promises.push(DefaultService.getCourseDetails(Array.from(coursesCodes)))
       if (equivalenceCodes.size > 0) promises.push(DefaultService.getEquivalenceDetails(Array.from(equivalenceCodes)))
       const courseDetails = await Promise.all(promises)
-      const dict = courseDetails.flat().reduce((acc: { [code: string]: PseudoCourseDetail }, curr: PseudoCourseDetail) => {
+      const dict = courseDetails.flat().reduce((acc: Record<string, PseudoCourseDetail>, curr: PseudoCourseDetail) => {
         acc[curr.code] = curr
         return acc
       }, {})
@@ -440,15 +440,15 @@ const Planner = (): JSX.Element => {
       DefaultService.getTitles(cYear)
     ])
     const curriculumData: CurriculumData = {
-      majors: majors.reduce((dict: { [code: string]: Major }, m: Major) => {
+      majors: majors.reduce((dict: Record<string, Major>, m: Major) => {
         dict[m.code] = m
         return dict
       }, {}),
-      minors: minors.reduce((dict: { [code: string]: Minor }, m: Minor) => {
+      minors: minors.reduce((dict: Record<string, Minor>, m: Minor) => {
         dict[m.code] = m
         return dict
       }, {}),
-      titles: titles.reduce((dict: { [code: string]: Title }, t: Title) => {
+      titles: titles.reduce((dict: Record<string, Title>, t: Title) => {
         dict[t.code] = t
         return dict
       }, {})

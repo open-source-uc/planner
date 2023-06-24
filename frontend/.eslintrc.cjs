@@ -24,6 +24,15 @@ module.exports = {
     'react'
   ],
   rules: {
+    '@typescript-eslint/ban-types': [
+      'error',
+      {
+        types: {
+          Function: false
+        },
+        extendDefaults: true
+      }
+    ]
   },
   settings: {
     react: {

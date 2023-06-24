@@ -452,12 +452,12 @@ export class DefaultService {
      * Get the curriculum validation graph for a certain plan, in Graphviz DOT format.
      * Useful for debugging and kind of a bonus easter egg.
      * @param requestBody
-     * @returns any Successful Response
+     * @returns string Successful Response
      * @throws ApiError
      */
     public static getCurriculumValidationGraph(
         requestBody: ValidatablePlan,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<string> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/plan/curriculum_graph',

@@ -1,12 +1,12 @@
 import { useState, useRef } from 'react'
 import SemesterColumn from './SemesterColumn'
-import { PseudoCourseId, PseudoCourseDetail, ValidationDigest } from '../Planner'
+import { type PseudoCourseId, type PseudoCourseDetail, type ValidationDigest } from '../Planner'
 import { useDndScrolling, createVerticalStrength, createHorizontalStrength } from 'react-dnd-scrolling'
 import 'react-toastify/dist/ReactToastify.css'
 
 interface PlanBoardProps {
   classesGrid: PseudoCourseId[][] | null
-  classesDetails: { [code: string]: PseudoCourseDetail }
+  classesDetails: Record<string, PseudoCourseDetail>
   moveCourse: Function
   openModal: Function
   addCourse: Function

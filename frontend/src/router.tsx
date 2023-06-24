@@ -5,18 +5,19 @@ import UserPage from './pages/user/UserPage'
 import Logout from './pages/Logout'
 import Error403 from './pages/errors/Error403'
 import Error404 from './pages/errors/Error404'
-import { DefaultService, ApiError } from './client'
+import { DefaultService, type ApiError } from './client'
 import { toast } from 'react-toastify'
 import {
-  createReactRouter,
-  createRouteConfig
+  ReactRouter,
+  RootRoute, Route
 } from '@tanstack/react-router'
 
-const rootRoute = createRouteConfig({
+const rootRoute = new RootRoute({
   component: Layout
 })
 
-const homeRoute = rootRoute.createRoute({
+const homeRoute = new Route({
+  getParentRoute: () => rootRoute,
   path: '/',
   component: Home
 })
@@ -37,50 +38,56 @@ function onAuthenticationError (err: ApiError): void {
   }
 }
 
-const error403 = rootRoute.createRoute({
+const error403 = new Route({
+  getParentRoute: () => rootRoute,
   path: '/403',
   component: Error403
 })
 
-const userPageRoute = rootRoute.createRoute({
+const userPageRoute = new Route({
+  getParentRoute: () => rootRoute,
   path: '/user',
   component: UserPage,
   beforeLoad: authenticateRoute,
   onLoadError: onAuthenticationError
 })
 
-const newPlannerRoute = rootRoute.createRoute({
+const newPlannerRoute = new Route({
+  getParentRoute: () => rootRoute,
   path: '/planner/new',
   component: Planner,
-  loader: () => ({
+  validateSearch: () => ({
     plannerId: null
   })
 })
 
-const getPlannerRoute = rootRoute.createRoute({
+const getPlannerRoute = new Route({
+  getParentRoute: () => rootRoute,
   path: '/planner/$plannerId',
-  loader: async ({ params }) => ({
-    plannerId: params.plannerId
-  }),
   component: Planner,
   beforeLoad: authenticateRoute,
-  onLoadError: onAuthenticationError
+  onLoadError: onAuthenticationError,
+  validateSearch: (params) => ({
+    plannerId: params.plannerId
+  })
 })
 
-const logoutRoute = rootRoute.createRoute({
+const logoutRoute = new Route({
+  getParentRoute: () => rootRoute,
   path: '/logout',
   component: Logout
 })
 
-const error404 = rootRoute.createRoute({
+const error404 = new Route({
+  getParentRoute: () => rootRoute,
   path: '*',
   component: Error404
 })
 
-const routeConfig = rootRoute.addChildren([homeRoute, userPageRoute, error403, newPlannerRoute, getPlannerRoute, logoutRoute, error404])
+const routeTree = rootRoute.addChildren([homeRoute, userPageRoute, error403, newPlannerRoute, getPlannerRoute, logoutRoute, error404])
 
-export const router = createReactRouter({
-  routeConfig
+export const router = new ReactRouter({
+  routeTree
 })
 
 declare module '@tanstack/react-router' {
