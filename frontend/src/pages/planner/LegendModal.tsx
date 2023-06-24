@@ -1,6 +1,7 @@
 import { Fragment, memo } from 'react'
 import { Dialog, Transition, Tab } from '@headlessui/react'
 import Legend from './Legend'
+import Instructions from './Instructions'
 
 const LegendModal = ({ open, onClose }: { open: boolean, onClose: Function }): JSX.Element => {
   const tabNames = ['Importante', 'Leyenda', 'Instrucciones']
@@ -52,24 +53,24 @@ const LegendModal = ({ open, onClose }: { open: boolean, onClose: Function }): J
                         </Tab>
                       ))}
                     </Tab.List>
-                    <Tab.Panels className="mt-2">
+                    <Tab.Panels className="mt-2 h-80 overflow-auto">
                       <Tab.Panel className='rounded-xl bg-white p-3'>
                         <p className="text-sm text-gray-500">Esta malla curricular es la recomendada y está sujeta a modificaciones conforme a la planificación académica vigente al momento de inscribir cursos.</p>
                         <p className="text-sm text-gray-500 my-2">Los requisitos y planificación de los cursos pueden ir variando semestre a semestre. Por lo que PanguiPath puede tener algunas variaciones. La información oficial de los requisitos y planificación de los cursos se encuentra disponible en el catálogo de cursos (http://catalogo.uc.cl/) y el libro de cursos (http://buscacursos.uc.cl/).</p>
                         <p className="text-sm text-gray-500">Es responsabilidad del alumno verificar que el avance curricular determinado por PanguiPath sea el correcto. Los Planes de Estudios publicados en Siding corresponden a la información oficial y actualizada.</p>
                       </Tab.Panel>
                       <Tab.Panel className='rounded-xl bg-white p-3'><Legend /></Tab.Panel>
-                      <Tab.Panel className='rounded-xl bg-white p-3'>Content 3</Tab.Panel>
+                      <Tab.Panel className='rounded-xl bg-white p-3'><Instructions /></Tab.Panel>
                     </Tab.Panels>
                   </Tab.Group>
                 </div>
-                <div className="mt-4">
+                <div className="m-2">
                   <button
                     type="button"
-                    className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    className="inline-flex float-right justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200"
                     onClick={() => onClose()}
                   >
-                    Got it, thanks!
+                    Cerrar
                   </button>
                 </div>
             </Dialog.Panel>
