@@ -125,13 +125,13 @@ class ValidationContext:
         unknown: list[ClassId] = []
         for sem_i, sem in enumerate(self.plan.classes):
             for i, course in enumerate(sem):
-                if course.code.startswith("~"):
-                    # Ignore failed courses
-                    continue
                 if isinstance(course, EquivalenceId):
                     if self.courseinfo.try_equiv(course.code) is None:
                         unknown.append(self.class_ids[sem_i][i])
                 else:
+                    if course.failed is not None:
+                        # Ignore failed courses
+                        continue
                     if self.courseinfo.try_course(course.code) is None:
                         unknown.append(self.class_ids[sem_i][i])
         if unknown:

@@ -22,6 +22,8 @@ class ConcreteId(BaseModel, frozen=True):
     code: str
     # If this course belongs to an equivalence, this field indicates it.
     equivalence: Optional[EquivalenceId] = None
+    # If this course is a failed course, what course was failed.
+    failed: Optional[str] = None
 
 
 PseudoCourse = Annotated[

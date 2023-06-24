@@ -328,7 +328,7 @@ async def fetch_student_previous_courses(
             semesters.append([])
         if c.Estado.startswith("2"):
             # Failed course
-            course = ConcreteId(code=f"~{c.Sigla}")
+            course = ConcreteId(code="#FAILED", failed=c.Sigla)
         else:
             # Approved course
             course = ConcreteId(code=c.Sigla)
