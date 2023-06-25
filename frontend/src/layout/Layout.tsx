@@ -1,4 +1,4 @@
-import { Outlet } from '@tanstack/router'
+import { Outlet } from '@tanstack/react-router'
 import Footer from './Footer'
 import Navbar from './Navbar'
 import { ToastContainer } from 'react-toastify'

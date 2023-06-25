@@ -1,6 +1,6 @@
 import CurriculumListRow from './CurriculumListRow'
 import { ReactComponent as PlusIcon } from '../../assets/plus.svg'
-import { Link } from '@tanstack/router'
+import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { DefaultService, type LowDetailPlanView, type ApiError } from '../../client'
 import { Spinner } from '../../components/Spinner'

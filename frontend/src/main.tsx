@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import {
   RouterProvider
-} from '@tanstack/router'
+} from '@tanstack/react-router'
 import './index.css'
 import 'react-toastify/dist/ReactToastify.css'
 
