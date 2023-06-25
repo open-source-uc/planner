@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { type ClassId, type CourseRequirementErr, type CurriculumSpec, type ValidationResult } from '../../client'
 import { Spinner } from '../../components/Spinner'
-import AutoFix, { validateCyear } from './AutoFix'
+import AutoFix, { validateCyear } from './utils/AutoFix'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
 type RequirementExpr = CourseRequirementErr['missing']

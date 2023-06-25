@@ -9,21 +9,12 @@ import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { type ApiError, type Major, type Minor, type Title, DefaultService, type ValidatablePlan, type CourseDetails, type EquivDetails, type ConcreteId, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise } from '../../client'
+import { type Major, type Minor, type Title, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise } from '../../client'
+import { type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type PlanDigest, type ValidationDigest, isApiError, isCancelError } from './utils/Types'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import DebugGraph from '../../components/DebugGraph'
 import deepEqual from 'fast-deep-equal'
-
-export type PseudoCourseId = ConcreteId | EquivalenceId
-export type PseudoCourseDetail = CourseDetails | EquivDetails
-export interface CurriculumData {
-  majors: Record<string, Major>
-  minors: Record<string, Minor>
-  titles: Record<string, Title>
-}
-
-type ModalData = { equivalence: EquivDetails | undefined, selector: boolean, semester: number, index?: number } | undefined
 
 enum PlannerStatus {
   LOADING = 'LOADING',
@@ -31,48 +22,6 @@ enum PlannerStatus {
   SAVING = 'SAVING',
   ERROR = 'ERROR',
   READY = 'READY',
-}
-
-const isApiError = (err: any): err is ApiError => {
-  return err.status !== undefined
-}
-
-const isCancelError = (err: any): boolean => {
-  return err.name !== undefined && err.name === 'CancelError'
-}
-
-export interface PlanDigest {
-  // Maps `(code, course instance index)` to `(semester, index within semester)`
-  idToIndex: Record<string, Array<[number, number]>>
-  // Maps `(semester, index within semester)` to `(code, course instance index)`
-  indexToId: Array<Array<{ code: string, instance: number }>>
-}
-
-export interface CourseValidationDigest {
-  // Contains the superblock string
-  // The empty string if no superblock is found
-  superblock: string
-  // Contains the indices of any errors associated with this course
-  errorIndices: number[]
-  // Contains the indices of any warnings associated with this course
-  warningIndices: number[]
-}
-
-export interface SemesterValidationDigest {
-  // Contains the indices of any errors associated with this semester.
-  errorIndices: number[]
-  // Contains the indices of any warnings associated with this semester.
-  warningIndices: number[]
-}
-
-export interface ValidationDigest {
-  // Information associated to each semester.
-  semesters: SemesterValidationDigest[]
-  // Information associated to each course.
-  courses: CourseValidationDigest[][]
-  // If `true`, the plan is outdated with respect to the courses that the user has taken.
-  // This is computed from the presence of "outdated" diagnostics.
-  isOutdated: boolean
 }
 
 const reduceCourseDetails = (old: Record<string, PseudoCourseDetail>, add: Record<string, PseudoCourseDetail>): Record<string, PseudoCourseDetail> => {
@@ -400,6 +349,7 @@ const Planner = (): JSX.Element => {
 
   const moveCourse = useCallback((drag: { semester: number, index: number }, drop: { semester: number, index: number }): void => {
     // move course from drag.semester, drag.index to semester, index
+    console.log(drag, drop)
     setValidatablePlan(prev => {
       if (prev === null) return prev
       const dragCourse = prev.classes[drag.semester][drag.index]
@@ -570,15 +520,16 @@ const Planner = (): JSX.Element => {
     setValidatablePlan(null)
   }
 
-  const selectMajor = useCallback(async (majorCode: string | undefined, isMinorValid: boolean): Promise<void> => {
+  const selectMajor = useCallback((majorCode: string | undefined, isMinorValid: boolean): void => {
     setValidatablePlan((prev) => {
       if (prev == null || prev.curriculum.major === majorCode) return prev
       const newCurriculum = { ...prev.curriculum, major: majorCode }
-      prev.classes.splice(authState?.student?.next_semester ?? 0)
+      const newClasses = [...prev.classes]
+      newClasses.splice(authState?.student?.next_semester ?? 0)
       if (!isMinorValid) {
         newCurriculum.minor = undefined
       }
-      return { ...prev, curriculum: newCurriculum }
+      return { ...prev, classes: newClasses, curriculum: newCurriculum }
     })
   }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
 
@@ -613,7 +564,7 @@ const Planner = (): JSX.Element => {
         isOpen: true
       })
     } else {
-      await selectMajor(major.code, true)
+      selectMajor(major.code, true)
     }
   }, [validatablePlan?.curriculum, setPopUpAlert, selectMajor]) // this sensitivity list shouldn't contain frequently-changing attributes
 
@@ -621,7 +572,7 @@ const Planner = (): JSX.Element => {
     const major = popUpAlert.major
     setPopUpAlert({ ...popUpAlert, isOpen: false })
     if (!isCanceled) {
-      await selectMajor(major, false)
+      selectMajor(major, false)
     }
   }
 
@@ -686,16 +637,16 @@ const Planner = (): JSX.Element => {
                 save={savePlan}
               />
               <DndProvider backend={HTML5Backend}>
-                {(validatablePlan != null) &&
                   <PlanBoard
-                    classesGrid={validatablePlan.classes}
+                    classesGrid={validatablePlan?.classes ?? []}
+                    planDigest={planDigest}
                     classesDetails={courseDetails}
                     moveCourse={moveCourse}
                     openModal={openModal}
                     addCourse={addCourse}
                     remCourse={remCourse}
                     validationDigest={validationDigest}
-                  />}
+                  />
               </DndProvider>
             </div>
           <ErrorTray

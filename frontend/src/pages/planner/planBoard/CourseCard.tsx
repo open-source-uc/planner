@@ -1,16 +1,15 @@
-import { memo, type ReactNode, useRef, Fragment } from 'react'
-import { useDrag, useDrop } from 'react-dnd'
-import editWhiteIcon from '../../../assets/editWhite.svg'
-import editBlackIcon from '../../../assets/editBlack.svg'
-import { useAuth } from '../../../contexts/auth.context'
+import { memo, type ReactNode, useRef } from 'react'
+import { useDrag } from 'react-dnd'
+import { ReactComponent as EditWhiteIcon } from '../../../assets/editWhite.svg'
+import { ReactComponent as EditBlackIcon } from '../../../assets/editBlack.svg'
+import ConditionalWrapper from '../utils/ConditionalWrapper'
 import deepEqual from 'fast-deep-equal'
 
-interface CourseCardProps {
-  semester: number
-  index: number
-  cardData: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }
+interface DraggableCardProps {
+  cardData: { name: string, code: string, credits?: number, is_concrete?: boolean }
+  coursesId: { code: string, instance: number }
+  isPassed: boolean
   isDragging: Function
-  moveCourse: Function
   remCourse: Function
   courseBlock: string
   openSelector: Function
@@ -19,7 +18,7 @@ interface CourseCardProps {
   hasWarning: boolean
 }
 interface CardProps {
-  cardData: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }
+  cardData: { name: string, code: string, credits?: number, is_concrete?: boolean }
   remCourse: Function
   courseBlock: string
   openSelector: Function
@@ -27,12 +26,6 @@ interface CardProps {
   hasError: boolean
   hasWarning: boolean
   isPassed: boolean
-}
-
-interface ConditionalWrapperProps {
-  condition: boolean
-  wrapper: Function
-  children: ReactNode
 }
 
 const BlockInitials = (courseBlock: string): string => {
@@ -53,23 +46,14 @@ const BlockInitials = (courseBlock: string): string => {
   return ''
 }
 
-const ConditionalWrapper = ({ condition, wrapper, children }: ConditionalWrapperProps): JSX.Element => {
-  return (
-    condition ? wrapper(children) : children
-  )
-}
-
-const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCourse, courseBlock, openSelector, hasEquivalence, hasError, hasWarning }: CourseCardProps): JSX.Element => {
+const DraggableCard = ({ cardData, coursesId, isPassed, isDragging, remCourse, courseBlock, openSelector, hasEquivalence, hasError, hasWarning }: DraggableCardProps): JSX.Element => {
   const ref = useRef(null)
-  const authState = useAuth()
-
-  const conditionPassed = authState?.student != null && semester < authState.student.current_semester
 
   const [collected = { isDragging: false }, drag] = useDrag(() => ({
     type: 'card',
     item: () => {
       isDragging(true)
-      return cardData
+      return coursesId
     },
     end () {
       isDragging(false)
@@ -78,61 +62,34 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
       return { isDragging: monitor.isDragging() }
     }
   }))
-  const [dropProps, drop] = useDrop(() => ({
-    accept: 'card',
-    drop (course: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }) {
-      moveCourse({ semester: course.semester, index: course.index }, { semester, index })
-      return course
-    },
-    collect: monitor => ({
-      isOver: monitor.isOver()
-    })
-  }))
 
-  if (!conditionPassed) {
-    drag(drop(ref))
+  if (!isPassed) {
+    drag(ref)
   }
 
   return (
-    <Fragment>
-      <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3' : ''} ${conditionPassed ? 'cursor-not-allowed opacity-50' : 'cursor-grab'} `}>
-        {!collected.isDragging && <Fragment>{dropProps.isOver
-          ? <div className={'card bg-place-holder'} />
-          : <ConditionalWrapper condition={cardData.is_concrete !== true && courseBlock != null} wrapper={(children: ReactNode) => <button className='w-full' onClick={() => openSelector()}>{children}</button>}>
-              <Card
-                courseBlock={courseBlock}
-                cardData={cardData}
-                hasEquivalence={hasEquivalence}
-                openSelector={openSelector}
-                remCourse={() => remCourse(semester, index)}
-                hasWarning={hasWarning}
-                hasError={hasError}
-                isPassed={conditionPassed}
-              />
-            </ConditionalWrapper>
-          }
-        </Fragment>}
-      </div>
-      {!collected.isDragging && dropProps.isOver && <div className={'px-2 pb-3'}>
-      <Card
-        courseBlock={courseBlock}
-        cardData={cardData}
-        hasEquivalence={hasEquivalence}
-        openSelector={openSelector}
-        remCourse={() => remCourse(semester, index)}
-        hasWarning={hasWarning}
-        hasError={hasError}
-        isPassed={conditionPassed}
-      />
-      </div>
-      }
-    </Fragment>
+    <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3' : ''} ${isPassed ? 'cursor-not-allowed opacity-50' : 'cursor-grab'} `}>
+      {!collected.isDragging &&
+        <ConditionalWrapper condition={cardData.is_concrete !== true && courseBlock != null} wrapper={(children: ReactNode) => <button className='w-full' onClick={() => openSelector()}>{children}</button>}>
+            <CourseCard
+              courseBlock={courseBlock}
+              cardData={cardData}
+              hasEquivalence={hasEquivalence}
+              openSelector={openSelector}
+              remCourse={remCourse}
+              hasWarning={hasWarning}
+              hasError={hasError}
+              isPassed={isPassed}
+            />
+          </ConditionalWrapper>
+        }
+    </div>
   )
 }
 
-const Card = memo(function _Card ({ courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError, isPassed }: CardProps): JSX.Element {
+const CourseCard = memo(function _CourseCard ({ courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError, isPassed }: CardProps): JSX.Element {
   const blockId = BlockInitials(courseBlock)
-  const editIcon = (blockId === 'FG') ? editWhiteIcon : editBlackIcon
+  const EditIcon = (blockId === 'FG') ? EditWhiteIcon : EditBlackIcon
 
   // Turns out animations are a big source of lag
   const allowAnimations = false && blockId !== 'FG'
@@ -140,11 +97,11 @@ const Card = memo(function _Card ({ courseBlock, cardData, hasEquivalence, openS
   return (
     <div className={`card group bg-block-${blockId} ${blockId === 'FG' ? 'text-white' : ''} ${cardData.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
       { hasEquivalence === true && (cardData.is_concrete === true
-        ? <button onClick={() => openSelector()}><img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" /></button>
-        : <img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" />
+        ? <button onClick={() => openSelector()}><div className='opacity-60 absolute w-3 top-2 left-2'><EditIcon/></div></button>
+        : <div className='opacity-60 absolute w-3 top-2 left-2'><EditIcon/></div>
       )}
       {blockId === ''
-        ? isPassed ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>
+        ? !isPassed && <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>
         : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{blockId}</div>
       }
       <div className='flex items-center justify-center text-center flex-col'>
@@ -164,4 +121,4 @@ const Card = memo(function _Card ({ courseBlock, cardData, hasEquivalence, openS
   )
 })
 
-export default memo(CourseCard, deepEqual)
+export default memo(DraggableCard, deepEqual)
