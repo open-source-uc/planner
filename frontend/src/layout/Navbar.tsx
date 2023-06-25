@@ -1,9 +1,10 @@
 
 import { Link } from '@tanstack/react-router'
-import router from '../router'
 import { useAuth } from '../contexts/auth.context'
 import { ReactComponent as PanguiPath } from '../assets/PanguiPath.svg'
 import { memo } from 'react'
+
+import router from './router'
 
 function Navbar (): JSX.Element {
   const authState = useAuth()

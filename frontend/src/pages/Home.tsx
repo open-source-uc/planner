@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link } from '@tanstack/router'
 import { useAuth } from '../contexts/auth.context'
 import demoGif from '../assets/demo_gif.gif'
 

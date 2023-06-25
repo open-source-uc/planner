@@ -1,6 +1,6 @@
 import CurriculumListRow from './CurriculumListRow'
 import { ReactComponent as PlusIcon } from '../../assets/plus.svg'
-import { Link } from '@tanstack/react-router'
+import { Link } from '@tanstack/router'
 import { useEffect, useState } from 'react'
 import { DefaultService, type LowDetailPlanView, type ApiError } from '../../client'
 import { Spinner } from '../../components/Spinner'
@@ -37,7 +37,7 @@ const CurriculumList = (): JSX.Element => {
       await DefaultService.deletePlan(id)
       await readPlans()
       console.log('plan deleted')
-      alert('Malla eliminada exitosamente')
+      toast.success('Malla eliminada exitosamente')
     } catch (err) {
       console.log(err)
       if (isApiError(err) && err.status === 401) {
