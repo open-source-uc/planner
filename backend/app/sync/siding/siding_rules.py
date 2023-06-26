@@ -119,6 +119,9 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
     # https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/formacion_gral/alumno_2020/index.phtml
     # En el bloque de OFG hay algunos cursos de 5 creditos que en conjunto pueden
     # contribuir a lo mas 10 creditos:
+    # - DPT (deportivos)
+    # - RII (inglés)
+    # - CAR (CARA)
     # - OFG plan antiguo (MEB158, MEB166 y MEB174)
 
     def is_limited(courseinfo: CourseInfo, code: str):
