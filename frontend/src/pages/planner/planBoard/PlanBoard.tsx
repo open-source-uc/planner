@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react'
 import SemesterColumn from './SemesterColumn'
+import { DndProvider } from 'react-dnd'
+import { HTML5Backend } from 'react-dnd-html5-backend'
 import { type PseudoCourseId, type PseudoCourseDetail, type ValidationDigest, type PlanDigest } from '../utils/Types'
 import { useDndScrolling, createVerticalStrength, createHorizontalStrength } from 'react-dnd-scrolling'
 import 'react-toastify/dist/ReactToastify.css'
@@ -29,7 +31,8 @@ const PlanBoard = ({ classesGrid = [], planDigest, classesDetails, moveCourse, o
   useDndScrolling(boardRef, { horizontalStrength: hStrength, verticalStrength: vStrength })
 
   return (
-    <div ref={boardRef} className= {'overflow-auto grid grid-rows-[fit-content] grid-flow-col justify-start gap-1'}>
+    <DndProvider backend={HTML5Backend}>
+      <div ref={boardRef} className= {'overflow-auto grid grid-rows-[fit-content] grid-flow-col justify-start gap-1'}>
         {classesGrid.map((classes: PseudoCourseId[], semester: number) => (
             <SemesterColumn
               key={semester}
@@ -67,6 +70,7 @@ const PlanBoard = ({ classesGrid = [], planDigest, classesDetails, moveCourse, o
           />
         ))}
     </div>
+    </DndProvider>
   )
 }
 

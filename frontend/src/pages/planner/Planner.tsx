@@ -7,8 +7,6 @@ import CurriculumSelector from './CurriculumSelector'
 import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react'
-import { DndProvider } from 'react-dnd'
-import { HTML5Backend } from 'react-dnd-html5-backend'
 import { type Major, type Minor, type Title, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise } from '../../client'
 import { type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type PlanDigest, type ValidationDigest, isApiError, isCancelError } from './utils/Types'
 import { useAuth } from '../../contexts/auth.context'
@@ -636,18 +634,16 @@ const Planner = (): JSX.Element => {
                 reset={reset}
                 save={savePlan}
               />
-              <DndProvider backend={HTML5Backend}>
-                  <PlanBoard
-                    classesGrid={validatablePlan?.classes ?? []}
-                    planDigest={planDigest}
-                    classesDetails={courseDetails}
-                    moveCourse={moveCourse}
-                    openModal={openModal}
-                    addCourse={addCourse}
-                    remCourse={remCourse}
-                    validationDigest={validationDigest}
-                  />
-              </DndProvider>
+              <PlanBoard
+                classesGrid={validatablePlan?.classes ?? []}
+                planDigest={planDigest}
+                classesDetails={courseDetails}
+                moveCourse={moveCourse}
+                openModal={openModal}
+                addCourse={addCourse}
+                remCourse={remCourse}
+                validationDigest={validationDigest}
+              />
             </div>
           <ErrorTray
             setValidatablePlan={setValidatablePlan}
