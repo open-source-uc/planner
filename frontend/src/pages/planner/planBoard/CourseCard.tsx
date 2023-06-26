@@ -52,11 +52,8 @@ const DraggableCard = ({ cardData, coursesId, isPassed, isDragging, remCourse, c
   const [collected = { isDragging: false }, drag] = useDrag(() => ({
     type: 'card',
     item: () => {
-      isDragging(true)
+      isDragging()
       return coursesId
-    },
-    end () {
-      isDragging(false)
     },
     collect (monitor) {
       return { isDragging: monitor.isDragging() }

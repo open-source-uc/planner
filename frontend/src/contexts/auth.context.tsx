@@ -1,5 +1,6 @@
 import React, { type Dispatch, type SetStateAction, useEffect, useState } from 'react'
 import { DefaultService, type StudentContext } from '../client'
+import { toast } from 'react-toastify'
 
 export interface UserData {
   token: string
@@ -32,6 +33,9 @@ export function AuthProvider ({ children, userData }: Props): JSX.Element {
       console.log(err)
       if (err.status === 401) {
         console.log('token invalid or expired, loading re-login page')
+        toast.error('Tu session a expirado. Redireccionando a pagina de inicio de sesion...', {
+          toastId: 'ERROR401'
+        })
       }
     })
   }, [user])

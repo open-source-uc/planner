@@ -1,5 +1,4 @@
-
-import { memo, useCallback, useRef } from 'react'
+import { memo, useCallback, useRef, Fragment, useState } from 'react'
 import { useDrop } from 'react-dnd'
 import { useAuth } from '../../../contexts/auth.context'
 import { type CourseValidationDigest, type PseudoCourseDetail, type PseudoCourseId, type SemesterValidationDigest } from '../utils/Types'
@@ -18,10 +17,11 @@ interface SemesterColumnProps {
   validationCourses: CourseValidationDigest[]
   validationSemester: SemesterValidationDigest | null
   isDragging: boolean
-  setIsDragging: Function
+  activeIndex: number | null
+  setActive: Function
 }
 
-const SemesterColumn = ({ classesDetails, semester, coursesId, addCourse, moveCourse, remCourse, openModal, classes, validationCourses, validationSemester, isDragging, setIsDragging }: SemesterColumnProps): JSX.Element => {
+const SemesterColumn = ({ classesDetails, semester, coursesId, addCourse, moveCourse, remCourse, openModal, classes, validationCourses, validationSemester, isDragging, activeIndex, setActive }: SemesterColumnProps): JSX.Element => {
   const authState = useAuth()
   const columnRef = useRef<HTMLDivElement>(null)
   const conditionPassed = ((authState?.student) != null) && (semester < authState.student.current_semester)
@@ -30,16 +30,21 @@ const SemesterColumn = ({ classesDetails, semester, coursesId, addCourse, moveCo
     drop (courseId: { code: string, instance: number }, monitor) {
       if (monitor.getClientOffset() === null || columnRef.current === null) return
       const targetIndex = Math.floor((monitor.getClientOffset().y - columnRef.current.getBoundingClientRect().top) / 100)
+      setActive(null)
       moveCourse(courseId, { semester, index: targetIndex })
     },
-    collect: monitor => ({
-      isOver: monitor.isOver()
-    })
-  }))
+    hover (item, monitor) {
+      if (monitor.getClientOffset() === null || columnRef.current === null) return
+      const targetIndex = Math.floor((monitor.getClientOffset().y - columnRef.current.getBoundingClientRect().top) / 100)
+      if (targetIndex !== activeIndex) setActive({ semester, index: targetIndex })
+    }
+  }), [])
+
   const openSelector = useCallback((course: PseudoCourseId, semester: number, index: number) => {
     if ('equivalence' in course) openModal(course.equivalence, semester, index)
     else openModal(course, semester, index)
   }, [])
+  
   let border = 'border-transparent'
   if (validationSemester != null && validationSemester.errorIndices.length > 0) border = 'border-solid border-red-300'
   else if (validationSemester != null && validationSemester.warningIndices.length > 0) border = 'border-solid border-yellow-300'
@@ -56,21 +61,26 @@ const SemesterColumn = ({ classesDetails, semester, coursesId, addCourse, moveCo
       <div className="my-2 divider"></div>
       <div ref={columnRef}>
         {classes.map((course: PseudoCourseId, index: number) => (
-          <DraggableCard
-            key={coursesId[index].code + String(coursesId[index].instance)}
-            cardData={{ ...course, ...classesDetails[course.code] }}
-            coursesId={coursesId[index]}
-            isPassed={conditionPassed}
-            isDragging={setIsDragging}
-            remCourse={remCourse}
-            courseBlock={validationCourses[index]?.superblock ?? ''}
-            openSelector={() => { openSelector(course, semester, index) }}
-            hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
-            hasError={validationCourses[index]?.errorIndices?.[0] != null}
-            hasWarning={validationCourses[index]?.warningIndices?.[0] != null}
-          />
-        ))
-        }
+          <Fragment key={index}>
+            {activeIndex === index && <div className="mb-3 mx-2 bg-place-holder card"></div>}
+            <DraggableCard
+              key={coursesId[index].code + String(coursesId[index].instance)}
+              cardData={{ ...course, ...classesDetails[course.code] }}
+              coursesId={coursesId[index]}
+              isPassed={conditionPassed}
+              isDragging={() => {
+                setActive({ semester, index })
+              }}
+              remCourse={remCourse}
+              courseBlock={validationCourses[index]?.superblock ?? ''}
+              openSelector={() => { openSelector(course, semester, index) }}
+              hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
+              hasError={validationCourses[index]?.errorIndices?.[0] != null}
+              hasWarning={validationCourses[index]?.warningIndices?.[0] != null}
+            />
+
+          </Fragment>
+        ))}
         {!conditionPassed && !isDragging && <div className="h-10 mx-2 bg-block- card">
         <button key="+" className="w-full" onClick={() => addCourse(semester)}>+</button>
         </div>}

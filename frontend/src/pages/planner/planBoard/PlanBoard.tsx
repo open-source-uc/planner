@@ -24,7 +24,7 @@ const hStrength = createHorizontalStrength(250)
  */
 
 const PlanBoard = ({ classesGrid = [], planDigest, classesDetails, moveCourse, openModal, addCourse, remCourse, validationDigest }: PlanBoardProps): JSX.Element => {
-  const [isDragging, setIsDragging] = useState(false)
+  const [active, setActive] = useState(null)
   const boardRef = useRef(null)
   useDndScrolling(boardRef, { horizontalStrength: hStrength, verticalStrength: vStrength })
 
@@ -43,14 +43,16 @@ const PlanBoard = ({ classesGrid = [], planDigest, classesDetails, moveCourse, o
               classesDetails={classesDetails}
               validationCourses={validationDigest.courses[semester]}
               validationSemester={validationDigest.semesters[semester]}
-              isDragging={isDragging}
-              setIsDragging={setIsDragging}
+              isDragging={active !== null}
+              activeIndex={(active !== null && active.semester === semester) ? active.index : null}
+              setActive={setActive}
             />
         ))}
-        {isDragging && [0, 1].map(off => (
+        {active !== null && [0, 1].map(off => (
           <SemesterColumn
             key={classesGrid.length + off}
             semester={classesGrid.length + off}
+            coursesId={[]}
             addCourse={addCourse}
             moveCourse={moveCourse}
             remCourse={remCourse}
@@ -59,8 +61,9 @@ const PlanBoard = ({ classesGrid = [], planDigest, classesDetails, moveCourse, o
             classesDetails={classesDetails}
             validationCourses={[]}
             validationSemester={null}
-            isDragging={isDragging}
-            setIsDragging={setIsDragging}
+            isDragging={active !== null}
+            activeIndex={(active !== null && active.semester === classesGrid.length + off) ? 0 : null}
+            setActive={setActive}
           />
         ))}
     </div>
