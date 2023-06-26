@@ -122,7 +122,11 @@ class BcParser:
         return ReqLevel(min_level=lvl)
 
     def parse_property_eq(
-        self, name: str, build: Callable[[bool, str], Expr], cmp: str, rhs: str,
+        self,
+        name: str,
+        build: Callable[[bool, str], Expr],
+        cmp: str,
+        rhs: str,
     ) -> Expr:
         if cmp == "=":
             return build(True, rhs)

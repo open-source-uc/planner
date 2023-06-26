@@ -3,7 +3,6 @@ Definitions of basic student information.
 """
 
 
-
 from pydantic import BaseModel
 
 from ..plan.course import PseudoCourse

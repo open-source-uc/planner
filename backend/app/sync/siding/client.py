@@ -208,7 +208,9 @@ class SoapClient:
             print("recording SIDING responses")
 
     async def call_endpoint(
-        self, name: str, args: dict[str, Any],
+        self,
+        name: str,
+        args: dict[str, Any],
     ) -> Any:  # noqa: ANN401 (using dynamic typing here is much simpler)
         # Check if request is in mock database
         args_str = json.dumps(args)

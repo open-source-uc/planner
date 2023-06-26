@@ -68,7 +68,10 @@ def apply_simplification(
 
 
 def simplify_children_rule(
-    ctx: None, op: Operator, new: list[Expr], child: Expr,
+    ctx: None,
+    op: Operator,
+    new: list[Expr],
+    child: Expr,
 ) -> bool:
     new_child = simplify(child)
     if new_child is not child:
@@ -116,7 +119,10 @@ def assoc(expr: Operator) -> Expr:
 
 
 def anihil_rule(
-    anihilate: list[bool], op: Operator, new: list[Expr], child: Expr,
+    anihilate: list[bool],
+    op: Operator,
+    new: list[Expr],
+    child: Expr,
 ) -> bool:
     if not anihilate[0] and isinstance(child, Const) and child.value != op.neutral:
         # This constant value destroys the entire operator clause
@@ -167,7 +173,10 @@ def idem(expr: Operator) -> Expr:
 
 
 def absorp_rule(
-    children: set[bytes], op: Operator, new: list[Expr], child: Expr,
+    children: set[bytes],
+    op: Operator,
+    new: list[Expr],
+    child: Expr,
 ) -> bool:
     if isinstance(child, Operator) and child.neutral != op.neutral:
         for grandchild in child.children:

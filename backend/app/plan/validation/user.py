@@ -5,7 +5,6 @@ since guests (with no associated user context) can also validate plans.
 """
 
 
-
 from ...user.info import StudentContext
 from ..course import EquivalenceId, PseudoCourse
 from ..plan import ValidatablePlan
@@ -36,7 +35,9 @@ def _check_sem_eq(sem1: list[PseudoCourse], sem2: list[PseudoCourse]) -> bool:
 
 
 def _validate_possibly_outdated(
-    plan: ValidatablePlan, user_ctx: StudentContext, out: ValidationResult,
+    plan: ValidatablePlan,
+    user_ctx: StudentContext,
+    out: ValidationResult,
 ):
     """
     Check whether the plan is in sync with the courses that `user_ctx` has passed.
@@ -58,7 +59,9 @@ def _is_mismatched(selected: str | None, reported: str | None):
 
 
 def validate_against_owner(
-    plan: ValidatablePlan, user_ctx: StudentContext, out: ValidationResult,
+    plan: ValidatablePlan,
+    user_ctx: StudentContext,
+    out: ValidationResult,
 ):
     if str(plan.curriculum.cyear) != user_ctx.info.cyear:
         out.add(
