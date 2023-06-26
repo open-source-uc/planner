@@ -100,7 +100,6 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
 
     courseinfo = await course_info()
     curr = await siding_translate.fetch_curriculum(courseinfo, spec)
-    curr.root.simplify_in_place()
     await DbCurriculum.prisma().query_raw(
         """
         INSERT INTO "Curriculum"

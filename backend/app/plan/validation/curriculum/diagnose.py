@@ -1,5 +1,6 @@
+from collections import defaultdict
+
 from ....user.info import StudentContext
-from ...course import PseudoCourse
 from ...courseinfo import CourseInfo
 from ...plan import ValidatablePlan
 from ..diagnostic import (
@@ -8,81 +9,63 @@ from ..diagnostic import (
     UnassignedWarn,
     ValidationResult,
 )
-from .solve import RecommendedCourse, SolvedCurriculum, TakenCourse, solve_curriculum
-from .tree import Block, Curriculum
+from .solve import FilledCourse, SolvedCurriculum, TakenCourse, solve_curriculum
+from .tree import Curriculum
 
 
-def _diagnose_block(
+def _diagnose_blocks(
     courseinfo: CourseInfo,
-    diagnosed: dict[str, set[int]],
     out: ValidationResult,
     g: SolvedCurriculum,
-    id: int,
-    name: str,
-) -> list[PseudoCourse]:
-    node = g.nodes[id]
-    if isinstance(node.origin, tuple):
-        _layer, c = node.origin
-        if isinstance(c, RecommendedCourse):
-            # Make sure to diagnose each course at most once
-            diagnosed_insts = diagnosed.setdefault(c.rec.course.code, set())
-            if c.repeat_index in diagnosed_insts:
-                return []
-            diagnosed_insts.add(c.repeat_index)
-
-            # Diagnose this course
-            return [c.rec.course]
-        return []
-    my_name = None
-    if isinstance(node.origin, Block) and node.origin.name is not None:
-        my_name = node.origin.name
-    if my_name is not None:
-        if name != "":
-            name += " -> "
-        name += my_name
-
-    needs_diagnosis: list[PseudoCourse] = []
-    for edge in node.incoming:
-        if edge.flow <= 0:
-            continue
-        needs_diagnosis.extend(
-            _diagnose_block(courseinfo, diagnosed, out, g, edge.src, name),
-        )
-
-    if needs_diagnosis and (my_name is not None or id == g.root):
-        if name == "":
-            name = "?"
-        credits = 0
-        for c in needs_diagnosis:
-            cred = courseinfo.get_credits(c)
-            if cred is not None:
-                credits += cred
-        out.add(
-            CurriculumErr(block=name, credits=credits, recommend=needs_diagnosis),
-        )
-        return []
-    return needs_diagnosis
-
-
-def _tag_superblock(
-    superblock: str,
-    out: ValidationResult,
-    g: SolvedCurriculum,
-    id: int,
 ):
-    node = g.nodes[id]
-    if isinstance(node.origin, tuple):
-        layer, c = node.origin
-        if layer == "" and isinstance(c, TakenCourse):
-            list_of_sb = out.course_superblocks.setdefault(c.course.code, [])
-            while c.repeat_index >= len(list_of_sb):
-                list_of_sb.append("")
-            list_of_sb[c.repeat_index] = superblock
-    else:
-        for edge in node.incoming:
-            if edge.flow <= 0:
-                continue
-            _tag_superblock(superblock, out, g, edge.src)
+    # Avoid diagnosing a course twice if it is present in two layers
+    diagnosed: defaultdict[str, set[int]] = defaultdict(set)
+
+    for _layer_id, layer in g.layers.items():
+        for code, courses in layer.courses.items():
+            for rep_idx, course in courses.items():
+                if isinstance(course.origin, FilledCourse):
+                    # This course was added by the solver because it could not fill
+                    # enough credits with the user's courses
+
+                    # Check if a diagnostic is necessary
+                    if course.active_edge is None:
+                        continue
+                    if rep_idx in diagnosed[code]:
+                        continue
+                    diagnosed[code].add(rep_idx)
+
+                    # Diagnose
+                    out.add(
+                        CurriculumErr(
+                            block=[
+                                b.name
+                                for b in course.active_edge.block_path
+                                if b.name is not None
+                            ],
+                            credits=course.active_flow,
+                            recommend=[course.origin.fill_with.course],
+                        ),
+                    )
+
+
+def _tag_superblocks(g: SolvedCurriculum, out: ValidationResult):
+    for code, courses in g.layers[""].courses.items():
+        for rep_idx, course in courses.items():
+            if isinstance(course.origin, TakenCourse):
+                # This course is a concrete course the user took
+
+                # Find the active superblock
+                superblock = ""
+                if course.active_edge is not None:
+                    # Use the first named block in the path
+                    for block in course.active_edge.block_path:
+                        if block.name is not None:
+                            superblock = block.name
+                            break
+
+                # Tag it
+                out.course_superblocks[code][rep_idx] = superblock
 
 
 def diagnose_curriculum(
@@ -100,15 +83,10 @@ def diagnose_curriculum(
     g = solve_curriculum(courseinfo, curriculum, plan.classes)
 
     # Generate diagnostics
-    _diagnose_block(courseinfo, {}, out, g, g.root, "")
+    _diagnose_blocks(courseinfo, out, g)
 
     # Tag each course with its associated superblock
-    for edge in g.nodes[g.root].incoming:
-        if edge.cap == 0:
-            continue
-        node = g.nodes[edge.src]
-        if isinstance(node.origin, Block) and node.origin.name is not None:
-            _tag_superblock(node.origin.name, out, g, edge.src)
+    _tag_superblocks(g, out)
 
     # Count unassigned credits (including passed courses)
     # However, only emit the warning if there is at least 1 not-yet-passed unassigned

@@ -16,9 +16,9 @@ from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
 from ...plan.validation.curriculum.tree import (
     Block,
     Combination,
-    CourseRecommendation,
     Curriculum,
     CurriculumSpec,
+    FillerCourse,
     Leaf,
 )
 
@@ -44,13 +44,11 @@ def _skip_extras(curriculum: Curriculum):
             continue
         if not all(block.cap == 1 for block in superblock.children):
             continue
-        superblock.children = list(
-            filter(
-                lambda b: b.name is not None
-                and ("Practica" in b.name or "Práctica" in b.name),
-                superblock.children,
-            ),
-        )
+        superblock.children = [
+            b
+            for b in superblock.children
+            if "Practica" in b.debug_name or "Práctica" in b.debug_name
+        ]
 
 
 def _is_ofg(block: Block) -> bool:
@@ -73,19 +71,17 @@ def _merge_ofgs(curriculum: Curriculum):
             if _is_ofg(block):
                 l1_blocks.append(block)
         if len(l1_blocks) > 0:
-            superblock.children = list(
-                filter(
-                    lambda block: not _is_ofg(block),
-                    superblock.children,
-                ),
-            )
+            superblock.children = [
+                block for block in superblock.children if not _is_ofg(block)
+            ]
             total_cap = sum(block.cap for block in l1_blocks)
-            fill_with: list[CourseRecommendation] = []
+            fill_with: list[FillerCourse] = []
             for block in l1_blocks:
                 fill_with.extend(block.fill_with)
             fill_with.sort(key=lambda rec: rec.order, reverse=True)
             superblock.children.append(
                 Leaf(
+                    debug_name=l1_blocks[0].debug_name,
                     name=l1_blocks[0].name,
                     cap=total_cap,
                     fill_with=fill_with,
@@ -151,13 +147,21 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                     else:
                         unlimited[code] = mult
                 # Separar el bloque en 2
-                limited_block = Leaf(cap=10, codes=limited)
+                limited_block = Leaf(
+                    debug_name=f"{block.debug_name} (máx. 10 creds. DPT y otros)",
+                    name=None,
+                    cap=10,
+                    codes=limited,
+                )
                 unlimited_block = Leaf(
+                    debug_name=f"{block.debug_name} (genérico)",
+                    name=None,
                     cap=block.cap,
                     codes=unlimited,
                     fill_with=block.fill_with,
                 )
                 block = Combination(
+                    debug_name=block.debug_name,
                     name=block.name,
                     cap=block.cap,
                     children=[
@@ -253,8 +257,8 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
             opi_dict[code] = 1
 
     # Agregar OPIs y reducir el limite de creditos al exclusivo
-    fill_with: list[CourseRecommendation] = [
-        CourseRecommendation(
+    fill_with: list[FillerCourse] = [
+        FillerCourse(
             course=EquivalenceId(code=opi_code, credits=10),
             order=1000,
             cost=1,
@@ -263,11 +267,23 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     ]
     exclusive.children.append(
         Combination(
+            debug_name=opi_name,
             name=opi_name,
             cap=title_exclusive_creds,
             children=[
-                Leaf(cap=title_exclusive_creds, codes=opi_dict, fill_with=fill_with),
-                Leaf(cap=20, codes=ipre_dict),
+                Leaf(
+                    debug_name=f"{opi_name} (genérico)",
+                    name=None,
+                    cap=title_exclusive_creds,
+                    codes=opi_dict,
+                    fill_with=fill_with,
+                ),
+                Leaf(
+                    debug_name=f"{opi_name} (IPre)",
+                    name=None,
+                    cap=20,
+                    codes=ipre_dict,
+                ),
             ],
         ),
     )

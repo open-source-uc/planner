@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from .. import sync
 from ..sync import get_curriculum
 from ..user.auth import UserKey
@@ -10,7 +12,8 @@ from .plan import (
 )
 from .validation.courses.logic import And, Expr, Or, ReqCourse
 from .validation.curriculum.solve import (
-    RecommendedCourse,
+    FilledCourse,
+    LayerCourse,
     SolvedCurriculum,
     solve_curriculum,
 )
@@ -25,40 +28,47 @@ from .validation.validate import quick_validate_dependencies
 RECOMMENDED_CREDITS_PER_SEMESTER = 50
 
 
-def _extract_recommendations(
-    courseinfo: CourseInfo,
-    seen: set[int],
-    added: dict[str, set[int]],
-    to_pass: list[tuple[RecommendedCourse, int]],
+def _extract_active_fillers(
     g: SolvedCurriculum,
-    id: int,
-):
+) -> list[PseudoCourse]:
     """
-    Recursively visit the curriculum blocks, looking for missing credits.
-    If missing credits are found, `to_pass` is filled with the corresponding
-    recommended courses in the `fill_with` fields.
+    Extract course recommendations from a solved curriculum.
+    If missing credits are found, `to_pass` is filled with the corresponding filler
+    courses from the `fill_with` fields.
     """
-    if id in seen:
-        return
-    seen.add(id)
+    # Make sure to only add courses once
+    added: defaultdict[str, set[int]] = defaultdict(set)
+    to_pass: list[tuple[LayerCourse, FilledCourse]] = []
+    for layer in g.layers.values():
+        for code, courses in layer.courses.items():
+            for rep_idx, course in courses.items():
+                if isinstance(course.origin, FilledCourse):
+                    # Check whether we should add this course
+                    if course.active_edge is None:
+                        continue
+                    if rep_idx in added[code]:
+                        continue
+                    added[code].add(rep_idx)
 
-    node = g.nodes[id]
-    flow = node.flow()
-    if flow <= 0:
-        return
-    # If this course is a recommendation node, extract it
-    if isinstance(node.origin, tuple):
-        _layer, rec = node.origin
-        if isinstance(rec, RecommendedCourse):
-            added_indices = added.setdefault(rec.rec.course.code, set())
-            if rec.repeat_index not in added_indices:
-                to_pass.append((rec, flow))
-                added_indices.add(rec.repeat_index)
-    # Recursively extract recommendations from child nodes
-    for edge in node.incoming:
-        if edge.cap == 0:
-            continue
-        _extract_recommendations(courseinfo, seen, added, to_pass, g, edge.src)
+                    # Add this course
+                    to_pass.append((course, course.origin))
+
+    # Sort courses by order
+    to_pass.sort(key=lambda c: c[1].fill_with.order)
+
+    # Flatten into plain pseudocourse ids, taking active credits into account
+    flattened: list[PseudoCourse] = []
+    for info, course in to_pass:
+        cid = course.fill_with.course
+        equiv = cid if isinstance(cid, EquivalenceId) else cid.equivalence
+        if equiv is not None:
+            equiv = EquivalenceId(code=equiv.code, credits=info.active_flow)
+            if isinstance(cid, EquivalenceId):
+                cid = equiv
+            else:
+                cid = ConcreteId(code=cid.code, equivalence=equiv)
+        flattened.append(cid)
+    return flattened
 
 
 def _compute_courses_to_pass(
@@ -75,22 +85,7 @@ def _compute_courses_to_pass(
     g = solve_curriculum(courseinfo, curriculum, passed_classes)
 
     # Extract recommended courses from solved plan
-    to_pass: list[tuple[RecommendedCourse, int]] = []
-    _extract_recommendations(courseinfo, set(), {}, to_pass, g, g.root)
-
-    # Order recommendations by priority, from soonest to latest
-    to_pass.sort(key=lambda rec: rec[0].rec.order)
-
-    # Transform recommendations into flat pseudocourse ids
-    courses_to_pass: list[PseudoCourse] = []
-    for rec, credits in to_pass:
-        if isinstance(rec.rec.course, EquivalenceId):
-            courses_to_pass.append(
-                EquivalenceId(code=rec.rec.course.code, credits=credits),
-            )
-        else:
-            courses_to_pass.append(rec.rec.course)
-    return courses_to_pass
+    return _extract_active_fillers(g)
 
 
 def _find_corequirements(out: list[str], expr: Expr):

@@ -84,7 +84,7 @@ const formatMessage = (diag: Diagnostic): string => {
     case 'creditswarn':
       return `Tienes ${diag.actual} créditos en el semestre ${diag.associated_to[0] + 1}, revisa que cumplas los requisitos para tomar más de ${diag.max_recommended} créditos.`
     case 'curr':
-      return `Faltan ${diag.credits} créditos para el bloque ${diag.block}`
+      return `Faltan ${diag.credits} créditos para el bloque ${diag.block.join(' -> ')}`
     case 'currdecl':
       return `El curriculum elegido (${formatCurriculum(diag.plan)}) no es el mismo que el que tienes declarado oficialmente (${formatCurriculum(diag.user)})`
     case 'cyear':

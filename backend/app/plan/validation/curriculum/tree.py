@@ -9,24 +9,32 @@ from pydantic import BaseModel, Field
 from ...course import PseudoCourse
 
 
-class CourseRecommendation(BaseModel):
-    # The code of the recommended course or equivalency.
+class FillerCourse(BaseModel):
+    """
+    Fill a block with a certain course or equivalency.
+    If a filler course has to be used, the plan is considered incomplete.
+    """
+
+    # The code of the filler course or equivalency.
     course: PseudoCourse
     # Where to place this recommendation relative to other recommendations.
     # The order indicates if the course should be taken early or late in the
     # student's career plan.
     order: int
-    # When there is an option on which courses to recommend, this cost determines which
-    # course is recommended.
-    # This cost is added with a big number to determine the actual cost of recommending
+    # When there is an option on which courses to fill with, this cost determines which
+    # course is used.
+    # This cost is added with a big number to determine the actual cost of filling with
     # this course.
     cost: int = 0
 
 
 class BaseBlock(BaseModel):
     # The name of this block.
-    # If this block is missing credits, this name will be used to report.
-    name: str | None = None
+    # Used for debug purposes.
+    debug_name: str
+    # The user-facing name of this block.
+    # May not be present (eg. the root block has no name).
+    name: str | None
     # What is the maximum amount of credits that this node can support.
     cap: int
 
@@ -34,35 +42,6 @@ class BaseBlock(BaseModel):
 class Combination(BaseBlock):
     # Children nodes that supply flow to this block.
     children: list["Block"]
-
-    def simplify_in_place(self):
-        """
-        Remove unnecessary nodes, connecting the grandchildren directly to the parents
-        if it can be done without changing the maximum flow or its cost.
-        """
-        new_children: list[Block] = []
-        for child in self.children:
-            if isinstance(child, Combination):
-                child.simplify_in_place()
-                grandchild_output = 0
-                for grandchild in child.children:
-                    grandchild_output += grandchild.cap
-                if grandchild_output <= child.cap:
-                    # If this condition holds, then raising the capacity of the child
-                    # won't increase the amount of flow that can be sent from the
-                    # grandchildren to us, because the total max output of the
-                    # grandchildren is still less than the capacity of the child.
-                    # Therefore, we can just connect the grandchildren to us directly
-                    # and remove a node
-                    for grandchild in child.children:
-                        if child.name is not None:
-                            grandchild.name = f"{child.name} -> {grandchild.name}"
-                        new_children.append(grandchild)
-                    # This `continue` statement avoids the child from getting into the
-                    # `new_children`` list
-                    continue
-            new_children.append(child)
-        self.children = new_children
 
 
 class Leaf(BaseBlock):
@@ -74,9 +53,9 @@ class Leaf(BaseBlock):
     codes: dict[str, int | None]
     # Indicates courses which will be used to fill the credits for this block if it
     # can't be done with taken courses.
-    # If there are more recommended courses than missing credits, the list is truncated.
+    # If there are more filler courses than missing credits, the list is truncated.
     # Therefore, prefer to place courses with a high `order` number first.
-    fill_with: list[CourseRecommendation] = Field(default_factory=list)
+    fill_with: list[FillerCourse] = Field(default_factory=list)
     # Course nodes are deduplicated by their codes.
     # However, this behavior can be controlled by the `layer` property.
     # Course nodes with different `layer` values will not be deduplicated.
@@ -101,10 +80,6 @@ class Curriculum(BaseModel):
     """
 
     root: Combination
-
-    @staticmethod
-    def empty() -> "Curriculum":
-        return Curriculum(root=Combination(cap=0, children=[]))
 
 
 class Cyear(BaseModel, frozen=True):

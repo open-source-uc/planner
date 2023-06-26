@@ -16,7 +16,7 @@ export type CurriculumErr = {
     kind?: 'curr';
     associated_to?: null;
     is_err?: boolean;
-    block: string;
+    block: Array<string>;
     credits: number;
     recommend: Array<(ConcreteId | EquivalenceId)>;
 };

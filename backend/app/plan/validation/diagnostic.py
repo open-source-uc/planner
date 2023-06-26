@@ -162,7 +162,7 @@ class CurriculumErr(DiagnosticErr):
 
     kind: Literal["curr"] = Field(default="curr", const=True)
     associated_to: None = None
-    block: str
+    block: list[str]
     credits: int
     recommend: list[PseudoCourse]
 
