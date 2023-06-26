@@ -1,18 +1,16 @@
-from typing import Optional
-
-from .user import validate_against_owner
-
-from ...user.info import StudentContext
-from .curriculum.diagnose import diagnose_curriculum
-from .courses.validate import CourseInstance, ValidationContext, is_satisfied
-from ..courseinfo import CourseInfo, course_info
 from ...sync import get_curriculum
-from .diagnostic import ValidationResult
+from ...user.info import StudentContext
+from ..courseinfo import CourseInfo, course_info
 from ..plan import ValidatablePlan
+from .courses.validate import CourseInstance, ValidationContext, is_satisfied
+from .curriculum.diagnose import diagnose_curriculum
+from .diagnostic import ValidationResult
+from .user import validate_against_owner
 
 
 async def diagnose_plan(
-    plan: ValidatablePlan, user_ctx: Optional[StudentContext]
+    plan: ValidatablePlan,
+    user_ctx: StudentContext | None,
 ) -> ValidationResult:
     """
     Validate a career plan, checking that all pending courses can actually be taken

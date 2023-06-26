@@ -13,9 +13,10 @@ Requirements: MAT1600 o MAT1207 o (Carrera=Ingenieria) o (Carrera=Lic en Fisica)
 In the context of an engineering student: None
 """
 
-from typing import TypeVar, Callable
-from .logic import And, BaseOp, Const, Expr, Operator, Or
+from collections.abc import Callable
+from typing import TypeVar
 
+from .logic import And, BaseOp, Const, Expr, Operator, Or
 
 T = TypeVar("T")
 
@@ -28,7 +29,7 @@ def simplify(expr: Expr) -> Expr:
         # Try to simplify using all available methods
         previous = expr
         for method in simplification_methods:
-            if not isinstance(expr, (And, Or)):
+            if not isinstance(expr, And | Or):
                 break
             expr = method(expr)
         # Finish simplifying if no progress is made
@@ -63,14 +64,14 @@ def apply_simplification(
             # No change done, pass child through to new instance
             new_children.append(child)
     # Make sure that if no changes are made, the exact same object is returned
-    if changed:
-        return BaseOp.create(expr.neutral, tuple(new_children))
-    else:
-        return expr
+    return BaseOp.create(expr.neutral, tuple(new_children)) if changed else expr
 
 
 def simplify_children_rule(
-    ctx: None, op: Operator, new: list[Expr], child: Expr
+    ctx: None,
+    op: Operator,
+    new: list[Expr],
+    child: Expr,
 ) -> bool:
     new_child = simplify(child)
     if new_child is not child:
@@ -94,10 +95,9 @@ def degen(expr: Operator) -> Expr:
     """
     if len(expr.children) == 0:
         return Const(value=expr.neutral)
-    elif len(expr.children) == 1:
+    if len(expr.children) == 1:
         return expr.children[0]
-    else:
-        return expr
+    return expr
 
 
 def assoc_rule(ctx: None, op: Operator, new: list[Expr], child: Expr) -> bool:
@@ -119,7 +119,10 @@ def assoc(expr: Operator) -> Expr:
 
 
 def anihil_rule(
-    anihilate: list[bool], op: Operator, new: list[Expr], child: Expr
+    anihilate: list[bool],
+    op: Operator,
+    new: list[Expr],
+    child: Expr,
 ) -> bool:
     if not anihilate[0] and isinstance(child, Const) and child.value != op.neutral:
         # This constant value destroys the entire operator clause
@@ -170,7 +173,10 @@ def idem(expr: Operator) -> Expr:
 
 
 def absorp_rule(
-    children: set[bytes], op: Operator, new: list[Expr], child: Expr
+    children: set[bytes],
+    op: Operator,
+    new: list[Expr],
+    child: Expr,
 ) -> bool:
     if isinstance(child, Operator) and child.neutral != op.neutral:
         for grandchild in child.children:
@@ -227,7 +233,7 @@ def factor(expr: Operator) -> Expr:
         # strip the factor and add it to the inner clause.
         # If the child is a clause without the factor, add it to the outer clause.
         has_factor = False
-        if isinstance(child, (And, Or)) and child.neutral != expr.neutral:
+        if isinstance(child, And | Or) and child.neutral != expr.neutral:
             without_factor: list[Expr] = []
             for grandchild in child.children:
                 if grandchild.hash == factor_hash:
@@ -250,8 +256,7 @@ def factor(expr: Operator) -> Expr:
     inner_clause = BaseOp.create(expr.neutral, tuple(inner))
     with_factor = BaseOp.create(not expr.neutral, (factor, inner_clause))
     outer.append(with_factor)
-    outer_clause = degen(BaseOp.create(expr.neutral, tuple(outer)))
-    return outer_clause
+    return degen(BaseOp.create(expr.neutral, tuple(outer)))
 
 
 # A list of techniques to try when simplifying

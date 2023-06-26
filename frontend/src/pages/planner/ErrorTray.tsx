@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ClassId, CourseRequirementErr, CurriculumSpec, ValidationResult } from '../../client'
+import { type ClassId, type CourseRequirementErr, type CurriculumSpec, type ValidationResult } from '../../client'
 import { Spinner } from '../../components/Spinner'
 import AutoFix, { validateCyear } from './AutoFix'
 
@@ -183,7 +183,7 @@ const ErrorTray = ({ setValidatablePlan, diagnostics, validating }: ErrorTrayPro
               Es necesario resolver todos los errores existentes para minimizar la bandeja de Errores y Advertencias.
             </span>
           </span>
-          <button className={`${hasError ? 'cursor-not-allowed stroke-slate-400' : 'stroke-current'}`} disabled={hasError} onClick={() => setOpen(prev => !prev)}>
+          <button className={`${hasError ? 'cursor-not-allowed stroke-slate-400' : 'stroke-current'}`} disabled={hasError} onClick={() => { setOpen(prev => !prev) }}>
             <svg className="w-5 h-5 flex " xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M2 12h20M2 6h20M2 18h20"></path>
             </svg>
