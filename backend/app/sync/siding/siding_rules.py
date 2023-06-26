@@ -10,7 +10,6 @@ Cuando aparezca una nueva version del curriculum con reglas especificas, este co
 el que habra que tocar.
 """
 
-from typing import Optional
 
 from ...plan.course import EquivalenceId
 from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
@@ -43,14 +42,14 @@ def _skip_extras(curriculum: Curriculum):
     for superblock in curriculum.root.children:
         if not isinstance(superblock, Combination):
             continue
-        if not all(map(lambda block: block.cap == 1, superblock.children)):
+        if not all(block.cap == 1 for block in superblock.children):
             continue
         superblock.children = list(
             filter(
                 lambda b: b.name is not None
                 and ("Practica" in b.name or "Práctica" in b.name),
                 superblock.children,
-            )
+            ),
         )
 
 
@@ -78,9 +77,9 @@ def _merge_ofgs(curriculum: Curriculum):
                 filter(
                     lambda block: not _is_ofg(block),
                     superblock.children,
-                )
+                ),
             )
-            total_cap = sum(map(lambda block: block.cap, l1_blocks))
+            total_cap = sum(block.cap for block in l1_blocks)
             fill_with: list[CourseRecommendation] = []
             for block in l1_blocks:
                 fill_with.extend(block.fill_with)
@@ -91,7 +90,7 @@ def _merge_ofgs(curriculum: Curriculum):
                     cap=total_cap,
                     fill_with=fill_with,
                     codes=l1_blocks[0].codes,
-                )
+                ),
             )
 
 
@@ -104,14 +103,14 @@ def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum)
             continue
         for block in superblock.children:
             if isinstance(block, Leaf) and _is_ofg(block):
-                for code in block.codes.keys():
+                for code in block.codes:
                     if not code.startswith("DPT"):
                         continue
                     info = courseinfo.try_course(code)
                     if info is None:
                         continue
                     if info.name.startswith("Seleccion ") or info.name.startswith(
-                        "Selección "
+                        "Selección ",
                     ):
                         block.codes[code] = 2
 
@@ -120,9 +119,6 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
     # https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/formacion_gral/alumno_2020/index.phtml
     # En el bloque de OFG hay algunos cursos de 5 creditos que en conjunto pueden
     # contribuir a lo mas 10 creditos:
-    # - DPT (deportivos)
-    # - RII (ingles)
-    # - CAR (CARA)
     # - OFG plan antiguo (MEB158, MEB166 y MEB174)
 
     def is_limited(courseinfo: CourseInfo, code: str):
@@ -132,9 +128,7 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
         if info.credits != 5:
             return False
         return (
-            code.startswith("DPT")
-            or code.startswith("RII")
-            or code.startswith("CAR")
+            code.startswith(("DPT", "RII", "CAR"))
             or code == "MEB158"
             or code == "MEB166"
             or code == "MEB174"
@@ -156,7 +150,9 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                 # Separar el bloque en 2
                 limited_block = Leaf(cap=10, codes=limited)
                 unlimited_block = Leaf(
-                    cap=block.cap, codes=unlimited, fill_with=block.fill_with
+                    cap=block.cap,
+                    codes=unlimited,
+                    fill_with=block.fill_with,
                 )
                 block = Combination(
                     name=block.name,
@@ -239,8 +235,8 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
         await add_equivalence(opi_equiv)
 
     # Meter los codigos en un diccionario
-    opi_dict: dict[str, Optional[int]] = {opi_code: None}
-    ipre_dict: dict[str, Optional[int]] = {}
+    opi_dict: dict[str, int | None] = {opi_code: None}
+    ipre_dict: dict[str, int | None] = {}
     for code in opi_equiv.courses:
         info = courseinfo.try_course(code)
         if info is None:
@@ -256,7 +252,9 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     # Agregar OPIs y reducir el limite de creditos al exclusivo
     fill_with: list[CourseRecommendation] = [
         CourseRecommendation(
-            course=EquivalenceId(code=opi_code, credits=10), order=1000, cost=1
+            course=EquivalenceId(code=opi_code, credits=10),
+            order=1000,
+            cost=1,
         )
         for _i in range((title_exclusive_creds + 9) // 10)
     ]
@@ -268,14 +266,16 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
                 Leaf(cap=title_exclusive_creds, codes=opi_dict, fill_with=fill_with),
                 Leaf(cap=20, codes=ipre_dict),
             ],
-        )
+        ),
     )
     exclusive.cap = title_exclusive_creds
     exclusive.name = f"{exclusive.name} (130 créditos exclusivos)"
 
 
 async def apply_curriculum_rules(
-    courseinfo: CourseInfo, spec: CurriculumSpec, curriculum: Curriculum
+    courseinfo: CourseInfo,
+    spec: CurriculumSpec,
+    curriculum: Curriculum,
 ) -> Curriculum:
     _skip_extras(curriculum)
 

@@ -92,30 +92,30 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
                 "major": spec.major or "",
                 "minor": spec.minor or "",
                 "title": spec.title or "",
-            }
-        }
+            },
+        },
     )
-    if db_curr is None:
-        courseinfo = await course_info()
-        curr = await siding_translate.fetch_curriculum(courseinfo, spec)
-        curr.root.simplify_in_place()
-        await DbCurriculum.prisma().query_raw(
-            """
-            INSERT INTO "Curriculum"
-                (cyear, major, minor, title, curriculum)
-            VALUES($1, $2, $3, $4, $5)
-            ON CONFLICT (cyear, major, minor, title)
-            DO UPDATE SET curriculum = $5
-            """,
-            str(spec.cyear),
-            spec.major or "",
-            spec.minor or "",
-            spec.title or "",
-            curr.json(),
-        )
-        return curr
-    else:
+    if db_curr is not None:
         return Curriculum.parse_raw(db_curr.curriculum)
+
+    courseinfo = await course_info()
+    curr = await siding_translate.fetch_curriculum(courseinfo, spec)
+    curr.root.simplify_in_place()
+    await DbCurriculum.prisma().query_raw(
+        """
+        INSERT INTO "Curriculum"
+            (cyear, major, minor, title, curriculum)
+        VALUES($1, $2, $3, $4, $5)
+        ON CONFLICT (cyear, major, minor, title)
+        DO UPDATE SET curriculum = $5
+        """,
+        str(spec.cyear),
+        spec.major or "",
+        spec.minor or "",
+        spec.title or "",
+        curr.json(),
+    )
+    return curr
 
 
 _student_context_cache: OrderedDict[str, tuple[StudentContext, float]] = OrderedDict()

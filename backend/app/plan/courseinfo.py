@@ -3,7 +3,6 @@ Cache course info from the database in memory, for easy access.
 """
 
 from dataclasses import dataclass
-from typing import Optional
 
 import pydantic
 from prisma.models import (
@@ -46,8 +45,8 @@ class CourseDetails(BaseModel):
     # "Facultad" that teaches the course.
     school: str
     # "Area de Formacion General"?
-    area: Optional[str]
-    category: Optional[str]
+    area: str | None
+    category: str | None
     # Heuristic indicating if the course is still available for students to take.
     is_available: bool
     # Booleans indicating on what semesters is the course available.
@@ -58,7 +57,6 @@ class CourseDetails(BaseModel):
     def from_db(db: Course) -> "CourseDetails":
         # Parse and validate dep json
         deps = pydantic.parse_raw_as(Expr, db.deps)
-        # deps = simplify(deps)
         return CourseDetails(
             code=db.code,
             name=db.name,
@@ -112,7 +110,7 @@ class EquivDetails(BaseModel):
                 "index": "asc",
             },
         )
-        courses = list(map(lambda ec: ec.course_code, dbcourses))
+        courses = [ec.course_code for ec in dbcourses]
         return EquivDetails(
             code=db.code,
             name=db.name,
@@ -127,23 +125,22 @@ class CourseInfo:
     courses: dict[str, CourseDetails]
     equivs: dict[str, EquivDetails]
 
-    def try_course(self, code: str) -> Optional[CourseDetails]:
+    def try_course(self, code: str) -> CourseDetails | None:
         return self.courses.get(code)
 
-    def try_equiv(self, code: str) -> Optional[EquivDetails]:
+    def try_equiv(self, code: str) -> EquivDetails | None:
         return self.equivs.get(code)
 
-    def get_credits(self, course: PseudoCourse) -> Optional[int]:
+    def get_credits(self, course: PseudoCourse) -> int | None:
         if isinstance(course, EquivalenceId):
             return course.credits
-        else:
-            info = self.try_course(course.code)
-            if info is None:
-                return None
-            return info.credits
+        info = self.try_course(course.code)
+        if info is None:
+            return None
+        return info.credits
 
 
-_course_info_cache: Optional[CourseInfo] = None
+_course_info_cache: CourseInfo | None = None
 
 
 async def clear_course_info_cache():
@@ -173,7 +170,9 @@ async def add_equivalence(equiv: EquivDetails):
     value_tuples: list[str] = []
     query_args = [equiv.code]
     for i, code in enumerate(equiv.courses):
-        value_tuples.append(f"({i}, $1, ${2+i})")
+        value_tuples.append(
+            f"({i}, $1, ${2+i})",
+        )  # NOTE: No user-input is injected here
         query_args.append(code)
     await EquivalenceCourse.prisma().query_raw(
         f"""
@@ -181,7 +180,7 @@ async def add_equivalence(equiv: EquivDetails):
         VALUES {','.join(value_tuples)}
         ON CONFLICT
         DO NOTHING
-        """,
+        """,  # noqa: S608 (only numbers are inserted in string)
         *query_args,
     )
     # Update in-memory cache if it was already loaded
@@ -202,7 +201,7 @@ async def course_info() -> CourseInfo:
 
         # Attempt to fetch pre-parsed courses
         preparsed = await DbCachedCourseInfo.prisma().find_unique(
-            {"id": _CACHED_COURSES_ID}
+            {"id": _CACHED_COURSES_ID},
         )
         if preparsed is not None:
             print("  loading pre-parsed course cache...")
@@ -221,7 +220,7 @@ async def course_info() -> CourseInfo:
                 {
                     "id": _CACHED_COURSES_ID,
                     "info": CachedCourseDetailsJson(__root__=courses).json(),
-                }
+                },
             )
         print(f"  processed {len(courses)} courses")
 
@@ -246,7 +245,6 @@ def make_searchable_name(name: str) -> str:
     name = unidecode(name)  # Remove accents
     name = name.lower()  # Make lowercase
     name = "".join(
-        map(lambda char: char if char.isalnum() else " ", name)
+        char if char.isalnum() else " " for char in name
     )  # Remove non-alphanumeric characters
-    name = " ".join(name.split())  # Merge adjacent spaces
-    return name
+    return " ".join(name.split())  # Merge adjacent spaces

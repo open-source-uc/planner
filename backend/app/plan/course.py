@@ -1,4 +1,4 @@
-from typing import Annotated, Literal, Optional, Union
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
@@ -22,9 +22,10 @@ class ConcreteId(BaseModel, frozen=True):
     # The unique course code representing this course.
     code: str
     # If this course belongs to an equivalence, this field indicates it.
-    equivalence: Optional[EquivalenceId] = None
+    equivalence: EquivalenceId | None = None
 
 
 PseudoCourse = Annotated[
-    Union[ConcreteId, EquivalenceId], Field(discriminator="is_concrete")
+    ConcreteId | EquivalenceId,
+    Field(discriminator="is_concrete"),
 ]

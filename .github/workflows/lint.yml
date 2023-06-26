@@ -54,7 +54,7 @@ jobs:
       - name: Run ruff
         uses: chartboost/ruff-action@v1
         with:
-          src: "./backend/app"
+          src: "./backend"
 
       - name: Run type checker
         run: poetry run pyright .

@@ -1,7 +1,8 @@
 import lzma
 import traceback
 from collections import defaultdict
-from typing import Callable, NoReturn, Optional
+from collections.abc import Callable
+from typing import NoReturn
 
 import pydantic
 import requests
@@ -55,8 +56,8 @@ class BcCourse(BaseModel):
     program: str
     school: str
     relevance: str
-    area: Optional[str]
-    category: Optional[str]
+    area: str | None
+    category: str | None
     instances: dict[str, BcCourseInstance]
 
 
@@ -68,7 +69,7 @@ class BcParser:
     i: int
     is_restr: bool
 
-    def __init__(self, s: str, is_restr: bool):
+    def __init__(self, s: str, is_restr: bool) -> None:
         self.s = s
         self.i = 0
         self.is_restr = is_restr
@@ -121,14 +122,13 @@ class BcParser:
         return ReqLevel(min_level=lvl)
 
     def parse_property_eq(
-        self, name: str, build: Callable[[bool, str], Expr], cmp: str, rhs: str
+        self, name: str, build: Callable[[bool, str], Expr], cmp: str, rhs: str,
     ) -> Expr:
         if cmp == "=":
             return build(True, rhs)
-        elif cmp == "<>":
+        if cmp == "<>":
             return build(False, rhs)
-        else:
-            self.bail(f"expected = or <> operator for {name}")
+        return self.bail(f"expected = or <> operator for {name}")
 
     def parse_credits(self, cmp: str, rhs: str) -> MinCredits:
         self.ensure(cmp == ">=", "expected >= operator for credits")
@@ -149,31 +149,30 @@ class BcParser:
         self.ensure(len(rhs) > 0, "expected an rhs")
         if lhs == "Nivel":
             return self.parse_level(cmp, rhs)
-        elif lhs == "Escuela":
+        if lhs == "Escuela":
             return self.parse_property_eq(
                 "school",
                 lambda eq, x: ReqSchool(school=x, equal=eq),
                 cmp,
                 rhs,
             )
-        elif lhs == "Programa":
+        if lhs == "Programa":
             return self.parse_property_eq(
                 "program",
                 lambda eq, x: ReqProgram(program=x, equal=eq),
                 cmp,
                 rhs,
             )
-        elif lhs == "Carrera":
+        if lhs == "Carrera":
             return self.parse_property_eq(
                 "career",
                 lambda eq, x: ReqCareer(career=x, equal=eq),
                 cmp,
                 rhs,
             )
-        elif lhs == "Creditos":
+        if lhs == "Creditos":
             return self.parse_credits(cmp, rhs)
-        else:
-            self.bail(f"unknown lhs '{lhs}'")
+        return self.bail(f"unknown lhs '{lhs}'")
 
     def parse_req(self) -> Expr:
         code = self.take(str.isalnum)
@@ -199,10 +198,7 @@ class BcParser:
             return inner
 
         # Parse unit
-        if self.is_restr:
-            return self.parse_restr()
-        else:
-            return self.parse_req()
+        return self.parse_restr() if self.is_restr else self.parse_req()
 
     def parse_andlist(self) -> Expr:
         inner: list[Expr] = []
@@ -212,14 +208,13 @@ class BcParser:
             nxt = self.peek().lower()
             if nxt == "" or nxt == ")" or nxt == "o":
                 break
-            elif nxt == "y":
+            if nxt == "y":
                 self.pop()
             else:
                 self.bail("expected the end of the expression or a connector")
         if len(inner) == 1:
             return inner[0]
-        else:
-            return And(children=tuple(inner))
+        return And(children=tuple(inner))
 
     def parse_orlist(self) -> Expr:
         inner: list[Expr] = []
@@ -229,14 +224,13 @@ class BcParser:
             nxt = self.peek().lower()
             if nxt == "" or nxt == ")":
                 break
-            elif nxt == "o":
+            if nxt == "o":
                 self.pop()
             else:
                 self.bail("expected the end of the expression or a connector")
         if len(inner) == 1:
             return inner[0]
-        else:
-            return Or(children=tuple(inner))
+        return Or(children=tuple(inner))
 
 
 def parse_reqs(reqs: str) -> Expr:
@@ -300,7 +294,7 @@ def _translate_courses(data: BcData) -> list[CourseCreateWithoutRelationsInput]:
                         equivs.append(equiv_subexpr.code)
             # Figure out semestrality
             available_in_semester = [False, False]
-            for period in c.instances.keys():
+            for period in c.instances:
                 sem = periods[period][1] - 1
                 if sem == 2:
                     # Consider TAV to be in the second semester
@@ -326,9 +320,9 @@ def _translate_courses(data: BcData) -> list[CourseCreateWithoutRelationsInput]:
                     "is_available": any(available_in_semester),
                     "semestrality_first": available_in_semester[0],
                     "semestrality_second": available_in_semester[1],
-                }
+                },
             )
-        except Exception:
+        except Exception:  # noqa: BLE001 (we really want to ignore any exceptions)
             print(f"failed to process course {code}:")
             print(traceback.format_exc())
 
@@ -339,7 +333,7 @@ async def fetch_to_database():
     # Fetch json blob from an unofficial source
     dl_url = (
         "https://github.com/negamartin/buscacursos-dl/releases/download"
-        + "/universal-3/universal-noprogram.json.xz"
+        "/universal-3/universal-noprogram.json.xz"
     )
     print(f"  downloading course data from {dl_url}...")
     # TODO: Use an async HTTP client

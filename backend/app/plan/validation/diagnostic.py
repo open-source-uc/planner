@@ -1,4 +1,4 @@
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
@@ -190,22 +190,20 @@ class NoMajorMinorWarn(DiagnosticWarn):
 
 
 Diagnostic = Annotated[
-    Union[
-        CourseRequirementErr,
-        UnknownCourseErr,
-        MismatchedCyearErr,
-        MismatchedCurriculumSelectionWarn,
-        OutdatedPlanErr,
-        OutdatedCurrentSemesterErr,
-        SemestralityWarn,
-        UnavailableCourseWarn,
-        AmbiguousCourseErr,
-        SemesterCreditsWarn,
-        SemesterCreditsErr,
-        CurriculumErr,
-        UnassignedWarn,
-        NoMajorMinorWarn,
-    ],
+    CourseRequirementErr
+    | UnknownCourseErr
+    | MismatchedCyearErr
+    | MismatchedCurriculumSelectionWarn
+    | OutdatedPlanErr
+    | OutdatedCurrentSemesterErr
+    | SemestralityWarn
+    | UnavailableCourseWarn
+    | AmbiguousCourseErr
+    | SemesterCreditsWarn
+    | SemesterCreditsErr
+    | CurriculumErr
+    | UnassignedWarn
+    | NoMajorMinorWarn,
     Field(discriminator="kind"),
 ]
 

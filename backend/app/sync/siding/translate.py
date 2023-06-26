@@ -2,7 +2,6 @@
 Transform the Siding format into something usable.
 """
 
-from typing import Optional
 
 from prisma.models import (
     Major as DbMajor,
@@ -37,7 +36,7 @@ from .client import (
 )
 
 
-def _decode_curriculum_versions(input: Optional[StringArray]) -> list[str]:
+def _decode_curriculum_versions(input: StringArray | None) -> list[str]:
     """
     SIDING returns lists of cyear codes (e.g. ["C2013", "C2020"]) as a convoluted
     `stringArray` type that is currently empty for some reason.
@@ -69,7 +68,8 @@ def _semesters_elapsed(start: tuple[int, int], end: tuple[int, int]) -> int:
 
 
 async def _fetch_raw_blocks(
-    courseinfo: CourseInfo, spec: CurriculumSpec
+    courseinfo: CourseInfo,
+    spec: CurriculumSpec,
 ) -> list[BloqueMalla]:
     # Use a dummy major and minor if they are not specified
     # Later, remove this information
@@ -83,7 +83,7 @@ async def _fetch_raw_blocks(
             CodMajor=major,
             CodMinor=minor,
             CodTitulo=spec.title or "",
-        )
+        ),
     )
 
     # Remove data if a dummy major/minor was used
@@ -92,14 +92,14 @@ async def _fetch_raw_blocks(
             filter(
                 lambda raw_block: not raw_block.BloqueAcademico.startswith("Major"),
                 raw_blocks,
-            )
+            ),
         )
     if spec.minor is None:
         raw_blocks = list(
             filter(
                 lambda raw_block: not raw_block.BloqueAcademico.startswith("Minor"),
                 raw_blocks,
-            )
+            ),
         )
 
     # Fetch data for unseen equivalences
@@ -115,7 +115,7 @@ async def _fetch_raw_blocks(
                 if courseinfo.try_course(c.Sigla) is None:
                     print(
                         f"unknown course {c.Sigla} in SIDING list"
-                        + f" {raw_block.CodLista} ({raw_block.Nombre})"
+                        f" {raw_block.CodLista} ({raw_block.Nombre})",
                     )
                 else:
                     codes.append(c.Sigla)
@@ -207,9 +207,9 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
                 cap=creds,
                 codes=codes_dict,
                 fill_with=[
-                    CourseRecommendation(course=recommended, order=recommended_order)
+                    CourseRecommendation(course=recommended, order=recommended_order),
                 ],
-            )
+            ),
         )
 
     # Transform into a somewhat valid curriculum
@@ -249,7 +249,7 @@ async def load_siding_offer_to_database():
                     "code": major.CodMajor,
                     "name": major.Nombre,
                     "version": major.VersionMajor,
-                }
+                },
             )
 
     print("  loading minors")
@@ -262,7 +262,7 @@ async def load_siding_offer_to_database():
                     "name": minor.Nombre,
                     "version": minor.VersionMinor or "",
                     "minor_type": minor.TipoMinor,
-                }
+                },
             )
 
     print("  loading titles")
@@ -275,13 +275,11 @@ async def load_siding_offer_to_database():
                     "name": title.Nombre,
                     "version": title.VersionTitulo or "",
                     "title_type": title.TipoTitulo,
-                }
+                },
             )
 
     print("  loading major-minor associations")
-    p_major_minor = list(
-        map(lambda maj: (maj, client.get_minors_for_major(maj.CodMajor)), majors)
-    )
+    p_major_minor = [(maj, client.get_minors_for_major(maj.CodMajor)) for maj in majors]
     for major, p_assoc_minors in p_major_minor:
         assoc_minors = await p_assoc_minors
         for cyear in _decode_curriculum_versions(major.Curriculum):
@@ -293,7 +291,7 @@ async def load_siding_offer_to_database():
                         "cyear": cyear,
                         "major": major.CodMajor,
                         "minor": minor.CodMinor,
-                    }
+                    },
                 )
 
 
@@ -316,7 +314,8 @@ async def fetch_student_info(rut: str) -> StudentInfo:
 
 
 async def fetch_student_previous_courses(
-    rut: str, info: StudentInfo
+    rut: str,
+    info: StudentInfo,
 ) -> list[list[PseudoCourse]]:
     """
     MUST BE CALLED WITH AUTHORIZATION

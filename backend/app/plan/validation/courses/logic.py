@@ -5,7 +5,7 @@ Implements logical expressions in the context of course requirements.
 
 from abc import abstractmethod
 from hashlib import blake2b as good_hash
-from typing import Annotated, Any, ClassVar, Literal, Union
+from typing import Annotated, Any, ClassVar, Literal
 
 from pydantic import BaseModel, Field
 
@@ -19,9 +19,13 @@ class BaseExpr(BaseModel):
     through a combination of expressions.
     """
 
-    hash: Annotated[bytes, Field(exclude=True)] = bytes()
+    hash: Annotated[bytes, Field(exclude=True)] = b""
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(
+        self,
+        *args: Any,  # noqa: ANN401 (args are passed through)
+        **kwargs: Any,  # noqa: ANN401 (kwargs are passed through)
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.hash = self.compute_hash()
 
@@ -48,7 +52,7 @@ class BaseOp(BaseExpr):
     def op(a: bool, b: bool) -> bool:
         pass
 
-    def __str__(self):
+    def __str__(self) -> str:
         op = "y" if self.neutral else "o"
         s = ""
         for child in self.children:
@@ -74,10 +78,7 @@ class BaseOp(BaseExpr):
         In other words, if `neutral` is true, build an AND node, otherwise build an OR
         node.
         """
-        if neutral:
-            return And(children=children)
-        else:
-            return Or(children=children)
+        return And(children=children) if neutral else Or(children=children)
 
 
 class And(BaseOp):
@@ -116,7 +117,7 @@ class Const(BaseExpr):
     expr: Literal["const"] = Field(default="const", const=True)
     value: bool
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.value)
 
     def compute_hash(self) -> bytes:
@@ -134,7 +135,7 @@ class MinCredits(BaseExpr):
 
     min_credits: int
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"(Creditos >= {self.min_credits})"
 
     def compute_hash(self) -> bytes:
@@ -152,7 +153,7 @@ class ReqLevel(BaseExpr):
 
     min_level: Level
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"(Nivel = {self.min_level})"
 
     def compute_hash(self) -> bytes:
@@ -173,7 +174,7 @@ class ReqSchool(BaseExpr):
     # Require equality or inequality?
     equal: bool
 
-    def __str__(self):
+    def __str__(self) -> str:
         eq = "=" if self.equal else "!="
         return f"(Facultad {eq} {self.school})"
 
@@ -196,7 +197,7 @@ class ReqProgram(BaseExpr):
     # Require equality or inequality?
     equal: bool
 
-    def __str__(self):
+    def __str__(self) -> str:
         eq = "=" if self.equal else "!="
         return f"(Programa {eq} {self.program})"
 
@@ -219,7 +220,7 @@ class ReqCareer(BaseExpr):
     # Require equality or inequality?
     equal: bool
 
-    def __str__(self):
+    def __str__(self) -> str:
         eq = "=" if self.equal else "!="
         return f"(Carrera {eq} {self.career})"
 
@@ -242,11 +243,8 @@ class ReqCourse(BaseExpr):
     # Is this requirement a corequirement?
     coreq: bool
 
-    def __str__(self):
-        if self.coreq:
-            return f"{self.code}(c)"
-        else:
-            return self.code
+    def __str__(self) -> str:
+        return f"{self.code}(c)" if self.coreq else self.code
 
     def compute_hash(self) -> bytes:
         h = good_hash(b"req")
@@ -255,15 +253,12 @@ class ReqCourse(BaseExpr):
         return h.digest()
 
 
-Atom = Union[Const, MinCredits, ReqLevel, ReqSchool, ReqProgram, ReqCareer, ReqCourse]
+Atom = Const | MinCredits | ReqLevel | ReqSchool | ReqProgram | ReqCareer | ReqCourse
 
-Operator = Union[And, Or]
+Operator = And | Or
 
 Expr = Annotated[
-    Union[
-        Operator,
-        Atom,
-    ],
+    Operator | Atom,
     Field(discriminator="expr"),
 ]
 

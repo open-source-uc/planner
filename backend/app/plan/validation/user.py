@@ -5,7 +5,6 @@ since guests (with no associated user context) can also validate plans.
 """
 
 
-from typing import Optional
 
 from ...user.info import StudentContext
 from ..course import EquivalenceId, PseudoCourse
@@ -26,7 +25,7 @@ def _check_sem_eq(sem1: list[PseudoCourse], sem2: list[PseudoCourse]) -> bool:
     sem2 = sorted(sem2, key=lambda c: c.code)
     if len(sem1) != len(sem2):
         return False
-    for c1, c2 in zip(sem1, sem2):
+    for c1, c2 in zip(sem1, sem2, strict=True):
         if (
             isinstance(c1, EquivalenceId)
             or isinstance(c2, EquivalenceId)
@@ -37,7 +36,7 @@ def _check_sem_eq(sem1: list[PseudoCourse], sem2: list[PseudoCourse]) -> bool:
 
 
 def _validate_possibly_outdated(
-    plan: ValidatablePlan, user_ctx: StudentContext, out: ValidationResult
+    plan: ValidatablePlan, user_ctx: StudentContext, out: ValidationResult,
 ):
     """
     Check whether the plan is in sync with the courses that `user_ctx` has passed.
@@ -54,16 +53,16 @@ def _validate_possibly_outdated(
             out.add(OutdatedPlanErr(associated_to=unsynced_sems))
 
 
-def _is_mismatched(selected: Optional[str], reported: Optional[str]):
+def _is_mismatched(selected: str | None, reported: str | None):
     return reported is not None and selected is not None and reported != selected
 
 
 def validate_against_owner(
-    plan: ValidatablePlan, user_ctx: StudentContext, out: ValidationResult
+    plan: ValidatablePlan, user_ctx: StudentContext, out: ValidationResult,
 ):
     if str(plan.curriculum.cyear) != user_ctx.info.cyear:
         out.add(
-            MismatchedCyearErr(plan=plan.curriculum.cyear, user=user_ctx.info.cyear)
+            MismatchedCyearErr(plan=plan.curriculum.cyear, user=user_ctx.info.cyear),
         )
 
     if (
@@ -81,7 +80,7 @@ def validate_against_owner(
                     minor=user_ctx.info.reported_minor,
                     title=user_ctx.info.reported_title,
                 ),
-            )
+            ),
         )
 
     _validate_possibly_outdated(plan, user_ctx, out)

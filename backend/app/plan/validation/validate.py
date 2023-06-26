@@ -1,4 +1,3 @@
-from typing import Optional
 
 from ...sync import get_curriculum
 from ...user.info import StudentContext
@@ -11,7 +10,7 @@ from .user import validate_against_owner
 
 
 async def diagnose_plan(
-    plan: ValidatablePlan, user_ctx: Optional[StudentContext]
+    plan: ValidatablePlan, user_ctx: StudentContext | None,
 ) -> ValidationResult:
     """
     Validate a career plan, checking that all pending courses can actually be taken
