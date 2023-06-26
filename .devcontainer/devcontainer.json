@@ -37,7 +37,7 @@
 				"austenc.tailwind-docs",
 				"dbaeumer.vscode-eslint",
 				"ms-python.python",
-				"ms-python.flake8",
+				"charliermarsh.ruff",
 				"kokakiwi.vscode-just"
 			],
 			"settings": {

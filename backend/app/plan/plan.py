@@ -1,8 +1,9 @@
-from .validation.curriculum.tree import CurriculumSpec
-from pydantic import BaseModel
-from typing import Optional
-from .course import PseudoCourse
 from enum import Enum
+
+from pydantic import BaseModel
+
+from .course import PseudoCourse
+from .validation.curriculum.tree import CurriculumSpec
 
 
 class Level(int, Enum):
@@ -36,13 +37,13 @@ class ValidatablePlan(BaseModel):
     # Classes per semester.
     classes: list[list[PseudoCourse]]
     # Academic level of the student
-    level: Optional[Level]
+    level: Level | None
     # Academic school (facultad) of the student
-    school: Optional[str]
+    school: str | None
     # Academic program of the student (magisteres, doctorados, etc)
-    program: Optional[str]
+    program: str | None
     # Career of the student
-    career: Optional[str]
+    career: str | None
     # The curriculum that the user wants to pursue
     # Validate the plan against this curriculum
     curriculum: CurriculumSpec

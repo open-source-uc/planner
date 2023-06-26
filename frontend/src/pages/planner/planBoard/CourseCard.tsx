@@ -1,4 +1,4 @@
-import { memo, ReactNode, useRef } from 'react'
+import { memo, type ReactNode, useRef } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
 import editWhiteIcon from '../../../assets/editWhite.svg'
 import editBlackIcon from '../../../assets/editBlack.svg'

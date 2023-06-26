@@ -1,16 +1,17 @@
-from fastapi import HTTPException, Depends
-from fastapi.responses import RedirectResponse
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel
-from typing import Optional, Any, Union
-from cas import CASClientV3
-from jose import jwt, JWTError, ExpiredSignatureError
-from datetime import datetime, timedelta
-from ..settings import settings
 import traceback
-from .key import UserKey, ModKey, AdminKey
-from prisma.models import AccessLevel as DbAccessLevel
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
+from cas import CASClientV3
+from fastapi import Depends, HTTPException
+from fastapi.responses import RedirectResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import ExpiredSignatureError, JWTError, jwt
+from prisma.models import AccessLevel as DbAccessLevel
+from pydantic import BaseModel
+
+from ..settings import settings
+from .key import AdminKey, ModKey, UserKey
 
 # CASClient abuses class constructors (__new__),
 # so we are using the versioned class directly
@@ -40,7 +41,7 @@ async def _is_mod(rut: str):
     return level.is_mod
 
 
-async def generate_token(user: str, rut: str, expire_delta: Optional[float] = None):
+async def generate_token(user: str, rut: str, expire_delta: float | None = None):
     """
     Generate a signed token (one that is unforgeable) with the given user, rut and
     expiration time.
@@ -48,17 +49,18 @@ async def generate_token(user: str, rut: str, expire_delta: Optional[float] = No
     # Calculate the time that this token expires
     if expire_delta is None:
         expire_delta = settings.jwt_expire
-    expire_time = datetime.utcnow() + timedelta(seconds=expire_delta)
+    expire_time = datetime.now(tz=UTC) + timedelta(seconds=expire_delta)
     # Pack user, rut and expire date into a signed token
-    payload: dict[str, Union[datetime, str, bool]] = {
+    payload: dict[str, datetime | str | bool] = {
         "exp": expire_time,
         "sub": user,
         "rut": rut,
     }
-    token = jwt.encode(
-        payload, settings.jwt_secret.get_secret_value(), settings.jwt_algorithm
+    return jwt.encode(
+        payload,
+        settings.jwt_secret.get_secret_value(),
+        settings.jwt_algorithm,
     )
-    return token
 
 
 def decode_token(token: str) -> UserKey:
@@ -67,12 +69,14 @@ def decode_token(token: str) -> UserKey:
     """
     try:
         payload = jwt.decode(
-            token, settings.jwt_secret.get_secret_value(), [settings.jwt_algorithm]
+            token,
+            settings.jwt_secret.get_secret_value(),
+            [settings.jwt_algorithm],
         )
     except ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
+        raise HTTPException(status_code=401, detail="Token expired") from None
     except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid token") from None
     if not isinstance(payload["sub"], str):
         raise HTTPException(status_code=401, detail="Invalid token")
     if not isinstance(payload["rut"], str):
@@ -126,7 +130,7 @@ async def require_admin_auth(
     return AdminKey(key.username, key.rut)
 
 
-async def login_cas(next: Optional[str] = None, ticket: Optional[str] = None):
+async def login_cas(next: str | None = None, ticket: str | None = None):
     """
     Login endpoint.
     Has two uses, depending on the presence of `ticket`.
@@ -140,45 +144,7 @@ async def login_cas(next: Optional[str] = None, ticket: Optional[str] = None):
     browser is redirected to the frontend along with this JWT.
     In this case, the frontend URL is whatever the `next` field indicates.
     """
-    if ticket:
-        # User has just authenticated themselves with CAS, and were redirected here
-        # with a token
-        if not next:
-            return HTTPException(status_code=422, detail="Missing next URL")
-
-        # Verify that the ticket is valid directly with the authority (the CAS server)
-        user: Any
-        attributes: Any
-        _pgtiou: Any
-        try:
-            (
-                user,
-                attributes,
-                _pgtiou,
-            ) = cas_client.verify_ticket(  # pyright: ignore[reportUnknownMemberType]
-                ticket
-            )
-        except Exception:
-            traceback.print_exc()
-            return HTTPException(status_code=502, detail="Error verifying CAS ticket")
-
-        if not isinstance(user, str) or not isinstance(attributes, dict):
-            # Failed to authenticate
-            return HTTPException(status_code=401, detail="Authentication failed")
-
-        # Get rut
-        rut: Any = attributes["carlicense"]
-        if not isinstance(rut, str):
-            return HTTPException(
-                status_code=500, detail="RUT is missing from CAS attributes"
-            )
-
-        # CAS token was validated, generate JWT token
-        token = await generate_token(user, rut)
-
-        # Redirect to next URL with JWT token attached
-        return RedirectResponse(next + f"?token={token}")
-    else:
+    if ticket is None:
         # User wants to authenticate
         # Redirect to authentication page
         cas_login_url: Any = (
@@ -186,13 +152,53 @@ async def login_cas(next: Optional[str] = None, ticket: Optional[str] = None):
         )
         if not isinstance(cas_login_url, str):
             return HTTPException(
-                status_code=500, detail="CAS redirection URL not found"
+                status_code=500,
+                detail="CAS redirection URL not found",
             )
         return RedirectResponse(cas_login_url)
 
+    # User has just authenticated themselves with CAS, and were redirected here
+    # with a token
+    if not next:
+        return HTTPException(status_code=422, detail="Missing next URL")
+
+    # Verify that the ticket is valid directly with the authority (the CAS server)
+    user: Any
+    attributes: Any
+    _pgtiou: Any
+    try:
+        (
+            user,
+            attributes,
+            _pgtiou,
+        ) = cas_client.verify_ticket(  # pyright: ignore[reportUnknownMemberType]
+            ticket,
+        )
+    except Exception:  # noqa: BLE001 (CAS lib is untyped)
+        traceback.print_exc()
+        return HTTPException(status_code=502, detail="Error verifying CAS ticket")
+
+    if not isinstance(user, str) or not isinstance(attributes, dict):
+        # Failed to authenticate
+        return HTTPException(status_code=401, detail="Authentication failed")
+
+    # Get rut
+    rut: Any = attributes["carlicense"]
+    if not isinstance(rut, str):
+        return HTTPException(
+            status_code=500,
+            detail="RUT is missing from CAS attributes",
+        )
+
+    # CAS token was validated, generate JWT token
+    token = await generate_token(user, rut)
+
+    # Redirect to next URL with JWT token attached
+    return RedirectResponse(next + f"?token={token}")
+
 
 class AccessLevelOverview(BaseModel):
-    name: Optional[str] = None
+    name: str | None = None
 
     # attributes from db
     user_rut: str

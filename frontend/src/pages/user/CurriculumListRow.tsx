@@ -1,4 +1,4 @@
-import { LowDetailPlanView } from '../../client'
+import { type LowDetailPlanView } from '../../client'
 
 const CurriculumListRow = ({ handleDelete, curriculum }: { handleDelete: Function, curriculum: LowDetailPlanView }): JSX.Element => {
   function getDateString (date: string): string {
