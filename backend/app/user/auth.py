@@ -1,3 +1,4 @@
+import contextlib
 import traceback
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -15,9 +16,15 @@ from .key import AdminKey, ModKey, UserKey
 
 # CASClient abuses class constructors (__new__),
 # so we are using the versioned class directly
-cas_client: CASClientV3 = CASClientV3(
+cas_verify_client: CASClientV3 = CASClientV3(
     service_url=settings.login_endpoint,
     server_url=settings.cas_server_url,
+)
+
+# Use a separate dummy CAS client instance to get the login URL.
+cas_redirect_client: CASClientV3 = CASClientV3(
+    service_url=settings.login_endpoint,
+    server_url=settings.cas_login_redirection_url or settings.cas_server_url,
 )
 
 
@@ -147,9 +154,7 @@ async def login_cas(next: str | None = None, ticket: str | None = None):
     if ticket is None:
         # User wants to authenticate
         # Redirect to authentication page
-        cas_login_url: Any = (
-            cas_client.get_login_url()  # pyright: ignore[reportUnknownMemberType]
-        )
+        cas_login_url: Any = cas_redirect_client.get_login_url()  # pyright: ignore
         if not isinstance(cas_login_url, str):
             return HTTPException(
                 status_code=500,
@@ -171,7 +176,7 @@ async def login_cas(next: str | None = None, ticket: str | None = None):
             user,
             attributes,
             _pgtiou,
-        ) = cas_client.verify_ticket(  # pyright: ignore[reportUnknownMemberType]
+        ) = cas_verify_client.verify_ticket(  # pyright: ignore
             ticket,
         )
     except Exception:  # noqa: BLE001 (CAS lib is untyped)
@@ -183,7 +188,9 @@ async def login_cas(next: str | None = None, ticket: str | None = None):
         return HTTPException(status_code=401, detail="Authentication failed")
 
     # Get rut
-    rut: Any = attributes["carlicense"]
+    rut: Any = None
+    with contextlib.suppress(KeyError):
+        rut = attributes["carlicense"]
     if not isinstance(rut, str):
         return HTTPException(
             status_code=500,
