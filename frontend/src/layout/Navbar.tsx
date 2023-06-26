@@ -16,13 +16,13 @@ function Navbar (): JSX.Element {
         <div className="hidden w-full md:block md:w-auto" id="navbar-default">
             <ul className="flex flex-col p-4 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 md:mt-0 md:text-sm md:font-medium md:border-0 md:bg-white ">
                 <li>
-                    <Link to="/" className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${router.matchRoute({ to: '/' }) ? 'text-white bg-blue-700 md:bg-transparent md:text-blue-700' : ''}`}>Inicio</Link>
+                    <Link to="/" className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${router.matchRoute({ to: '/' }) != null ? 'text-white bg-blue-700 md:bg-transparent md:text-blue-700' : ''}`}>Inicio</Link>
                 </li>
                 { authState?.user !== null && <li>
-                    <Link to="/planner/new" className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${router.matchRoute({ to: '/planner/new' }) ? 'text-white bg-blue-700 md:bg-transparent md:text-blue-700' : ''}`}>Nueva planificación</Link>
+                    <Link to="/planner/new" className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${router.matchRoute({ to: '/planner/new', search: { plannerId: null } }) != null ? 'text-white bg-blue-700 md:bg-transparent md:text-blue-700' : ''}`}>Nueva planificación</Link>
                 </li> }
                 { authState?.user !== null && <li>
-                    <Link to="/user" className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${router.matchRoute({ to: '/user' }) ? 'text-white bg-blue-700 md:bg-transparent md:text-blue-700' : ''}`}>Mis mallas</Link>
+                    <Link to="/user" className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${router.matchRoute({ to: '/user' }) != null ? 'text-white bg-blue-700 md:bg-transparent md:text-blue-700' : ''}`}>Mis mallas</Link>
                 </li>
                 }
                 <li>

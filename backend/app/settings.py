@@ -1,14 +1,7 @@
-from pydantic import BaseSettings, Field, SecretStr
+from pathlib import Path
 
-# HACK: When prisma is loaded it loads the correct `.env` file.
-# Therefore, prisma must be loaded before `Settings` is instantiated.
-# TODO: Decide how to fix this.
-# - One solution is using the proper `.env` support that `BaseSettings` implements.
-#   However, Prisma loads the `.env` file separately (to read the `DATABASE_URL`
-#   environment variable), so then we would have to make sure that the 2 ways of
-#   loading the `.env` never diverge.
-# - Another solution is this hack, but it is ugly.
-from .database import prisma  # pyright: ignore[reportUnusedImport], # noqa: F401
+from dotenv import load_dotenv
+from pydantic import BaseSettings, Field, SecretStr
 
 
 class Settings(BaseSettings):
@@ -60,7 +53,7 @@ class Settings(BaseSettings):
     # Siding mock database file.
     # If "", it does not load any mock data.
     # Failing to read the mock database is not a fatal error, only a warning.
-    siding_mock_path: str = "../data/siding-mock.json"
+    siding_mock_path: Path = Path("../data/siding-mock.json")
 
     # Where to store recorded SIDING responses.
     # If "", responses are not recorded.
@@ -74,11 +67,18 @@ class Settings(BaseSettings):
     #   write the recorded responses.
     # 4. A JSON file will be saved with previous mock data (if any) + the recorded data.
     #   Note that the file may contain sensitive data!
-    siding_record_path: str = ""
+    siding_record_path: Path = Path("")
 
     # Time to expire cached student information in seconds.
     student_info_expire: float = 1800
 
 
+# Make sure the `.env` file is loaded before settings are loaded
+load_dotenv()
+
 # Load settings and allow global app access to them
-settings = Settings()
+# NOTE: Pyright reports this line (rightfully) as an error because there are missing
+# arguments.
+# However, we actually want this to fail if there are missing environment variables, so
+# it's ok to ignore.
+settings = Settings()  # pyright: ignore[reportGeneralTypeIssues]

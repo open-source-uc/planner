@@ -1,10 +1,10 @@
 import { Fragment, memo } from 'react'
 import { Listbox, Transition } from '@headlessui/react'
-import { Major, Minor, Title, CurriculumSpec } from '../../client'
-import { CurriculumData } from './Planner'
+import { type Major, type Minor, type Title, type CurriculumSpec } from '../../client'
+import { type CurriculumData } from './Planner'
 
 interface CurriculumSelectorProps {
-  planName: String
+  planName: string
   curriculumData: CurriculumData | null
   curriculumSpec: CurriculumSpec | { cyear: null, major: null, minor: null, title: null }
   selectMajor: Function
@@ -13,7 +13,7 @@ interface CurriculumSelectorProps {
 }
 interface SelectorProps {
   canDeselect: boolean
-  data: { [code: string]: Major | Minor | Title }
+  data: Record<string, Major | Minor | Title>
   value: string | null | undefined
   onChange: (value: string) => void
 }
