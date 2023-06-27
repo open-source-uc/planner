@@ -46,6 +46,7 @@ lint-front:
 
 lint-back:
     @echo "{{ info_prefix }} \e[1mLinting back-end...\e[0m"
+    cd backend && poetry run black --diff .
     cd backend && poetry run ruff check .
     cd backend && poetry run pyright
 

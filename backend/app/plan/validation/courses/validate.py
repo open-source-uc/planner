@@ -139,6 +139,9 @@ class ValidationContext:
                     if self.courseinfo.try_equiv(course.code) is None:
                         unknown.append(self.class_ids[sem_i][i])
                 else:
+                    if course.failed is not None:
+                        # Ignore failed courses
+                        continue
                     if self.courseinfo.try_course(course.code) is None:
                         unknown.append(self.class_ids[sem_i][i])
         if unknown:
