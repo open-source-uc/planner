@@ -703,7 +703,6 @@ const Planner = (): JSX.Element => {
             setValidatablePlan={setValidatablePlan}
             diagnostics={validationResult?.diagnostics ?? []}
             validating={plannerStatus === 'VALIDATING'}
-            courseDetails={courseDetails}
           />
         </div>
       }

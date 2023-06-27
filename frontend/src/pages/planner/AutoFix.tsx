@@ -1,6 +1,6 @@
 import { type CurriculumErr, type Cyear, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../client'
 import { type AuthState, useAuth } from '../../contexts/auth.context'
-import { type PseudoCourseDetail, type PseudoCourseId } from './Planner'
+import { type PseudoCourseId } from './Planner'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
 
@@ -111,26 +111,25 @@ const moveCourseByCode = (plan: ValidatablePlan, code: string, repIdx: number, t
 interface AutoFixProps {
   diag: Diagnostic
   setValidatablePlan: Function
-  courseDetails: Record<string, PseudoCourseDetail>
 }
 
 /**
  * Get the quick fixed for some diagnostic, if any.
  */
-const AutoFix = ({ diag, setValidatablePlan, courseDetails }: AutoFixProps): JSX.Element => {
+const AutoFix = ({ diag, setValidatablePlan }: AutoFixProps): JSX.Element => {
   // FIXME: TODO: Los cursos añadidos a traves del autofix les faltan los CourseDetails.
   // No me manejo bien con la implementación del frontend, lo dejo en mejores manos.
   const auth = useAuth()
   switch (diag.kind) {
     case 'curr': {
-      const buttons = diag.recommend.map((fillWith, i) => (
+      const buttons = diag.recommend.map(([fillWith, fillWithName], i) => (
         <button key={i} className="autofix" onClick={() => {
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
             return fixMissingCurriculumCourse(plan, diag, fillWith, auth)
           })
         }}>
-          Agregar {fillWith.is_concrete === true ? fillWith.code : courseDetails[fillWith.code]?.name ?? ''}
+          Agregar {fillWithName}
         </button>))
       return <>{buttons}</>
     }

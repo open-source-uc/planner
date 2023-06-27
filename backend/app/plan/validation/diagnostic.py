@@ -174,13 +174,15 @@ class CurriculumErr(DiagnosticErr):
     `credits`.
     A set of courses that would fill this block (possibly equivalences) is given in
     `recommend`.
+    Because equivalences could be potentially unknown to the frontend and we don't want
+    to show the user equivalence codes, each course is coupled with its name.
     """
 
     kind: Literal["curr"] = Field(default="curr", const=True)
     associated_to: None = None
     block: list[str]
     credits: int
-    recommend: list[PseudoCourse]
+    recommend: list[tuple[PseudoCourse, str]]
 
 
 class UnassignedWarn(DiagnosticWarn):

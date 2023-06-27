@@ -54,10 +54,15 @@ def _diagnose_blocks(
                     equivalents_set: dict[str, PseudoCourse] = {
                         c.code: c for c in raw_equivalents
                     }
-                    equivalents: list[PseudoCourse] = [
-                        pseudocourse_with_credits(c, course.active_flow)
-                        for c in equivalents_set.values()
-                    ]
+                    equivalents: list[tuple[PseudoCourse, str]] = []
+                    for c in equivalents_set.values():
+                        info = courseinfo.try_any(c)
+                        equivalents.append(
+                            (
+                                pseudocourse_with_credits(c, course.active_flow),
+                                c.code if info is None else info.name,
+                            ),
+                        )
 
                     # Diagnose
                     out.add(
