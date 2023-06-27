@@ -1,5 +1,5 @@
 
-import { DefaultService, ValidatablePlan } from '../client'
+import { DefaultService, type ValidatablePlan } from '../client'
 import { useEffect } from 'react'
 
 const DebugGraph = ({ validatablePlan }: { validatablePlan: ValidatablePlan | null }): JSX.Element => {
@@ -20,7 +20,7 @@ const DebugGraph = ({ validatablePlan }: { validatablePlan: ValidatablePlan | nu
         if (opened) {
           console.log('curriculum graph opened in pop-up window')
         }
-      }).catch(e => console.error(e))
+      }).catch(e => { console.error(e) })
     }
 
     document.addEventListener('keydown', handleWrapper)

@@ -6,7 +6,7 @@ const AlertModal = ({ title, desc, isOpen, close }: { title: string, desc: strin
 
   return (
     <Transition.Root show={isOpen} as={Fragment}>
-      <Dialog as="div" className="modal relative" initialFocus={cancelButtonRef} onClose={() => console.log('alert closed')}>
+      <Dialog as="div" className="modal relative" initialFocus={cancelButtonRef} onClose={() => { console.log('alert closed') }}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"

@@ -41,7 +41,7 @@ jobs:
           poetry install
           poetry run prisma generate
 
-      - name: Run linters
+      - name: Run black
         uses: wearerequired/lint-action@v2
         with:
           github_token: ${{ secrets.github_token }}
@@ -50,10 +50,11 @@ jobs:
           black_dir: backend
           black_command_prefix: poetry run
           black_auto_fix: true
-          flake8: true
-          flake8_dir: backend
-          flake8_command_prefix: poetry run
-          flake8_auto_fix: true
+      
+      - name: Run ruff
+        uses: chartboost/ruff-action@v1
+        with:
+          src: "./backend"
 
       - name: Run type checker
         run: poetry run pyright .

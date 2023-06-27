@@ -11,27 +11,36 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.11"
-fastapi = {extras = ["all"], version = "^0.88.0"}
-prisma = {git = "https://github.com/RobertCraigie/prisma-client-py.git", rev = "refactor/remove-pkg-cli"}
+fastapi = {extras = ["all"], version = "^0.98.0"}
+prisma = "^0.9"
 python-cas = "^1.6.0"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 zeep = {extras = ["async"], version = "^4.2.1"}
 unidecode = "^1.3.6"
+python-dotenv = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
-flake8 = "^6.0.0"
-black = "^22.10.0"
-isort = "^5.10.1"
+ruff = "^0.0.275"
+black = "^23.3.0"
 tomli = "^2.0.1"
-pyright = "^1.1.282"
+pyright = "^1.1.315"
 
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.isort]
-profile = "black"
+[tool.ruff]
+select = ["F", "E", "W", "C90", "I", "N", "UP", "ANN", "ASYNC", "S", "BLE", "B", "COM", "C4", "DTZ", "ISC", "INP", "PIE", "RET", "SIM", "TCH", "PTH", "ERA", "RUF"]
+ignore = [
+    "B008",  # "Do not perform function call in argument defaults" (to allow `arg = Depends()`)
+    "ANN101",  # "Missing type annotation for `self` in method" (annotating self is too redundant)
+    "ANN201", "ANN202",  # "Missing return type annotation" (sometimes return types are too complex)
+    "S101",  # "Use of `assert` detected" (debug assertions are useful)
+]
+
+[tool.ruff.mccabe]
+max-complexity = 15
 
 [tool.pyright]
 pythonVersion = "3.11"

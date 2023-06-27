@@ -8,5 +8,6 @@ export type ConcreteId = {
     is_concrete?: boolean;
     code: string;
     equivalence?: EquivalenceId;
+    failed?: string;
 };
 

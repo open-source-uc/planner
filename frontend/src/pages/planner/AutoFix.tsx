@@ -1,5 +1,5 @@
-import { CourseRequirementErr, CurriculumErr, Cyear, MismatchedCyearErr, OutdatedCurrentSemesterErr, OutdatedPlanErr, ValidatablePlan, ValidationResult } from '../../client'
-import { AuthState, useAuth } from '../../contexts/auth.context'
+import { type CourseRequirementErr, type CurriculumErr, type Cyear, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../client'
+import { type AuthState, useAuth } from '../../contexts/auth.context'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
 type RequirementExpr = CourseRequirementErr['missing']

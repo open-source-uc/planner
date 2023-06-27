@@ -1,6 +1,10 @@
+from collections.abc import Callable
 from dataclasses import dataclass
+
 from ....user.info import StudentContext
 from ...course import ConcreteId, EquivalenceId
+from ...courseinfo import CourseInfo
+from ...plan import ClassId, ValidatablePlan
 from ..diagnostic import (
     AmbiguousCourseErr,
     CourseRequirementErr,
@@ -11,23 +15,29 @@ from ..diagnostic import (
     UnknownCourseErr,
     ValidationResult,
 )
-from ...plan import ClassId, ValidatablePlan
-from ...courseinfo import CourseInfo
 from .logic import (
     Atom,
     BaseOp,
     Const,
-    ReqCourse,
     Expr,
     MinCredits,
     Operator,
     ReqCareer,
+    ReqCourse,
     ReqLevel,
     ReqProgram,
     ReqSchool,
 )
-from typing import Callable, Optional
 from .simplify import simplify
+
+# Students can only take this amount of credits if they meet certain criteria.
+# Currently, that criteria is not failing any course in the previous X
+# semesters.
+# TODO: Actually check this criteria, and apply validations depending on user
+# context.
+CREDIT_SOFT_MAX = 55
+# Students can't take over this amount of credits without special authorization.
+CREDIT_HARD_MAX = 65
 
 
 @dataclass
@@ -61,7 +71,7 @@ class ValidationContext:
     # Original validatable plan object.
     plan: ValidatablePlan
     # User context, if any
-    user_ctx: Optional[StudentContext]
+    user_ctx: StudentContext | None
     # On which semester to start validating requirements and other associated
     # validations.
     # Should be the first semester that has not yet been taken (ie. the semester after
@@ -72,8 +82,8 @@ class ValidationContext:
         self,
         courseinfo: CourseInfo,
         plan: ValidatablePlan,
-        user_ctx: Optional[StudentContext],
-    ):
+        user_ctx: StudentContext | None,
+    ) -> None:
         # Map from coursecode to course instance
         self.by_code = {}
         for sem_i, sem in enumerate(plan.classes):
@@ -129,6 +139,9 @@ class ValidationContext:
                     if self.courseinfo.try_equiv(course.code) is None:
                         unknown.append(self.class_ids[sem_i][i])
                 else:
+                    if course.failed is not None:
+                        # Ignore failed courses
+                        continue
                     if self.courseinfo.try_course(course.code) is None:
                         unknown.append(self.class_ids[sem_i][i])
         if unknown:
@@ -169,14 +182,14 @@ class ValidationContext:
                         ):
                             # This course is only available on the other semester
                             only_on_sem[(sem_i + 1) % 2].append(
-                                self.class_ids[sem_i][i]
+                                self.class_ids[sem_i][i],
                             )
         if unavailable:
             out.add(UnavailableCourseWarn(associated_to=unavailable))
         for k in range(2):
             if only_on_sem[k]:
                 out.add(
-                    SemestralityWarn(associated_to=only_on_sem[k], only_available_on=k)
+                    SemestralityWarn(associated_to=only_on_sem[k], only_available_on=k),
                 )
 
     def validate_max_credits(self, out: ValidationResult):
@@ -184,34 +197,25 @@ class ValidationContext:
         Validate that there are no semester with an excess of credits.
         """
 
-        # Students can only take this amount of credits if they meet certain criteria.
-        # Currently, that criteria is not failing any course in the previous X
-        # semesters.
-        # TODO: Actually check this criteria, and apply validations depending on user
-        # context.
-        SOFT_MAX = 55
-        # Students can't take over this amount of credits without special authorization.
-        HARD_MAX = 65
-
         for sem_i in range(self.start_validation_from, len(self.plan.classes)):
             sem_credits = 0
             for course in self.plan.classes[sem_i]:
                 sem_credits += self.courseinfo.get_credits(course) or 0
-                if sem_credits > HARD_MAX:
+                if sem_credits > CREDIT_HARD_MAX:
                     out.add(
                         SemesterCreditsErr(
                             associated_to=[sem_i],
-                            max_allowed=HARD_MAX,
+                            max_allowed=CREDIT_HARD_MAX,
                             actual=sem_credits,
-                        )
+                        ),
                     )
-                elif sem_credits > SOFT_MAX:
+                elif sem_credits > CREDIT_SOFT_MAX:
                     out.add(
                         SemesterCreditsWarn(
                             associated_to=[sem_i],
-                            max_recommended=SOFT_MAX,
+                            max_recommended=CREDIT_SOFT_MAX,
                             actual=sem_credits,
-                        )
+                        ),
                     )
 
     def validate_all_dependencies(self, out: ValidationResult):
@@ -238,7 +242,9 @@ class ValidationContext:
                 info = self.courseinfo.try_course(code)
                 if info is not None:
                     self.validate_dependencies_for(
-                        out, CourseInstance(code, sem_i, i), info.deps
+                        out,
+                        CourseInstance(code, sem_i, i),
+                        info.deps,
                     )
 
     def validate_all(self, out: ValidationResult):
@@ -252,13 +258,16 @@ class ValidationContext:
         self.validate_all_dependencies(out)
 
     def validate_dependencies_for(
-        self, out: ValidationResult, inst: CourseInstance, expr: "Expr"
+        self,
+        out: ValidationResult,
+        inst: CourseInstance,
+        expr: "Expr",
     ):
         """
         Validate the requirements for the course `inst`.
         """
         if is_satisfied(self, inst, expr):
-            return None
+            return
         # Some requirement is not satisfied
         # Fill in satisfied requirements, and then simplify resulting expression to get
         # an indication of "what do I have to do in order to satisfy requirements"
@@ -269,12 +278,12 @@ class ValidationContext:
                 inst,
                 expr,
                 lambda atom, sat: sat
-                or isinstance(atom, (ReqSchool, ReqProgram, ReqCareer))
+                or isinstance(atom, ReqSchool | ReqProgram | ReqCareer)
                 or (
                     isinstance(atom, ReqCourse)
                     and not is_course_indirectly_available(self.courseinfo, atom.code)
                 ),
-            )
+            ),
         )
         # Stage 2: allow unavailable courses
         if isinstance(missing, Const):
@@ -284,15 +293,15 @@ class ValidationContext:
                     inst,
                     expr,
                     lambda atom, sat: sat
-                    or isinstance(atom, (ReqSchool, ReqProgram, ReqCareer)),
-                )
+                    or isinstance(atom, ReqSchool | ReqProgram | ReqCareer),
+                ),
             )
         # Stage 3: allow changing everything
         if isinstance(missing, Const):
             # Only set atoms in stone if they are satisfied (ie. leave all unsatisfied
             # requirements as free variables)
             missing = simplify(
-                set_atoms_in_stone_if(self, inst, expr, lambda atom, sat: sat)
+                set_atoms_in_stone_if(self, inst, expr, lambda atom, sat: sat),
             )
         # Map missing courses to their newest equivalent versions
         missing_equivalents = map_atoms(missing, self.map_to_equivalent)
@@ -302,7 +311,7 @@ class ValidationContext:
                 associated_to=[self.class_ids[inst.sem][inst.index]],
                 missing=missing,
                 modernized_missing=missing_equivalents,
-            )
+            ),
         )
 
     def map_to_equivalent(self, atom: Atom) -> Atom:
@@ -341,11 +350,7 @@ def is_satisfied(ctx: ValidationContext, cl: CourseInstance, expr: Expr) -> bool
         if expr.code not in ctx.by_code:
             return False
         req_cl = ctx.by_code[expr.code]
-        if expr.coreq:
-            return req_cl.sem <= cl.sem
-        else:
-            return req_cl.sem < cl.sem
-    # assert isinstance(expr, Const)
+        return (req_cl.sem <= cl.sem) if expr.coreq else (req_cl.sem < cl.sem)
     return expr.value
 
 
@@ -408,10 +413,6 @@ def map_atoms(expr: Expr, map: Callable[[Atom], Atom]):
             new_children.append(new_child)
             if new_child is not child:
                 changed = True
-        if changed:
-            return BaseOp.create(expr.neutral, tuple(new_children))
-        else:
-            return expr
-    else:
-        # Replace this atom
-        return map(expr)
+        return BaseOp.create(expr.neutral, tuple(new_children)) if changed else expr
+    # Replace this atom
+    return map(expr)
