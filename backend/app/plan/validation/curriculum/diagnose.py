@@ -1,8 +1,6 @@
-from typing import Optional
-
 from ....user.info import StudentContext
 from ...course import PseudoCourse
-from .solve import RecommendedCourse, SolvedCurriculum, TakenCourse, solve_curriculum
+from ...courseinfo import CourseInfo
 from ...plan import ValidatablePlan
 from ..diagnostic import (
     CurriculumErr,
@@ -10,8 +8,8 @@ from ..diagnostic import (
     UnassignedWarn,
     ValidationResult,
 )
+from .solve import RecommendedCourse, SolvedCurriculum, TakenCourse, solve_curriculum
 from .tree import Block, Curriculum
-from ...courseinfo import CourseInfo
 
 
 def _diagnose_block(
@@ -34,43 +32,43 @@ def _diagnose_block(
 
             # Diagnose this course
             return [c.rec.course]
-        else:
-            return []
-    else:
-        my_name = None
-        if isinstance(node.origin, Block) and node.origin.name is not None:
-            my_name = node.origin.name
-        if my_name is not None:
-            if name != "":
-                name += " -> "
-            name += my_name
+        return []
+    my_name = None
+    if isinstance(node.origin, Block) and node.origin.name is not None:
+        my_name = node.origin.name
+    if my_name is not None:
+        if name != "":
+            name += " -> "
+        name += my_name
 
-        needs_diagnosis: list[PseudoCourse] = []
-        for edge in node.incoming:
-            if edge.flow <= 0:
-                continue
-            needs_diagnosis.extend(
-                _diagnose_block(courseinfo, diagnosed, out, g, edge.src, name)
-            )
+    needs_diagnosis: list[PseudoCourse] = []
+    for edge in node.incoming:
+        if edge.flow <= 0:
+            continue
+        needs_diagnosis.extend(
+            _diagnose_block(courseinfo, diagnosed, out, g, edge.src, name),
+        )
 
-        if needs_diagnosis and (my_name is not None or id == g.root):
-            if name == "":
-                name = "?"
-            credits = 0
-            for c in needs_diagnosis:
-                cred = courseinfo.get_credits(c)
-                if cred is not None:
-                    credits += cred
-            out.add(
-                CurriculumErr(block=name, credits=credits, recommend=needs_diagnosis)
-            )
-            return []
-        else:
-            return needs_diagnosis
+    if needs_diagnosis and (my_name is not None or id == g.root):
+        if name == "":
+            name = "?"
+        credits = 0
+        for c in needs_diagnosis:
+            cred = courseinfo.get_credits(c)
+            if cred is not None:
+                credits += cred
+        out.add(
+            CurriculumErr(block=name, credits=credits, recommend=needs_diagnosis),
+        )
+        return []
+    return needs_diagnosis
 
 
 def _tag_superblock(
-    superblock: str, out: ValidationResult, g: SolvedCurriculum, id: int
+    superblock: str,
+    out: ValidationResult,
+    g: SolvedCurriculum,
+    id: int,
 ):
     node = g.nodes[id]
     if isinstance(node.origin, tuple):
@@ -91,7 +89,7 @@ def diagnose_curriculum(
     courseinfo: CourseInfo,
     curriculum: Curriculum,
     plan: ValidatablePlan,
-    user_ctx: Optional[StudentContext],
+    user_ctx: StudentContext | None,
     out: ValidationResult,
 ):
     # Produce a warning if no major/minor is selected

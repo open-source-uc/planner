@@ -1,43 +1,27 @@
-from .plan.validation.curriculum.solve import solve_curriculum
-from .user.info import StudentContext
-from .plan.validation.diagnostic import ValidationResult
-from .plan.validation.validate import diagnose_plan
-from .plan.plan import ValidatablePlan
-from .plan.generation import generate_empty_plan, generate_recommended_plan
-from .plan.storage import (
-    PlanView,
-    LowDetailPlanView,
-    store_plan,
-    get_user_plans,
-    get_plan_details,
-    modify_validatable_plan,
-    modify_plan_metadata,
-    remove_plan,
-)
-from .sync.siding import translate as siding_translate
-from fastapi import FastAPI, Query, Depends, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
-from .database import prisma
 from prisma.models import (
     AccessLevel as DbAccessLevel,
+)
+from prisma.models import (
     Course as DbCourse,
+)
+from prisma.models import (
     Major as DbMajor,
+)
+from prisma.models import (
     Minor as DbMinor,
+)
+from prisma.models import (
     Title as DbTitle,
 )
 from prisma.types import CourseWhereInput, CourseWhereInputRecursive2
-from .user.auth import (
-    require_authentication,
-    require_mod_auth,
-    require_admin_auth,
-    login_cas,
-    UserKey,
-    ModKey,
-    AdminKey,
-    AccessLevelOverview,
-)
+from pydantic import BaseModel
+from unidecode import unidecode
+
 from . import sync
+from .database import prisma
 from .plan.courseinfo import (
     CourseDetails,
     EquivDetails,
@@ -45,10 +29,34 @@ from .plan.courseinfo import (
     course_info,
     make_searchable_name,
 )
+from .plan.generation import generate_empty_plan, generate_recommended_plan
+from .plan.plan import ValidatablePlan
+from .plan.storage import (
+    LowDetailPlanView,
+    PlanView,
+    get_plan_details,
+    get_user_plans,
+    modify_plan_metadata,
+    modify_validatable_plan,
+    remove_plan,
+    store_plan,
+)
+from .plan.validation.curriculum.solve import solve_curriculum
+from .plan.validation.diagnostic import ValidationResult
+from .plan.validation.validate import diagnose_plan
+from .sync.siding import translate as siding_translate
 from .sync.siding.client import client as siding_soap_client
-from typing import Optional, Union
-from pydantic import BaseModel
-from unidecode import unidecode
+from .user.auth import (
+    AccessLevelOverview,
+    AdminKey,
+    ModKey,
+    UserKey,
+    login_cas,
+    require_admin_auth,
+    require_authentication,
+    require_mod_auth,
+)
+from .user.info import StudentContext
 
 
 # Set-up operation IDs for OpenAPI
@@ -103,7 +111,10 @@ async def health():
 
 
 @app.get("/auth/login")
-async def authenticate(next: Optional[str] = None, ticket: Optional[str] = None):
+async def authenticate(
+    next: str | None = None,
+    ticket: str | None = None,
+):
     """
     Redirect the browser to this page to initiate authentication.
     """
@@ -228,36 +239,34 @@ class CourseOverview(BaseModel):
     name: str
     credits: int
     school: str
-    area: Optional[str]
+    area: str | None
     is_available: bool
 
 
 class CourseFilter(BaseModel):
     # Only allow courses that match the given search string, in name or course code.
-    text: Optional[str] = None
+    text: str | None = None
     # Only allow courses that have the given amount of credits.
-    credits: Optional[int] = None
+    credits: int | None = None
     # Only allow courses matching the given school.
-    school: Optional[str] = None
+    school: str | None = None
     # Only allow courses that match the given availability.
-    available: Optional[bool] = None
+    available: bool | None = None
     # Only allow courses that are available/unavailable on first semesters.
-    first_semester: Optional[bool] = None
+    first_semester: bool | None = None
     # Only allow courses that are available/unavailable on second semesters.
-    second_semester: Optional[bool] = None
+    second_semester: bool | None = None
     # Only allow courses that are members of the given equivalence.
-    equiv: Optional[str] = None
+    equiv: str | None = None
 
     def as_db_filter(self) -> CourseWhereInput:
         filter = CourseWhereInput()
         if self.text is not None:
             search_text = make_searchable_name(self.text)
-            name_parts: list[CourseWhereInputRecursive2] = list(
-                map(
-                    lambda text_part: {"searchable_name": {"contains": text_part}},
-                    search_text.split(),
-                )
-            )
+            name_parts: list[CourseWhereInputRecursive2] = [
+                {"searchable_name": {"contains": text_part}}
+                for text_part in search_text.split()
+            ]
             filter["OR"] = [
                 {"code": {"contains": search_text.upper()}},
                 {"AND": name_parts},
@@ -300,13 +309,13 @@ async def search_course_codes(filter: CourseFilter):
     credits and school.
     Returns only the course codes, but allows up to 3000 results.
     """
-    codes = list(
-        map(
-            lambda c: c.code,
-            await DbCourse.prisma().find_many(where=filter.as_db_filter(), take=3000),
+    return [
+        c.code
+        for c in await DbCourse.prisma().find_many(
+            where=filter.as_db_filter(),
+            take=3000,
         )
-    )
-    return codes
+    ]
 
 
 @app.get("/courses", response_model=list[CourseDetails])
@@ -344,7 +353,8 @@ async def get_equivalence_details(
         equiv = courseinfo.try_equiv(code)
         if equiv is None:
             raise HTTPException(
-                status_code=404, detail=f"Equivalence '{code}' not found"
+                status_code=404,
+                detail=f"Equivalence '{code}' not found",
             )
         equivs.append(equiv)
     return equivs
@@ -378,7 +388,8 @@ async def empty_plan_for_user(user: UserKey = Depends(require_authentication)):
 
 @app.get("/plan/empty_for_any", response_model=ValidatablePlan)
 async def empty_plan_for_any_user(
-    user_rut: str, mod: ModKey = Depends(require_mod_auth)
+    user_rut: str,
+    mod: ModKey = Depends(require_mod_auth),
 ):
     """
     Same functionality as `empty_plan_for_user`, but works for any user identified by
@@ -407,7 +418,8 @@ async def validate_guest_plan(plan: ValidatablePlan):
 
 @app.post("/plan/validate_for", response_model=ValidationResult)
 async def validate_plan_for_user(
-    plan: ValidatablePlan, user: UserKey = Depends(require_authentication)
+    plan: ValidatablePlan,
+    user: UserKey = Depends(require_authentication),
 ):
     """
     Validate a plan, generating diagnostics.
@@ -420,7 +432,9 @@ async def validate_plan_for_user(
 
 @app.post("/plan/validate_for_any", response_model=ValidationResult)
 async def validate_plan_for_any_user(
-    plan: ValidatablePlan, user_rut: str, mod: ModKey = Depends(require_mod_auth)
+    plan: ValidatablePlan,
+    user_rut: str,
+    mod: ModKey = Depends(require_mod_auth),
 ):
     """
     Same functionality as `validate_plan_for_user`, but works for any user identified by
@@ -449,13 +463,14 @@ async def generate_plan(passed: ValidatablePlan):
     From a base plan, generate a new plan that should lead the user to earn their title
     of choice.
     """
-    plan = await generate_recommended_plan(passed)
-    return plan
+    return await generate_recommended_plan(passed)
 
 
 @app.post("/plan/storage", response_model=PlanView)
 async def save_plan(
-    name: str, plan: ValidatablePlan, user: UserKey = Depends(require_authentication)
+    name: str,
+    plan: ValidatablePlan,
+    user: UserKey = Depends(require_authentication),
 ) -> PlanView:
     """
     Save a plan with the given name in the storage of the current user.
@@ -496,7 +511,8 @@ async def read_plans(
 
 @app.get("/plan/storage/any", response_model=list[LowDetailPlanView])
 async def read_any_plans(
-    user_rut: str, mod: ModKey = Depends(require_mod_auth)
+    user_rut: str,
+    mod: ModKey = Depends(require_mod_auth),
 ) -> list[LowDetailPlanView]:
     """
     Same functionality as `read_plans`, but works for any user identified by
@@ -508,7 +524,8 @@ async def read_any_plans(
 
 @app.get("/plan/storage/details", response_model=PlanView)
 async def read_plan(
-    plan_id: str, user: UserKey = Depends(require_authentication)
+    plan_id: str,
+    user: UserKey = Depends(require_authentication),
 ) -> PlanView:
     """
     Fetch the plan details for a given plan id.
@@ -519,7 +536,8 @@ async def read_plan(
 
 @app.get("/plan/storage/any/details", response_model=PlanView)
 async def read_any_plan(
-    plan_id: str, user: ModKey = Depends(require_mod_auth)
+    plan_id: str,
+    user: ModKey = Depends(require_mod_auth),
 ) -> PlanView:
     """
     Same functionality as `read_plan`, but works for any plan of any user
@@ -545,7 +563,9 @@ async def update_plan(
 
 @app.put("/plan/storage/any", response_model=PlanView)
 async def update_any_plan(
-    plan_id: str, new_plan: ValidatablePlan, user: ModKey = Depends(require_mod_auth)
+    plan_id: str,
+    new_plan: ValidatablePlan,
+    user: ModKey = Depends(require_mod_auth),
 ) -> PlanView:
     """
     Same functionality as `update_plan`, but works for any plan of any user
@@ -553,15 +573,18 @@ async def update_any_plan(
     Moderator access is required.
     """
     return await modify_validatable_plan(
-        user=user, plan_id=plan_id, new_plan=new_plan, mod_access=True
+        user=user,
+        plan_id=plan_id,
+        new_plan=new_plan,
+        mod_access=True,
     )
 
 
 @app.put("/plan/storage/metadata", response_model=PlanView)
 async def update_plan_metadata(
     plan_id: str,
-    set_name: Union[str, None] = None,
-    set_favorite: Union[bool, None] = None,
+    set_name: str | None = None,
+    set_favorite: bool | None = None,
     user: UserKey = Depends(require_authentication),
 ) -> PlanView:
     """
@@ -582,8 +605,8 @@ async def update_plan_metadata(
 @app.put("/plan/storage/any/metadata", response_model=PlanView)
 async def update_any_plan_metadata(
     plan_id: str,
-    set_name: Union[str, None] = None,
-    set_favorite: Union[bool, None] = None,
+    set_name: str | None = None,
+    set_favorite: bool | None = None,
     mod: ModKey = Depends(require_mod_auth),
 ) -> PlanView:
     """
@@ -603,7 +626,8 @@ async def update_any_plan_metadata(
 
 @app.delete("/plan/storage", response_model=PlanView)
 async def delete_plan(
-    plan_id: str, user: UserKey = Depends(require_authentication)
+    plan_id: str,
+    user: UserKey = Depends(require_authentication),
 ) -> PlanView:
     """
     Deletes a plan by ID.
@@ -615,7 +639,8 @@ async def delete_plan(
 
 @app.delete("/plan/storage/any", response_model=PlanView)
 async def delete_any_plan(
-    plan_id: str, mod: ModKey = Depends(require_mod_auth)
+    plan_id: str,
+    mod: ModKey = Depends(require_mod_auth),
 ) -> PlanView:
     """
     Same functionality as `delete_plan`, but works for any plan of any user
@@ -633,31 +658,30 @@ async def get_majors(cyear: str):
     return await DbMajor.prisma().find_many(
         where={
             "cyear": cyear,
-        }
+        },
     )
 
 
 @app.get("/offer/minor", response_model=list[DbMinor])
-async def get_minors(cyear: str, major_code: Optional[str] = None):
+async def get_minors(cyear: str, major_code: str | None = None):
     if major_code is None:
         return await DbMinor.prisma().find_many(
             where={
                 "cyear": cyear,
-            }
+            },
         )
-    else:
-        return await DbMinor.prisma().query_raw(
-            """
-            SELECT *
-            FROM "Minor", "MajorMinor"
-            WHERE "MajorMinor".minor = "Minor".code
-                AND "MajorMinor".major = $2
-                AND "MajorMinor".cyear = $1
-                AND "Minor".cyear = $1
-            """,
-            cyear,
-            major_code,
-        )
+    return await DbMinor.prisma().query_raw(
+        """
+        SELECT *
+        FROM "Minor", "MajorMinor"
+        WHERE "MajorMinor".minor = "Minor".code
+            AND "MajorMinor".major = $2
+            AND "MajorMinor".cyear = $1
+            AND "Minor".cyear = $1
+        """,
+        cyear,
+        major_code,
+    )
 
 
 @app.get("/offer/title", response_model=list[DbTitle])
@@ -665,5 +689,5 @@ async def get_titles(cyear: str):
     return await DbTitle.prisma().find_many(
         where={
             "cyear": cyear,
-        }
+        },
     )

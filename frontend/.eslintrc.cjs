@@ -24,6 +24,16 @@ module.exports = {
     'react'
   ],
   rules: {
+    '@typescript-eslint/ban-types': [
+      'error',
+      {
+        types: {
+          Function: false
+        },
+        extendDefaults: true
+      }
+    ],
+    '@typescript-eslint/ban-tslint-comment': 'off'
   },
   settings: {
     react: {

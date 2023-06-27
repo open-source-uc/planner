@@ -1,28 +1,26 @@
-from typing import Optional
+from .. import sync
+from ..sync import get_curriculum
+from ..user.auth import UserKey
+from .course import ConcreteId, EquivalenceId
+from .courseinfo import CourseInfo, course_info
+from .plan import (
+    Level,
+    PseudoCourse,
+    ValidatablePlan,
+)
+from .validation.courses.logic import And, Expr, Or, ReqCourse
 from .validation.curriculum.solve import (
     RecommendedCourse,
     SolvedCurriculum,
     solve_curriculum,
 )
-
-from ..user.auth import UserKey
-from ..sync import get_curriculum
-from .validation.courses.logic import And, Expr, Or, ReqCourse
 from .validation.curriculum.tree import (
     LATEST_CYEAR,
     Curriculum,
     CurriculumSpec,
     Cyear,
 )
-from .plan import (
-    Level,
-    PseudoCourse,
-    ValidatablePlan,
-)
-from .course import EquivalenceId
-from .courseinfo import CourseInfo, course_info
 from .validation.validate import quick_validate_dependencies
-from .. import sync
 
 RECOMMENDED_CREDITS_PER_SEMESTER = 50
 
@@ -88,7 +86,7 @@ def _compute_courses_to_pass(
     for rec, credits in to_pass:
         if isinstance(rec.rec.course, EquivalenceId):
             courses_to_pass.append(
-                EquivalenceId(code=rec.rec.course.code, credits=credits)
+                EquivalenceId(code=rec.rec.course.code, credits=credits),
             )
         else:
             courses_to_pass.append(rec.rec.course)
@@ -98,7 +96,7 @@ def _compute_courses_to_pass(
 def _find_corequirements(out: list[str], expr: Expr):
     if isinstance(expr, ReqCourse) and expr.coreq:
         out.append(expr.code)
-    elif isinstance(expr, (And, Or)):
+    elif isinstance(expr, And | Or):
         for child in expr.children:
             _find_corequirements(out, child)
 
@@ -122,18 +120,16 @@ def _get_corequirements(courseinfo: CourseInfo, courseid: PseudoCourse) -> list[
 
 
 def _is_course_in_list_of_codes(
-    courseinfo: CourseInfo, course: PseudoCourse, codes: list[str]
+    courseinfo: CourseInfo,
+    course: PseudoCourse,
+    codes: list[str],
 ) -> bool:
-    if isinstance(course, EquivalenceId):
-        info = courseinfo.try_equiv(course.code)
-        if info is None:
-            return False
-        for code in info.courses:
-            if code in codes:
-                return True
-        return False
-    else:
+    if isinstance(course, ConcreteId):
         return course.code in codes
+    info = courseinfo.try_equiv(course.code)
+    if info is None:
+        return False
+    return any(code in codes for code in info.courses)
 
 
 def _get_credits(courseinfo: CourseInfo, courseid: PseudoCourse) -> int:
@@ -144,7 +140,8 @@ def _get_credits(courseinfo: CourseInfo, courseid: PseudoCourse) -> int:
 
 
 def _determine_coreq_components(
-    courseinfo: CourseInfo, courses_to_pass: list[PseudoCourse]
+    courseinfo: CourseInfo,
+    courses_to_pass: list[PseudoCourse],
 ) -> dict[PseudoCourse, list[PseudoCourse]]:
     """
     Determine which courses have to be taken together because they are
@@ -166,7 +163,9 @@ def _determine_coreq_components(
         for j in range(i + 1, len(courses_to_pass)):
             course2 = courses_to_pass[j]
             if _is_course_in_list_of_codes(
-                courseinfo, course2, coreqs[i]
+                courseinfo,
+                course2,
+                coreqs[i],
             ) and _is_course_in_list_of_codes(courseinfo, course1, coreqs[j]):
                 # `course1` and `course2` are mutual corequirements, they must be taken
                 # together
@@ -205,7 +204,7 @@ def _try_add_course_group(
             return False
 
     # Determine total credits of this group
-    group_credits = sum(map(lambda c: _get_credits(courseinfo, c), course_group))
+    group_credits = sum(_get_credits(courseinfo, c) for c in course_group)
 
     # Bail if there is not enough space in this semester
     if current_credits + group_credits > RECOMMENDED_CREDITS_PER_SEMESTER:
@@ -222,7 +221,10 @@ def _try_add_course_group(
         if courseinfo.try_course(course.code) is None:
             continue
         if not quick_validate_dependencies(
-            courseinfo, plan, len(plan.classes) - 1, original_length + i
+            courseinfo,
+            plan,
+            len(plan.classes) - 1,
+            original_length + i,
         ):
             # Requirements are not met
             # Undo changes and cancel
@@ -238,7 +240,7 @@ def _try_add_course_group(
     return True
 
 
-async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan:
+async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
     """
     Generate an empty plan with optional user context.
     If no user context is available, uses the latest curriculum version.
@@ -309,7 +311,11 @@ async def generate_recommended_plan(passed: ValidatablePlan):
             course_group = coreq_components[try_course]
 
             could_add = _try_add_course_group(
-                courseinfo, plan, courses_to_pass, credits, course_group
+                courseinfo,
+                plan,
+                courses_to_pass,
+                credits,
+                course_group,
             )
             if could_add:
                 # Successfully added a course, finish

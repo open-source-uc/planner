@@ -37,18 +37,19 @@
     "[python]": {
         "editor.defaultFormatter": "ms-python.python",
         "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        }
     },
     "python.formatting.provider": "black",
     "python.defaultInterpreterPath": "/workspaces/planner/backend/.venv/bin/python",
     "python.analysis.typeCheckingMode": "strict",
-    "isort.check": true,
     "python.analysis.inlayHints.functionReturnTypes": true,
     "python.analysis.inlayHints.variableTypes": false,
     "python.terminal.activateEnvInCurrentTerminal": true,
-    "flake8.importStrategy": "fromEnvironment",
-    "flake8.args": [
-        "--config",
-        "./backend/.flake8"
-    ],
     "python.linting.pylintEnabled": false,
+    "ruff.args": [
+        "--config=/workspaces/planner/backend/pyproject.toml"
+    ],
+    "ruff.organizeImports": true,
 }

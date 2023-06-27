@@ -2,12 +2,12 @@
 import { memo, useCallback } from 'react'
 import { useDrop } from 'react-dnd'
 import { useAuth } from '../../../contexts/auth.context'
-import { CourseValidationDigest, PseudoCourseDetail, PseudoCourseId, SemesterValidationDigest } from '../Planner'
+import { type CourseValidationDigest, type PseudoCourseDetail, type PseudoCourseId, type SemesterValidationDigest } from '../Planner'
 import CourseCard from './CourseCard'
 import deepEqual from 'fast-deep-equal'
 
 interface SemesterColumnProps {
-  classesDetails: { [code: string]: PseudoCourseDetail }
+  classesDetails: Record<string, PseudoCourseDetail>
   semester: number
   addCourse: Function
   moveCourse: Function
@@ -56,12 +56,12 @@ const SemesterColumn = ({ classesDetails, semester, addCourse, moveCourse, remCo
               key={index}
               semester={semester}
               index={index}
-              cardData={{ ...course, semester, index, ...classesDetails[course.code] }}
+              cardData={{ ...course, semester, index, ...classesDetails[('failed' in course ? course.failed : null) ?? course.code] }}
               isDragging={setIsDragging}
               moveCourse={moveCourse}
               remCourse={remCourse}
               courseBlock={validationCourses[index]?.superblock ?? ''}
-              openSelector={() => openSelector(course, semester, index)}
+              openSelector={() => { openSelector(course, semester, index) }}
               hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
               hasError={validationCourses[index]?.errorIndices?.[0] != null}
               hasWarning={validationCourses[index]?.warningIndices?.[0] != null}
