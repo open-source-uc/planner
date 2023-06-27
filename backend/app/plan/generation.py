@@ -261,6 +261,7 @@ async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
             title=student.info.reported_title,
         )
     return ValidatablePlan(
+        version="0.0.1",
         classes=classes,
         level="Pregrado",
         school="Ingenieria",

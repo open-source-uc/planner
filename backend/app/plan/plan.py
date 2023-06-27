@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel
 
 from .course import PseudoCourse
@@ -20,6 +22,9 @@ class ValidatablePlan(BaseModel):
     # Eventually, we will have to roll our own migration system if we allow
     # ValidatablePlans to be exportable/importable.
 
+    # The version of the plan.
+    # We will probably use this if we move to a `StorablePlan`/`ValidatablePlan` divide.
+    version: Literal["0.0.1"]
     # Classes per semester.
     classes: list[list[PseudoCourse]]
     # Academic level of the student
