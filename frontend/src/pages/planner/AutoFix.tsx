@@ -1,5 +1,6 @@
 import { type CourseRequirementErr, type CurriculumErr, type Cyear, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../client'
 import { type AuthState, useAuth } from '../../contexts/auth.context'
+import { type PseudoCourseId } from './Planner'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
 type RequirementExpr = CourseRequirementErr['missing']
@@ -47,17 +48,15 @@ const findSemesterWithLeastCourses = (newClasses: ValidatablePlan['classes'], au
   return minSem
 }
 
-const fixMissingCurriculumCourse = (plan: ValidatablePlan, diag: CurriculumErr, auth: AuthState | null): ValidatablePlan => {
-  // Add the recommended courses to wherever there's fewer courses
+const fixMissingCurriculumCourse = (plan: ValidatablePlan, diag: CurriculumErr, fillWith: PseudoCourseId, auth: AuthState | null): ValidatablePlan => {
+  // Add the recommended course to wherever there's fewer courses
   const nextSemester = auth?.student?.next_semester ?? 0
   const newClasses = [...plan.classes]
   while (newClasses.length <= nextSemester) newClasses.push([])
-  for (const recommendation of diag.recommend) {
-    const semIdx = findSemesterWithLeastCourses(newClasses, auth, null)
-    // Add the recommended course to this semester
-    newClasses[semIdx] = [...newClasses[semIdx]]
-    newClasses[semIdx].push(recommendation)
-  }
+  const semIdx = findSemesterWithLeastCourses(newClasses, auth, null)
+  // Add the recommended course to this semester
+  newClasses[semIdx] = [...newClasses[semIdx]]
+  newClasses[semIdx].push(fillWith)
   return { ...plan, classes: newClasses }
 }
 
@@ -124,12 +123,17 @@ const AutoFix = ({ diag, setValidatablePlan }: { diag: Diagnostic, setValidatabl
   const auth = useAuth()
   switch (diag.kind) {
     case 'curr':
-      return <button onClick={() => {
-        setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
-          if (plan == null) return null
-          return fixMissingCurriculumCourse(plan, diag, auth)
-        })
-      }}>Agregar {diag.recommend.map(c => c.code).join(', ')}</button>
+      return <>{
+        diag.recommend.map((fillWith, i) => (
+          <button key={i} onClick={() => {
+            setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+              if (plan == null) return null
+              return fixMissingCurriculumCourse(plan, diag, fillWith, auth)
+            })
+          }}>
+            Agregar {fillWith.code}
+          </button>))
+      }</>
     case 'cyear':
       if (validateCyear(diag.user) != null) {
         return <button onClick={() => {

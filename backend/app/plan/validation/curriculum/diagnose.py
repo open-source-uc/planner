@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from ....user.info import StudentContext
+from ...course import PseudoCourse, pseudocourse_with_credits
 from ...courseinfo import CourseInfo
 from ...plan import ValidatablePlan
 from ..diagnostic import (
@@ -9,7 +10,13 @@ from ..diagnostic import (
     UnassignedWarn,
     ValidationResult,
 )
-from .solve import FilledCourse, SolvedCurriculum, TakenCourse, solve_curriculum
+from .solve import (
+    EquivalentFillerFinder,
+    FilledCourse,
+    SolvedCurriculum,
+    TakenCourse,
+    solve_curriculum,
+)
 from .tree import Curriculum
 
 
@@ -20,6 +27,7 @@ def _diagnose_blocks(
 ):
     # Avoid diagnosing a course twice if it is present in two layers
     diagnosed: defaultdict[str, set[int]] = defaultdict(set)
+    equivalent_finder: EquivalentFillerFinder | None = None
 
     for _layer_id, layer in g.layers.items():
         for code, courses in layer.courses.items():
@@ -35,6 +43,22 @@ def _diagnose_blocks(
                         continue
                     diagnosed[code].add(rep_idx)
 
+                    # Find equivalents
+                    if equivalent_finder is None:
+                        equivalent_finder = EquivalentFillerFinder(g)
+                    raw_equivalents = equivalent_finder.find_equivalents(
+                        course.active_edge,
+                    )
+
+                    # Collapse equivalents and adjust equivalence credits
+                    equivalents_set: dict[str, PseudoCourse] = {
+                        c.code: c for c in raw_equivalents
+                    }
+                    equivalents: list[PseudoCourse] = [
+                        pseudocourse_with_credits(c, course.active_flow)
+                        for c in equivalents_set.values()
+                    ]
+
                     # Diagnose
                     out.add(
                         CurriculumErr(
@@ -44,7 +68,7 @@ def _diagnose_blocks(
                                 if b.name is not None
                             ],
                             credits=course.active_flow,
-                            recommend=[course.origin.fill_with.course],
+                            recommend=equivalents,
                         ),
                     )
 

@@ -3,7 +3,7 @@ from collections import defaultdict
 from .. import sync
 from ..sync import get_curriculum
 from ..user.auth import UserKey
-from .course import ConcreteId, EquivalenceId
+from .course import ConcreteId, EquivalenceId, pseudocourse_with_credits
 from .courseinfo import CourseInfo, course_info
 from .plan import (
     Level,
@@ -59,15 +59,9 @@ def _extract_active_fillers(
     # Flatten into plain pseudocourse ids, taking active credits into account
     flattened: list[PseudoCourse] = []
     for info, course in to_pass:
-        cid = course.fill_with.course
-        equiv = cid if isinstance(cid, EquivalenceId) else cid.equivalence
-        if equiv is not None:
-            equiv = EquivalenceId(code=equiv.code, credits=info.active_flow)
-            if isinstance(cid, EquivalenceId):
-                cid = equiv
-            else:
-                cid = ConcreteId(code=cid.code, equivalence=equiv)
-        flattened.append(cid)
+        flattened.append(
+            pseudocourse_with_credits(course.fill_with.course, info.active_flow),
+        )
     return flattened
 
 
