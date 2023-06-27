@@ -6,6 +6,7 @@ import selectorIncompatibility from '../../assets/instructions/selector_incompat
 import selectorDelete from '../../assets/instructions/selector_delete.jpg'
 import editIcon from '../../assets/editBlack.svg'
 import courseSelector from '../../assets/instructions/courseSelector.jpg'
+import courseSelectorNoFilter from '../../assets/instructions/courseSelector_nofilter.jpg'
 
 const Text = ({ text }: { text: string }): JSX.Element => {
   return (
@@ -42,10 +43,10 @@ const Instructions = (): JSX.Element => {
         <Text text='Una vez seleccionado el major, el selector de minors solo mostrará los minors compatibles con el major seleccionado.'/>
 
         <Text text='Si se desea cambiar el major teniendo el minor ya seleccionado, si existe una incompatibilidad, esta será informada.'/>
-        <img className="w-1/3 m-1 mb-3 mx-auto h-auto" alt="selector list of majors" src={selectorIncompatibility}></img>
+        <img className="w-1/3 m-1 mb-3 mx-auto h-auto" alt="Alerta incompatibilidad" src={selectorIncompatibility}></img>
 
         <Text text={'Si se desea eliminar una selección, esto se puede realizar haciendo click en \'Eliminar selección\' en la parte superior de la lista'}/>
-        <img className="w-1/3 m-1 mb-3 mx-auto h-auto" alt="selector list of majors" src={selectorDelete}></img>
+        <img className="w-1/3 m-1 mb-3 mx-auto h-auto" alt="Eliminar selección" src={selectorDelete}></img>
 
         <Text text='Al realizar cualquier cambio, el plan volverá a crear la malla recomendada para las opciones seleccionadas.'/>
       </div>
@@ -58,7 +59,10 @@ const Instructions = (): JSX.Element => {
            en la esquina superior izquierda de la tarjeta, en la tarjeta correspondiente.</p>
           <Text text='Se abrirá un selector en el cual se puede seleccionar el curso deseado de un grupo de cursos posibles.'/>
           <Text text='Dependiendo del bloque o equivalencia que se esté seleccionando, estos cursos se pueden filtrar por Nombre o Sigla, créditos, escuela y semestralidad.'/>
-          <img className="w-1/3 m-1 mb-3 mx-auto h-auto" alt="selector list of majors" src={courseSelector}></img>
+          <span className='flex flex-row'>
+            <img className="w-1/3 m-1 mb-3 mx-auto h-auto" alt="selector de curso con filtros" src={courseSelector}></img>
+            <img className="w-1/3 m-1 mb-3 mx-auto h-auto" alt="selector de curso sin filtros" src={courseSelectorNoFilter}></img>
+          </span>
         </div>
 
         <div className="mb-2">
