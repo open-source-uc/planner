@@ -103,8 +103,8 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
     <>
       <ConditionalWrapper
         condition={conditionPassed || checkCurrent}
-        wrapper={(children: ReactNode) => <div ref={ref} draggable={false} className={'px-2 opacity-50 pb-3 cursor-not-allowed'}>{children}</div>}
-        wrapperNotPassed={(children: ReactNode) => <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3 cursor-grab' : 'cursor-grabbing'} `}>{children}</div>}
+        wrapper={(children: ReactNode) => <div ref={ref} draggable={false} className={'px-1 opacity-50 pb-3 cursor-not-allowed'}>{children}</div>}
+        wrapperNotPassed={(children: ReactNode) => <div ref={ref} draggable={true} className={`px-1 ${!collected.isDragging ? 'pb-3 cursor-grab' : 'cursor-grabbing'} `}>{children}</div>}
       >
         {!collected.isDragging && <>{dropProps.isOver
           ? <div className={'card bg-place-holder'} />
