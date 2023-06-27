@@ -33,10 +33,8 @@ interface CardProps {
 }
 
 interface ConditionalWrapperProps {
-  conditionPassed: boolean
-  conditionCurrent: boolean
-  wrapperCurrent: Function
-  wrapperPassed: Function
+  condition: boolean
+  wrapper: Function
   wrapperNotPassed: Function
   children: ReactNode
 }
@@ -59,9 +57,9 @@ const BlockInitials = (courseBlock: string): string => {
   return ''
 }
 
-const ConditionalWrapper = ({ conditionPassed, conditionCurrent, wrapperCurrent, wrapperPassed, wrapperNotPassed, children }: ConditionalWrapperProps): JSX.Element => {
+const ConditionalWrapper = ({ condition, wrapper, wrapperNotPassed, children }: ConditionalWrapperProps): JSX.Element => {
   return (
-    conditionCurrent ? wrapperCurrent(children) : conditionPassed ? wrapperPassed(children) : wrapperNotPassed(children)
+    condition ? wrapper(children) : wrapperNotPassed(children)
   )
 }
 
@@ -104,10 +102,8 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
   return (
     <>
       <ConditionalWrapper
-        conditionPassed={conditionPassed}
-        conditionCurrent={checkCurrent}
-        wrapperCurrent={(children: ReactNode) => <div ref={ref} draggable={false} className={'px-2 opacity-75 pb-3 cursor-not-allowed'}>{children}</div>}
-        wrapperPassed={(children: ReactNode) => <div ref={ref} draggable={false} className={'px-2 opacity-50 pb-3 cursor-not-allowed'}>{children}</div>}
+        condition={conditionPassed || checkCurrent}
+        wrapper={(children: ReactNode) => <div ref={ref} draggable={false} className={'px-2 opacity-50 pb-3 cursor-not-allowed'}>{children}</div>}
         wrapperNotPassed={(children: ReactNode) => <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3 cursor-grab' : 'cursor-grabbing'} `}>{children}</div>}
       >
         {!collected.isDragging && <>{dropProps.isOver
