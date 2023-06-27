@@ -189,7 +189,7 @@ class SoapClient:
 
         # Connect to SIDING webservice
         if settings.siding_username != "":
-            wsdl_url = Path(__file__).joinpath("ServiciosPlanner.wsdl")
+            wsdl_url = Path(__file__).with_name("ServiciosPlanner.wsdl").as_posix()
             http_client = httpx.AsyncClient(
                 auth=httpx.DigestAuth(
                     settings.siding_username,
