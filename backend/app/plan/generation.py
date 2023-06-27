@@ -6,7 +6,6 @@ from ..user.auth import UserKey
 from .course import ConcreteId, EquivalenceId, pseudocourse_with_credits
 from .courseinfo import CourseInfo, course_info
 from .plan import (
-    Level,
     PseudoCourse,
     ValidatablePlan,
 )
@@ -263,7 +262,7 @@ async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
         )
     return ValidatablePlan(
         classes=classes,
-        level=Level.PREGRADO,
+        level="Pregrado",
         school="Ingenieria",
         program=None,
         career="Ingenieria",

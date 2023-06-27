@@ -331,12 +331,8 @@ def is_satisfied(ctx: ValidationContext, cl: CourseInstance, expr: Expr) -> bool
     if isinstance(expr, MinCredits):
         return ctx.approved_credits[cl.sem] >= expr.min_credits
     if isinstance(expr, ReqLevel):
-        if ctx.plan.level is None:
-            # TODO: Does everybody have a level?
-            # Should planner reject guests with courses that have level restrictions?
-            return False
         # TODO: Is this a `>=` relationship or actually an `=` relationship?
-        return ctx.plan.level.value >= expr.min_level.value
+        return ctx.plan.level == expr.level
     if isinstance(expr, ReqSchool):
         return (ctx.plan.school == expr.school) == expr.equal
     if isinstance(expr, ReqProgram):

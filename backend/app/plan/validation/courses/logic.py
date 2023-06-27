@@ -9,8 +9,6 @@ from typing import Annotated, Any, ClassVar, Literal
 
 from pydantic import BaseModel, Field
 
-from ...plan import Level
-
 
 class BaseExpr(BaseModel):
     """
@@ -151,14 +149,20 @@ class ReqLevel(BaseExpr):
 
     expr: Literal["lvl"] = Field(default="lvl", const=True)
 
-    min_level: Level
+    # Takes the values: "Pregrado", "Postitulo", "Magister", "Doctorado".
+    level: str
+
+    # Require equality or inequality?
+    equal: bool
 
     def __str__(self) -> str:
-        return f"(Nivel = {self.min_level})"
+        eq = "=" if self.equal else "!="
+        return f"(Nivel {eq} {self.level})"
 
     def compute_hash(self) -> bytes:
-        h = good_hash(b"lvl")
-        h.update(self.min_level.value.to_bytes(4))
+        h = good_hash(b"level")
+        h.update(self.level.encode("UTF-8"))
+        h.update(b"==" if self.equal else b"!=")
         return h.digest()
 
 

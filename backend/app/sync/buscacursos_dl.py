@@ -10,7 +10,6 @@ from prisma.types import CourseCreateWithoutRelationsInput
 from pydantic import BaseModel
 
 from ..plan.courseinfo import make_searchable_name
-from ..plan.plan import Level
 from ..plan.validation.courses.logic import (
     And,
     Const,
@@ -106,20 +105,6 @@ class BcParser:
             self.i = len(self.s)
         return self.s[prv : self.i]
 
-    def parse_level(self, cmp: str, rhs: str) -> ReqLevel:
-        self.ensure(cmp == "=", "expected = operator for level")
-        if rhs == "Pregrado":
-            lvl = Level.PREGRADO
-        elif rhs == "Postitulo":
-            lvl = Level.POSTITULO
-        elif rhs == "Magister":
-            lvl = Level.MAGISTER
-        elif rhs == "Doctorado":
-            lvl = Level.DOCTORADO
-        else:
-            self.bail("invalid academic level")
-        return ReqLevel(min_level=lvl)
-
     def parse_property_eq(
         self,
         name: str,
@@ -151,7 +136,12 @@ class BcParser:
         self.ensure(len(cmp) > 0, "expected a comparison operator")
         self.ensure(len(rhs) > 0, "expected an rhs")
         if lhs == "Nivel":
-            return self.parse_level(cmp, rhs)
+            return self.parse_property_eq(
+                "level",
+                lambda eq, x: ReqLevel(level=x, equal=eq),
+                cmp,
+                rhs,
+            )
         if lhs == "Escuela":
             return self.parse_property_eq(
                 "school",
