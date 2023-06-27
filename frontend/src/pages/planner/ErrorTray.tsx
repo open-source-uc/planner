@@ -114,9 +114,9 @@ const formatMessage = (diag: Diagnostic, courseDetails: Record<string, PseudoCou
     case 'req':
       return `Faltan requisitos para el curso ${diag.associated_to[0]?.code}: ${formatReqExpr(diag.modernized_missing)}`
     case 'sem': {
-      const sem = diag.only_available_on === 0 ? 'primeros' : diag.only_available_on === 1 ? 'segundos' : '?'
+      const sem = diag.only_available_on === 0 ? 'impares' : diag.only_available_on === 1 ? 'pares' : '?'
       const s = diag.associated_to.length !== 1
-      return `${s ? 'Los' : 'El'} curso${s ? 's' : ''} ${listCourses(diag.associated_to)} solo se dicta${s ? 'n' : ''} los ${sem} semestres.`
+      return `${s ? 'Los' : 'El'} curso${s ? 's' : ''} ${listCourses(diag.associated_to)} solo se dicta${s ? 'n' : ''} los semestres ${sem}.`
     }
     case 'unavail': {
       const s = diag.associated_to.length !== 1
