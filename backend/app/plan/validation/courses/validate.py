@@ -332,7 +332,7 @@ def is_satisfied(ctx: ValidationContext, cl: CourseInstance, expr: Expr) -> bool
         return ctx.approved_credits[cl.sem] >= expr.min_credits
     if isinstance(expr, ReqLevel):
         # TODO: Is this a `>=` relationship or actually an `=` relationship?
-        return ctx.plan.level == expr.level
+        return (ctx.plan.level == expr.level) == expr.equal
     if isinstance(expr, ReqSchool):
         return (ctx.plan.school == expr.school) == expr.equal
     if isinstance(expr, ReqProgram):
