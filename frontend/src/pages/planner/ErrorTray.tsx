@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { type ClassId, type CourseRequirementErr, type CurriculumSpec, type ValidationResult } from '../../client'
 import { Spinner } from '../../components/Spinner'
 import AutoFix, { validateCyear } from './AutoFix'
+import { type PseudoCourseDetail } from './Planner'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
 type RequirementExpr = CourseRequirementErr['missing']
@@ -75,7 +76,7 @@ const formatCurriculum = (curr: CurriculumSpec): string => {
 /**
  * Get the error message for a given diagnostic.
  */
-const formatMessage = (diag: Diagnostic): string => {
+const formatMessage = (diag: Diagnostic, courseDetails: Record<string, PseudoCourseDetail>): string => {
   // Este switch gigante esta chequeado por typescript
   // Si no se chequean exactamente todas las opciones tira error
   switch (diag.kind) {
@@ -94,8 +95,8 @@ const formatMessage = (diag: Diagnostic): string => {
         return `Tu versión del curriculum es ${diag.user} pero no es soportada. El plan esta siendo validado para la versión de curriculum ${diag.plan.raw}.`
       }
     case 'equiv': {
-      const s = diag.associated_to.length === 1 ? '' : 's'
-      return `Falta desambiguar la${s} equivalencia${s} ${listCourses(diag.associated_to)} para validar correctamente tu plan.`
+      const n = diag.associated_to.length
+      return `Falta especificar ${n} equivalencia${n === 1 ? '' : 's'} para validar correctamente tu plan.`
     }
     case 'nomajor': {
       let missing = ''
@@ -139,12 +140,13 @@ interface MessageProps {
   diag: Diagnostic
   key: number
   open: boolean
+  courseDetails: Record<string, PseudoCourseDetail>
 }
 
 /**
  * A single error/warning message.
  */
-const Message = ({ setValidatablePlan, diag, key, open }: MessageProps): JSX.Element => {
+const Message = ({ setValidatablePlan, diag, key, open, courseDetails }: MessageProps): JSX.Element => {
   const w = !(diag.is_err ?? true)
 
   return (
@@ -153,8 +155,8 @@ const Message = ({ setValidatablePlan, diag, key, open }: MessageProps): JSX.Ele
     <span className="sr-only">Info</span>
     <div className={`min-w-[14rem] ml-2 ${open ? '' : 'hidden'} `}>
       <span className={'font-semibold '}>{`${w ? 'Advertencia' : 'Error'}: `}</span>
-      {formatMessage(diag)}
-      <AutoFix setValidatablePlan={setValidatablePlan} diag={diag}/>
+      {formatMessage(diag, courseDetails)}
+      <AutoFix setValidatablePlan={setValidatablePlan} diag={diag} courseDetails={courseDetails} />
     </div>
   </div>)
 }
@@ -163,15 +165,16 @@ interface ErrorTrayProps {
   setValidatablePlan: any
   diagnostics: Diagnostic[]
   validating: boolean
+  courseDetails: Record<string, PseudoCourseDetail>
 }
 
 /**
  * The error tray shows errors and warnings about the current plan that come from the validation backend.
  */
-const ErrorTray = ({ setValidatablePlan, diagnostics, validating }: ErrorTrayProps): JSX.Element => {
+const ErrorTray = ({ setValidatablePlan, diagnostics, validating, courseDetails }: ErrorTrayProps): JSX.Element => {
   const [open, setOpen] = useState(true)
   const hasError = diagnostics.some(diag => diag.is_err)
-  const messageList: JSX.Element[] = diagnostics.map((diag, index) => Message({ setValidatablePlan, diag, key: index, open: open || hasError }))
+  const messageList: JSX.Element[] = diagnostics.map((diag, index) => Message({ setValidatablePlan, diag, key: index, open: open || hasError, courseDetails }))
 
   return (
     <div className={`h-[95%] z-20 flex flex-col relative border-slate-300 border-2 rounded-lg bg-slate-100 shadow-lg mb-2 py-4  motion-reduce:transition-none transition-all ${hasError || open ? 'w-80 min-w-[20rem]' : 'min-w-[4.5rem]'}`}>

@@ -1,6 +1,6 @@
 import { type CourseRequirementErr, type CurriculumErr, type Cyear, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../client'
 import { type AuthState, useAuth } from '../../contexts/auth.context'
-import { type PseudoCourseId } from './Planner'
+import { type PseudoCourseDetail, type PseudoCourseId } from './Planner'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
 type RequirementExpr = CourseRequirementErr['missing']
@@ -114,29 +114,35 @@ const fixMissingRequirement = (plan: ValidatablePlan, diag: CourseRequirementErr
   return { ...plan, classes: newClasses }
 }
 
+interface AutoFixProps {
+  diag: Diagnostic
+  setValidatablePlan: Function
+  courseDetails: Record<string, PseudoCourseDetail>
+}
+
 /**
  * Get the quick fixed for some diagnostic, if any.
  */
-const AutoFix = ({ diag, setValidatablePlan }: { diag: Diagnostic, setValidatablePlan: any }): JSX.Element => {
+const AutoFix = ({ diag, setValidatablePlan, courseDetails }: AutoFixProps): JSX.Element => {
   // FIXME: TODO: Los cursos añadidos a traves del autofix les faltan los CourseDetails.
   // No me manejo bien con la implementación del frontend, lo dejo en mejores manos.
   const auth = useAuth()
   switch (diag.kind) {
-    case 'curr':
-      return <>{
-        diag.recommend.map((fillWith, i) => (
-          <button key={i} onClick={() => {
-            setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
-              if (plan == null) return null
-              return fixMissingCurriculumCourse(plan, diag, fillWith, auth)
-            })
-          }}>
-            Agregar {fillWith.code}
-          </button>))
-      }</>
+    case 'curr': {
+      const buttons = diag.recommend.map((fillWith, i) => (
+        <button key={i} className="autofix" onClick={() => {
+          setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+            if (plan == null) return null
+            return fixMissingCurriculumCourse(plan, diag, fillWith, auth)
+          })
+        }}>
+          Agregar {fillWith.is_concrete === true ? fillWith.code : courseDetails[fillWith.code]?.name ?? ''}
+        </button>))
+      return <>{buttons}</>
+    }
     case 'cyear':
       if (validateCyear(diag.user) != null) {
-        return <button onClick={() => {
+        return <button className="autofix" onClick={() => {
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
             return fixIncorrectCyear(plan, diag)
@@ -148,7 +154,7 @@ const AutoFix = ({ diag, setValidatablePlan }: { diag: Diagnostic, setValidatabl
     case 'outdated':
     case 'outdatedcurrent':
       if (auth != null) {
-        return <button onClick={() => {
+        return <button className="autofix" onClick={() => {
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
             return fixOutdatedPlan(plan, diag, auth)
@@ -159,24 +165,20 @@ const AutoFix = ({ diag, setValidatablePlan }: { diag: Diagnostic, setValidatabl
       }
     case 'req': {
       const missing = extractRequiredCourses(diag.modernized_missing)
-      const buttons = []
-      for (const code in missing) {
-        const type = missing[code]
-        buttons.push(<button onClick={() => {
-          setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
-            if (plan == null) return null
-            return fixMissingRequirement(plan, diag, auth, code, type)
-          })
-        }}>
+      const buttons = Object.entries(missing).map(([code, type], i) => (
+          <button key={i} className="autofix" onClick={() => {
+            setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+              if (plan == null) return null
+              return fixMissingRequirement(plan, diag, auth, code, type)
+            })
+          }}>
             Agregar {type === 'req' ? 'requisito' : 'corequisito'} {code}
-          </button>)
-      }
-      return <>
-          {buttons}
-        </>
+          </button>
+      ))
+      return (<>{buttons}</>)
     }
     case 'unknown':
-      return <button onClick={() => {
+      return <button className="autofix" onClick={() => {
         setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
           if (plan == null) return null
           const remCodes = new Set<string>()
