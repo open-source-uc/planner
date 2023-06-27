@@ -622,14 +622,14 @@ def _build_graph(
     for sem_i, sem in enumerate(taken_semesters):
         for i, c in sorted(enumerate(sem)):
             creds = courseinfo.get_credits(c)
-            if creds is None:
-                continue
             if creds == 0:
                 # Assign 1 ghost credit to 0-credit courses
                 # Kind of a hack, but works pretty well
                 # The curriculum definition must correspondingly also consider
                 # 0-credit courses to have 1 ghost credit
                 creds = 1
+            if creds is None:
+                creds = 0
             repetitions = taken.mapped[c.code]
             c = TakenCourse(
                 course=c,

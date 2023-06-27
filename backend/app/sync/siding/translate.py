@@ -339,5 +339,11 @@ async def fetch_student_previous_courses(
         sem = _semesters_elapsed(start_period, _decode_period(c.Periodo))
         while len(semesters) <= sem:
             semesters.append([])
-        semesters[sem].append(ConcreteId(code=c.Sigla))
+        if c.Estado.startswith("2"):
+            # Failed course
+            course = ConcreteId(code="#FAILED", failed=c.Sigla)
+        else:
+            # Approved course
+            course = ConcreteId(code=c.Sigla)
+        semesters[sem].append(course)
     return semesters

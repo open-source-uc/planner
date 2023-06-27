@@ -283,8 +283,9 @@ const Planner = (): JSX.Element => {
     const coursesCodes = new Set<string>()
     const equivalenceCodes = new Set<string>()
     for (const courseid of courses) {
-      if (!(courseid.code in courseDetails)) {
-        if (courseid.is_concrete === true) { coursesCodes.add(courseid.code) } else { equivalenceCodes.add(courseid.code) }
+      const code = ('failed' in courseid ? courseid.failed : null) ?? courseid.code
+      if (!(code in courseDetails)) {
+        if (courseid.is_concrete === true) { coursesCodes.add(code) } else { equivalenceCodes.add(code) }
       }
     }
     try {
