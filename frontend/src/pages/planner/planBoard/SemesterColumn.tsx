@@ -1,4 +1,4 @@
-import { memo, useCallback, useRef, Fragment, useState } from 'react'
+import { memo, useCallback, useRef, useState, Fragment } from 'react'
 import { useDrop } from 'react-dnd'
 import { useAuth } from '../../../contexts/auth.context'
 import { type CourseValidationDigest, type PseudoCourseDetail, type PseudoCourseId, type SemesterValidationDigest } from '../utils/Types'
@@ -9,22 +9,28 @@ interface SemesterColumnProps {
   classesDetails: Record<string, PseudoCourseDetail>
   semester: number
   addCourse: Function
-  coursesId: Array<{ code: string, instance: number }>
+  coursesId?: Array<{ code: string, instance: number }>
   moveCourse: Function
   remCourse: Function
   openModal: Function
-  classes: PseudoCourseId[]
-  validationCourses: CourseValidationDigest[]
+  classes?: PseudoCourseId[]
+  validationCourses?: CourseValidationDigest[]
   validationSemester: SemesterValidationDigest | null
   isDragging: boolean
   activeIndex: number | null
   setActive: Function
 }
-
-const SemesterColumn = ({ classesDetails, semester, coursesId, addCourse, moveCourse, remCourse, openModal, classes, validationCourses, validationSemester, isDragging, activeIndex, setActive }: SemesterColumnProps): JSX.Element => {
+const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, moveCourse, remCourse, openModal, classes = [], validationCourses = [], validationSemester, isDragging, activeIndex, setActive }: SemesterColumnProps): JSX.Element => {
+  const [dragged, setDragged] = useState<number | null>(null)
   const authState = useAuth()
   const columnRef = useRef<HTMLDivElement>(null)
   const conditionPassed = ((authState?.student) != null) && (semester < authState.student.current_semester)
+
+  const openSelector = useCallback((course: PseudoCourseId, semester: number, index: number) => {
+    if ('equivalence' in course) openModal(course.equivalence, semester, index)
+    else openModal(course, semester, index)
+  }, [])
+
   const [, drop] = useDrop(() => ({
     accept: 'card',
     drop (courseId: { code: string, instance: number }, monitor) {
@@ -39,12 +45,6 @@ const SemesterColumn = ({ classesDetails, semester, coursesId, addCourse, moveCo
       if (targetIndex !== activeIndex) setActive({ semester, index: targetIndex })
     }
   }), [])
-
-  const openSelector = useCallback((course: PseudoCourseId, semester: number, index: number) => {
-    if ('equivalence' in course) openModal(course.equivalence, semester, index)
-    else openModal(course, semester, index)
-  }, [])
-  
   let border = 'border-transparent'
   if (validationSemester != null && validationSemester.errorIndices.length > 0) border = 'border-solid border-red-300'
   else if (validationSemester != null && validationSemester.warningIndices.length > 0) border = 'border-solid border-yellow-300'
@@ -52,6 +52,19 @@ const SemesterColumn = ({ classesDetails, semester, coursesId, addCourse, moveCo
   if (!conditionPassed) {
     drop(columnRef)
   }
+  const activeIndexHandler = useCallback(
+    (index: number): boolean => {
+      if (activeIndex === null) return false
+      if (dragged === null) {
+        if (activeIndex === index) return true
+      } else {
+        if (activeIndex === index && dragged > index) return true
+        if (activeIndex === index - 1 && dragged < index) return true
+      }
+      return false
+    },
+    [activeIndex, dragged]
+  )
   return (
     <div className='drop-shadow-xl w-[161px] shrink-0 bg-base-200 rounded-lg flex flex-col'>
       {conditionPassed
@@ -60,27 +73,35 @@ const SemesterColumn = ({ classesDetails, semester, coursesId, addCourse, moveCo
       }
       <div className="my-2 divider"></div>
       <div ref={columnRef}>
-        {classes.map((course: PseudoCourseId, index: number) => (
-          <Fragment key={index}>
-            {activeIndex === index && <div className="mb-3 mx-2 bg-place-holder card"></div>}
-            <DraggableCard
-              key={coursesId[index].code + String(coursesId[index].instance)}
-              cardData={{ ...course, ...classesDetails[course.code] }}
-              coursesId={coursesId[index]}
-              isPassed={conditionPassed}
-              isDragging={() => {
-                setActive({ semester, index })
-              }}
-              remCourse={remCourse}
-              courseBlock={validationCourses[index]?.superblock ?? ''}
-              openSelector={() => { openSelector(course, semester, index) }}
-              hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
-              hasError={validationCourses[index]?.errorIndices?.[0] != null}
-              hasWarning={validationCourses[index]?.warningIndices?.[0] != null}
-            />
-
-          </Fragment>
-        ))}
+        {classes.map((course: PseudoCourseId, index: number) => {
+          return (
+            <Fragment key={index}>
+              {(activeIndexHandler(index)) && <div key="placeholder" className="card mx-2 mb-3 bg-place-holder"/>}
+              <div className={`${dragged === index ? 'opacity-0 absolute w-full' : ''}`}>
+                <DraggableCard
+                  key={coursesId[index].code + String(coursesId[index].instance)}
+                  cardData={{ ...course, ...classesDetails[course.code] }}
+                  courseId={coursesId[index]}
+                  isPassed={conditionPassed}
+                  toggleDrag={(isStart: boolean) => {
+                    if (isStart) {
+                      setDragged(index)
+                      setActive({ semester, index })
+                    } else {
+                      setDragged(null)
+                    }
+                  }}
+                  remCourse={remCourse}
+                  courseBlock={validationCourses[index]?.superblock ?? ''}
+                  openSelector={() => { openSelector(course, semester, index) }}
+                  hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
+                  hasError={validationCourses[index]?.errorIndices?.[0] != null}
+                  hasWarning={validationCourses[index]?.warningIndices?.[0] != null}
+                />
+              </div>
+            </Fragment>
+          )
+        })}
         {!conditionPassed && !isDragging && <div className="h-10 mx-2 bg-block- card">
         <button key="+" className="w-full" onClick={() => addCourse(semester)}>+</button>
         </div>}

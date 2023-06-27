@@ -1,6 +1,8 @@
 
 import { type ApiError, type Major, type Minor, type Title, type CourseDetails, type EquivDetails, type ConcreteId, type EquivalenceId } from '../../../client'
 
+export interface CoursePos { semester: number, index: number }
+export interface CourseId { code: string, instance: number }
 export type PseudoCourseId = ConcreteId | EquivalenceId
 export type PseudoCourseDetail = CourseDetails | EquivDetails
 export type ModalData = { equivalence: EquivDetails | undefined, selector: boolean, semester: number, index?: number } | undefined

@@ -7,9 +7,9 @@ import deepEqual from 'fast-deep-equal'
 
 interface DraggableCardProps {
   cardData: { name: string, code: string, credits?: number, is_concrete?: boolean }
-  coursesId: { code: string, instance: number }
+  courseId: { code: string, instance: number }
   isPassed: boolean
-  isDragging: Function
+  toggleDrag: Function
   remCourse: Function
   courseBlock: string
   openSelector: Function
@@ -46,40 +46,36 @@ const BlockInitials = (courseBlock: string): string => {
   return ''
 }
 
-const DraggableCard = ({ cardData, coursesId, isPassed, isDragging, remCourse, courseBlock, openSelector, hasEquivalence, hasError, hasWarning }: DraggableCardProps): JSX.Element => {
+const DraggableCard = ({ cardData, courseId, isPassed, toggleDrag, remCourse, courseBlock, openSelector, hasEquivalence, hasError, hasWarning }: DraggableCardProps): JSX.Element => {
   const ref = useRef(null)
-
-  const [collected = { isDragging: false }, drag] = useDrag(() => ({
+  const [, drag] = useDrag(() => ({
     type: 'card',
     item: () => {
-      isDragging()
-      return coursesId
+      toggleDrag(true)
+      return courseId
     },
-    collect (monitor) {
-      return { isDragging: monitor.isDragging() }
+    end: () => {
+      toggleDrag(false)
     }
-  }))
 
+  }))
   if (!isPassed) {
     drag(ref)
   }
-
   return (
-    <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3' : ''} ${isPassed ? 'cursor-not-allowed opacity-50' : 'cursor-grab'} `}>
-      {!collected.isDragging &&
-        <ConditionalWrapper condition={cardData.is_concrete !== true && courseBlock != null} wrapper={(children: ReactNode) => <button className='w-full' onClick={() => openSelector()}>{children}</button>}>
-            <CourseCard
-              courseBlock={courseBlock}
-              cardData={cardData}
-              hasEquivalence={hasEquivalence}
-              openSelector={openSelector}
-              remCourse={remCourse}
-              hasWarning={hasWarning}
-              hasError={hasError}
-              isPassed={isPassed}
-            />
-          </ConditionalWrapper>
-        }
+    <div ref={ref} className={`px-2 pb-3 ${isPassed ? 'cursor-not-allowed opacity-50' : 'cursor-grab'} `}>
+      <ConditionalWrapper condition={cardData.is_concrete !== true && courseBlock != null} wrapper={(children: ReactNode) => <button className='w-full' onClick={() => openSelector()}>{children}</button>}>
+          <CourseCard
+            courseBlock={courseBlock}
+            cardData={cardData}
+            hasEquivalence={hasEquivalence}
+            openSelector={openSelector}
+            remCourse={remCourse}
+            hasWarning={hasWarning}
+            hasError={hasError}
+            isPassed={isPassed}
+          />
+        </ConditionalWrapper>
     </div>
   )
 }
@@ -92,7 +88,7 @@ const CourseCard = memo(function _CourseCard ({ courseBlock, cardData, hasEquiva
   const allowAnimations = false && blockId !== 'FG'
 
   return (
-    <div className={`card group bg-block-${blockId} ${blockId === 'FG' ? 'text-white' : ''} ${cardData.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
+    <div className={` card group bg-block-${blockId} ${blockId === 'FG' ? 'text-white' : ''} ${cardData.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
       { hasEquivalence === true && (cardData.is_concrete === true
         ? <button onClick={() => openSelector()}><div className='opacity-60 absolute w-3 top-2 left-2'><EditIcon/></div></button>
         : <div className='opacity-60 absolute w-3 top-2 left-2'><EditIcon/></div>

@@ -158,7 +158,7 @@ const AutoFix = ({ diag, setValidatablePlan }: { diag: Diagnostic, setValidatabl
       const buttons = []
       for (const code in missing) {
         const type = missing[code]
-        buttons.push(<button onClick={() => {
+        buttons.push(<button key={code} onClick={() => {
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
             return fixMissingRequirement(plan, diag, auth, code, type)

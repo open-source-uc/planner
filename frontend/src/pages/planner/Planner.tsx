@@ -8,11 +8,14 @@ import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react'
 import { type Major, type Minor, type Title, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise } from '../../client'
-import { type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type PlanDigest, type ValidationDigest, isApiError, isCancelError } from './utils/Types'
+import { type CourseId, type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type PlanDigest, type ValidationDigest, isApiError, isCancelError } from './utils/Types'
+import { validateCourseMovement, updateClassesState, getCoursePos } from './utils/planBoardFunctions'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import DebugGraph from '../../components/DebugGraph'
 import deepEqual from 'fast-deep-equal'
+import { DndProvider } from 'react-dnd'
+import { HTML5Backend } from 'react-dnd-html5-backend'
 
 enum PlannerStatus {
   LOADING = 'LOADING',
@@ -345,39 +348,21 @@ const Planner = (): JSX.Element => {
     })
   }, []) // remCourse should not depend on `validatablePlan`, so that memoing does its work
 
-  const moveCourse = useCallback((drag: { semester: number, index: number }, drop: { semester: number, index: number }): void => {
-    // move course from drag.semester, drag.index to semester, index
-    console.log(drag, drop)
+  const moveCourse = useCallback((drag: CourseId, drop: { semester: number, index: number }): void => {
     setValidatablePlan(prev => {
       if (prev === null) return prev
-      const dragCourse = prev.classes[drag.semester][drag.index]
-      if (dragCourse.is_concrete === true && drop.semester !== drag.semester && drop.semester < prev.classes.length && prev.classes[drop.semester].map(course => course.code).includes(dragCourse.code)) {
-        toast.error('No se puede tener dos cursos iguales en un mismo semestre')
+      const dragIndex = getCoursePos(prev.classes, drag)
+      if (dragIndex === null) {
+        toast.error('Index no encontrado')
         return prev
       }
-      const newClasses = [...prev.classes]
-      while (drop.semester >= newClasses.length) {
-        newClasses.push([])
+      const validationError = validateCourseMovement(prev, dragIndex, drop)
+
+      if (validationError !== null) {
+        toast.error(validationError)
+        return prev
       }
-      const dragSemester = [...newClasses[drag.semester]]
-      const dropSemester = [...newClasses[drop.semester]]
-      if (drop.semester === drag.semester) {
-        dragSemester.splice(drop.index, 0, dragCourse)
-        if (drop.index < drag.index) {
-          dragSemester.splice(drag.index + 1, 1)
-        } else {
-          dragSemester.splice(drag.index, 1)
-        }
-      } else {
-        dropSemester.splice(drop.index, 0, dragCourse)
-        dragSemester.splice(drag.index, 1)
-        newClasses[drop.semester] = dropSemester
-      }
-      newClasses[drag.semester] = dragSemester
-      while (newClasses[newClasses.length - 1].length === 0) {
-        newClasses.pop()
-      }
-      return { ...prev, classes: newClasses }
+      return updateClassesState(prev, dragIndex, drop)
     })
   }, []) // moveCourse should not depend on `validatablePlan`, so that memoing does its work
 
@@ -634,16 +619,18 @@ const Planner = (): JSX.Element => {
                 reset={reset}
                 save={savePlan}
               />
-              <PlanBoard
-                classesGrid={validatablePlan?.classes ?? []}
-                planDigest={planDigest}
-                classesDetails={courseDetails}
-                moveCourse={moveCourse}
-                openModal={openModal}
-                addCourse={addCourse}
-                remCourse={remCourse}
-                validationDigest={validationDigest}
-              />
+              <DndProvider backend={HTML5Backend}>
+                <PlanBoard
+                  classesGrid={validatablePlan?.classes ?? []}
+                  planDigest={planDigest}
+                  classesDetails={courseDetails}
+                  moveCourse={moveCourse}
+                  openModal={openModal}
+                  addCourse={addCourse}
+                  remCourse={remCourse}
+                  validationDigest={validationDigest}
+                />
+              </DndProvider>
             </div>
           <ErrorTray
             setValidatablePlan={setValidatablePlan}
