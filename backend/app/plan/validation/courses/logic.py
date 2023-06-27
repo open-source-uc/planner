@@ -45,11 +45,6 @@ class BaseOp(BaseExpr):
     neutral: ClassVar[bool]
     children: tuple["Expr", ...]
 
-    @staticmethod
-    @abstractmethod
-    def op(a: bool, b: bool) -> bool:
-        pass
-
     def __str__(self) -> str:
         op = "y" if self.neutral else "o"
         s = ""
@@ -88,10 +83,6 @@ class And(BaseOp):
     expr: Literal["and"] = Field(default="and", const=True)
     neutral: ClassVar[bool] = True
 
-    @staticmethod
-    def op(a: bool, b: bool) -> bool:
-        return a and b
-
 
 class Or(BaseOp):
     """
@@ -101,10 +92,6 @@ class Or(BaseOp):
 
     expr: Literal["or"] = Field(default="or", const=True)
     neutral: ClassVar[bool] = False
-
-    @staticmethod
-    def op(a: bool, b: bool) -> bool:
-        return a or b
 
 
 class Const(BaseExpr):

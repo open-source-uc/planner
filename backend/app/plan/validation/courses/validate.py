@@ -16,12 +16,14 @@ from ..diagnostic import (
     ValidationResult,
 )
 from .logic import (
+    And,
     Atom,
     BaseOp,
     Const,
     Expr,
     MinCredits,
     Operator,
+    Or,
     ReqCareer,
     ReqCourse,
     ReqLevel,
@@ -38,6 +40,9 @@ from .simplify import simplify
 CREDIT_SOFT_MAX = 55
 # Students can't take over this amount of credits without special authorization.
 CREDIT_HARD_MAX = 65
+
+# Used to mean unfeasability.
+INFINITY = 10**9
 
 
 @dataclass
@@ -302,14 +307,51 @@ class ValidationContext:
             )
         # Map missing courses to their newest equivalent versions
         missing_equivalents = map_atoms(missing, self.map_to_equivalent)
+        # Figure out if we can push this course back and solve the missing requirements
+        push_back = find_minimum_semester(self, missing)
+        # Figure out if we can pull any dependencies forward
+        pull_forward: dict[str, int] = {}
+        self.find_pull_forwards(inst, pull_forward, missing)
+        # Find absent courses
+        absent: dict[str, int] = {}
+        self.find_absent(inst, absent, missing_equivalents)
         # Show this expression
         out.add(
             CourseRequirementErr(
                 associated_to=[self.class_ids[inst.sem][inst.index]],
                 missing=missing,
                 modernized_missing=missing_equivalents,
+                push_back=None if push_back == INFINITY else push_back,
+                pull_forward=pull_forward,
+                add_absent=absent,
             ),
         )
+
+    def find_pull_forwards(
+        self,
+        inst: CourseInstance,
+        pull_forward: dict[str, int],
+        expr: Expr,
+    ):
+        if isinstance(expr, Operator):
+            for child in expr.children:
+                self.find_pull_forwards(inst, pull_forward, child)
+        if isinstance(expr, ReqCourse) and expr.code in self.by_code:
+            req = self.by_code[expr.code]
+            req_sem = inst.sem - (0 if expr.coreq else 1)
+            if req.sem > req_sem:
+                pull_forward[req.code] = min(
+                    pull_forward.get(req.code, INFINITY),
+                    req_sem,
+                )
+
+    def find_absent(self, inst: CourseInstance, absent: dict[str, int], expr: Expr):
+        if isinstance(expr, Operator):
+            for child in expr.children:
+                self.find_absent(inst, absent, child)
+        if isinstance(expr, ReqCourse) and expr.code not in self.by_code:
+            add_on_sem = inst.sem - (0 if expr.coreq else 1)
+            absent[expr.code] = min(absent.get(expr.code, INFINITY), add_on_sem)
 
     def map_to_equivalent(self, atom: Atom) -> Atom:
         if isinstance(atom, ReqCourse):
@@ -324,10 +366,11 @@ def is_satisfied(ctx: ValidationContext, cl: CourseInstance, expr: Expr) -> bool
     Core logic to check whether an expression is satisfied by a student and their plan.
     """
     if isinstance(expr, Operator):
-        ok = expr.neutral
         for child in expr.children:
-            ok = expr.op(ok, is_satisfied(ctx, cl, child))
-        return ok
+            value = is_satisfied(ctx, cl, child)
+            if value != expr.neutral:
+                return value
+        return expr.neutral
     if isinstance(expr, MinCredits):
         return ctx.approved_credits[cl.sem] >= expr.min_credits
     if isinstance(expr, ReqLevel):
@@ -345,6 +388,42 @@ def is_satisfied(ctx: ValidationContext, cl: CourseInstance, expr: Expr) -> bool
         req_cl = ctx.by_code[expr.code]
         return (req_cl.sem <= cl.sem) if expr.coreq else (req_cl.sem < cl.sem)
     return expr.value
+
+
+def find_minimum_semester(ctx: ValidationContext, expr: Expr) -> int:
+    """
+    Given a dependency expression, find the minimum semester where the class would have
+    to be in order to be satisfied.
+    Can be used to determine how much to "push back" courses.
+    """
+    if isinstance(expr, And):
+        # The course must be as late as the most late subrequirement
+        sem = -INFINITY
+        for child in expr.children:
+            sem = max(sem, find_minimum_semester(ctx, child))
+        return sem
+    if isinstance(expr, Or):
+        # The course must only be as late as the least late subrequirement
+        sem = INFINITY
+        for child in expr.children:
+            sem = min(sem, find_minimum_semester(ctx, child))
+        return sem
+    if isinstance(expr, MinCredits):
+        # The course needs to be at least as far back as to have approved n credits
+        for sem, creds in enumerate(ctx.approved_credits):
+            if creds >= expr.min_credits:
+                return sem
+        return INFINITY
+    if isinstance(expr, ReqLevel | ReqSchool | ReqProgram | ReqCareer):
+        # Can't fix these just by changing the course semester
+        return INFINITY
+    if isinstance(expr, ReqCourse):
+        # We must be as late as this semester (or this semester + 1)
+        if expr.code not in ctx.by_code:
+            return INFINITY
+        return ctx.by_code[expr.code].sem + (0 if expr.coreq else 1)
+    # Depending on the constant value this is feasible or unfeasible
+    return -INFINITY if expr.value else INFINITY
 
 
 def set_atoms_in_stone_if(
@@ -381,6 +460,9 @@ def set_atoms_in_stone_if(
 
 
 def is_course_indirectly_available(courseinfo: CourseInfo, code: str):
+    """
+    Check if a course is available OR there is an available equivalent.
+    """
     info = courseinfo.try_course(code)
     if info is None:
         return False

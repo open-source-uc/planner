@@ -1,23 +1,8 @@
-import { type CourseRequirementErr, type CurriculumErr, type Cyear, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../client'
+import { type CurriculumErr, type Cyear, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../client'
 import { type AuthState, useAuth } from '../../contexts/auth.context'
 import { type PseudoCourseDetail, type PseudoCourseId } from './Planner'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
-type RequirementExpr = CourseRequirementErr['missing']
-
-const extractRequiredCourses = (expr: RequirementExpr, out: Record<string, 'req' | 'coreq'> = {}): Record<string, 'req' | 'coreq'> => {
-  switch (expr.expr) {
-    case 'req':
-      out[expr.code] = expr.coreq ? 'coreq' : 'req'
-      break
-    case 'and':
-    case 'or':
-      for (const sub of expr.children) {
-        extractRequiredCourses(sub, out)
-      }
-  }
-  return out
-}
 
 const validateCyear = (raw: string): Cyear | null => {
     // Ensure that an array stays in sync with a union of string literals
@@ -83,34 +68,43 @@ const fixOutdatedPlan = (plan: ValidatablePlan, diag: OutdatedPlanErr | Outdated
   return { ...plan, classes: newClasses }
 }
 
-const fixMissingRequirement = (plan: ValidatablePlan, diag: CourseRequirementErr, auth: AuthState | null, missingCode: string, reqType: 'req' | 'coreq'): ValidatablePlan => {
-  // Find where is the diagnostic course (ie. the course that is missing a `missingCode` requirement)
-  if (diag.associated_to.length === 0) return plan
-  const mainCourse = diag.associated_to[0]
-  let mainCourseSem: number | null = null
-  {
-    let k = 0
-    for (let i = 0; i < plan.classes.length; i++) {
-      const sem = plan.classes[i]
-      for (let j = 0; j < sem.length; j++) {
-        if (sem[j].code === mainCourse.code) {
-          if (k === mainCourse.instance) {
-            mainCourseSem = i
-          }
-          k += 1
+const addCourseAt = (plan: ValidatablePlan, code: string, onSem: number): ValidatablePlan => {
+  const newClasses = [...plan.classes]
+  while (newClasses.length <= onSem) newClasses.push([])
+  newClasses[onSem] = [...newClasses[onSem]]
+  newClasses[onSem].unshift({ is_concrete: true, code })
+  return { ...plan, classes: newClasses }
+}
+
+const moveCourseByCode = (plan: ValidatablePlan, code: string, repIdx: number, toSem: number): ValidatablePlan => {
+  // Find the course within the plan
+  let semIdx = null
+  let courseIdx = null
+  let course = null
+  for (let i = 0; i < plan.classes.length; i++) {
+    const sem = plan.classes[i]
+    for (let j = 0; j < sem.length; j++) {
+      if (sem[j].code === code) {
+        if (repIdx === 0) {
+          semIdx = i
+          courseIdx = j
+          course = sem[j]
+          i = plan.classes.length
+          break
         }
       }
     }
   }
-  if (mainCourseSem == null) return plan
-  // Add the missing requirement in the semester with the least amount of courses
+  if (semIdx == null || courseIdx == null || course == null) return plan
+  if (semIdx === toSem) return plan
+
+  // Create a new plan with the moved course
   const newClasses = [...plan.classes]
-  const semIdx = findSemesterWithLeastCourses(newClasses, auth, mainCourseSem + (reqType === 'coreq' ? 1 : 0))
   newClasses[semIdx] = [...newClasses[semIdx]]
-  newClasses[semIdx].push({
-    is_concrete: true,
-    code: missingCode
-  })
+  newClasses[semIdx].splice(courseIdx, 1)
+  while (newClasses.length <= toSem) newClasses.push([])
+  newClasses[toSem] = [...newClasses[toSem]]
+  newClasses[toSem].unshift(course)
   return { ...plan, classes: newClasses }
 }
 
@@ -164,17 +158,43 @@ const AutoFix = ({ diag, setValidatablePlan, courseDetails }: AutoFixProps): JSX
         return <></>
       }
     case 'req': {
-      const missing = extractRequiredCourses(diag.modernized_missing)
-      const buttons = Object.entries(missing).map(([code, type], i) => (
-          <button key={i} className="autofix" onClick={() => {
-            setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
-              if (plan == null) return null
-              return fixMissingRequirement(plan, diag, auth, code, type)
-            })
-          }}>
-            Agregar {type === 'req' ? 'requisito' : 'corequisito'} {code}
-          </button>
-      ))
+      const buttons = []
+      // Push back course itself
+      const pushBackTo = diag.push_back
+      if (pushBackTo != null) {
+        buttons.push(<button key={buttons.length} className="autofix" onClick={() => {
+          setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+            if (plan == null) return null
+            return moveCourseByCode(plan, diag.associated_to[0].code, diag.associated_to[0].instance, pushBackTo)
+          })
+        }}>
+          Atrasar curso {diag.associated_to[0].code}
+        </button>)
+      }
+      // Pull requirements forward
+      for (const code in diag.pull_forward) {
+        const toSem = diag.pull_forward[code]
+        buttons.push(<button key={buttons.length} className="autofix" onClick={() => {
+          setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+            if (plan == null) return null
+            return moveCourseByCode(plan, code, 0, toSem)
+          })
+        }}>
+          Adelantar requisito {code}
+        </button>)
+      }
+      // Add any absent requirements
+      for (const code in diag.add_absent) {
+        const onSem = diag.add_absent[code]
+        buttons.push(<button key={buttons.length} className="autofix" onClick={() => {
+          setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+            if (plan == null) return null
+            return addCourseAt(plan, code, onSem)
+          })
+        }}>
+          Agregar requisito {code}
+        </button>)
+      }
       return (<>{buttons}</>)
     }
     case 'unknown':

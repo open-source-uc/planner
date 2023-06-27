@@ -39,7 +39,7 @@ const formatReqExpr = (expr: RequirementExpr): string => {
     case 'cred':
       return `Créditos >= ${expr.min_credits}`
     case 'lvl':
-      return `Nivel = ${expr.min_level}`
+      return `Nivel ${expr.equal ? '=' : '!='} ${expr.level}`
     case 'school':
       return `Facultad ${expr.equal ? '=' : '!='} ${expr.school}`
     case 'program':
