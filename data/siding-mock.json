@@ -132,6 +132,51 @@
                 "Periodo": "2020-2",
                 "TipoCurso": null,
                 "UnidadAcademica": null
+            },
+            {
+                "Sigla": "MAT1630",
+                "Nombre": "C\u00e1lculo III",
+                "Creditos": 10,
+                "Estado": "30",
+                "Periodo": "2021-1",
+                "TipoCurso": null,
+                "UnidadAcademica": null
+            },
+            {
+                "Sigla": "FIS1514",
+                "Nombre": "Dinámica",
+                "Creditos": 10,
+                "Estado": "30",
+                "Periodo": "2021-1",
+                "TipoCurso": null,
+                "UnidadAcademica": null
+            },
+            {
+                "Sigla": "IMT1001",
+                "Nombre": "Introducción a la Ingeniería Matemática",
+                "Creditos": 10,
+                "Estado": "30",
+                "Periodo": "2021-1",
+                "TipoCurso": null,
+                "UnidadAcademica": null
+            },
+            {
+                "Sigla": "TTF027",
+                "Nombre": "Jesus: Distintas Comprensiones",
+                "Creditos": 10,
+                "Estado": "30",
+                "Periodo": "2021-1",
+                "TipoCurso": null,
+                "UnidadAcademica": null
+            },
+            {
+                "Sigla": "IIC1253",
+                "Nombre": "Matemáticas Discretas",
+                "Creditos": 10,
+                "Estado": "30",
+                "Periodo": "2021-1",
+                "TipoCurso": null,
+                "UnidadAcademica": null
             }
         ]
     },
