@@ -1,6 +1,6 @@
 import { useState, useEffect, Fragment, memo } from 'react'
 import { Dialog, Transition, Switch } from '@headlessui/react'
-import { DefaultService, EquivDetails, CourseOverview, CourseDetails, CancelablePromise } from '../../client'
+import { DefaultService, type EquivDetails, type CourseOverview, type CourseDetails, type CancelablePromise } from '../../client'
 import { Spinner } from '../../components/Spinner'
 import { Info } from '../../components/Info'
 
@@ -23,7 +23,7 @@ interface Filter {
 }
 
 const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: EquivDetails, open: boolean, onClose: Function }): JSX.Element => {
-  const [loadedCourses, setLoadedCourses] = useState<{ [code: string]: CourseOverview }>({})
+  const [loadedCourses, setLoadedCourses] = useState<Record<string, CourseOverview>>({})
   const [filteredCodes, setFilteredCodes] = useState<string[]>([])
   const [loadingCoursesData, setLoadingCoursesData] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<string>()
@@ -62,7 +62,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     const response = await promise
     setPromiseInstance(null)
 
-    const dict = response.reduce((acc: { [code: string]: CourseDetails }, curr: CourseDetails) => {
+    const dict = response.reduce((acc: Record<string, CourseDetails>, curr: CourseDetails) => {
       acc[curr.code] = curr
       return acc
     }, {})
@@ -90,7 +90,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       setPromiseInstance(promise)
       const response = await promise
       setPromiseInstance(null)
-      const dict = response.flat().reduce((acc: { [code: string]: CourseOverview }, curr: CourseOverview) => {
+      const dict = response.flat().reduce((acc: Record<string, CourseOverview>, curr: CourseOverview) => {
         acc[curr.code] = curr
         return acc
       }, {})
@@ -135,7 +135,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     if (!open || loadingCoursesData) return
     const { scrollTop, scrollHeight, clientHeight } = event.currentTarget
     if (scrollTop + clientHeight === scrollHeight && equivalence !== undefined) {
-      getCourseDetails(filteredCodes.filter((code) => !Object.keys(loadedCourses).includes(code)).splice(0, coursesBatchSize)).catch(err => console.log(err))
+      getCourseDetails(filteredCodes.filter((code) => !Object.keys(loadedCourses).includes(code)).splice(0, coursesBatchSize)).catch(err => { console.log(err) })
     }
   }
 
@@ -164,13 +164,13 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   useEffect(() => {
     const showCoursesCount = Object.keys(loadedCourses).filter(key => filteredCodes.includes(key)).length
     if (showCoursesCount < coursesBatchSize && filteredCodes.length > 0) {
-      getCourseDetails(filteredCodes.filter((code) => !Object.keys(loadedCourses).includes(code)).splice(0, coursesBatchSize)).catch(err => console.log(err))
+      getCourseDetails(filteredCodes.filter((code) => !Object.keys(loadedCourses).includes(code)).splice(0, coursesBatchSize)).catch(err => { console.log(err) })
     }
   }, [filteredCodes])
 
   useEffect(() => {
     if (!open) {
-      void resetFilters()
+      resetFilters()
       setFilteredCodes([])
       setLoadedCourses({})
     } else if (equivalence !== undefined) {
@@ -241,11 +241,11 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                   <div className="grid border-2 p-4 py-3 rounded bg-slate-100 border-slate-500 border-solid gap-2 grid-cols-12">
                     <div className="col-span-9 flex">
                       <label className="mr-3 my-auto" htmlFor="nameFilter">Nombre o Sigla: </label>
-                      <input className="grow rounded py-1" type="text" id="nameFilter" value={filter.name} onChange={e => setFilter({ ...filter, name: e.target.value })} onKeyDown={handleKeyDownFilter}/>
+                      <input className="grow rounded py-1" type="text" id="nameFilter" value={filter.name} onChange={e => { setFilter({ ...filter, name: e.target.value }) }} onKeyDown={handleKeyDownFilter}/>
                     </div>
                     <div className="col-span-3 flex">
                       <label className="mr-3 my-auto" htmlFor="creditsFilter">Creditos: </label>
-                      <select className="grow rounded py-1" id="creditsFilter" value={filter.credits} onChange={e => setFilter({ ...filter, credits: e.target.value })}>
+                      <select className="grow rounded py-1" id="creditsFilter" value={filter.credits} onChange={e => { setFilter({ ...filter, credits: e.target.value }) }}>
                         <option value={''}>-</option>
                         <option value={'4'}>4</option>
                         <option value={'5'}>5</option>
@@ -260,7 +260,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
 
                     <div className="col-span-8 flex">
                       <label className="mr-3 my-auto" htmlFor="schoolFilter">Escuela: </label>
-                      <select className="grow rounded py-1" id="schoolFilter" value={filter.school} onChange={e => setFilter({ ...filter, school: e.target.value })} >
+                      <select className="grow rounded py-1" id="schoolFilter" value={filter.school} onChange={e => { setFilter({ ...filter, school: e.target.value }) }} >
                         <option value=''>-- Todas --</option>
                         {schoolOptions.map(school => <option key={school} value={school}>{school}</option>)}
                       </select>
@@ -268,7 +268,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
 
                     <div className="col-span-4 flex">
                       <label className="mr-3 my-auto" htmlFor="semesterFilter">Semestralidad: </label>
-                      <select className="grow rounded py-1" id="semesterFilter" value={filter.on_semester} onChange={e => setFilter({ ...filter, on_semester: parseInt(e.target.value) })}>
+                      <select className="grow rounded py-1" id="semesterFilter" value={filter.on_semester} onChange={e => { setFilter({ ...filter, on_semester: parseInt(e.target.value) }) }}>
                         <option value={0}>Cualquiera</option>
                         <option value={1}>Pares</option>
                         <option value={2}>Impares</option>
@@ -279,7 +279,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                       <label className="my-auto mr-2" htmlFor="availableFilter">Ocultar cursos no disponibles: </label>
                       <Switch
                         checked={filter.available}
-                        onChange={(e: boolean) => setFilter({ ...filter, available: e })}
+                        onChange={(e: boolean) => { setFilter({ ...filter, available: e }) }}
                         id="availableFilter"
                         className={`${
                           filter.available ? 'darkBlue' : 'bg-gray-200'
@@ -345,7 +345,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                           type="radio"
                           name="status"
                           value={code}
-                          onChange={e => setSelectedCourse(e.target.value)}
+                          onChange={e => { setSelectedCourse(e.target.value) }}
                           onKeyDown={handleKeyDownSelection}
                         />
                       </td>

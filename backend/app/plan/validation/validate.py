@@ -1,18 +1,16 @@
-from typing import Optional
-
-from .user import validate_against_owner
-
-from ...user.info import StudentContext
-from .curriculum.diagnose import diagnose_curriculum
-from .courses.validate import CourseInstance, PlanContext, is_satisfied
-from ..courseinfo import CourseInfo, course_info
 from ...sync import get_curriculum
-from .diagnostic import ValidationResult
+from ...user.info import StudentContext
+from ..courseinfo import CourseInfo, course_info
 from ..plan import ValidatablePlan
+from .courses.validate import CourseInstance, ValidationContext, is_satisfied
+from .curriculum.diagnose import diagnose_curriculum
+from .diagnostic import ValidationResult
+from .user import validate_against_owner
 
 
 async def diagnose_plan(
-    plan: ValidatablePlan, user_ctx: Optional[StudentContext]
+    plan: ValidatablePlan,
+    user_ctx: StudentContext | None,
 ) -> ValidationResult:
     """
     Validate a career plan, checking that all pending courses can actually be taken
@@ -24,29 +22,15 @@ async def diagnose_plan(
     out = ValidationResult.empty(plan)
 
     # Ensure course requirements are met
-    course_ctx = PlanContext(courseinfo, plan)
-    course_ctx.validate(out)
+    course_ctx = ValidationContext(courseinfo, plan, user_ctx)
+    course_ctx.validate_all(out)
 
     # Ensure the given curriculum is fulfilled
-    diagnose_curriculum(courseinfo, curriculum, plan, out)
+    diagnose_curriculum(courseinfo, curriculum, plan, user_ctx, out)
 
     # Validate against user context, if there is any context
     if user_ctx is not None:
         validate_against_owner(plan, user_ctx, out)
-
-    return out
-
-
-async def diagnose_plan_skip_curriculum(plan: ValidatablePlan) -> ValidationResult:
-    """
-    Validate a career plan, but only the course dependencies.
-    Do not validate whether the student will get their selected degree.
-    """
-    courseinfo = await course_info()
-    out = ValidationResult.empty(plan)
-
-    course_ctx = PlanContext(courseinfo, plan)
-    course_ctx.validate(out)
 
     return out
 
@@ -58,16 +42,15 @@ def quick_validate_dependencies(
     index: int,
 ) -> bool:
     """
-    Simulate placing the given course at the given semester, and check if its
-    dependencies are met.
+    Validate only the dependencies of the course at the given position.
     """
     course = plan.classes[sem][index]
     info = courseinfo.try_course(course.code)
     if info is None:
         return False
-    course_ctx = PlanContext(courseinfo, plan)
+    course_ctx = ValidationContext(courseinfo, plan, user_ctx=None)
     return is_satisfied(
         course_ctx,
-        CourseInstance(course=course, sem=sem, index=index),
+        CourseInstance(code=course.code, sem=sem, index=index),
         info.deps,
     )

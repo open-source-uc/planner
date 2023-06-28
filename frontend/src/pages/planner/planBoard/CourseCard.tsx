@@ -1,14 +1,16 @@
-import { memo, ReactNode, useRef } from 'react'
+import { memo, type ReactNode, useRef } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
 import editWhiteIcon from '../../../assets/editWhite.svg'
 import editBlackIcon from '../../../assets/editBlack.svg'
+import currentWhiteIcon from '../../../assets/currentWhite.svg'
+import currentBlackIcon from '../../../assets/currentBlack.svg'
 import { useAuth } from '../../../contexts/auth.context'
 import deepEqual from 'fast-deep-equal'
 
 interface CourseCardProps {
   semester: number
   index: number
-  cardData: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }
+  cardData: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean, failed?: string }
   isDragging: Function
   moveCourse: Function
   remCourse: Function
@@ -21,7 +23,7 @@ interface CourseCardProps {
 interface CardProps {
   semester: number
   index: number
-  cardData: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean }
+  cardData: { name: string, code: string, index: number, semester: number, credits?: number, is_concrete?: boolean, failed?: string }
   remCourse: Function
   courseBlock: string
   openSelector: Function
@@ -32,7 +34,7 @@ interface CardProps {
 
 interface ConditionalWrapperProps {
   condition: boolean
-  wrapperPassed: Function
+  wrapper: Function
   wrapperNotPassed: Function
   children: ReactNode
 }
@@ -55,9 +57,9 @@ const BlockInitials = (courseBlock: string): string => {
   return ''
 }
 
-const ConditionalWrapper = ({ condition, wrapperPassed, wrapperNotPassed, children }: ConditionalWrapperProps): JSX.Element => {
+const ConditionalWrapper = ({ condition, wrapper, wrapperNotPassed, children }: ConditionalWrapperProps): JSX.Element => {
   return (
-    condition ? wrapperPassed(children) : wrapperNotPassed(children)
+    condition ? wrapper(children) : wrapperNotPassed(children)
   )
 }
 
@@ -65,7 +67,9 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
   const ref = useRef(null)
   const authState = useAuth()
 
-  const conditionPassed = authState?.passed?.[cardData.semester]?.find(o => o.code === cardData.code) !== undefined
+  const conditionPassed = authState?.student != null && semester < authState.student.current_semester
+  const checkInClass = ((authState?.student) != null) && (authState.student.current_semester === authState.student.next_semester - 1)
+  const checkCurrent = (checkInClass && (semester === authState?.student?.current_semester))
 
   const [collected = { isDragging: false }, drag] = useDrag(() => ({
     type: 'card',
@@ -91,16 +95,16 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
     })
   }))
 
-  if (!conditionPassed) {
+  if (!conditionPassed && !checkCurrent) {
     drag(drop(ref))
   }
 
   return (
     <>
       <ConditionalWrapper
-        condition={conditionPassed}
-        wrapperPassed={(children: ReactNode) => <div ref={ref} draggable={false} className={'px-2 opacity-50 pb-3 cursor-not-allowed'}>{children}</div>}
-        wrapperNotPassed={(children: ReactNode) => <div ref={ref} draggable={true} className={`px-2 ${!collected.isDragging ? 'pb-3 cursor-grab' : 'cursor-grabbing'} `}>{children}</div>}
+        condition={conditionPassed || checkCurrent}
+        wrapper={(children: ReactNode) => <div ref={ref} draggable={false} className={'px-1 opacity-50 pb-3 cursor-not-allowed'}>{children}</div>}
+        wrapperNotPassed={(children: ReactNode) => <div ref={ref} draggable={true} className={`px-1 ${!collected.isDragging ? 'pb-3 cursor-grab' : 'cursor-grabbing'} `}>{children}</div>}
       >
         {!collected.isDragging && <>{dropProps.isOver
           ? <div className={'card bg-place-holder'} />
@@ -133,7 +137,7 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
             </>}
       </ConditionalWrapper>
 
-      {!collected.isDragging && dropProps.isOver && <div className={'px-2 pb-3'}>
+      {!collected.isDragging && dropProps.isOver && <div className={'px-1 pb-3'}>
       <Card
         semester={semester}
         index={index}
@@ -153,9 +157,13 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
 
 const Card = memo(function _Card ({ semester, index, courseBlock, cardData, hasEquivalence, openSelector, remCourse, hasWarning, hasError }: CardProps): JSX.Element {
   const authState = useAuth()
-  const conditionPassed = authState?.passed?.[cardData.semester]?.find(o => o.code === cardData.code) !== undefined
+  const conditionPassed = authState?.student != null && semester < authState.student.current_semester
+  const checkInClass = ((authState?.student) != null) && (authState.student.current_semester === authState.student.next_semester - 1)
+  const checkCurrent = (checkInClass && (semester === authState?.student?.current_semester))
+
   const blockId = BlockInitials(courseBlock)
-  const editIcon = (blockId === 'FG') ? editWhiteIcon : editBlackIcon
+  const editIcon = blockId === 'FG' ? editWhiteIcon : editBlackIcon
+  const currentIcon = blockId === 'FG' ? currentWhiteIcon : currentBlackIcon
 
   // Turns out animations are a big source of lag
   const allowAnimations = false && blockId !== 'FG'
@@ -167,14 +175,16 @@ const Card = memo(function _Card ({ semester, index, courseBlock, cardData, hasE
         : <img className='opacity-60 absolute w-3 top-2 left-2' src={editIcon} alt="Seleccionar Curso" />
       )}
       {blockId === ''
-        ? <>{conditionPassed ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse(semester, index)}>x</button>}</>
+        ? <>{conditionPassed || checkCurrent ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse(semester, index)}>x</button>}</>
         : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{blockId}</div>
       }
       <div className='flex items-center justify-center text-center flex-col'>
-        <div className='text-xs line-clamp-2'>{cardData.name}</div>
+        <div className={`text-xs line-clamp-2 ${cardData.failed != null ? 'line-through' : ''}`}>{cardData.name}</div>
         <div className='text-[0.6rem] opacity-75'>{cardData.is_concrete !== true ? 'Seleccionar Curso' : cardData.code}</div>
       </div>
       <div className='absolute bottom-2 left-2 text-[0.5rem] opacity-75'>{cardData.credits} créd.</div>
+      { checkCurrent ? <img className='opacity-60 absolute w-3 bottom-2 right-2' src={currentIcon} alt="Curso en curso" /> : null}
+
       {hasError && <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
         <span className={`${allowAnimations ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-red-300 opacity-90`}></span>
         <span className="relative inline-flex rounded-full h-3 w-3 bg-red-400"></span>

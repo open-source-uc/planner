@@ -17,6 +17,8 @@ export type CourseDetails = {
     name: string;
     credits: number;
     deps: (And | Or | Const | MinCredits | ReqLevel | ReqSchool | ReqProgram | ReqCareer | ReqCourse);
+    banner_equivs: Array<string>;
+    canonical_equiv: string;
     program: string;
     school: string;
     area?: string;

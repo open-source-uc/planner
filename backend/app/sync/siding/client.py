@@ -1,13 +1,15 @@
+import json
 from decimal import Decimal
-from ...settings import settings
+from pathlib import Path
+from typing import Any, Literal
+
+import httpx
+import zeep
+from pydantic import BaseModel, parse_obj_as
 from zeep import AsyncClient
 from zeep.transports import AsyncTransport
-import zeep
-import httpx
-import json
-import os
-from typing import Any, Literal, Optional
-from pydantic import BaseModel, parse_obj_as
+
+from ...settings import settings
 
 
 class StringArrayInner(BaseModel):
@@ -25,29 +27,29 @@ class Major(BaseModel):
     # For some reason after a SIDING update majors stopped having associated
     # curriculums
     # TODO: Learn why and what to do about it
-    Curriculum: Optional[StringArray]
+    Curriculum: StringArray | None
 
 
 class Minor(BaseModel):
     CodMinor: str
     Nombre: str
     TipoMinor: Literal["Amplitud"] | Literal["Profundidad"]
-    VersionMinor: Optional[str]
+    VersionMinor: str | None
     # For some reason after a SIDING update minors stopped having associated
     # curriculums
     # TODO: Learn why and what to do about it
-    Curriculum: Optional[StringArray]
+    Curriculum: StringArray | None
 
 
 class Titulo(BaseModel):
     CodTitulo: str
     Nombre: str
     TipoTitulo: Literal["CIVIL"] | Literal["INDUSTRIAL"]
-    VersionTitulo: Optional[str]
+    VersionTitulo: str | None
     # For some reason after a SIDING update titles stopped having associated
     # curriculums
     # TODO: Learn why and what to do about it
-    Curriculum: Optional[StringArray]
+    Curriculum: StringArray | None
 
 
 class PlanEstudios(BaseModel):
@@ -59,10 +61,10 @@ class PlanEstudios(BaseModel):
 
 class Curso(BaseModel):
     Sigla: str
-    Nombre: Optional[str]
+    Nombre: str | None
     # Strings like `I`, `II`, `I y II`, o `None`
-    Semestralidad: Optional[str]
-    Creditos: Optional[int]
+    Semestralidad: str | None
+    Creditos: int | None
 
 
 class ListaCursos(BaseModel):
@@ -70,8 +72,8 @@ class ListaCursos(BaseModel):
 
 
 class Restriccion(BaseModel):
-    Nombre: Optional[str]
-    CreditoMin: Optional[str]
+    Nombre: str | None
+    CreditoMin: str | None
 
 
 class ListaRestricciones(BaseModel):
@@ -85,24 +87,24 @@ class ListaRequisitos(BaseModel):
 class BloqueMalla(BaseModel):
     Nombre: str
     # If set, this block corresponds to a single course
-    CodSigla: Optional[str]
+    CodSigla: str | None
     # If set, this block corresponds to a named predefined list of courses
-    CodLista: Optional[str]
+    CodLista: str | None
     Programa: str
     Creditos: int
     # The recommended semester to take this course.
     SemestreBloque: int
     # The order within a semester (?)
     OrdenSemestre: int
-    Equivalencias: Optional[ListaCursos]
+    Equivalencias: ListaCursos | None
     # Catedra, catedra y laboratorio, etc
     # A veces simplemente no hay info
-    Tipocurso: Optional[str]
+    Tipocurso: str | None
     BloqueAcademico: str
     # Seems to always be empty.
-    Requisitos: Optional[ListaRequisitos]
+    Requisitos: ListaRequisitos | None
     # Seems to always be empty.
-    Restricciones: Optional[ListaRestricciones]
+    Restricciones: ListaRestricciones | None
 
 
 class InfoEstudiante(BaseModel):
@@ -114,14 +116,14 @@ class InfoEstudiante(BaseModel):
     # Usually coupled with `PeriodoAdmision`
     Curriculo: str
     # Major code of the self-reported intended major.
-    MajorInscrito: Optional[str]
+    MajorInscrito: str | None
     # Minor code of the self-reported intended minor.
-    MinorInscrito: Optional[str]
+    MinorInscrito: str | None
     # Title code of the self-reported intended title.
-    TituloInscrito: Optional[str]
+    TituloInscrito: str | None
     # Not really sure what this is.
     # Seems to be `None`.
-    Codigo: Optional[str]
+    Codigo: str | None
     # Career
     # Should be 'INGENIERÍA CIVIL' (mind the Unicode accent)
     Carrera: str
@@ -131,12 +133,10 @@ class InfoEstudiante(BaseModel):
 
     # Average student grades
     # Since this is somewhat sensitive data and we don't use it, it's best to ignore it
-    # PPA: Decimal
 
     # Student status
     # Regular students have 'REGULAR' status.
     # Not useful for us, and it may even be sensitive data, so it's best to ignore it
-    # Estado: str
 
 
 class CursoHecho(BaseModel):
@@ -153,18 +153,18 @@ class CursoHecho(BaseModel):
     Periodo: str
     # Not sure, but probably whether the course is catedra or lab.
     # Seems to be `None`
-    TipoCurso: Optional[str]
+    TipoCurso: str | None
     # Academic unit, probably.
     # Seems to be `None`
-    UnidadAcademica: Optional[str]
+    UnidadAcademica: str | None
 
 
 class SoapClient:
-    soap_client: Optional[AsyncClient]
+    soap_client: AsyncClient | None
     mock_db: dict[str, dict[str, Any]]
-    record_path: Optional[str]
+    record_path: Path | None
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.soap_client = None
         self.mock_db = {}
         self.record_path = None
@@ -173,28 +173,28 @@ class SoapClient:
         # Load mockup data
         if settings.siding_mock_path != "":
             try:
-                with open(settings.siding_mock_path, "r") as file:
+                with settings.siding_mock_path.open() as file:
                     self.mock_db = json.load(file)
-                cnt = sum(map(lambda r: len(r), self.mock_db.values()))
+                cnt = sum(len(r) for r in self.mock_db.values())
                 print(
                     f"loaded {cnt} SIDING mock responses from"
-                    + f" '{settings.siding_mock_path}'"
+                    f" '{settings.siding_mock_path}'",
                 )
-            except Exception as err:
+            except (OSError, ValueError) as err:
                 print(
                     "failed to read SIDING mock data from"
-                    + f" '{settings.siding_mock_path}': {err}"
+                    f" '{settings.siding_mock_path}': {err}",
                 )
                 self.mock_db = {}
 
         # Connect to SIDING webservice
         if settings.siding_username != "":
-            wsdl_url = os.path.join(os.path.dirname(__file__), "ServiciosPlanner.wsdl")
+            wsdl_url = Path(__file__).with_name("ServiciosPlanner.wsdl").as_posix()
             http_client = httpx.AsyncClient(
                 auth=httpx.DigestAuth(
                     settings.siding_username,
                     settings.siding_password.get_secret_value(),
-                )
+                ),
             )
             self.soap_client = AsyncClient(
                 wsdl_url,
@@ -207,21 +207,24 @@ class SoapClient:
             self.record_path = settings.siding_record_path
             print("recording SIDING responses")
 
-    async def call_endpoint(self, name: str, args: dict[str, Any]) -> Any:
+    async def call_endpoint(
+        self,
+        name: str,
+        args: dict[str, Any],
+    ) -> Any:  # noqa: ANN401 (using dynamic typing here is much simpler)
         # Check if request is in mock database
         args_str = json.dumps(args)
-        if name in self.mock_db:
-            if args_str in self.mock_db[name]:
-                return self.mock_db[name][args_str]
+        if name in self.mock_db and args_str in self.mock_db[name]:
+            return self.mock_db[name][args_str]
 
         if self.soap_client is None:
             raise Exception(
-                f"mock data not found for SIDING request {name}({args_str})"
+                f"mock data not found for SIDING request {name}({args_str})",
             )
 
         # Carry out request to SIDING webservice backend
         response: Any = zeep.helpers.serialize_object(  # type: ignore
-            await self.soap_client.service[name](**args)
+            await self.soap_client.service[name](**args),
         )
 
         # Record response if enabled
@@ -236,17 +239,17 @@ class SoapClient:
             try:
 
                 class CustomEncoder(json.JSONEncoder):
-                    def default(self, o: Any):
+                    def default(self, o: Any):  # noqa: ANN401
                         if isinstance(o, Decimal):
                             return float(o)
                         return super().default(o)
 
-                with open(self.record_path, "w") as file:
+                with self.record_path.open("w") as file:
                     json.dump(self.mock_db, file, cls=CustomEncoder)
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001 (any error is non-fatal here)
                 print(
                     "failed to save recorded SIDING data to"
-                    + f" '{self.record_path}': {err}"
+                    f" '{self.record_path}': {err}",
                 )
 
 
@@ -260,7 +263,6 @@ async def get_majors() -> list[Major]:
 
     # DEBUG: Show raw XML response
     # with soap_client.settings(raw_response=True):
-    #     resp = await soap_client.service.getListadoMajor()
     #     with open("log.txt", "a") as f:
     #         print(resp.content, file=f)
 
@@ -385,7 +387,8 @@ async def get_requirements(course_code: str, study_spec: PlanEstudios) -> list[C
 
 
 async def get_restrictions(
-    course_code: str, study_spec: PlanEstudios
+    course_code: str,
+    study_spec: PlanEstudios,
 ) -> list[Restriccion]:
     """
     Get the basic SIDING restriccions as a list.
@@ -434,7 +437,8 @@ async def get_student_done_courses(rut: str) -> list[CursoHecho]:
     The RUT must be in the format "011222333-K", the same format used by CAS.
     """
     return parse_obj_as(
-        list[CursoHecho], await client.call_endpoint("getCursosHechos", {"rut": rut})
+        list[CursoHecho],
+        await client.call_endpoint("getCursosHechos", {"rut": rut}),
     )
 
 

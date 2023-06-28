@@ -1,101 +1,226 @@
-from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Annotated, Literal
+
+from pydantic import BaseModel, Field
+
+from ..course import PseudoCourse
 from ..plan import ClassId, ValidatablePlan
-from pydantic import BaseModel
+from .courses.logic import Expr
+from .curriculum.tree import CurriculumSpec, Cyear
 
 
-class FlatDiagnostic(BaseModel):
-    # The course identifier is a (code, index of the instance of this code) tuple.
-    class_id: Optional[ClassId]
-    is_warning: bool
-    message: str
+class BaseDiagnostic(BaseModel):
+    # Determines the kind of diagnostic.
+    kind: str
+    # Associated to either a set of courses, or a set of semesters.
+    associated_to: list[ClassId] | list[int] | None
+    # Either a warning or an error.
+    is_err: bool
 
 
-class FlatValidationResult(BaseModel):
-    diagnostics: list[FlatDiagnostic]
-    # Associates course indices with academic block names (superblocks).
-    # Used to assign colors to each course depending on what purpose they serve.
-    # Ideally, this would be a `dict[str, list[Optional[str]]]`, but the typescript
-    # client generator is a bit dumb and forgets about `Optional[]`???
-    course_superblocks: dict[str, list[str]]
+class DiagnosticErr(BaseDiagnostic):
+    is_err: Literal[True] = Field(default=True, const=True)
 
 
-class Diagnostic(BaseModel, ABC):
+class DiagnosticWarn(BaseDiagnostic):
+    is_err: Literal[False] = Field(default=False, const=True)
+
+
+class CourseRequirementErr(DiagnosticErr):
     """
-    A diagnostic message, that may be associated to a course that the user is taking.
+    Indicates that a course (`associated_to`) is missing some requirements (`missing`).
     """
 
-    def class_index(self) -> Optional[tuple[int, int]]:
-        return None
-
-    @abstractmethod
-    def message(self) -> str:
-        pass
+    kind: Literal["req"] = Field(default="req", const=True)
+    associated_to: list[ClassId]
+    missing: Expr
+    modernized_missing: Expr
 
 
-class DiagnosticErr(Diagnostic):
-    pass
+class UnknownCourseErr(DiagnosticErr):
+    """
+    Indicates that some courses (`associated_to`) have unknown/invalid codes.
+    """
+
+    kind: Literal["unknown"] = Field(default="unknown", const=True)
+    associated_to: list[ClassId]
 
 
-class DiagnosticWarn(Diagnostic):
-    pass
+class MismatchedCyearErr(DiagnosticErr):
+    """
+    Indicates that the plan is validating for a cyear (`plan`) that does not match the
+    user's cyear (`user`).
+    """
+
+    kind: Literal["cyear"] = Field(default="cyear", const=True)
+    associated_to: None = None
+    plan: Cyear
+    user: str
+
+
+class MismatchedCurriculumSelectionWarn(DiagnosticWarn):
+    """
+    Indicates that the plan selection of curriculum does not match the official
+    curriculum declaration.
+    """
+
+    kind: Literal["currdecl"] = Field(default="currdecl", const=True)
+    associated_to: None = None
+    plan: CurriculumSpec
+    user: CurriculumSpec
+
+
+class OutdatedPlanErr(DiagnosticErr):
+    """
+    Indicates that the plan does not reflect the courses that the user has taken.
+    This could happen if the user planned ahead, but didn't follow their plan.
+    Afterwards, when they take different courses than they planned, their plan becomes
+    outdated.
+    The semesters that are mismatched are included in `associated_to`.
+    """
+
+    kind: Literal["outdated"] = Field(default="outdated", const=True)
+    associated_to: list[int]
+
+
+class OutdatedCurrentSemesterErr(DiagnosticErr):
+    """
+    Indicates that the current semester in the plan does not reflect the courses that
+    the user is currently taken.
+    This could be because the user is experimenting with modifying their current
+    semester (ie. removing courses that they don't expect to pass).
+    This is the "smaller version" of `OutdatedPlanErr`.
+    """
+
+    kind: Literal["outdatedcurrent"] = Field(default="outdatedcurrent", const=True)
+    associated_to: list[int]
+
+
+class SemestralityWarn(DiagnosticWarn):
+    """
+    Indicates that some courses (`associated_to`) are not normally given in the
+    semester they are in.
+    Instead, they are usually only given in semesters with parity `only_available_on`.
+    """
+
+    kind: Literal["sem"] = Field(default="sem", const=True)
+    associated_to: list[ClassId]
+    only_available_on: int
+
+
+class UnavailableCourseWarn(DiagnosticWarn):
+    """
+    Indicates that some courses (`associated_to`) have not been given in a long while
+    and are probably unavailable.
+    """
+
+    kind: Literal["unavail"] = Field(default="unavail", const=True)
+    associated_to: list[ClassId]
+
+
+class AmbiguousCourseErr(DiagnosticErr):
+    """
+    Indicates that some equivalences (`associated_to`) should be disambiguated and they
+    aren't.
+    """
+
+    kind: Literal["equiv"] = Field(default="equiv", const=True)
+    associated_to: list[ClassId]
+
+
+class SemesterCreditsWarn(DiagnosticWarn):
+    """
+    Indicates that some semesters (`associated_to`) have more than the recommended
+    amount of credits.
+    """
+
+    kind: Literal["creditswarn"] = Field(default="creditswarn", const=True)
+    associated_to: list[int]
+    max_recommended: int
+    actual: int
+
+
+class SemesterCreditsErr(DiagnosticErr):
+    """
+    Indicates that some semesters (`associated_to`) have more than the allowed amount
+    of credits.
+    """
+
+    kind: Literal["creditserr"] = Field(default="creditserr", const=True)
+    associated_to: list[int]
+    max_allowed: int
+    actual: int
+
+
+class CurriculumErr(DiagnosticErr):
+    """
+    Indicates that there are some courses missing to fulfill the chosen curriculum.
+    The incomplete block is given in `block`, and the amount of credits missing in
+    `credits`.
+    A set of courses that would fill this block (possibly equivalences) is given in
+    `recommend`.
+    """
+
+    kind: Literal["curr"] = Field(default="curr", const=True)
+    associated_to: None = None
+    block: str
+    credits: int
+    recommend: list[PseudoCourse]
+
+
+class UnassignedWarn(DiagnosticWarn):
+    """
+    Indicates that some courses (in total `unassigned_credits` credits) have no use in
+    the curriculum.
+    """
+
+    kind: Literal["useless"] = Field(default="useless", const=True)
+    associated_to: None = None
+    unassigned_credits: int
+
+
+class NoMajorMinorWarn(DiagnosticWarn):
+    """
+    Indicates that no major or minor is chosen, and it should be chosen to validate the
+    plan correctly.
+    """
+
+    kind: Literal["nomajor"] = Field(default="nomajor", const=True)
+    associated_to: None = None
+    plan: CurriculumSpec
+
+
+Diagnostic = Annotated[
+    CourseRequirementErr
+    | UnknownCourseErr
+    | MismatchedCyearErr
+    | MismatchedCurriculumSelectionWarn
+    | OutdatedPlanErr
+    | OutdatedCurrentSemesterErr
+    | SemestralityWarn
+    | UnavailableCourseWarn
+    | AmbiguousCourseErr
+    | SemesterCreditsWarn
+    | SemesterCreditsErr
+    | CurriculumErr
+    | UnassignedWarn
+    | NoMajorMinorWarn,
+    Field(discriminator="kind"),
+]
 
 
 class ValidationResult(BaseModel):
-    """
-    Simply a list of diagnostics, in the same order that is shown to the user.
-    """
-
     diagnostics: list[Diagnostic]
-    # Associates course indices with academic block names (superblocks).
-    # Used to assign colors to each course depending on what purpose they serve.
-    course_superblocks: dict[str, list[Optional[str]]]
+    course_superblocks: dict[str, list[str]]
 
     @staticmethod
     def empty(plan: ValidatablePlan) -> "ValidationResult":
-        return ValidationResult(
-            diagnostics=[],
-            course_superblocks={},
-        )
+        blocks: dict[str, list[str]] = {}
+        for sem in plan.classes:
+            for c in sem:
+                if c.code not in blocks:
+                    blocks[c.code] = []
+                blocks[c.code].append("")
+        return ValidationResult(diagnostics=[], course_superblocks=blocks)
 
     def add(self, diag: Diagnostic):
         self.diagnostics.append(diag)
-
-    def remove(self, indices: list[int]):
-        for i, _diag in reversed(list(enumerate(self.diagnostics))):
-            if i in indices:
-                del self.diagnostics[i]
-
-    def flatten(self, plan: ValidatablePlan) -> FlatValidationResult:
-        # Build index -> id mapping
-        counters: dict[str, int] = {}
-        idx2id: list[list[ClassId]] = []
-        for sem in plan.classes:
-            ids: list[ClassId] = []
-            for c in sem:
-                count = counters.get(c.code, 0)
-                counters[c.code] = count + 1
-                ids.append(ClassId(code=c.code, instance=count))
-            idx2id.append(ids)
-
-        # Flatten diagnostics
-        flat_diags: list[FlatDiagnostic] = []
-        for diag in self.diagnostics:
-            index = diag.class_index()
-            if index is None:
-                id = None
-            else:
-                id = idx2id[index[0]][index[1]]
-            flat = FlatDiagnostic(
-                class_id=id,
-                is_warning=isinstance(diag, DiagnosticWarn),
-                message=diag.message(),
-            )
-            flat_diags.append(flat)
-        return FlatValidationResult(
-            diagnostics=flat_diags,
-            course_superblocks={
-                code: [sb or "" for sb in instances]
-                for code, instances in self.course_superblocks.items()
-            },
-        )

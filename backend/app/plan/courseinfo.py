@@ -3,47 +3,67 @@ Cache course info from the database in memory, for easy access.
 """
 
 from dataclasses import dataclass
-from typing import Optional
 
-from prisma import Json
-from unidecode import unidecode
-from .course import EquivalenceId, PseudoCourse
 import pydantic
-from pydantic import BaseModel
-from .validation.courses.logic import Expr
+from prisma.models import (
+    CachedCourseInfo as DbCachedCourseInfo,
+)
 from prisma.models import (
     Course,
     Equivalence,
     EquivalenceCourse,
-    CachedCourseInfo as DbCachedCourseInfo,
 )
+from pydantic import BaseModel
+from unidecode import unidecode
+
+from .course import EquivalenceId, PseudoCourse
+from .validation.courses.logic import Expr
 
 _CACHED_COURSES_ID: str = "cached-course-info"
 
 
 class CourseDetails(BaseModel):
+    # The unique code identifying this course.
     code: str
+    # An informative, short course name.
     name: str
+    # The nonnegative amount of credits.
     credits: int
+    # The requirements that must be true in order to take this course.
     deps: Expr
+    # The list of courses that are equivalent to this course (in terms of requirements).
+    # Taking this course is equivalent to having taken any course in this list.
+    banner_equivs: list[str]
+    # For old course codes that were replaced by equivalent courses, this is hopefully
+    # the code of that newer course.
+    # For valid, relevant courses that are still available for students to take, this
+    # is the same as `code`.
+    canonical_equiv: str
+    # The course program.
+    # A long, textual description.
     program: str
+    # "Facultad" that teaches the course.
     school: str
-    area: Optional[str]
-    category: Optional[str]
+    # "Area de Formacion General"?
+    area: str | None
+    category: str | None
+    # Heuristic indicating if the course is still available for students to take.
     is_available: bool
-    # First semester, second semester, TAV
-    semestrality: tuple[bool, bool, bool]
+    # Booleans indicating on what semesters is the course available.
+    # First semester (odd semesters), second semester (even semesters) (including TAV)
+    semestrality: tuple[bool, bool]
 
     @staticmethod
     def from_db(db: Course) -> "CourseDetails":
         # Parse and validate dep json
         deps = pydantic.parse_raw_as(Expr, db.deps)
-        # deps = simplify(deps)
         return CourseDetails(
             code=db.code,
             name=db.name,
             credits=db.credits,
             deps=deps,
+            banner_equivs=db.banner_equivs,
+            canonical_equiv=db.canonical_equiv,
             program=db.program,
             school=db.school,
             area=db.area,
@@ -52,21 +72,32 @@ class CourseDetails(BaseModel):
             semestrality=(
                 db.semestrality_first,
                 db.semestrality_second,
-                db.semestrality_tav,
             ),
         )
 
 
 class EquivDetails(BaseModel):
+    """
+    Details about an equivalence.
+    - code: Unique code identifying this equivalence.
+        Unique across course and equivalence codes (ie. course and equivalence names
+        live in the same namespace).
+    - name: Informative name of this equivalence.
+    - is_homogeneous: Indicates whether this equivalence is "homogeneous".
+        A homogeneous equivalence is one where all of its concrete courses have the
+        same requirements and reverse requirements (eg. "Dinamica" is homogeneous, but
+        "OFG" is not).
+        The requirement validator gives up on non-homogeneous equivalences, but tries
+        to validate homogeneous dependencies.
+    - is_unessential: Whether the equivalence can go unspecified without raising an
+        error.
+    - courses: List of concrete course codes that make up this equivalence.
+    """
+
     code: str
     name: str
-    # Indicates whether this equivalence is "homogeneous".
-    # A homogeneous equivalence is one where all of its concrete courses have the same
-    # requirements and reverse requirements (eg. "Dinamica" is homogeneous, but "OFG"
-    # is not).
-    # The requirement validator gives up on non-homogeneous equivalences, but tries to
-    # validate homogeneous dependencies.
     is_homogeneous: bool
+    is_unessential: bool
     courses: list[str]
 
     @staticmethod
@@ -79,11 +110,12 @@ class EquivDetails(BaseModel):
                 "index": "asc",
             },
         )
-        courses = list(map(lambda ec: ec.course_code, dbcourses))
+        courses = [ec.course_code for ec in dbcourses]
         return EquivDetails(
             code=db.code,
             name=db.name,
             is_homogeneous=db.is_homogeneous,
+            is_unessential=db.is_unessential,
             courses=courses,
         )
 
@@ -93,29 +125,22 @@ class CourseInfo:
     courses: dict[str, CourseDetails]
     equivs: dict[str, EquivDetails]
 
-    def try_course(self, code: str) -> Optional[CourseDetails]:
+    def try_course(self, code: str) -> CourseDetails | None:
         return self.courses.get(code)
 
-    def try_equiv(self, code: str) -> Optional[EquivDetails]:
+    def try_equiv(self, code: str) -> EquivDetails | None:
         return self.equivs.get(code)
 
-    def is_course_available(self, code: str) -> bool:
-        info = self.try_course(code)
-        if info is None:
-            return False
-        return info.is_available
-
-    def get_credits(self, course: PseudoCourse) -> Optional[int]:
+    def get_credits(self, course: PseudoCourse) -> int | None:
         if isinstance(course, EquivalenceId):
             return course.credits
-        else:
-            info = self.try_course(course.code)
-            if info is None:
-                return None
-            return info.credits
+        info = self.try_course(course.code)
+        if info is None:
+            return None
+        return info.credits
 
 
-_course_info_cache: Optional[CourseInfo] = None
+_course_info_cache: CourseInfo | None = None
 
 
 async def clear_course_info_cache():
@@ -129,14 +154,15 @@ async def add_equivalence(equiv: EquivDetails):
     # Add equivalence to database
     await Equivalence.prisma().query_raw(
         """
-        INSERT INTO "Equivalence" (code, name, is_homogeneous)
-        VALUES($1, $2, $3)
+        INSERT INTO "Equivalence" (code, name, is_homogeneous, is_unessential)
+        VALUES($1, $2, $3, $4)
         ON CONFLICT (code)
-        DO UPDATE SET name = $2, is_homogeneous = $3
+        DO UPDATE SET name = $2, is_homogeneous = $3, is_unessential = $4
         """,
         equiv.code,
         equiv.name,
         equiv.is_homogeneous,
+        equiv.is_unessential,
     )
     # Clear previous equivalence courses
     await EquivalenceCourse.prisma().delete_many(where={"equiv_code": equiv.code})
@@ -144,7 +170,9 @@ async def add_equivalence(equiv: EquivDetails):
     value_tuples: list[str] = []
     query_args = [equiv.code]
     for i, code in enumerate(equiv.courses):
-        value_tuples.append(f"({i}, $1, ${2+i})")
+        value_tuples.append(
+            f"({i}, $1, ${2+i})",
+        )  # NOTE: No user-input is injected here
         query_args.append(code)
     await EquivalenceCourse.prisma().query_raw(
         f"""
@@ -152,7 +180,7 @@ async def add_equivalence(equiv: EquivDetails):
         VALUES {','.join(value_tuples)}
         ON CONFLICT
         DO NOTHING
-        """,
+        """,  # noqa: S608 (only numbers are inserted in string)
         *query_args,
     )
     # Update in-memory cache if it was already loaded
@@ -173,7 +201,7 @@ async def course_info() -> CourseInfo:
 
         # Attempt to fetch pre-parsed courses
         preparsed = await DbCachedCourseInfo.prisma().find_unique(
-            {"id": _CACHED_COURSES_ID}
+            {"id": _CACHED_COURSES_ID},
         )
         if preparsed is not None:
             print("  loading pre-parsed course cache...")
@@ -191,8 +219,8 @@ async def course_info() -> CourseInfo:
             await DbCachedCourseInfo.prisma().create(
                 {
                     "id": _CACHED_COURSES_ID,
-                    "info": Json(CachedCourseDetailsJson(__root__=courses).json()),
-                }
+                    "info": CachedCourseDetailsJson(__root__=courses).json(),
+                },
             )
         print(f"  processed {len(courses)} courses")
 
@@ -217,7 +245,6 @@ def make_searchable_name(name: str) -> str:
     name = unidecode(name)  # Remove accents
     name = name.lower()  # Make lowercase
     name = "".join(
-        map(lambda char: char if char.isalnum() else " ", name)
+        char if char.isalnum() else " " for char in name
     )  # Remove non-alphanumeric characters
-    name = " ".join(name.split())  # Merge adjacent spaces
-    return name
+    return " ".join(name.split())  # Merge adjacent spaces

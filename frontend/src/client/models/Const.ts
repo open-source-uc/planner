@@ -7,16 +7,7 @@
  */
 export type Const = {
     hash?: Blob;
-    expr?: Const.expr;
+    expr?: 'const';
     value: boolean;
 };
-
-export namespace Const {
-
-    export enum expr {
-        CONST = 'const',
-    }
-
-
-}
 

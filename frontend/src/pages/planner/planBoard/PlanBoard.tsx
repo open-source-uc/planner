@@ -1,12 +1,12 @@
 import { useState, useRef } from 'react'
 import SemesterColumn from './SemesterColumn'
-import { PseudoCourseId, PseudoCourseDetail, ValidationDigest } from '../Planner'
+import { type PseudoCourseId, type PseudoCourseDetail, type ValidationDigest } from '../Planner'
 import { useDndScrolling, createVerticalStrength, createHorizontalStrength } from 'react-dnd-scrolling'
 import 'react-toastify/dist/ReactToastify.css'
 
 interface PlanBoardProps {
   classesGrid: PseudoCourseId[][] | null
-  classesDetails: { [code: string]: PseudoCourseDetail }
+  classesDetails: Record<string, PseudoCourseDetail>
   moveCourse: Function
   openModal: Function
   addCourse: Function
@@ -28,7 +28,7 @@ const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCour
   useDndScrolling(boardRef, { horizontalStrength: hStrength, verticalStrength: vStrength })
 
   return (
-    <div ref={boardRef} className= {'overflow-auto grid grid-rows-[fit-content] grid-flow-col justify-start '}>
+    <div ref={boardRef} className= {'overflow-auto grid grid-rows-[fit-content] grid-flow-col justify-start gap-1'}>
       {classesGrid === null
         ? <h1>elija plan</h1>
         : <>
@@ -42,7 +42,8 @@ const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCour
                 openModal={openModal}
                 classes={classes}
                 classesDetails={classesDetails}
-                validationDigest={validationDigest[semester]}
+                validationCourses={validationDigest.courses[semester]}
+                validationSemester={validationDigest.semesters[semester]}
                 isDragging={isDragging}
                 setIsDragging={setIsDragging}
               />
@@ -57,7 +58,8 @@ const PlanBoard = ({ classesGrid, classesDetails, moveCourse, openModal, addCour
               openModal={openModal}
               classes={[]}
               classesDetails={classesDetails}
-              validationDigest={[]}
+              validationCourses={[]}
+              validationSemester={null}
               isDragging={isDragging}
               setIsDragging={setIsDragging}
             />

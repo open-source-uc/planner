@@ -1,29 +1,26 @@
-from typing import Literal, Optional
+from .. import sync
+from ..sync import get_curriculum
+from ..user.auth import UserKey
+from .course import ConcreteId, EquivalenceId
+from .courseinfo import CourseInfo, course_info
+from .plan import (
+    Level,
+    PseudoCourse,
+    ValidatablePlan,
+)
+from .validation.courses.logic import And, Expr, Or, ReqCourse
 from .validation.curriculum.solve import (
     RecommendedCourse,
     SolvedCurriculum,
     solve_curriculum,
 )
-
-from fastapi import HTTPException
-from ..user.auth import UserKey
-from ..sync import get_curriculum
-from .validation.courses.logic import And, Expr, Or, ReqCourse
 from .validation.curriculum.tree import (
     LATEST_CYEAR,
     Curriculum,
     CurriculumSpec,
     Cyear,
 )
-from .plan import (
-    Level,
-    PseudoCourse,
-    ValidatablePlan,
-)
-from .course import EquivalenceId
-from .courseinfo import CourseInfo, course_info
 from .validation.validate import quick_validate_dependencies
-from .. import sync
 
 RECOMMENDED_CREDITS_PER_SEMESTER = 50
 
@@ -89,7 +86,7 @@ def _compute_courses_to_pass(
     for rec, credits in to_pass:
         if isinstance(rec.rec.course, EquivalenceId):
             courses_to_pass.append(
-                EquivalenceId(code=rec.rec.course.code, credits=credits)
+                EquivalenceId(code=rec.rec.course.code, credits=credits),
             )
         else:
             courses_to_pass.append(rec.rec.course)
@@ -99,7 +96,7 @@ def _compute_courses_to_pass(
 def _find_corequirements(out: list[str], expr: Expr):
     if isinstance(expr, ReqCourse) and expr.coreq:
         out.append(expr.code)
-    elif isinstance(expr, (And, Or)):
+    elif isinstance(expr, And | Or):
         for child in expr.children:
             _find_corequirements(out, child)
 
@@ -123,18 +120,16 @@ def _get_corequirements(courseinfo: CourseInfo, courseid: PseudoCourse) -> list[
 
 
 def _is_course_in_list_of_codes(
-    courseinfo: CourseInfo, course: PseudoCourse, codes: list[str]
+    courseinfo: CourseInfo,
+    course: PseudoCourse,
+    codes: list[str],
 ) -> bool:
-    if isinstance(course, EquivalenceId):
-        info = courseinfo.try_equiv(course.code)
-        if info is None:
-            return False
-        for code in info.courses:
-            if code in codes:
-                return True
-        return False
-    else:
+    if isinstance(course, ConcreteId):
         return course.code in codes
+    info = courseinfo.try_equiv(course.code)
+    if info is None:
+        return False
+    return any(code in codes for code in info.courses)
 
 
 def _get_credits(courseinfo: CourseInfo, courseid: PseudoCourse) -> int:
@@ -145,7 +140,8 @@ def _get_credits(courseinfo: CourseInfo, courseid: PseudoCourse) -> int:
 
 
 def _determine_coreq_components(
-    courseinfo: CourseInfo, courses_to_pass: list[PseudoCourse]
+    courseinfo: CourseInfo,
+    courses_to_pass: list[PseudoCourse],
 ) -> dict[PseudoCourse, list[PseudoCourse]]:
     """
     Determine which courses have to be taken together because they are
@@ -167,7 +163,9 @@ def _determine_coreq_components(
         for j in range(i + 1, len(courses_to_pass)):
             course2 = courses_to_pass[j]
             if _is_course_in_list_of_codes(
-                courseinfo, course2, coreqs[i]
+                courseinfo,
+                course2,
+                coreqs[i],
             ) and _is_course_in_list_of_codes(courseinfo, course1, coreqs[j]):
                 # `course1` and `course2` are mutual corequirements, they must be taken
                 # together
@@ -187,19 +185,30 @@ def _try_add_course_group(
     courses_to_pass: list[PseudoCourse],
     current_credits: int,
     course_group: list[PseudoCourse],
-) -> Literal["credits", "deps", "added"]:
+) -> bool:
     """
     Attempt to add a group of courses to the last semester of the given plan.
     Fails if they cannot be added.
     Assumes all courses in the group are not present in the given plan.
+    Returns `True` if the courses could be added.
     """
 
+    # Bail if the semestrality is wrong for any course (but it could be right in
+    # another semester)
+    sem_i = len(plan.classes) - 1
+    for course in course_group:
+        info = courseinfo.try_course(course.code)
+        if info is None:
+            continue
+        if not info.semestrality[sem_i % 2] and info.semestrality[(sem_i + 1) % 2]:
+            return False
+
     # Determine total credits of this group
-    group_credits = sum(map(lambda c: _get_credits(courseinfo, c), course_group))
+    group_credits = sum(_get_credits(courseinfo, c) for c in course_group)
 
     # Bail if there is not enough space in this semester
     if current_credits + group_credits > RECOMMENDED_CREDITS_PER_SEMESTER:
-        return "credits"
+        return False
 
     # Temporarily add to plan
     semester = plan.classes[-1]
@@ -212,23 +221,26 @@ def _try_add_course_group(
         if courseinfo.try_course(course.code) is None:
             continue
         if not quick_validate_dependencies(
-            courseinfo, plan, len(plan.classes) - 1, original_length + i
+            courseinfo,
+            plan,
+            len(plan.classes) - 1,
+            original_length + i,
         ):
             # Requirements are not met
             # Undo changes and cancel
             while len(semester) > original_length:
                 semester.pop()
-            return "deps"
+            return False
 
     # Added course successfully
     # Remove added courses from `courses_to_pass`
     for course in course_group:
         courses_to_pass.remove(course)
 
-    return "added"
+    return True
 
 
-async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan:
+async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
     """
     Generate an empty plan with optional user context.
     If no user context is available, uses the latest curriculum version.
@@ -237,11 +249,9 @@ async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan
     from this function, except for manually crafted plans).
     """
     classes: list[list[PseudoCourse]]
-    next_semester: int
     curriculum: CurriculumSpec
     if user is None:
         classes = []
-        next_semester = 0
         curriculum = CurriculumSpec(
             cyear=LATEST_CYEAR,
             major=None,
@@ -252,14 +262,10 @@ async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan
         student = await sync.get_student_data(user)
         cyear = Cyear.from_str(student.info.cyear)
         if cyear is None:
-            # HTTP error 501: Unimplemented
-            # TODO: The frontend could recognize this code and show a nice error message
-            # maybe?
-            raise HTTPException(
-                status_code=501, detail="Your curriculum version is unsupported"
-            )
+            # Just plow forward, after all the validation endpoint will generate an
+            # error about the mismatched cyear
+            cyear = LATEST_CYEAR
         classes = student.passed_courses
-        next_semester = len(classes)
         curriculum = CurriculumSpec(
             cyear=cyear,
             major=student.info.reported_major,
@@ -268,7 +274,6 @@ async def generate_empty_plan(user: Optional[UserKey] = None) -> ValidatablePlan
         )
     return ValidatablePlan(
         classes=classes,
-        next_semester=next_semester,
         level=Level.PREGRADO,
         school="Ingenieria",
         program=None,
@@ -302,45 +307,37 @@ async def generate_recommended_plan(passed: ValidatablePlan):
 
         # Go in order, attempting to add each course to the semester
         added_course = False
-        could_use_more_credits = False
-        some_requirements_missing = False
         for try_course in courses_to_pass:
             course_group = coreq_components[try_course]
 
-            status = _try_add_course_group(
-                courseinfo, plan, courses_to_pass, credits, course_group
+            could_add = _try_add_course_group(
+                courseinfo,
+                plan,
+                courses_to_pass,
+                credits,
+                course_group,
             )
-            if status == "added":
+            if could_add:
                 # Successfully added a course, finish
                 added_course = True
                 break
-            elif status == "credits":
-                # Keep track of the case when there are some courses that need more
-                # credit-space
-                could_use_more_credits = True
-            elif status == "deps":
-                # Keep track on when we need more requirements
-                some_requirements_missing = True
 
         if added_course:
             # Made some progress!
             # Continue adding courses
             continue
 
-        if could_use_more_credits:
-            # Maybe we couldn't make progress because there is no space for any more
-            # courses
-            plan.classes.append([])
-            continue
+        # We could not add any course, try adding another semester
+        # However, we do not want to enter an infinite loop if nothing can be added, so
+        # only do this if we cannot add courses for 2 empty semesters
+        if len(plan.classes) >= 2 and not plan.classes[-1] and not plan.classes[-2]:
+            # Stuck :(
+            break
 
-        if some_requirements_missing and len(plan.classes[-1]) != 0:
-            # Last chance: maybe we can't make progress because there's a course that
-            # depends on the courses on this very semester
-            plan.classes.append([])
-            continue
-
-        # Stuck! :(
-        break
+        # Maybe some requirements are not met, maybe the semestrality is wrong, maybe
+        # we reached the credit limit for this semester
+        # Anyway, if we are stuck let's try adding a new semester and see if it helps
+        plan.classes.append([])
 
     # Remove empty semesters at the end (if any)
     while plan.classes and not plan.classes[-1]:

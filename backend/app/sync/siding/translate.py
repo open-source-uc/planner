@@ -2,35 +2,41 @@
 Transform the Siding format into something usable.
 """
 
-from typing import Optional
 
-from ...user.info import StudentInfo
-from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
-from ...plan.course import ConcreteId, EquivalenceId, PseudoCourse
-from . import client, curriculum_rules
-from .client import (
-    BloqueMalla,
-    PlanEstudios,
-    StringArray,
-)
 from prisma.models import (
     Major as DbMajor,
-    Minor as DbMinor,
-    Title as DbTitle,
+)
+from prisma.models import (
     MajorMinor as DbMajorMinor,
 )
+from prisma.models import (
+    Minor as DbMinor,
+)
+from prisma.models import (
+    Title as DbTitle,
+)
+
+from ...plan.course import ConcreteId, EquivalenceId, PseudoCourse
+from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
 from ...plan.validation.curriculum.tree import (
+    Block,
     Combination,
     CourseRecommendation,
     Curriculum,
     CurriculumSpec,
     Cyear,
-    Block,
     Leaf,
+)
+from ...user.info import StudentInfo
+from . import client, siding_rules
+from .client import (
+    BloqueMalla,
+    PlanEstudios,
+    StringArray,
 )
 
 
-def _decode_curriculum_versions(input: Optional[StringArray]) -> list[str]:
+def _decode_curriculum_versions(input: StringArray | None) -> list[str]:
     """
     SIDING returns lists of cyear codes (e.g. ["C2013", "C2020"]) as a convoluted
     `stringArray` type that is currently empty for some reason.
@@ -62,9 +68,9 @@ def _semesters_elapsed(start: tuple[int, int], end: tuple[int, int]) -> int:
 
 
 async def _fetch_raw_blocks(
-    courseinfo: CourseInfo, spec: CurriculumSpec
+    courseinfo: CourseInfo,
+    spec: CurriculumSpec,
 ) -> list[BloqueMalla]:
-
     # Use a dummy major and minor if they are not specified
     # Later, remove this information
     major = "M245" if spec.major is None else spec.major
@@ -77,7 +83,7 @@ async def _fetch_raw_blocks(
             CodMajor=major,
             CodMinor=minor,
             CodTitulo=spec.title or "",
-        )
+        ),
     )
 
     # Remove data if a dummy major/minor was used
@@ -86,33 +92,39 @@ async def _fetch_raw_blocks(
             filter(
                 lambda raw_block: not raw_block.BloqueAcademico.startswith("Major"),
                 raw_blocks,
-            )
+            ),
         )
     if spec.minor is None:
         raw_blocks = list(
             filter(
                 lambda raw_block: not raw_block.BloqueAcademico.startswith("Minor"),
                 raw_blocks,
-            )
+            ),
         )
 
     # Fetch data for unseen equivalences
     for raw_block in raw_blocks:
+        equiv = None
         if raw_block.CodLista is not None:
             code = f"!{raw_block.CodLista}"
             if courseinfo.try_equiv(code) is not None:
                 continue
             raw_courses = await client.get_predefined_list(raw_block.CodLista)
-            codes = list(map(lambda c: c.Sigla, raw_courses))
-            await add_equivalence(
-                EquivDetails(
-                    code=code,
-                    name=raw_block.Nombre,
-                    # TODO: Do some deeper analysis to determine if an equivalency is
-                    # homogeneous
-                    is_homogeneous=len(codes) < 5,
-                    courses=codes,
-                )
+            codes: list[str] = []
+            for c in raw_courses:
+                if courseinfo.try_course(c.Sigla) is None:
+                    print(
+                        f"unknown course {c.Sigla} in SIDING list"
+                        f" {raw_block.CodLista} ({raw_block.Nombre})",
+                    )
+                else:
+                    codes.append(c.Sigla)
+            equiv = EquivDetails(
+                code=code,
+                name=raw_block.Nombre,
+                is_homogeneous=False,
+                is_unessential=False,
+                courses=codes,
             )
         elif raw_block.CodSigla is not None and raw_block.Equivalencias is not None:
             code = f"?{raw_block.CodSigla}"
@@ -121,11 +133,16 @@ async def _fetch_raw_blocks(
             codes = [raw_block.CodSigla]
             for equiv in raw_block.Equivalencias.Cursos:
                 codes.append(equiv.Sigla)
-            await add_equivalence(
-                EquivDetails(
-                    code=code, name=raw_block.Nombre, is_homogeneous=True, courses=codes
-                )
+            equiv = EquivDetails(
+                code=code,
+                name=raw_block.Nombre,
+                is_homogeneous=True,
+                is_unessential=True,
+                courses=codes,
             )
+        if equiv is not None:
+            equiv = await siding_rules.apply_equivalence_rules(courseinfo, spec, equiv)
+            await add_equivalence(equiv)
 
     return raw_blocks
 
@@ -190,9 +207,9 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
                 cap=creds,
                 codes=codes_dict,
                 fill_with=[
-                    CourseRecommendation(course=recommended, order=recommended_order)
+                    CourseRecommendation(course=recommended, order=recommended_order),
                 ],
-            )
+            ),
         )
 
     # Transform into a somewhat valid curriculum
@@ -202,9 +219,7 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
     curriculum = Curriculum(root=root)
 
     # Apply custom cyear-dependent transformations
-    curriculum = await curriculum_rules.apply_curriculum_rules(
-        courseinfo, spec, curriculum
-    )
+    curriculum = await siding_rules.apply_curriculum_rules(courseinfo, spec, curriculum)
 
     # Patch any `-1` capacities to be the sum of child capacities
     _patch_capacities(curriculum.root)
@@ -234,7 +249,7 @@ async def load_siding_offer_to_database():
                     "code": major.CodMajor,
                     "name": major.Nombre,
                     "version": major.VersionMajor,
-                }
+                },
             )
 
     print("  loading minors")
@@ -247,7 +262,7 @@ async def load_siding_offer_to_database():
                     "name": minor.Nombre,
                     "version": minor.VersionMinor or "",
                     "minor_type": minor.TipoMinor,
-                }
+                },
             )
 
     print("  loading titles")
@@ -260,13 +275,11 @@ async def load_siding_offer_to_database():
                     "name": title.Nombre,
                     "version": title.VersionTitulo or "",
                     "title_type": title.TipoTitulo,
-                }
+                },
             )
 
     print("  loading major-minor associations")
-    p_major_minor = list(
-        map(lambda maj: (maj, client.get_minors_for_major(maj.CodMajor)), majors)
-    )
+    p_major_minor = [(maj, client.get_minors_for_major(maj.CodMajor)) for maj in majors]
     for major, p_assoc_minors in p_major_minor:
         assoc_minors = await p_assoc_minors
         for cyear in _decode_curriculum_versions(major.Curriculum):
@@ -278,7 +291,7 @@ async def load_siding_offer_to_database():
                         "cyear": cyear,
                         "major": major.CodMajor,
                         "minor": minor.CodMinor,
-                    }
+                    },
                 )
 
 
@@ -301,8 +314,9 @@ async def fetch_student_info(rut: str) -> StudentInfo:
 
 
 async def fetch_student_previous_courses(
-    rut: str, info: StudentInfo
-) -> list[list[PseudoCourse]]:
+    rut: str,
+    info: StudentInfo,
+) -> tuple[list[list[PseudoCourse]], bool]:
     """
     MUST BE CALLED WITH AUTHORIZATION
 
@@ -313,9 +327,24 @@ async def fetch_student_previous_courses(
     semesters: list[list[PseudoCourse]] = []
     # Make sure semester 1 is always odd, adding an empty semester if necessary
     start_period = (info.admission[0], 1)
+    in_course: list[list[bool]] = []
     for c in raw:
         sem = _semesters_elapsed(start_period, _decode_period(c.Periodo))
         while len(semesters) <= sem:
             semesters.append([])
-        semesters[sem].append(ConcreteId(code=c.Sigla))
-    return semesters
+        while len(in_course) <= sem:
+            in_course.append([])
+        if c.Estado.startswith("2"):
+            # Failed course
+            course = ConcreteId(code="#FAILED", failed=c.Sigla)
+        else:
+            # Approved course
+            course = ConcreteId(code=c.Sigla)
+        semesters[sem].append(course)
+        currently_coursing = c.Estado.startswith("3")
+        in_course[sem].append(currently_coursing)
+
+    # Check if the last semester is currently being coursed
+    last_semester_in_course = bool(in_course and in_course[-1] and all(in_course[-1]))
+
+    return semesters, last_semester_in_course

@@ -3,27 +3,41 @@ Update local database with an official but ugly source.
 Currently using unofficial sources until we get better API access.
 """
 
-from collections import OrderedDict
 import time
+from collections import OrderedDict
 
+from prisma.models import (
+    Course as DbCourse,
+)
+from prisma.models import (
+    Curriculum as DbCurriculum,
+)
+from prisma.models import (
+    Equivalence as DbEquivalence,
+)
+from prisma.models import (
+    EquivalenceCourse as DbEquivalenceCourse,
+)
+from prisma.models import (
+    Major as DbMajor,
+)
+from prisma.models import (
+    MajorMinor as DbMajorMinor,
+)
+from prisma.models import (
+    Minor as DbMinor,
+)
+from prisma.models import (
+    Title as DbTitle,
+)
+
+from ..plan.courseinfo import clear_course_info_cache, course_info
+from ..plan.validation.curriculum.tree import Curriculum, CurriculumSpec
 from ..settings import settings
 from ..user.auth import UserKey
 from ..user.info import StudentContext
-from prisma import Json
-from .siding import translate as siding_translate
-from ..plan.validation.curriculum.tree import Curriculum, CurriculumSpec
-from ..plan.courseinfo import clear_course_info_cache, course_info
 from . import buscacursos_dl
-from prisma.models import (
-    Curriculum as DbCurriculum,
-    Major as DbMajor,
-    Minor as DbMinor,
-    Title as DbTitle,
-    MajorMinor as DbMajorMinor,
-    EquivalenceCourse as DbEquivalenceCourse,
-    Course as DbCourse,
-    Equivalence as DbEquivalence,
-)
+from .siding import translate as siding_translate
 
 
 async def clear_upstream_data(courses: bool = True, offer: bool = True):
@@ -78,29 +92,30 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
                 "major": spec.major or "",
                 "minor": spec.minor or "",
                 "title": spec.title or "",
-            }
-        }
+            },
+        },
     )
-    if db_curr is None:
-        courseinfo = await course_info()
-        curr = await siding_translate.fetch_curriculum(courseinfo, spec)
-        await DbCurriculum.prisma().query_raw(
-            """
-            INSERT INTO "Curriculum"
-                (cyear, major, minor, title, curriculum)
-            VALUES($1, $2, $3, $4, $5)
-            ON CONFLICT (cyear, major, minor, title)
-            DO UPDATE SET curriculum = $5
-            """,
-            str(spec.cyear),
-            spec.major or "",
-            spec.minor or "",
-            spec.title or "",
-            Json(curr.json()),
-        )
-        return curr
-    else:
+    if db_curr is not None:
         return Curriculum.parse_raw(db_curr.curriculum)
+
+    courseinfo = await course_info()
+    curr = await siding_translate.fetch_curriculum(courseinfo, spec)
+    curr.root.simplify_in_place()
+    await DbCurriculum.prisma().query_raw(
+        """
+        INSERT INTO "Curriculum"
+            (cyear, major, minor, title, curriculum)
+        VALUES($1, $2, $3, $4, $5)
+        ON CONFLICT (cyear, major, minor, title)
+        DO UPDATE SET curriculum = $5
+        """,
+        str(spec.cyear),
+        spec.major or "",
+        spec.minor or "",
+        spec.title or "",
+        curr.json(),
+    )
+    return curr
 
 
 _student_context_cache: OrderedDict[str, tuple[StudentContext, float]] = OrderedDict()
@@ -122,8 +137,16 @@ async def get_student_data(user: UserKey) -> StudentContext:
     # Request user context from SIDING
     print(f"fetching user data for student {user.rut} from SIDING...")
     info = await siding_translate.fetch_student_info(user.rut)
-    passed = await siding_translate.fetch_student_previous_courses(user.rut, info)
-    ctx = StudentContext(info=info, passed_courses=passed)
+    passed, in_course = await siding_translate.fetch_student_previous_courses(
+        user.rut,
+        info,
+    )
+    ctx = StudentContext(
+        info=info,
+        passed_courses=passed,
+        current_semester=len(passed) - (1 if in_course else 0),
+        next_semester=len(passed),
+    )
 
     # Add to cache and return
     _student_context_cache[user.rut] = (

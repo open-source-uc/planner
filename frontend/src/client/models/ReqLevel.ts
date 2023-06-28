@@ -9,16 +9,7 @@ import type { Level } from './Level';
  */
 export type ReqLevel = {
     hash?: Blob;
-    expr?: ReqLevel.expr;
+    expr?: 'lvl';
     min_level: Level;
 };
-
-export namespace ReqLevel {
-
-    export enum expr {
-        LVL = 'lvl',
-    }
-
-
-}
 

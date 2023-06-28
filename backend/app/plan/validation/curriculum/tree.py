@@ -2,9 +2,11 @@
 Models a flow network in the context of curriculums.
 """
 
+from typing import Literal, Optional
+
+from pydantic import BaseModel, Field
+
 from ...course import PseudoCourse
-from pydantic import BaseModel
-from typing import Literal, Optional, Union
 
 
 class CourseRecommendation(BaseModel):
@@ -24,7 +26,7 @@ class CourseRecommendation(BaseModel):
 class BaseBlock(BaseModel):
     # The name of this block.
     # If this block is missing credits, this name will be used to report.
-    name: Optional[str] = None
+    name: str | None = None
     # What is the maximum amount of credits that this node can support.
     cap: int
 
@@ -33,6 +35,35 @@ class Combination(BaseBlock):
     # Children nodes that supply flow to this block.
     children: list["Block"]
 
+    def simplify_in_place(self):
+        """
+        Remove unnecessary nodes, connecting the grandchildren directly to the parents
+        if it can be done without changing the maximum flow or its cost.
+        """
+        new_children: list[Block] = []
+        for child in self.children:
+            if isinstance(child, Combination):
+                child.simplify_in_place()
+                grandchild_output = 0
+                for grandchild in child.children:
+                    grandchild_output += grandchild.cap
+                if grandchild_output <= child.cap:
+                    # If this condition holds, then raising the capacity of the child
+                    # won't increase the amount of flow that can be sent from the
+                    # grandchildren to us, because the total max output of the
+                    # grandchildren is still less than the capacity of the child.
+                    # Therefore, we can just connect the grandchildren to us directly
+                    # and remove a node
+                    for grandchild in child.children:
+                        if child.name is not None:
+                            grandchild.name = f"{child.name} -> {grandchild.name}"
+                        new_children.append(grandchild)
+                    # This `continue` statement avoids the child from getting into the
+                    # `new_children`` list
+                    continue
+            new_children.append(child)
+        self.children = new_children
+
 
 class Leaf(BaseBlock):
     # A set of course codes that comprise this leaf.
@@ -40,12 +71,12 @@ class Leaf(BaseBlock):
     # count as valid credits.
     # In most cases this should be `1`, but for example equivalences should count
     # unlimited times (`None`), and selecciones deportivas can count twice.
-    codes: dict[str, Optional[int]]
+    codes: dict[str, int | None]
     # Indicates courses which will be used to fill the credits for this block if it
     # can't be done with taken courses.
     # If there are more recommended courses than missing credits, the list is truncated.
     # Therefore, prefer to place courses with a high `order` number first.
-    fill_with: list[CourseRecommendation] = []
+    fill_with: list[CourseRecommendation] = Field(default_factory=list)
     # Course nodes are deduplicated by their codes.
     # However, this behavior can be controlled by the `layer` property.
     # Course nodes with different `layer` values will not be deduplicated.
@@ -54,7 +85,7 @@ class Leaf(BaseBlock):
     layer: str = ""
 
 
-Block = Union[Combination, Leaf]
+Block = Combination | Leaf
 
 
 Combination.update_forward_refs()
@@ -91,8 +122,7 @@ class Cyear(BaseModel, frozen=True):
     def from_str(cyear: str) -> Optional["Cyear"]:
         if cyear == "C2020":
             return Cyear(raw=cyear)
-        else:
-            return None
+        return None
 
     def __str__(self) -> str:
         """
@@ -116,8 +146,8 @@ class CurriculumSpec(BaseModel, frozen=True):
     # Curriculum year.
     cyear: Cyear
     # Major code.
-    major: Optional[str]
+    major: str | None
     # Minor code.
-    minor: Optional[str]
+    minor: str | None
     # Title code.
-    title: Optional[str]
+    title: str | None
