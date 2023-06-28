@@ -324,7 +324,7 @@ async def fetch_student_info(rut: str) -> StudentInfo:
 async def fetch_student_previous_courses(
     rut: str,
     info: StudentInfo,
-) -> list[list[PseudoCourse]]:
+) -> tuple[list[list[PseudoCourse]], bool]:
     """
     MUST BE CALLED WITH AUTHORIZATION
 
@@ -335,10 +335,13 @@ async def fetch_student_previous_courses(
     semesters: list[list[PseudoCourse]] = []
     # Make sure semester 1 is always odd, adding an empty semester if necessary
     start_period = (info.admission[0], 1)
+    in_course: list[list[bool]] = []
     for c in raw:
         sem = _semesters_elapsed(start_period, _decode_period(c.Periodo))
         while len(semesters) <= sem:
             semesters.append([])
+        while len(in_course) <= sem:
+            in_course.append([])
         if c.Estado.startswith("2"):
             # Failed course
             course = ConcreteId(code="#FAILED", failed=c.Sigla)
@@ -346,4 +349,10 @@ async def fetch_student_previous_courses(
             # Approved course
             course = ConcreteId(code=c.Sigla)
         semesters[sem].append(course)
-    return semesters
+        currently_coursing = c.Estado.startswith("3")
+        in_course[sem].append(currently_coursing)
+
+    # Check if the last semester is currently being coursed
+    last_semester_in_course = bool(in_course and in_course[-1] and all(in_course[-1]))
+
+    return semesters, last_semester_in_course

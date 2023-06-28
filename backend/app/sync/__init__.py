@@ -136,11 +136,14 @@ async def get_student_data(user: UserKey) -> StudentContext:
     # Request user context from SIDING
     print(f"fetching user data for student {user.rut} from SIDING...")
     info = await siding_translate.fetch_student_info(user.rut)
-    passed = await siding_translate.fetch_student_previous_courses(user.rut, info)
+    passed, in_course = await siding_translate.fetch_student_previous_courses(
+        user.rut,
+        info,
+    )
     ctx = StudentContext(
         info=info,
         passed_courses=passed,
-        current_semester=len(passed),
+        current_semester=len(passed) - (1 if in_course else 0),
         next_semester=len(passed),
     )
 
