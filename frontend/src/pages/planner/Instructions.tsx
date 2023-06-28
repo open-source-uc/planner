@@ -31,7 +31,7 @@ const Instructions = (): JSX.Element => {
     <div className='text-justify'>
       <div className='mb-4'>
         <SectionTitle text='Selector major minor titulo' />
-        <Text text={'Para seleccionar un major, minor o título, hacer click en \'Por seleccionar\' '}/>
+        <Text text={'Para seleccionar un major, minor o título, hacer click en \'Por seleccionar\'.'}/>
         <img className="w-2/3 m-1 mb-3 mx-auto h-auto" alt="selector empty" src={selectorEmpty}></img>
 
         <Text text='Si ya está selecionado el major, minor o título y se desea modificar, hacer click en el nombre correspondiente.'/>
@@ -45,7 +45,7 @@ const Instructions = (): JSX.Element => {
         <Text text='Si se desea cambiar el major teniendo el minor ya seleccionado, si existe una incompatibilidad, esta será informada.'/>
         <img className="w-1/3 m-1 mb-3 mx-auto h-auto" alt="Alerta incompatibilidad" src={selectorIncompatibility}></img>
 
-        <Text text={'Si se desea eliminar una selección, esto se puede realizar haciendo click en \'Eliminar selección\' en la parte superior de la lista'}/>
+        <Text text={'Si se desea eliminar una selección, esto se puede realizar haciendo click en \'Eliminar selección\' en la parte superior de la lista.'}/>
         <img className="w-1/3 m-1 mb-3 mx-auto h-auto" alt="Eliminar selección" src={selectorDelete}></img>
 
         <Text text='Al realizar cualquier cambio, el plan volverá a crear la malla recomendada para las opciones seleccionadas.'/>
@@ -92,7 +92,7 @@ const Instructions = (): JSX.Element => {
         <SectionTitle text='Barra acciones' />
         <div className="my-2">
           <Subtitle text='Guardar malla' />
-          <Text text='Para guardar la malla, hacer click en Guardar malla en la barra de acciones. Luego se abrirá un pop-up donde se debe dar un nombre a la malla y hacer click en aceptar'/>
+          <Text text='Para guardar la malla, hacer click en Guardar malla en la barra de acciones. Luego se abrirá un pop-up donde se debe dar un nombre a la malla y hacer click en aceptar.'/>
           <Text text='Si la malla ya existía previamente, no volverá a preguntar el nombre.'/>
         </div>
 
