@@ -226,6 +226,10 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
             # TODO: Cual es la definicion exacta de un curso IPre?
             # En particular, el curso "Cmd Investigación o Proyecto Interdisciplinario"
             # cuenta como IPre?
+            # TODO: Segun https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/optativos/opt_ing_2013/alumno_2020/index.phtml,
+            # existen cursos de otras facultades que se consideran como OPIs.
+            # Si no hay una lista programatica en SIDING que los liste, habria que
+            # incluirla textualmente.
             if (
                 (len(code) >= 6 and code[3] == "3")
                 or course.name == "Investigacion o Proyecto"

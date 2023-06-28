@@ -66,10 +66,11 @@ const listCourses = (courses: ClassId[]): string => {
  * Format a curriculum specification.
  */
 const formatCurriculum = (curr: CurriculumSpec): string => {
-  const major: string = curr.major ?? '()'
-  const minor: string = curr.minor ?? '()'
-  const title: string = curr.title ?? '()'
-  return `${major}-${minor}-${title}`
+  const pieces: string[] = []
+  if (curr.major != null) pieces.push(curr.major)
+  if (curr.minor != null) pieces.push(curr.minor)
+  if (curr.title != null) pieces.push(curr.title)
+  return pieces.length === 0 ? '-' : pieces.join('-')
 }
 
 /**
@@ -84,9 +85,9 @@ const formatMessage = (diag: Diagnostic): string => {
     case 'creditswarn':
       return `Tienes ${diag.actual} créditos en el semestre ${diag.associated_to[0] + 1}, revisa que cumplas los requisitos para tomar más de ${diag.max_recommended} créditos.`
     case 'curr':
-      return `Faltan ${diag.credits} créditos para el bloque ${diag.block.join(' -> ')}`
+      return `Faltan ${diag.credits} créditos para el bloque ${diag.block.join(' -> ')}.`
     case 'currdecl':
-      return `El curriculum elegido (${formatCurriculum(diag.plan)}) no es el mismo que el que tienes declarado oficialmente (${formatCurriculum(diag.user)})`
+      return `El curriculum elegido (${formatCurriculum(diag.plan)}) es distinto al que tienes declarado oficialmente (${formatCurriculum(diag.user)}).`
     case 'cyear':
       if (validateCyear(diag.user) != null) {
         return `Tu versión de curriculum es ${diag.user}, pero el plan esta siendo validado para ${diag.plan.raw}.`
@@ -107,9 +108,9 @@ const formatMessage = (diag: Diagnostic): string => {
       return `Debes seleccionar ${missing} para validar correctamente tu plan.`
     }
     case 'outdated':
-      return 'Esta malla no está actualizada con los cursos que has tomado'
+      return 'Esta malla no está actualizada con los cursos que has tomado.'
     case 'outdatedcurrent':
-      return 'Esta malla no está actualizada con los cursos que estás tomando'
+      return 'Esta malla no está actualizada con los cursos que estás tomando.'
     case 'req':
       return `Faltan requisitos para el curso ${diag.associated_to[0]?.code}: ${formatReqExpr(diag.modernized_missing)}`
     case 'sem': {
