@@ -137,7 +137,7 @@ const CourseCard = ({ semester, index, cardData, isDragging, moveCourse, remCour
             </>}
       </ConditionalWrapper>
 
-      {!collected.isDragging && dropProps.isOver && <div className={'px-2 pb-3'}>
+      {!collected.isDragging && dropProps.isOver && <div className={'px-1 pb-3'}>
       <Card
         semester={semester}
         index={index}
