@@ -1,0 +1,11 @@
+{$PLANNER_URL} {
+	handle_path /api/* {
+		reverse_proxy api:8000
+	}
+
+	handle /* {
+		root * /srv
+		file_server
+		try_files {path} /index.html
+	}
+}
