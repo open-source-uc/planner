@@ -38,7 +38,7 @@ const formatReqExpr = (expr: RequirementExpr): string => {
     case 'cred':
       return `Créditos >= ${expr.min_credits}`
     case 'lvl':
-      return `Nivel = ${expr.min_level}`
+      return `Nivel ${expr.equal ? '=' : '!='} ${expr.level}`
     case 'school':
       return `Facultad ${expr.equal ? '=' : '!='} ${expr.school}`
     case 'program':
@@ -66,10 +66,11 @@ const listCourses = (courses: ClassId[]): string => {
  * Format a curriculum specification.
  */
 const formatCurriculum = (curr: CurriculumSpec): string => {
-  const major: string = curr.major ?? '()'
-  const minor: string = curr.minor ?? '()'
-  const title: string = curr.title ?? '()'
-  return `${major}-${minor}-${title}`
+  const pieces: string[] = []
+  if (curr.major != null) pieces.push(curr.major)
+  if (curr.minor != null) pieces.push(curr.minor)
+  if (curr.title != null) pieces.push(curr.title)
+  return pieces.length === 0 ? '-' : pieces.join('-')
 }
 
 /**
@@ -84,9 +85,9 @@ const formatMessage = (diag: Diagnostic): string => {
     case 'creditswarn':
       return `Tienes ${diag.actual} créditos en el semestre ${diag.associated_to[0] + 1}, revisa que cumplas los requisitos para tomar más de ${diag.max_recommended} créditos.`
     case 'curr':
-      return `Faltan ${diag.credits} créditos para el bloque ${diag.block}`
+      return `Faltan ${diag.credits} créditos para el bloque ${diag.block.join(' -> ')}.`
     case 'currdecl':
-      return `El curriculum elegido (${formatCurriculum(diag.plan)}) no es el mismo que el que tienes declarado oficialmente (${formatCurriculum(diag.user)})`
+      return `El curriculum elegido (${formatCurriculum(diag.plan)}) es distinto al que tienes declarado oficialmente (${formatCurriculum(diag.user)}).`
     case 'cyear':
       if (validateCyear(diag.user) != null) {
         return `Tu versión de curriculum es ${diag.user}, pero el plan esta siendo validado para ${diag.plan.raw}.`
@@ -94,8 +95,8 @@ const formatMessage = (diag: Diagnostic): string => {
         return `Tu versión del curriculum es ${diag.user} pero no es soportada. El plan esta siendo validado para la versión de curriculum ${diag.plan.raw}.`
       }
     case 'equiv': {
-      const s = diag.associated_to.length === 1 ? '' : 's'
-      return `Falta desambiguar la${s} equivalencia${s} ${listCourses(diag.associated_to)} para validar correctamente tu plan.`
+      const n = diag.associated_to.length
+      return `Falta especificar ${n} equivalencia${n === 1 ? '' : 's'} para validar correctamente tu plan.`
     }
     case 'nomajor': {
       let missing = ''
@@ -107,15 +108,15 @@ const formatMessage = (diag: Diagnostic): string => {
       return `Debes seleccionar ${missing} para validar correctamente tu plan.`
     }
     case 'outdated':
-      return 'Esta malla no está actualizada con los cursos que has tomado'
+      return 'Esta malla no está actualizada con los cursos que has tomado.'
     case 'outdatedcurrent':
-      return 'Esta malla no está actualizada con los cursos que estás tomando'
+      return 'Esta malla no está actualizada con los cursos que estás tomando.'
     case 'req':
       return `Faltan requisitos para el curso ${diag.associated_to[0]?.code}: ${formatReqExpr(diag.modernized_missing)}`
     case 'sem': {
-      const sem = diag.only_available_on === 0 ? 'primeros' : diag.only_available_on === 1 ? 'segundos' : '?'
+      const sem = diag.only_available_on === 0 ? 'impares' : diag.only_available_on === 1 ? 'pares' : '?'
       const s = diag.associated_to.length !== 1
-      return `${s ? 'Los' : 'El'} curso${s ? 's' : ''} ${listCourses(diag.associated_to)} solo se dicta${s ? 'n' : ''} los ${sem} semestres.`
+      return `${s ? 'Los' : 'El'} curso${s ? 's' : ''} ${listCourses(diag.associated_to)} solo se dicta${s ? 'n' : ''} los semestres ${sem}.`
     }
     case 'unavail': {
       const s = diag.associated_to.length !== 1
@@ -154,7 +155,7 @@ const Message = ({ setValidatablePlan, diag, key, open }: MessageProps): JSX.Ele
     <div className={`min-w-[14rem] ml-2 ${open ? '' : 'hidden'} `}>
       <span className={'font-semibold '}>{`${w ? 'Advertencia' : 'Error'}: `}</span>
       {formatMessage(diag)}
-      <AutoFix setValidatablePlan={setValidatablePlan} diag={diag}/>
+      <AutoFix setValidatablePlan={setValidatablePlan} diag={diag} />
     </div>
   </div>)
 }

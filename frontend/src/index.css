@@ -36,31 +36,34 @@
     --otro: #D8D8D8;
   }
 
-  html[data-theme='dark'] {
-  }
-  
-  html[data-theme='light'] {
-  }
+  html[data-theme='dark'] {}
+
+  html[data-theme='light'] {}
 }
 
 @layer components {
   .curriculumSelector {
     @apply w-full mb-3 mt-2 relative;
   }
-  .curriculumSelector .selectorElement{
+
+  .curriculumSelector .selectorElement {
     @apply inline-block ml-3 font-semibold;
   }
-  .curriculumSelector .selectorElement .selectorName{
+
+  .curriculumSelector .selectorElement .selectorName {
     @apply text-sm inline mr-1 font-normal;
   }
-  .curriculumSelector .selectorElement .selectorButton{
+
+  .curriculumSelector .selectorElement .selectorButton {
     @apply text-base pl-1 pr-1 text-left;
   }
+
   .curriculumSelector .selectorElement .curriculumOptions {
     @apply fixed mt-1 max-h-96 flex flex-col rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm;
   }
-  .curriculumSelector .selectorElement .curriculumOptions .curriculumOption{
-    @apply relative cursor-default select-none py-1.5 pl-8 pr-4 ;
+
+  .curriculumSelector .selectorElement .curriculumOptions .curriculumOption {
+    @apply relative cursor-default select-none py-1.5 pl-8 pr-4;
   }
 
   .card {
@@ -75,14 +78,18 @@
     opacity: 1;
     transition: opacity 0.5s ease;
   }
-  .darkBlue{
-    background-color: #00345E; /*#3D4451*/
+
+  .darkBlue {
+    background-color: #00345E;
+    /*#3D4451*/
   }
-  .btn{
+
+  .btn {
     @apply font-semibold py-2 px-4 rounded;
-    @apply  text-white;
+    @apply text-white;
     background-color: #3D4451;
   }
+
   .btn:hover {
     background-color: #2C353F;
   }
@@ -91,10 +98,12 @@
     background-color: #25282D;
   }
 }
-.modal{
+
+.modal {
   box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.18);
   @apply z-50;
 }
+
 .animated {
   /*transform: rotateZ(360deg);*/
   animation: opacity-animation 1s infinite alternate;
@@ -104,7 +113,8 @@
   5% {
     opacity: 1;
   }
-  100%{
+
+  100% {
     opacity: 0.5;
   }
 }
@@ -141,3 +151,19 @@
   left: -2%;
 }
 
+.autofix {
+  display: block;
+  background-color: #0002;
+  border-radius: 4px;
+  margin-top: 0.25em;
+  margin-left: 1em;
+  padding: 0.25em;
+}
+
+.autofix:hover {
+  background-color: #0003;
+}
+
+.autofix:active {
+  background-color: #0005;
+}

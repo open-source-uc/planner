@@ -113,9 +113,11 @@ async def get_plan_details(
 
 
 async def get_user_plans(user: UserKey) -> list[LowDetailPlanView]:
-    plans = await DbPlan.prisma().find_many(where={
-        "user_rut": user.rut,
-    })
+    plans = await DbPlan.prisma().find_many(
+        where={
+            "user_rut": user.rut,
+        },
+    )
 
     return [LowDetailPlanView.from_db(plan) for plan in plans]
 
