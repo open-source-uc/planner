@@ -5,7 +5,7 @@ within a block and respecting exclusivity rules.
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from ...course import ConcreteId, EquivalenceId, PseudoCourse
 from ...courseinfo import CourseInfo
@@ -100,7 +100,7 @@ class LayerCourses:
     # Contains an entry for each course code.
     # The nested dictionary maps from repeat indices to vertex ids.
     courses: defaultdict[str, dict[int, int]] = field(
-        default_factory=lambda: defaultdict(dict)
+        default_factory=lambda: defaultdict(dict),
     )
 
 
@@ -121,7 +121,7 @@ class SolvedCurriculum:
     # Taken courses.
     taken: TakenCourses
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.nodes = [Node()]
         self.edges = []
         self.source = 0
@@ -141,10 +141,22 @@ class SolvedCurriculum:
         fw_id = len(self.edges)
         bk_id = len(self.edges) + 1
         edge_fw = Edge(
-            id=fw_id, cap=cap, flow=0, src=src_id, dst=dst_id, rev=bk_id, cost=cost
+            id=fw_id,
+            cap=cap,
+            flow=0,
+            src=src_id,
+            dst=dst_id,
+            rev=bk_id,
+            cost=cost,
         )
         edge_rev = Edge(
-            id=bk_id, cap=0, flow=0, src=dst_id, dst=src_id, rev=fw_id, cost=-cost
+            id=bk_id,
+            cap=0,
+            flow=0,
+            src=dst_id,
+            dst=src_id,
+            rev=fw_id,
+            cost=-cost,
         )
         src.outgoing.append(edge_fw)
         src.outgoing_active.add(fw_id)
@@ -178,7 +190,7 @@ class SolvedCurriculum:
         for id, node in enumerate(self.nodes):
             if id == self.source:
                 continue
-            elif id == self.root:
+            if id == self.root:
                 label = "Root"
             elif isinstance(node.origin, Block):
                 label = f"{node.origin.name or f'b{id}'}"
@@ -221,7 +233,7 @@ class SolvedCurriculum:
         out += "}"
         return out
 
-    def dump_raw_graphviz(self, node_labels: Optional[list[Any]] = None) -> str:
+    def dump_raw_graphviz(self, node_labels: list[Any] | None = None) -> str:
         """
         Dump the raw graphviz representation using node and edge indices instead of
         names.
@@ -267,15 +279,12 @@ def _connect_course(
     If the course `c` is repeated and the multiplicity of `block` does not allow it,
     the course is not connected.
     """
-    if isinstance(origin, TakenCourse):
-        course = origin.course
-    else:
-        course = origin.rec.course
+    course = origin.course if isinstance(origin, TakenCourse) else origin.rec.course
     repeat_index = origin.repeat_index
     credits = courseinfo.get_credits(course)
     if credits is None:
         return
-    elif credits == 0:
+    if credits == 0:
         credits = 1
     max_multiplicity = block.codes[course.code]
     if max_multiplicity is not None and repeat_index >= max_multiplicity:
@@ -354,14 +363,14 @@ def _build_graph(
     for sem_i, sem in enumerate(taken_semesters):
         for i, c in sorted(enumerate(sem)):
             creds = courseinfo.get_credits(c)
-            if creds is None:
-                continue
             if creds == 0:
                 # Assign 1 ghost credit to 0-credit courses
                 # Kind of a hack, but works pretty well
                 # The curriculum definition must correspondingly also consider
                 # 0-credit courses to have 1 ghost credit
                 creds = 1
+            if creds is None:
+                creds = 0
             repetitions = taken.mapped[c.code]
             c = TakenCourse(
                 course=c,
@@ -397,11 +406,10 @@ def _max_flow_min_cost(g: SolvedCurriculum):
     # To simplify this check, we just check that there are no negative cost edges in
     # the residual graph
     for edge in g.edges:
-        if edge.flow < edge.cap:
-            if edge.cost < 0:
-                raise Exception(
-                    "curriculum residual flow graph has negative cost edges"
-                )
+        if edge.flow < edge.cap and edge.cost < 0:
+            raise Exception(
+                "curriculum residual flow graph has negative cost edges",
+            )
     if len(g.edges) == 0:
         return
 
@@ -410,7 +418,6 @@ def _max_flow_min_cost(g: SolvedCurriculum):
     parent: list[Edge] = [g.edges[0] for _node in g.nodes]
     while True:
         # Find shortest path from source to sink
-        # Shortest-Path-Faster-Algorithm (SPFA)
         dists: list[int] = [INFINITY for _node in g.nodes]
         dists[g.source] = 0
         queue.clear()
@@ -460,7 +467,9 @@ def _max_flow_min_cost(g: SolvedCurriculum):
 
 
 def solve_curriculum(
-    courseinfo: CourseInfo, curriculum: Curriculum, taken: list[list[PseudoCourse]]
+    courseinfo: CourseInfo,
+    curriculum: Curriculum,
+    taken: list[list[PseudoCourse]],
 ) -> SolvedCurriculum:
     # Take the curriculum blueprint, and produce a graph for this student
     g = _build_graph(courseinfo, curriculum, taken)
@@ -472,8 +481,8 @@ def solve_curriculum(
     if g.nodes[g.root].flow() < curriculum.root.cap:
         raise Exception(
             "maximizing flow does not satisfy the root demand,"
-            + " even with filler recommendations"
-            + f":\n{g.dump_graphviz()}"
+            " even with filler recommendations"
+            f":\n{g.dump_graphviz()}",
         )
     # Make sure that there is no split flow (ie. there is no course that splits its
     # outgoing flow between two blocks)
@@ -490,7 +499,7 @@ def solve_curriculum(
         if nonzero > 1:
             raise Exception(
                 "min cost max flow produced invalid split-flow"
-                + " (ie. there is some node with 2+ non-zero-flow outgoing edges)"
-                + f":\n{g.dump_graphviz()}"
+                " (ie. there is some node with 2+ non-zero-flow outgoing edges)"
+                f":\n{g.dump_graphviz()}",
             )
     return g

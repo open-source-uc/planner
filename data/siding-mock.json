@@ -119,7 +119,7 @@
                 "Sigla": "MAT1620",
                 "Nombre": "C\u00e1lculo II",
                 "Creditos": 10,
-                "Estado": "12",
+                "Estado": "20",
                 "Periodo": "2020-2",
                 "TipoCurso": null,
                 "UnidadAcademica": null
@@ -130,6 +130,51 @@
                 "Creditos": 0,
                 "Estado": "11",
                 "Periodo": "2020-2",
+                "TipoCurso": null,
+                "UnidadAcademica": null
+            },
+            {
+                "Sigla": "MAT1630",
+                "Nombre": "C\u00e1lculo III",
+                "Creditos": 10,
+                "Estado": "30",
+                "Periodo": "2021-1",
+                "TipoCurso": null,
+                "UnidadAcademica": null
+            },
+            {
+                "Sigla": "FIS1514",
+                "Nombre": "Dinámica",
+                "Creditos": 10,
+                "Estado": "30",
+                "Periodo": "2021-1",
+                "TipoCurso": null,
+                "UnidadAcademica": null
+            },
+            {
+                "Sigla": "IMT1001",
+                "Nombre": "Introducción a la Ingeniería Matemática",
+                "Creditos": 10,
+                "Estado": "30",
+                "Periodo": "2021-1",
+                "TipoCurso": null,
+                "UnidadAcademica": null
+            },
+            {
+                "Sigla": "TTF027",
+                "Nombre": "Jesus: Distintas Comprensiones",
+                "Creditos": 10,
+                "Estado": "30",
+                "Periodo": "2021-1",
+                "TipoCurso": null,
+                "UnidadAcademica": null
+            },
+            {
+                "Sigla": "IIC1253",
+                "Nombre": "Matemáticas Discretas",
+                "Creditos": 10,
+                "Estado": "30",
+                "Periodo": "2021-1",
                 "TipoCurso": null,
                 "UnidadAcademica": null
             }
@@ -21914,13 +21959,15 @@
                 "Equivalencias": null,
                 "Restricciones": null,
                 "Requisitos": {
-                    "Cursos": [{
-                        "Sigla": "MAT1203",
-                        "Nombre": "\u00c1lgebra Lineal",
-                        "Semestralidad": "I y II",
-                        "Creditos": 10,
-                        "TipoRequisito": "Requisito"
-                    }]
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1203",
+                            "Nombre": "\u00c1lgebra Lineal",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
                 },
                 "Tipocurso": null,
                 "BloqueAcademico": "Major"
@@ -22783,13 +22830,15 @@
                 "Equivalencias": null,
                 "Restricciones": null,
                 "Requisitos": {
-                    "Cursos": [{
-                        "Sigla": "MAT1203",
-                        "Nombre": "\u00c1lgebra Lineal",
-                        "Semestralidad": "I y II",
-                        "Creditos": 10,
-                        "TipoRequisito": "Requisito"
-                    }]
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1203",
+                            "Nombre": "\u00c1lgebra Lineal",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
                 },
                 "Tipocurso": null,
                 "BloqueAcademico": "Major"
@@ -23028,7 +23077,8 @@
                 "SemestreBloque": 9,
                 "OrdenSemestre": 2,
                 "Equivalencias": null,
-                "Restricciones": null, "Requisitos": {
+                "Restricciones": null,
+                "Requisitos": {
                     "Cursos": [
                         {
                             "Sigla": "IIC1222",
@@ -23098,8 +23148,8 @@
                 "BloqueAcademico": "Minor de Amplitud en Programaci\u00f3n"
             },
             {
-                "Nombre":"Optativos Complementarios",
-                "CodSigla":  null,
+                "Nombre": "Optativos Complementarios",
+                "CodSigla": null,
                 "CodLista": "C8767",
                 "Programa": "Minor de Amplitud en Programaci\u00f3n",
                 "Creditos": 20,
@@ -23729,13 +23779,15 @@
                 "Equivalencias": null,
                 "Restricciones": null,
                 "Requisitos": {
-                    "Cursos": [{
-                        "Sigla": "MAT1203",
-                        "Nombre": "\u00c1lgebra Lineal",
-                        "Semestralidad": "I y II",
-                        "Creditos": 10,
-                        "TipoRequisito": "Requisito"
-                    }]
+                    "Cursos": [
+                        {
+                            "Sigla": "MAT1203",
+                            "Nombre": "\u00c1lgebra Lineal",
+                            "Semestralidad": "I y II",
+                            "Creditos": 10,
+                            "TipoRequisito": "Requisito"
+                        }
+                    ]
                 },
                 "Tipocurso": null,
                 "BloqueAcademico": "Major"
@@ -23974,7 +24026,8 @@
                 "SemestreBloque": 9,
                 "OrdenSemestre": 2,
                 "Equivalencias": null,
-                "Restricciones": null, "Requisitos": {
+                "Restricciones": null,
+                "Requisitos": {
                     "Cursos": [
                         {
                             "Sigla": "IIC1222",
@@ -24044,8 +24097,8 @@
                 "BloqueAcademico": "Minor de Amplitud en Programaci\u00f3n"
             },
             {
-                "Nombre":"Optativos Complementarios",
-                "CodSigla":  null,
+                "Nombre": "Optativos Complementarios",
+                "CodSigla": null,
                 "CodLista": "C8767",
                 "Programa": "Minor de Amplitud en Programaci\u00f3n",
                 "Creditos": 20,
@@ -24309,7 +24362,6 @@
                 "Creditos": 10
             },
             {
-
                 "Sigla": "IIC1253",
                 "Nombre": "Matem\u00e1ticas Discretas",
                 "Semestralidad": "I y II",
@@ -24339,7 +24391,6 @@
                 "Semestralidad": "I y II",
                 "Creditos": 10
             }
-
         ],
         "{\"CodLista\": \"L11\"}": [
             {

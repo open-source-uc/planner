@@ -3,8 +3,6 @@ Definitions of basic student information.
 """
 
 
-from typing import Optional
-
 from pydantic import BaseModel
 
 from ..plan.course import PseudoCourse
@@ -23,11 +21,11 @@ class StudentInfo(BaseModel):
     # E.g `(2021, 1)` for the first semester of the year 2021
     admission: tuple[int, int]
     # The self-reported major code.
-    reported_major: Optional[str]
+    reported_major: str | None
     # The self-reported minor code.
-    reported_minor: Optional[str]
+    reported_minor: str | None
     # The self-reported title code.
-    reported_title: Optional[str]
+    reported_title: str | None
 
 
 class StudentContext(BaseModel):

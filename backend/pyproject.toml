@@ -31,14 +31,12 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
-select = ["E", "F", "I"]
-line-length = 88
-ignore = ["E203"]
-exclude = [
-    "__pycache__",
-    "build",
-    "dist",
-    ".venv"
+select = ["F", "E", "W", "C90", "I", "N", "UP", "ANN", "ASYNC", "S", "BLE", "B", "COM", "C4", "DTZ", "ISC", "INP", "PIE", "RET", "SIM", "TCH", "PTH", "ERA", "RUF"]
+ignore = [
+    "B008",  # "Do not perform function call in argument defaults" (to allow `arg = Depends()`)
+    "ANN101",  # "Missing type annotation for `self` in method" (annotating self is too redundant)
+    "ANN201", "ANN202",  # "Missing return type annotation" (sometimes return types are too complex)
+    "S101",  # "Use of `assert` detected" (debug assertions are useful)
 ]
 
 [tool.ruff.mccabe]

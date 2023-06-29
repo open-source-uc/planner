@@ -42,11 +42,9 @@ export interface ValidationDigest {
   // This is computed from the presence of "outdated" diagnostics.
   isOutdated: boolean
 }
-
 export const isApiError = (err: any): err is ApiError => {
   return err.status !== undefined
 }
-
 export const isCancelError = (err: any): boolean => {
   return err.name !== undefined && err.name === 'CancelError'
 }

@@ -1,13 +1,21 @@
+from pathlib import Path
+
 from dotenv import load_dotenv
 from pydantic import BaseSettings, Field, SecretStr
 
 
 class Settings(BaseSettings):
-    # URL to the CAS server endpoint.
-    # Used for two purposes:
-    # - The user is redirected here when login is required
-    # - Tokens are validated directly with this server
+    # URL to the CAS verification server.
+    # When a user arrives with a CAS token the backend verifies the token directly with
+    # this server.
     cas_server_url: str = Field(...)
+
+    # URL to the CAS login server.
+    # The client's browser is redirected to this URL when they want to log in.
+    # If left empty, the same URL as `cas_server_url` is used.
+    # If the backend server is in a different network than the client's browser, it may
+    # need to use a different address to reach the CAS server.
+    cas_login_redirection_url: str = ""
 
     # URL to the backend endpoint that performs authentication.
     # This URL needs to be whitelisted in the CAS server.
@@ -21,6 +29,7 @@ class Settings(BaseSettings):
     # Admin RUT as string. This user will always be the only admin.
     # TODO: Maybe use the username instead of the RUT, because RUTs can have zeros in
     # front of them and this can be confusing.
+    # Alternatively, remove leading zeros before matching admin RUTs.
     admin_rut: SecretStr = Field(...)
 
     # JWT secret hex string. If this secret is leaked, anyone can forge JWT tokens for
@@ -44,7 +53,7 @@ class Settings(BaseSettings):
     # Siding mock database file.
     # If "", it does not load any mock data.
     # Failing to read the mock database is not a fatal error, only a warning.
-    siding_mock_path: str = "../data/siding-mock.json"
+    siding_mock_path: Path = Path("../data/siding-mock.json")
 
     # Where to store recorded SIDING responses.
     # If "", responses are not recorded.
@@ -58,7 +67,7 @@ class Settings(BaseSettings):
     #   write the recorded responses.
     # 4. A JSON file will be saved with previous mock data (if any) + the recorded data.
     #   Note that the file may contain sensitive data!
-    siding_record_path: str = ""
+    siding_record_path: Path = Path("")
 
     # Time to expire cached student information in seconds.
     student_info_expire: float = 1800

@@ -11,8 +11,6 @@ export const getCoursePos = (prevCourses: PseudoCourseId[][], courseId: CourseId
       }
     })
   })
-  console.log(positions)
-  console.log(courseId)
   if (positions.length <= courseId.instance || courseId.instance < 0) {
     return null
   }

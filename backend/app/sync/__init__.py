@@ -92,30 +92,30 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
                 "major": spec.major or "",
                 "minor": spec.minor or "",
                 "title": spec.title or "",
-            }
-        }
+            },
+        },
     )
-    if db_curr is None:
-        courseinfo = await course_info()
-        curr = await siding_translate.fetch_curriculum(courseinfo, spec)
-        curr.root.simplify_in_place()
-        await DbCurriculum.prisma().query_raw(
-            """
-            INSERT INTO "Curriculum"
-                (cyear, major, minor, title, curriculum)
-            VALUES($1, $2, $3, $4, $5)
-            ON CONFLICT (cyear, major, minor, title)
-            DO UPDATE SET curriculum = $5
-            """,
-            str(spec.cyear),
-            spec.major or "",
-            spec.minor or "",
-            spec.title or "",
-            curr.json(),
-        )
-        return curr
-    else:
+    if db_curr is not None:
         return Curriculum.parse_raw(db_curr.curriculum)
+
+    courseinfo = await course_info()
+    curr = await siding_translate.fetch_curriculum(courseinfo, spec)
+    curr.root.simplify_in_place()
+    await DbCurriculum.prisma().query_raw(
+        """
+        INSERT INTO "Curriculum"
+            (cyear, major, minor, title, curriculum)
+        VALUES($1, $2, $3, $4, $5)
+        ON CONFLICT (cyear, major, minor, title)
+        DO UPDATE SET curriculum = $5
+        """,
+        str(spec.cyear),
+        spec.major or "",
+        spec.minor or "",
+        spec.title or "",
+        curr.json(),
+    )
+    return curr
 
 
 _student_context_cache: OrderedDict[str, tuple[StudentContext, float]] = OrderedDict()
@@ -137,11 +137,14 @@ async def get_student_data(user: UserKey) -> StudentContext:
     # Request user context from SIDING
     print(f"fetching user data for student {user.rut} from SIDING...")
     info = await siding_translate.fetch_student_info(user.rut)
-    passed = await siding_translate.fetch_student_previous_courses(user.rut, info)
+    passed, in_course = await siding_translate.fetch_student_previous_courses(
+        user.rut,
+        info,
+    )
     ctx = StudentContext(
         info=info,
         passed_courses=passed,
-        current_semester=len(passed),
+        current_semester=len(passed) - (1 if in_course else 0),
         next_semester=len(passed),
     )
 

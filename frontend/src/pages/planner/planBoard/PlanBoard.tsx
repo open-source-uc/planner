@@ -24,7 +24,7 @@ const hStrength = createHorizontalStrength(250)
  */
 
 const PlanBoard = ({ classesGrid = [], planDigest, classesDetails, moveCourse, openModal, addCourse, remCourse, validationDigest }: PlanBoardProps): JSX.Element => {
-  const [active, setActive] = useState(null)
+  const [active, setActive] = useState<{ semester: number, index: number } | null>(null)
   const boardRef = useRef(null)
   useDndScrolling(boardRef, { horizontalStrength: hStrength, verticalStrength: vStrength })
   return (
@@ -47,7 +47,7 @@ const PlanBoard = ({ classesGrid = [], planDigest, classesDetails, moveCourse, o
               setActive={setActive}
             />
         ))}
-        {active !== null && [0, 1].map(off => (
+        {[0, 1].map(off => (
           <SemesterColumn
             key={classesGrid.length + off}
             semester={classesGrid.length + off}
