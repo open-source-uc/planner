@@ -55,27 +55,25 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
     }
   }), [])
 
-  const [dropProps, dropEnd] = useDrop(() => ({
+  const [, dropEnd] = useDrop(() => ({
     accept: 'card',
     drop (courseId: { code: string, instance: number }) {
       setActive(null)
-      moveCourse(courseId, { semester, index: classes.length })
+      moveCourse(courseId, { semester, index: -1 })
     },
     hover (item, monitor: DropTargetMonitor) {
       setActive((prev: { semester: number, index: number }) => {
-        if (prev.index !== classes.length || prev.semester !== semester) return { semester, index: classes.length }
+        if (prev.index !== -1 || prev.semester !== semester) return { semester, index: -1 }
         return prev
       })
-    },
-    collect: monitor => ({
-      isOver: monitor.isOver()
-    })
+    }
   }))
+
   let border = 'border-transparent'
   if (validationSemester != null && validationSemester.errorIndices.length > 0) border = 'border-solid border-red-300'
   else if (validationSemester != null && validationSemester.warningIndices.length > 0) border = 'border-solid border-yellow-300'
 
-  if (!conditionPassed) {
+  if (!conditionPassed && !checkCurrent) {
     drop(columnRef)
   }
   const activeIndexHandler = useCallback(
@@ -99,6 +97,7 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
       setActive({ semester, index })
     } else {
       setDragged(null)
+      setActive(null)
     }
   }, [coursesId])
 
@@ -147,7 +146,7 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
       {conditionPassed || checkCurrent
         ? null
         : <div ref={dropEnd} className={'w-full px-2 flex flex-grow min-h-[90px]'}>
-            {dropProps.isOver &&
+            {activeIndex === -1 &&
               <div key="placeholder" className="w-full card bg-place-holder" />
             }
           </div>

@@ -17,7 +17,7 @@ interface PlanBoardProps {
 
 // Estos parametros controlan a cuantos pixeles de distancia al borde de la pantalla se activa el scroll
 const vStrength = createVerticalStrength(60)
-const hStrength = createHorizontalStrength(250)
+const hStrength = createHorizontalStrength(300)
 /**
  * The main drag-n-drop planner interface.
  * Displays several semesters, as well as several classes per semester.
@@ -57,8 +57,8 @@ const PlanBoard = ({ classesGrid = [], planDigest, classesDetails, moveCourse, o
             openModal={openModal}
             classesDetails={classesDetails}
             validationSemester={null}
-            isDragging={true}
-            activeIndex={(active !== null && active.semester === classesGrid.length + off) ? 0 : null}
+            isDragging={active !== null}
+            activeIndex={(active !== null && active.semester === classesGrid.length + off) ? active.index : null}
             setActive={setActive}
           />
         ))}

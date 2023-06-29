@@ -36,19 +36,23 @@ export const validateCourseMovement = (prev: ValidatablePlan, drag: CoursePos, d
 export const updateClassesState = (prev: ValidatablePlan, drag: CoursePos, drop: CoursePos): ValidatablePlan => {
   const newClasses = [...prev.classes]
   const dragSemester = [...newClasses[drag.semester]]
+
+  while (drop.semester >= newClasses.length) {
+    newClasses.push([])
+  }
   const dropSemester = [...newClasses[drop.semester]]
   const dragCourse = { ...dragSemester[drag.index] }
-
+  const dropIndex = drop.index !== -1 ? drop.index : dropSemester.length
   if (drop.semester === drag.semester) {
-    dragSemester.splice(drop.index, 0, dragCourse)
-
-    if (drop.index < drag.index) {
+    if (dropIndex < drag.index) {
+      dragSemester.splice(dropIndex, 0, dragCourse)
       dragSemester.splice(drag.index + 1, 1)
     } else {
       dragSemester.splice(drag.index, 1)
+      dragSemester.splice(dropIndex, 0, dragCourse)
     }
   } else {
-    dropSemester.splice(drop.index, 0, dragCourse)
+    dropSemester.splice(dropIndex, 0, dragCourse)
     dragSemester.splice(drag.index, 1)
     newClasses[drop.semester] = dropSemester
   }
