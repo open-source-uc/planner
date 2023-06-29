@@ -98,13 +98,26 @@ El ambiente de staging está diseñado para testear las nuevas versiones en un a
 
 Levantar los servicios en diferentes contenedores utilizando:
 
-> docker compose -f docker-compose.yml -f docker-compose.stag.yml up -d
+> docker compose -f docker-compose.yml -f docker-compose.stag.yml up -d --force-recreate --build
+
+Detener los contenedores con el siguiente comando:
+
+> docker compose -f docker-compose.yml -f docker-compose.stag.yml down
 
 ### Producción
 
 El ambiente de producción lo maneja la universidad de forma interna, pero aquí se intentan detallar los pasos para poder replicar el funcionamiento.
 
-> docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+1. Se debe crear un archivo `.env` en la carpeta `backend`. Si es que no existe tal archivo, entonces se utilizará de forma predeterminada el archivo de ejemplo `backend/.env.staging.example`.
+2. Modificar otras variables de entorno directamente en el archivo `docker-compose.prod.yml` (e.g. credenciales de la base de datos y URL del planner).
+- POR DISCUTIR: ¿hacer que todas las variables se puedan configurar a través de un `.env` en vez de cambiarlas directamente en el `docker-compose.prod.yml`?
+3. Levantar toda la aplicación utilizando el siguiente comando (requiere _Docker_ y _Docker Compose_ instalados en la máquina):
+
+> docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --force-recreate --build
+
+4. Detener los contenedores con el siguiente comando:
+
+> docker compose -f docker-compose.yml -f docker-compose.prod.yml down
 
 ## Equipo
 
