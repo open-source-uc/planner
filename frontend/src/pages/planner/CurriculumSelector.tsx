@@ -1,7 +1,7 @@
 import { Fragment, memo } from 'react'
 import { Listbox, Transition } from '@headlessui/react'
 import { type Major, type Minor, type Title, type CurriculumSpec } from '../../client'
-import { type CurriculumData } from './Planner'
+import { type CurriculumData } from './utils/Types'
 
 interface CurriculumSelectorProps {
   planName: string
