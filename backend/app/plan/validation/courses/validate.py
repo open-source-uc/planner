@@ -359,7 +359,8 @@ class ValidationContext:
                 self.find_absent(inst, absent, child)
         if isinstance(expr, ReqCourse) and expr.code not in self.by_code:
             add_on_sem = max(
-                inst.sem - (0 if expr.coreq else 1), self.start_validation_from
+                inst.sem - (0 if expr.coreq else 1),
+                self.start_validation_from,
             )
             absent[expr.code] = min(absent.get(expr.code, INFINITY), add_on_sem)
 
