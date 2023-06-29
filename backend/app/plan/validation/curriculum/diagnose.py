@@ -79,19 +79,32 @@ def _diagnose_blocks(
 
 
 def _tag_superblocks(g: SolvedCurriculum, out: ValidationResult):
+    layer_ids = sorted(g.layers)
     for code, courses in g.layers[""].courses.items():
-        for rep_idx, course in courses.items():
-            if isinstance(course.origin, TakenCourse):
+        for rep_idx, info in courses.items():
+            if isinstance(info.origin, TakenCourse):
                 # This course is a concrete course the user took
 
                 # Find the active superblock
                 superblock = ""
-                if course.active_edge is not None:
+                # Attempt to find a course superblock in some layer (prioritizing the
+                # default "" layer)
+                for layer_id in layer_ids:
+                    layer = g.layers[layer_id]
+                    if code not in layer.courses:
+                        continue
+                    if rep_idx not in layer.courses[code]:
+                        continue
+                    info_in_layer = layer.courses[code][rep_idx]
+                    if info_in_layer.active_edge is None:
+                        continue
                     # Use the first named block in the path
-                    for block in course.active_edge.block_path:
+                    for block in info_in_layer.active_edge.block_path:
                         if block.name is not None:
                             superblock = block.name
                             break
+                    if superblock != "":
+                        break
 
                 # Tag it
                 out.course_superblocks[code][rep_idx] = superblock
