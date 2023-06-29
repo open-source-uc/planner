@@ -309,7 +309,7 @@ class ValidationContext:
                 set_atoms_in_stone_if(self, inst, expr, lambda atom, sat: sat),
             )
         # Map missing courses to their newest equivalent versions
-        missing_equivalents = map_atoms(missing, self.map_to_equivalent)
+        missing_equivalents = simplify(map_atoms(missing, self.map_to_equivalent))
         # Figure out if we can push this course back and solve the missing requirements
         push_back = find_minimum_semester(self, missing)
         # Figure out if we can pull any dependencies forward
