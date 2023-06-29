@@ -245,7 +245,7 @@ class SoapClient:
                         return super().default(o)
 
                 with self.record_path.open("w") as file:
-                    json.dump(self.mock_db, file, cls=CustomEncoder)
+                    json.dump(self.mock_db, file, cls=CustomEncoder, ensure_ascii=False)
             except Exception as err:  # noqa: BLE001 (any error is non-fatal here)
                 print(
                     "failed to save recorded SIDING data to"
