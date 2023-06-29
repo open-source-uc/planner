@@ -1,29 +1,40 @@
 version: '3.8'
 
+networks:
+  caddy:
 services:
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - caddy
+    depends_on:
+      - api
+    environment:
+      - PLANNER_URL=http://localhost
   api:
-    # image: planner-backend:latest
     build: ./backend
     ports:
       - "8000:8000"
+    networks:
+      - caddy
     depends_on:
       - db
-    environment:
-      - SIDING_MOCK_PATH=/code/mock-data/siding-mock.json
-    # env_file:
-    #   - ./backend/.env
-
-    #   web:
-    #     image: planner/frontend:latest
   db:
     image: postgres:latest
+    ports:
+      - "5432:5432"
+    networks:
+      - caddy
     restart: unless-stopped
     volumes:
       - postgres-data:/var/lib/postgresql/data
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_DB: postgres
-      POSTGRES_PASSWORD: postgres
-
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_PASSWORD=postgres
 volumes:
   postgres-data:

@@ -28,8 +28,8 @@ COPY ./pyproject.toml ./poetry.lock* /tmp/
 # Install dependencies
 RUN poetry export -f requirements.txt --without-hashes | pip install --no-cache-dir -r /dev/stdin
 
-# Create `.env` from `.env.example`
-COPY ./.env.example /tmp/.env
+# Create `.env` from `.env.staging.example`
+COPY ./.env.staging.example /tmp/.env
 
 # Copy the rest of the application code
 COPY . .

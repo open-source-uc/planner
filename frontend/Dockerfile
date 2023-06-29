@@ -10,8 +10,8 @@ COPY package*.json .
 # Install production dependencies
 RUN npm ci --only=prod
 
-# Create `.env` from `.env.example`
-COPY ./.env.example /tmp/.env
+# Create `.env` from `.env.docker`
+COPY ./.env.docker /tmp/.env
 
 # Copy other files to the working directory
 COPY . .

@@ -1,0 +1,14 @@
+
+services:
+  cas_mock_server:
+    # TODO: use a separate machine and URL instead of replicating the cas server here,
+    # in order to have a scenario more similar to production.
+    image: node:16-alpine
+    working_dir: /app
+    ports:
+      - "3004:3004"
+    networks:
+      - caddy
+    command: npx --yes cas-server-mock --port=3004 --database=/app/mock-data/cas-mock-users.json
+    volumes:
+      - ./backend/mock-data/cas-mock-users.json:/app/mock-data/cas-mock-users.json
