@@ -122,7 +122,7 @@ async def _fetch_raw_blocks(
             equiv = EquivDetails(
                 code=code,
                 name=raw_block.Nombre,
-                is_homogeneous=False,
+                is_homogeneous=len(raw_courses) == 1,
                 is_unessential=False,
                 courses=codes,
             )
