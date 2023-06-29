@@ -335,15 +335,20 @@ const Planner = (): JSX.Element => {
     setIsModalOpen(true)
   }, []) // addCourse should not depend on `validatablePlan`, so that memoing does its work
 
-  const remCourse = useCallback((semIdx: number, index: number): void => {
+  const remCourse = useCallback((course: CourseId): void => {
     // its ok to use `setValidatablePlan`
     // its not ok to use `validatablePlan` directly
     setValidatablePlan(prev => {
       if (prev === null) return null
+      const remPos = getCoursePos(prev.classes, course)
+      if (remPos === null) {
+        toast.error('Index no encontrado')
+        return prev
+      }
       const newClases = [...prev.classes]
-      const newClasesSem = [...prev.classes[semIdx]]
-      newClasesSem.splice(index, 1)
-      newClases[semIdx] = newClasesSem
+      const newClasesSem = [...prev.classes[remPos.semester]]
+      newClasesSem.splice(remPos.index, 1)
+      newClases[remPos.semester] = newClasesSem
       while (newClases[newClases.length - 1].length === 0) {
         newClases.pop()
       }

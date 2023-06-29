@@ -57,6 +57,7 @@ const BlockInitials = (courseBlock: string): string => {
 const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, toggleDrag, remCourse, courseBlock, openSelector, hasEquivalence, hasError, hasWarning }: DraggableCardProps): JSX.Element => {
   const ref = useRef(null)
   const callOpenSelector = (): void => openSelector(courseId)
+  const callRemCourse = (): void => remCourse(courseId)
   const [, drag] = useDrag(() => ({
     type: 'card',
     item: () => {
@@ -81,7 +82,7 @@ const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, t
             name={courseDetails !== undefined ? courseDetails.name : ''}
             hasEquivalence={hasEquivalence}
             openSelector={callOpenSelector}
-            remCourse={remCourse}
+            remCourse={callRemCourse}
             hasWarning={hasWarning}
             hasError={hasError}
             isPassed={isPassed}
