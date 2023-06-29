@@ -6,11 +6,7 @@
 		"cpus": 4,
 		"memory": "8gb"
 	},
-	"dockerComposeFile": [
-		// TODO: descomentar cuando esté listo el archivo base y elimine las redundancias
-		// "../docker-compose.yml",
-		"docker-compose.dev.yml"
-	],
+	"dockerComposeFile": "docker-compose.dev.yml",
 	"service": "app",
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 	"features": {
