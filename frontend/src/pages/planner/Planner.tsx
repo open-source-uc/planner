@@ -240,6 +240,8 @@ const Planner = (): JSX.Element => {
         if (courseid.is_concrete === true) { coursesCodes.add(code) } else { equivalenceCodes.add(code) }
       }
     }
+    console.log(courses)
+    console.log('mmm')
     try {
       const promises = []
       if (coursesCodes.size > 0) promises.push(DefaultService.getCourseDetails(Array.from(coursesCodes)))
@@ -326,7 +328,7 @@ const Planner = (): JSX.Element => {
     setPlannerStatus(PlannerStatus.READY)
   }
 
-  const addCourse = useCallback((semIdx: number): void => {
+  const openModalForExtraClass = useCallback((semIdx: number): void => {
     setModalData({
       equivalence: undefined,
       selector: true,
@@ -644,7 +646,7 @@ const Planner = (): JSX.Element => {
                   classesDetails={courseDetails}
                   moveCourse={moveCourse}
                   openModal={openModal}
-                  addCourse={addCourse}
+                  addCourse={openModalForExtraClass}
                   remCourse={remCourse}
                   validationDigest={validationDigest}
                 />
@@ -652,6 +654,7 @@ const Planner = (): JSX.Element => {
             </div>
           <ErrorTray
             setValidatablePlan={setValidatablePlan}
+            getCourseDetails={getCourseDetails}
             diagnostics={validationResult?.diagnostics ?? []}
             validating={plannerStatus === 'VALIDATING'}
           />

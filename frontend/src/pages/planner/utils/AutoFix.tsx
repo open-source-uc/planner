@@ -118,7 +118,7 @@ const fixMissingRequirement = (plan: ValidatablePlan, diag: CourseRequirementErr
 /**
  * Get the quick fixed for some diagnostic, if any.
  */
-const AutoFix = ({ diag, setValidatablePlan }: { diag: Diagnostic, setValidatablePlan: any }): JSX.Element => {
+const AutoFix = ({ diag, setValidatablePlan, getCourseDetails }: { diag: Diagnostic, setValidatablePlan: any, getCourseDetails: Function }): JSX.Element => {
   // FIXME: TODO: Los cursos añadidos a traves del autofix les faltan los CourseDetails.
   // No me manejo bien con la implementación del frontend, lo dejo en mejores manos.
   const auth = useAuth()
@@ -127,7 +127,9 @@ const AutoFix = ({ diag, setValidatablePlan }: { diag: Diagnostic, setValidatabl
       return <button onClick={() => {
         setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
           if (plan == null) return null
-          return fixMissingCurriculumCourse(plan, diag, auth)
+          const planArreglado = fixMissingCurriculumCourse(plan, diag, auth)
+          void getCourseDetails(planArreglado.classes.flat())
+          return planArreglado
         })
       }}>Agregar {diag.recommend.map(c => c.code).join(', ')}</button>
     case 'cyear':
@@ -147,7 +149,9 @@ const AutoFix = ({ diag, setValidatablePlan }: { diag: Diagnostic, setValidatabl
         return <button onClick={() => {
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
-            return fixOutdatedPlan(plan, diag, auth)
+            const planArreglado = fixOutdatedPlan(plan, diag, auth)
+            void getCourseDetails(planArreglado.classes)
+            return planArreglado
           })
         }}>Actualizar semestres {diag.associated_to.map(s => s + 1).join(', ')}</button>
       } else {
@@ -161,7 +165,9 @@ const AutoFix = ({ diag, setValidatablePlan }: { diag: Diagnostic, setValidatabl
         buttons.push(<button key={code} onClick={() => {
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
-            return fixMissingRequirement(plan, diag, auth, code, type)
+            const planArreglado = fixMissingRequirement(plan, diag, auth, code, type)
+            void getCourseDetails(planArreglado.classes.flat().filter(course => course.code === code))
+            return planArreglado
           })
         }}>
             Agregar {type === 'req' ? 'requisito' : 'corequisito'} {code}
