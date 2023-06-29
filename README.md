@@ -60,11 +60,6 @@ Sigue en la sección [Desarrollo general](#desarrollo-general).
 
 Una vez listo, podrás entrar a la app en [http://localhost:3000](http://localhost:3000) 🎉
 
-### Bug Reports & Feature Requests
-
-> **Nota:** Este proyecto usa [Linear](https://linear.app/) para rastrear el progreso del proyecto. Por ahora, el Linear no es público, pero de todas formas se revisan los issues y features creados en GitHub.
-
-La app aún está en una etapa muy temprana del desarrollo por lo que podrían haber cosas que no funcionan correctamente o difieren de la documentación, por lo que cualquier lector siéntase libre a colaborar :rocket:. Toda ayuda es bienvenida :)
 
 Necesitaras un nombre de usuario para acceder a CAS. Puedes acceder con `testuser` o con otros usuarios definidos en `cas-mock-users.json`. 
 
@@ -78,6 +73,12 @@ Es importante que cuando:
 - Cambies el esquema de la base de datos, corras la tarea _"Create/apply migrations"_ para que los cambios se reflejen en la base de datos.
 
 Para realizar contribuciones, revisa [contributing.md](contributing.md).
+
+### Bug Reports & Feature Requests
+
+> **Nota:** Este proyecto usa [Linear](https://linear.app/) para rastrear el progreso del proyecto. Por ahora, el Linear no es público, pero de todas formas se revisan los issues y features creados en GitHub.
+
+La app aún está en una etapa muy temprana del desarrollo por lo que podrían haber cosas que no funcionan correctamente o difieren de la documentación, por lo que cualquier lector siéntase libre a colaborar :rocket:. Toda ayuda es bienvenida :)
 
 ## Mocks
 
