@@ -7,8 +7,8 @@ WORKDIR /tmp
 # Copy package.json and package-lock.json to the working directory
 COPY package*.json .
 
-# Install production dependencies
-RUN npm ci --only=prod
+# Install dependencies
+RUN npm ci
 
 # Create `.env` from `.env.docker`
 COPY ./.env.docker /tmp/.env
