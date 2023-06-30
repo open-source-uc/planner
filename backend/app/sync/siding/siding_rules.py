@@ -57,12 +57,12 @@ def _skip_extras(curriculum: Curriculum):
 # Tabla que mapea la primera palabra del nombre textual de un bloque academico a un
 # nombre mas machine-readable
 SUPERBLOCK_TABLE = {
-    "ciencias": "plancomun",
-    "base": "plancomun",
-    "formacion": "formaciongeneral",
-    "major": "major",
-    "minor": "minor",
-    "ingeniero": "titulo",
+    "ciencias": "PlanComun",
+    "base": "PlanComun",
+    "formacion": "FormacionGeneral",
+    "major": "Major",
+    "minor": "Minor",
+    "ingeniero": "Titulo",
 }
 
 

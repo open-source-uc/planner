@@ -110,11 +110,11 @@ def _get_credits(courseinfo: CourseInfo, courseid: PseudoCourse) -> int:
 
 
 SUPERBLOCK_COLOR_ORDER_TABLE: dict[str, int] = {
-    "plancomun": 0,
-    "major": 1,
-    "minor": 2,
-    "titulo": 3,
-    "formaciongeneral": 4,
+    "PlanComun": 0,
+    "Major": 1,
+    "Minor": 2,
+    "Titulo": 3,
+    "FormacionGeneral": 4,
 }
 
 

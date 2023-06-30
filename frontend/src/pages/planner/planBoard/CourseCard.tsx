@@ -41,15 +41,15 @@ interface ConditionalWrapperProps {
 
 const BlockInitials = (courseBlock: string): string => {
   switch (courseBlock) {
-    case 'plancomun':
+    case 'PlanComun':
       return 'PC'
-    case 'formaciongeneral':
+    case 'FormacionGeneral':
       return 'FG'
-    case 'major':
+    case 'Major':
       return 'M'
-    case 'minor':
+    case 'Minor':
       return 'm'
-    case 'titulo':
+    case 'Titulo':
       return 'T'
   }
   return ''
