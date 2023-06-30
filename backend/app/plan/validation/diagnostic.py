@@ -232,13 +232,7 @@ class ValidationResult(BaseModel):
 
     @staticmethod
     def empty(plan: ValidatablePlan) -> "ValidationResult":
-        blocks: dict[str, list[str]] = {}
-        for sem in plan.classes:
-            for c in sem:
-                if c.code not in blocks:
-                    blocks[c.code] = []
-                blocks[c.code].append("")
-        return ValidationResult(diagnostics=[], course_superblocks=blocks)
+        return ValidationResult(diagnostics=[], course_superblocks={})
 
     def add(self, diag: Diagnostic):
         self.diagnostics.append(diag)
