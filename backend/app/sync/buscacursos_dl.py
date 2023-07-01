@@ -1,6 +1,5 @@
 import lzma
 import traceback
-from collections import defaultdict
 from collections.abc import Callable
 from typing import NoReturn
 
@@ -11,7 +10,6 @@ from prisma.types import CourseCreateWithoutRelationsInput
 from pydantic import BaseModel
 
 from ..plan.courseinfo import make_searchable_name
-from ..plan.plan import Level
 from ..plan.validation.courses.logic import (
     And,
     Const,
@@ -107,20 +105,6 @@ class BcParser:
             self.i = len(self.s)
         return self.s[prv : self.i]
 
-    def parse_level(self, cmp: str, rhs: str) -> ReqLevel:
-        self.ensure(cmp == "=", "expected = operator for level")
-        if rhs == "Pregrado":
-            lvl = Level.PREGRADO
-        elif rhs == "Postitulo":
-            lvl = Level.POSTITULO
-        elif rhs == "Magister":
-            lvl = Level.MAGISTER
-        elif rhs == "Doctorado":
-            lvl = Level.DOCTORADO
-        else:
-            self.bail("invalid academic level")
-        return ReqLevel(min_level=lvl)
-
     def parse_property_eq(
         self,
         name: str,
@@ -152,7 +136,12 @@ class BcParser:
         self.ensure(len(cmp) > 0, "expected a comparison operator")
         self.ensure(len(rhs) > 0, "expected an rhs")
         if lhs == "Nivel":
-            return self.parse_level(cmp, rhs)
+            return self.parse_property_eq(
+                "level",
+                lambda eq, x: ReqLevel(level=x, equal=eq),
+                cmp,
+                rhs,
+            )
         if lhs == "Escuela":
             return self.parse_property_eq(
                 "school",
@@ -279,6 +268,7 @@ def _translate_courses(data: BcData) -> list[CourseCreateWithoutRelationsInput]:
     # Process courses to place into database
     print("  processing courses...")
     db_input: list[CourseCreateWithoutRelationsInput] = []
+    by_code: dict[str, CourseCreateWithoutRelationsInput] = {}
     for code, c in data.items():
         try:
             # Parse and simplify dependencies
@@ -315,6 +305,7 @@ def _translate_courses(data: BcData) -> list[CourseCreateWithoutRelationsInput]:
                     "credits": c.credits,
                     "deps": deps.json(),
                     "banner_equivs": equivs,
+                    "banner_inv_equivs": [],
                     "canonical_equiv": code,
                     "program": c.program,
                     "school": c.school,
@@ -326,9 +317,22 @@ def _translate_courses(data: BcData) -> list[CourseCreateWithoutRelationsInput]:
                     "semestrality_second": available_in_semester[1],
                 },
             )
+            by_code[code] = db_input[-1]
         except Exception:  # noqa: BLE001 (we really want to ignore any exceptions)
             print(f"failed to process course {code}:")
             print(traceback.format_exc())
+
+    # Find inverse equivalencies
+    for course in db_input:
+        if "banner_equivs" not in course:
+            continue
+        for equiv_code in course["banner_equivs"]:
+            if equiv_code not in by_code:
+                continue
+            equiv = by_code[equiv_code]
+            if "banner_inv_equivs" not in equiv:
+                continue
+            equiv["banner_inv_equivs"].append(course["code"])
 
     return db_input
 
@@ -357,18 +361,14 @@ async def fetch_to_database():
 
     # Figure out canonical equivalence for each course
     print("  finding newest versions of each course...")
-    rev_equivs: defaultdict[str, list[str]] = defaultdict(list)
     available_courses: set[str] = set()
     for c in db_input:
-        if "banner_equivs" in c:
-            for equiv in c["banner_equivs"]:
-                rev_equivs[equiv].append(c["code"])
         if c["is_available"]:
             available_courses.add(c["code"])
     for c in db_input:
         canonical = c["code"]
-        if not c["is_available"]:
-            for equiv in rev_equivs[c["code"]]:
+        if not c["is_available"] and "banner_inv_equivs" in c:
+            for equiv in c["banner_inv_equivs"]:
                 if equiv in available_courses:
                     canonical = equiv
                     break

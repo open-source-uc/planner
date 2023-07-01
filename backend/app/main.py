@@ -195,9 +195,6 @@ async def add_mod(rut: str, user: AdminKey = Depends(require_admin_auth)):
 async def remove_mod(rut: str, user: AdminKey = Depends(require_admin_auth)):
     """
     Remove mod access from a user with the specified RUT.
-
-    TODO: add JWT tracking system for mods to be able to instantly revoke unexpired
-    token access after permission removal.
     """
     mod_record = await DbAccessLevel.prisma().find_unique(where={"user_rut": rut})
 
@@ -216,10 +213,7 @@ async def get_student_info(user: UserKey = Depends(require_authentication)):
     return await sync.get_student_data(user)
 
 
-# TODO: This HTTP method should not be GET, as it has side-effects.
-# For the meantime this makes it easier to trigger syncs, but in the future this must
-# change.
-@app.get("/sync")
+@app.post("/sync")
 async def sync_database(
     courses: bool = False,
     offer: bool = False,

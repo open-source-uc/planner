@@ -1,21 +1,9 @@
-from enum import Enum
+from typing import Literal
 
 from pydantic import BaseModel
 
 from .course import PseudoCourse
 from .validation.curriculum.tree import CurriculumSpec
-
-
-class Level(int, Enum):
-    """
-    An academic level.
-    """
-
-    # TODO: Confirm this order, is it correct?
-    PREGRADO = 1
-    POSTITULO = 2
-    MAGISTER = 3
-    DOCTORADO = 4
 
 
 class ValidatablePlan(BaseModel):
@@ -34,10 +22,13 @@ class ValidatablePlan(BaseModel):
     # Eventually, we will have to roll our own migration system if we allow
     # ValidatablePlans to be exportable/importable.
 
+    # The version of the plan.
+    # We will probably use this if we move to a `StorablePlan`/`ValidatablePlan` divide.
+    version: Literal["0.0.1"]
     # Classes per semester.
     classes: list[list[PseudoCourse]]
     # Academic level of the student
-    level: Level | None
+    level: str | None
     # Academic school (facultad) of the student
     school: str | None
     # Academic program of the student (magisteres, doctorados, etc)

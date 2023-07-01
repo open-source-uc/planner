@@ -21,10 +21,10 @@ from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
 from ...plan.validation.curriculum.tree import (
     Block,
     Combination,
-    CourseRecommendation,
     Curriculum,
     CurriculumSpec,
     Cyear,
+    FillerCourse,
     Leaf,
 )
 from ...user.info import StudentInfo
@@ -203,19 +203,27 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
         superblock = superblocks.setdefault(raw_block.BloqueAcademico, [])
         superblock.append(
             Leaf(
+                debug_name=raw_block.Nombre,
                 name=raw_block.Nombre,
                 cap=creds,
                 codes=codes_dict,
                 fill_with=[
-                    CourseRecommendation(course=recommended, order=recommended_order),
+                    FillerCourse(course=recommended, order=recommended_order),
                 ],
             ),
         )
 
     # Transform into a somewhat valid curriculum
-    root = Combination(cap=-1, children=[])
+    root = Combination(debug_name="Raíz", name=None, cap=-1, children=[])
     for superblock_name, leaves in superblocks.items():
-        root.children.append(Combination(name=superblock_name, cap=-1, children=leaves))
+        root.children.append(
+            Combination(
+                debug_name=superblock_name,
+                name=superblock_name,
+                cap=-1,
+                children=leaves,
+            ),
+        )
     curriculum = Curriculum(root=root)
 
     # Apply custom cyear-dependent transformations
