@@ -103,7 +103,6 @@
   box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.18);
   @apply z-50;
 }
-
 .animated {
   /*transform: rotateZ(360deg);*/
   animation: opacity-animation 1s infinite alternate;

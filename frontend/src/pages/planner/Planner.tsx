@@ -243,8 +243,6 @@ const Planner = (): JSX.Element => {
         if (courseid.is_concrete === true) { coursesCodes.add(code) } else { equivalenceCodes.add(code) }
       }
     }
-    console.log(courses)
-    console.log('mmm')
     try {
       const promises = []
       if (coursesCodes.size > 0) promises.push(DefaultService.getCourseDetails(Array.from(coursesCodes)))

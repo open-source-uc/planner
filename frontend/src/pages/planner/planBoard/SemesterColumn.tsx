@@ -25,7 +25,6 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
   const authState = useAuth()
   const columnRef = useRef<HTMLDivElement>(null)
   const conditionPassed = ((authState?.student) != null) && (semester < authState.student.current_semester)
-  const conditionNotPassed = ((authState?.student) != null) && (semester >= authState.student.current_semester)
   const checkInClass = ((authState?.student) != null) && (authState.student.current_semester === authState.student.next_semester - 1)
   const checkCurrent = (checkInClass && (semester === authState?.student?.current_semester))
 
@@ -61,7 +60,7 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
       setActive(null)
       moveCourse(courseId, { semester, index: -1 })
     },
-    hover (item, monitor: DropTargetMonitor) {
+    hover () {
       setActive((prev: { semester: number, index: number }) => {
         if (prev.index !== -1 || prev.semester !== semester) return { semester, index: -1 }
         return prev
@@ -139,11 +138,11 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
             </Fragment>
           )
         })}
-        {conditionNotPassed && !checkCurrent && !isDragging && <div className="h-10 mx-1 bg-block- card">
+        {!conditionPassed && !checkCurrent && !isDragging && <div className="h-10 mx-1 bg-block- card">
         <button key="+" className="w-full" onClick={() => addCourse(semester)}>+</button>
         </div>}
       </div>
-      {conditionPassed || checkCurrent
+      {(conditionPassed || checkCurrent)
         ? null
         : <div ref={dropEnd} className={'w-full px-2 flex flex-grow min-h-[90px]'}>
             {activeIndex === -1 &&
