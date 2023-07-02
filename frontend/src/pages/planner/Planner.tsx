@@ -8,7 +8,7 @@ import CurriculumSelector from './CurriculumSelector'
 import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react'
-import { type Major, type Minor, type Title, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise } from '../../client'
+import { type CourseDetails, type Major, type Minor, type Title, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise } from '../../client'
 import { type CourseId, type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type PlanDigest, type ValidationDigest, isApiError, isCancelError } from './utils/Types'
 import { validateCourseMovement, updateClassesState, getCoursePos } from './utils/planBoardFunctions'
 import { useAuth } from '../../contexts/auth.context'
@@ -410,10 +410,9 @@ const Planner = (): JSX.Element => {
     setIsModalOpen(true)
   }, [])
 
-  const closeModal = useCallback(async (selection?: string): Promise<void> => {
+  const closeModal = useCallback(async (selection?: CourseDetails): Promise<void> => {
     if (selection != null && modalData !== undefined) {
-      const details = (await DefaultService.getCourseDetails([selection]))[0]
-      addCourseDetails({ [details.code]: details })
+      addCourseDetails({ [selection.code]: selection })
       setValidatablePlan(prev => {
         if (prev === null) return prev
         const newValidatablePlan = { ...prev, classes: [...prev.classes] }
@@ -422,10 +421,10 @@ const Planner = (): JSX.Element => {
         }
         const index = modalData.index ?? newValidatablePlan.classes[modalData.semester].length
         const pastClass = newValidatablePlan.classes[modalData.semester][index]
-        if (pastClass !== undefined && selection === pastClass.code) { setIsModalOpen(false); return prev }
+        if (pastClass !== undefined && selection.code === pastClass.code) { setIsModalOpen(false); return prev }
         for (const existingCourse of newValidatablePlan.classes[modalData.semester].flat()) {
-          if (existingCourse.code === selection) {
-            toast.error(`${selection} ya se encuentra en este semestre, seleccione otro curso por favor`)
+          if (existingCourse.code === selection.code) {
+            toast.error(`${selection.name} ya se encuentra en este semestre, seleccione otro curso por favor`)
             return prev
           }
         }
@@ -436,7 +435,7 @@ const Planner = (): JSX.Element => {
           }
           newValidatablePlan.classes[modalData.semester][index] = {
             is_concrete: true,
-            code: selection,
+            code: selection.code,
             equivalence: undefined
           }
         } else {
@@ -444,24 +443,24 @@ const Planner = (): JSX.Element => {
 
           newValidatablePlan.classes[modalData.semester][index] = {
             is_concrete: true,
-            code: selection,
+            code: selection.code,
             equivalence: oldEquivalence
           }
-          if (oldEquivalence !== undefined && oldEquivalence.credits !== details.credits) {
-            if (oldEquivalence.credits > details.credits) {
+          if (oldEquivalence !== undefined && oldEquivalence.credits !== selection.credits) {
+            if (oldEquivalence.credits > selection.credits) {
               newValidatablePlan.classes[modalData.semester].splice(index, 1,
                 {
                   is_concrete: true,
-                  code: selection,
+                  code: selection.code,
                   equivalence: {
                     ...oldEquivalence,
-                    credits: details.credits
+                    credits: selection.credits
                   }
                 },
                 {
                   is_concrete: false,
                   code: oldEquivalence.code,
-                  credits: oldEquivalence.credits - details.credits
+                  credits: oldEquivalence.credits - selection.credits
                 }
               )
             } else {
@@ -476,7 +475,7 @@ const Planner = (): JSX.Element => {
 
               // Partial solution: just consume anything we find
               const semester = newValidatablePlan.classes[modalData.semester]
-              let extra = details.credits - oldEquivalence.credits
+              let extra = selection.credits - oldEquivalence.credits
               for (let i = semester.length; i-- > 0;) {
                 const equiv = semester[i]
                 if ('credits' in equiv && equiv.code === oldEquivalence.code) {
@@ -497,10 +496,10 @@ const Planner = (): JSX.Element => {
               newValidatablePlan.classes[modalData.semester].splice(index, 1,
                 {
                   is_concrete: true,
-                  code: selection,
+                  code: selection.code,
                   equivalence: {
                     ...oldEquivalence,
-                    credits: details.credits
+                    credits: selection.credits
                   }
                 }
               )
@@ -511,6 +510,8 @@ const Planner = (): JSX.Element => {
         setIsModalOpen(false)
         return newValidatablePlan
       })
+    } else {
+      setIsModalOpen(false)
     }
   }, [setValidatablePlan, setIsModalOpen, modalData])
 

@@ -5,7 +5,6 @@
 import type { ConcreteId } from './ConcreteId';
 import type { CurriculumSpec } from './CurriculumSpec';
 import type { EquivalenceId } from './EquivalenceId';
-import type { Level } from './Level';
 
 /**
  * An academic plan submitted by a user.
@@ -17,8 +16,9 @@ import type { Level } from './Level';
  * allowing guests to simulate any plans they want to try out.
  */
 export type ValidatablePlan = {
+    version: '0.0.1';
     classes: Array<Array<(ConcreteId | EquivalenceId)>>;
-    level?: Level;
+    level?: string;
     school?: string;
     program?: string;
     career?: string;

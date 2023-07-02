@@ -1,5 +1,5 @@
 import { memo, type ReactNode, useRef } from 'react'
-import { type DragSourceMonitor, useDrag } from 'react-dnd'
+import { useDrag } from 'react-dnd'
 import { ReactComponent as EditWhiteIcon } from '../../../assets/editWhite.svg'
 import { ReactComponent as EditBlackIcon } from '../../../assets/editBlack.svg'
 import { ReactComponent as currentWhiteIcon } from '../../../assets/currentWhite.svg'
@@ -76,7 +76,7 @@ const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, t
     drag(ref)
   }
   return (
-    <div ref={ref} draggable={true} className={`${isDragging ? 'opacity-0 z-0' : ''} mx-1 mb-3 ${(isPassed || isCurrent) ? 'cursor-not-allowed opacity-50' : 'cursor-grab'} `}>
+    <div ref={ref} draggable={true} className={`${isDragging ? 'opacity-0 z-0' : 'mb-3'} mx-1 ${(isPassed || isCurrent) ? 'cursor-not-allowed opacity-50' : 'cursor-grab'} `}>
       <ConditionalWrapper condition={course.is_concrete !== true && courseBlock != null} wrapper={(children: ReactNode) => <button className='w-full' onClick={() => { callOpenSelector() }}>{children}</button>}>
           <CourseCard
             courseBlock={courseBlock}

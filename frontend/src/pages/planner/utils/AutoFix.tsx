@@ -181,9 +181,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails }: AutoFixProps): 
         buttons.push(<button key={buttons.length} className="autofix" onClick={() => {
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
-            const planArreglado = moveCourseByCode(plan, code, 0, toSem)
-            void getCourseDetails(planArreglado.classes.flat().filter(course => course.code === code))
-            return planArreglado
+            return moveCourseByCode(plan, code, 0, toSem)
           })
         }}>
           Adelantar requisito {code}
@@ -195,7 +193,9 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails }: AutoFixProps): 
         buttons.push(<button key={buttons.length} className="autofix" onClick={() => {
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
-            return addCourseAt(plan, code, onSem)
+            const planArreglado = addCourseAt(plan, code, onSem)
+            void getCourseDetails(planArreglado.classes.flat().filter(course => course.code === code))
+            return planArreglado
           })
         }}>
           Agregar requisito {code}
