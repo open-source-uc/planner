@@ -72,6 +72,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   }
 
   async function handleSearch (filterProp: Filter): Promise<void> {
+    console.log(equivalence, filterProp)
     setLoadingCoursesData(true)
     const crd = filterProp.credits === '' ? undefined : parseInt(filterProp.credits)
     const onlyAvaible = filterProp.available ? filterProp.available : undefined

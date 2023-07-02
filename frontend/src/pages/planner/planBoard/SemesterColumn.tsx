@@ -122,7 +122,7 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
                 <DraggableCard
                   key={coursesId[index].code + String(coursesId[index].instance)}
                   course={course}
-                  courseDetails={classesDetails[course.code]}
+                  courseDetails={classesDetails[('failed' in course ? course.failed : null) ?? course.code] }
                   courseId={coursesId[index]}
                   isPassed={conditionPassed}
                   isCurrent={checkCurrent}

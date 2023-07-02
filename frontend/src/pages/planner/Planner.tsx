@@ -515,18 +515,18 @@ const Planner = (): JSX.Element => {
     }
   }, [setValidatablePlan, setIsModalOpen, modalData])
 
-  function openInfoModal (): void {
+  const openInfoModal = useCallback((): void => {
     setIsLegendModalOpen(true)
-  }
+  }, [setIsLegendModalOpen])
 
-  function closeInfoModal (): void {
+  const closeInfoModal = useCallback((): void => {
     setIsLegendModalOpen(false)
-  }
+  }, [setIsLegendModalOpen])
 
-  function reset (): void {
+  const reset = useCallback((): void => {
     setPlannerStatus(PlannerStatus.LOADING)
     setValidatablePlan(null)
-  }
+  }, [setPlannerStatus, setValidatablePlan])
 
   const selectMajor = useCallback((majorCode: string | undefined, isMinorValid: boolean): void => {
     setValidatablePlan((prev) => {
@@ -576,13 +576,14 @@ const Planner = (): JSX.Element => {
     }
   }, [validatablePlan?.curriculum, setPopUpAlert, selectMajor]) // this sensitivity list shouldn't contain frequently-changing attributes
 
-  async function handlePopUpAlert (isCanceled: boolean): Promise<void> {
-    const major = popUpAlert.major
-    setPopUpAlert({ ...popUpAlert, isOpen: false })
-    if (!isCanceled) {
-      selectMajor(major, false)
-    }
-  }
+  const handlePopUpAlert = useCallback(async (isCanceled: boolean): Promise<void> => {
+    setPopUpAlert(prev => {
+      if (!isCanceled) {
+        selectMajor(prev.major, false)
+      }
+      return { ...prev, isOpen: false }
+    })
+  }, [setPopUpAlert, selectMajor])
 
   useEffect(() => {
     setPlannerStatus(PlannerStatus.LOADING)
