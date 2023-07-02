@@ -410,104 +410,109 @@ const Planner = (): JSX.Element => {
     setIsModalOpen(true)
   }, [])
 
-  async function closeModal (selection?: string): Promise<void> {
-    if (selection != null && modalData !== undefined && validatablePlan != null) {
-      let index = modalData.index
-      if (index === undefined) {
-        index = validatablePlan.classes[modalData.semester].length
-      }
-      const pastClass = validatablePlan.classes[modalData.semester][index]
-      if (pastClass !== undefined && selection === pastClass.code) { setIsModalOpen(false); return }
-      for (const existingCourse of validatablePlan.classes[modalData.semester].flat()) {
-        if (existingCourse.code === selection) {
-          toast.error(`${selection} ya se encuentra en este semestre, seleccione otro curso por favor`)
-          return
-        }
-      }
+  const closeModal = useCallback(async (selection?: string): Promise<void> => {
+    if (selection != null && modalData !== undefined) {
       const details = (await DefaultService.getCourseDetails([selection]))[0]
       addCourseDetails({ [details.code]: details })
-
-      const newValidatablePlan = { ...validatablePlan, classes: [...validatablePlan.classes] }
-      newValidatablePlan.classes[modalData.semester] = [...newValidatablePlan.classes[modalData.semester]]
-      if (modalData.equivalence === undefined) {
-        newValidatablePlan.classes[modalData.semester][index] = {
-          is_concrete: true,
-          code: selection,
-          equivalence: undefined
+      setValidatablePlan(prev => {
+        if (prev === null) return prev
+        const newValidatablePlan = { ...prev, classes: [...prev.classes] }
+        while (newValidatablePlan.classes.length <= modalData.semester) {
+          newValidatablePlan.classes.push([])
         }
-      } else {
-        const oldEquivalence = 'credits' in pastClass ? pastClass : pastClass.equivalence
-
-        newValidatablePlan.classes[modalData.semester][index] = {
-          is_concrete: true,
-          code: selection,
-          equivalence: oldEquivalence
-        }
-        if (oldEquivalence !== undefined && oldEquivalence.credits !== details.credits) {
-          if (oldEquivalence.credits > details.credits) {
-            newValidatablePlan.classes[modalData.semester].splice(index, 1,
-              {
-                is_concrete: true,
-                code: selection,
-                equivalence: {
-                  ...oldEquivalence,
-                  credits: details.credits
-                }
-              },
-              {
-                is_concrete: false,
-                code: oldEquivalence.code,
-                credits: oldEquivalence.credits - details.credits
-              }
-            )
-          } else {
-            // To-DO: handle when credis exced necesary
-            // General logic: if there are not other courses with the same code then it dosnt matters
-            // If there are other course with the same code, and exact same credits that this card exceed, delete the other
-
-            // On other way, one should decresed credits of other course with the same code
-            // Problem In this part: if i exceed by 5 and have a course of 4 and 10, what do i do
-            // option 1: delete the course with 4 and decresed the one of 10 by 1
-            // option 2: decresed the one of 10 to 5
-
-            // Partial solution: just consume anything we find
-            const semester = newValidatablePlan.classes[modalData.semester]
-            let extra = details.credits - oldEquivalence.credits
-            for (let i = semester.length; i-- > 0;) {
-              const equiv = semester[i]
-              if ('credits' in equiv && equiv.code === oldEquivalence.code) {
-                if (equiv.credits <= extra) {
-                  // Consume this equivalence entirely
-                  semester.splice(index, 1)
-                  extra -= equiv.credits
-                } else {
-                  // Consume part of this equivalence
-                  equiv.credits -= extra
-                  extra = 0
-                }
-              }
-            }
-
-            // Increase the credits of the equivalence
-            // We might not have found all the missing credits, but that's ok
-            newValidatablePlan.classes[modalData.semester].splice(index, 1,
-              {
-                is_concrete: true,
-                code: selection,
-                equivalence: {
-                  ...oldEquivalence,
-                  credits: details.credits
-                }
-              }
-            )
+        const index = modalData.index ?? newValidatablePlan.classes[modalData.semester].length
+        const pastClass = newValidatablePlan.classes[modalData.semester][index]
+        if (pastClass !== undefined && selection === pastClass.code) { setIsModalOpen(false); return prev }
+        for (const existingCourse of newValidatablePlan.classes[modalData.semester].flat()) {
+          if (existingCourse.code === selection) {
+            toast.error(`${selection} ya se encuentra en este semestre, seleccione otro curso por favor`)
+            return prev
           }
         }
-      }
-      setValidatablePlan(newValidatablePlan)
-      setPlannerStatus(PlannerStatus.VALIDATING)
+        newValidatablePlan.classes[modalData.semester] = [...newValidatablePlan.classes[modalData.semester]]
+        if (modalData.equivalence === undefined) {
+          while (newValidatablePlan.classes.length <= modalData.semester) {
+            newValidatablePlan.classes.push([])
+          }
+          newValidatablePlan.classes[modalData.semester][index] = {
+            is_concrete: true,
+            code: selection,
+            equivalence: undefined
+          }
+        } else {
+          const oldEquivalence = 'credits' in pastClass ? pastClass : pastClass.equivalence
+
+          newValidatablePlan.classes[modalData.semester][index] = {
+            is_concrete: true,
+            code: selection,
+            equivalence: oldEquivalence
+          }
+          if (oldEquivalence !== undefined && oldEquivalence.credits !== details.credits) {
+            if (oldEquivalence.credits > details.credits) {
+              newValidatablePlan.classes[modalData.semester].splice(index, 1,
+                {
+                  is_concrete: true,
+                  code: selection,
+                  equivalence: {
+                    ...oldEquivalence,
+                    credits: details.credits
+                  }
+                },
+                {
+                  is_concrete: false,
+                  code: oldEquivalence.code,
+                  credits: oldEquivalence.credits - details.credits
+                }
+              )
+            } else {
+              // To-DO: handle when credis exced necesary
+              // General logic: if there are not other courses with the same code then it dosnt matters
+              // If there are other course with the same code, and exact same credits that this card exceed, delete the other
+
+              // On other way, one should decresed credits of other course with the same code
+              // Problem In this part: if i exceed by 5 and have a course of 4 and 10, what do i do
+              // option 1: delete the course with 4 and decresed the one of 10 by 1
+              // option 2: decresed the one of 10 to 5
+
+              // Partial solution: just consume anything we find
+              const semester = newValidatablePlan.classes[modalData.semester]
+              let extra = details.credits - oldEquivalence.credits
+              for (let i = semester.length; i-- > 0;) {
+                const equiv = semester[i]
+                if ('credits' in equiv && equiv.code === oldEquivalence.code) {
+                  if (equiv.credits <= extra) {
+                    // Consume this equivalence entirely
+                    semester.splice(index, 1)
+                    extra -= equiv.credits
+                  } else {
+                    // Consume part of this equivalence
+                    equiv.credits -= extra
+                    extra = 0
+                  }
+                }
+              }
+
+              // Increase the credits of the equivalence
+              // We might not have found all the missing credits, but that's ok
+              newValidatablePlan.classes[modalData.semester].splice(index, 1,
+                {
+                  is_concrete: true,
+                  code: selection,
+                  equivalence: {
+                    ...oldEquivalence,
+                    credits: details.credits
+                  }
+                }
+              )
+            }
+          }
+        }
+        setPlannerStatus(PlannerStatus.VALIDATING)
+        setIsModalOpen(false)
+        return newValidatablePlan
+      })
     }
-    setIsModalOpen(false)
-  }
+  }, [setValidatablePlan, setIsModalOpen, modalData])
 
   function openInfoModal (): void {
     setIsLegendModalOpen(true)
