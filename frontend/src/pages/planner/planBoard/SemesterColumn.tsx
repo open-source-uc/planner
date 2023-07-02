@@ -117,8 +117,8 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
         {classes.map((course: PseudoCourseId, index: number) => {
           return (
             <Fragment key={index}>
-              {(activeIndexHandler(index)) && <div key="placeholder" className="card mx-2 mb-3 bg-place-holder"/>}
-              <div className={`${dragged === index ? 'opacity-0 absolute w-full' : ''}`}>
+              {(activeIndexHandler(index)) && <div key="placeholder" className="card mx-1 mb-3 bg-place-holder"/>}
+              <div className={`${dragged === index ? 'dragged' : ''}`}>
                 <DraggableCard
                   key={coursesId[index].code + String(coursesId[index].instance)}
                   course={course}
@@ -144,7 +144,7 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
       </div>
       {(conditionPassed || checkCurrent)
         ? null
-        : <div ref={dropEnd} className={'w-full px-2 flex flex-grow min-h-[90px]'}>
+        : <div ref={dropEnd} className={'w-full px-1 flex flex-grow min-h-[90px]'}>
             {activeIndex === -1 &&
               <div key="placeholder" className="w-full card bg-place-holder" />
             }

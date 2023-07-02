@@ -22,6 +22,7 @@ export type { Cyear } from './models/Cyear';
 export type { EquivalenceId } from './models/EquivalenceId';
 export type { EquivDetails } from './models/EquivDetails';
 export type { HTTPValidationError } from './models/HTTPValidationError';
+export type { Level } from './models/Level';
 export type { LowDetailPlanView } from './models/LowDetailPlanView';
 export type { Major } from './models/Major';
 export type { MinCredits } from './models/MinCredits';

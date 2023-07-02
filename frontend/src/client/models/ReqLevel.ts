@@ -2,13 +2,14 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { Level } from './Level';
+
 /**
  * Express that this course requires a certain academic level.
  */
 export type ReqLevel = {
     hash?: Blob;
     expr?: 'lvl';
-    level: string;
-    equal: boolean;
+    min_level: Level;
 };
 
