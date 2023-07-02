@@ -142,7 +142,7 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
       {(conditionPassed || checkCurrent)
         ? null
         : <div ref={dropEnd} className={'w-full px-1 flex flex-grow min-h-[90px]'}>
-            {!isDragging && <div className="w-full h-10 mx-1 bg-block- card">
+            {!isDragging && <div className="w-full h-10 bg-block- card">
               <button key="+" className="w-full" onClick={() => addCourse(semester)}>+</button>
             </div>}
             {(activeIndex === -1 || activeIndexHandler(classes.length)) &&
