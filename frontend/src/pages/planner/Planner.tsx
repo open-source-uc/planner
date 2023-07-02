@@ -665,6 +665,7 @@ const Planner = (): JSX.Element => {
             getCourseDetails={getCourseDetails}
             diagnostics={validationResult?.diagnostics ?? []}
             validating={plannerStatus === 'VALIDATING'}
+            courseDetails={courseDetails}
           />
         </div>
       }

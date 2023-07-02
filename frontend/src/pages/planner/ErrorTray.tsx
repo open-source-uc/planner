@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { type ClassId, type CourseRequirementErr, type CurriculumSpec, type ValidationResult } from '../../client'
+import { type PseudoCourseDetail, isDiagWithAssociatedCourses } from './utils/Types'
 import { Spinner } from '../../components/Spinner'
 import AutoFix, { validateCyear } from './utils/AutoFix'
 
@@ -51,14 +52,23 @@ const formatReqExpr = (expr: RequirementExpr): string => {
       return '?'
   }
 }
-
+const getCourseName = (course: ClassId | PseudoCourseDetail): string => {
+  if ('name' in course) {
+    return `${course.name} [${course.code}]`
+  } else {
+  // If the course details are not available, fallback to just the code
+    return course.code
+  }
+}
 /**
  * Format a list of courses as a human readable list of codes.
  */
-const listCourses = (courses: ClassId[]): string => {
-  const a = courses.map(c => c.code)
-  if (a.length > 1) return `${a.slice(0, -1).join(', ')} y ${a[a.length - 1]}`
-  else if (a.length === 1) return a[0]
+const listCourses = (courses: Array<ClassId | PseudoCourseDetail>): string => {
+  const courseNames: string[] = courses.map(c => (
+    getCourseName(c)
+  ))
+  if (courseNames.length > 1) return `${courseNames.slice(0, -1).join(', ')} y ${courseNames[courseNames.length - 1]}`
+  else if (courseNames.length === 1) return courseNames[0]
   else return '()'
 }
 
@@ -112,7 +122,7 @@ const formatMessage = (diag: Diagnostic): string => {
     case 'outdatedcurrent':
       return 'Esta malla no está actualizada con los cursos que estás tomando.'
     case 'req':
-      return `Faltan requisitos para el curso ${diag.associated_to[0]?.code}: ${formatReqExpr(diag.modernized_missing)}`
+      return `Faltan requisitos para el curso ${getCourseName(diag.associated_to[0])}: ${formatReqExpr(diag.modernized_missing)}`
     case 'sem': {
       const sem = diag.only_available_on === 0 ? 'impares' : diag.only_available_on === 1 ? 'pares' : '?'
       const s = diag.associated_to.length !== 1
@@ -166,15 +176,21 @@ interface ErrorTrayProps {
   getCourseDetails: Function
   diagnostics: Diagnostic[]
   validating: boolean
+  courseDetails: any
 }
 
 /**
  * The error tray shows errors and warnings about the current plan that come from the validation backend.
  */
-const ErrorTray = ({ setValidatablePlan, diagnostics, validating, getCourseDetails }: ErrorTrayProps): JSX.Element => {
+const ErrorTray = ({ setValidatablePlan, diagnostics, validating, courseDetails, getCourseDetails }: ErrorTrayProps): JSX.Element => {
   const [open, setOpen] = useState(true)
   const hasError = diagnostics.some(diag => diag.is_err)
-  const messageList: JSX.Element[] = diagnostics.map((diag, index) => Message({ setValidatablePlan, getCourseDetails, diag, key: index, open: open || hasError }))
+
+  const messageList: JSX.Element[] = diagnostics.map((diag, index) => {
+    let diagWithAssociated = diag
+    if (isDiagWithAssociatedCourses(diag)) diagWithAssociated = { ...diag, associated_to: diag.associated_to.map((course: ClassId) => courseDetails[course.code] ?? course.code) }
+    return Message({ setValidatablePlan, diag: diagWithAssociated, key: index, open: open || hasError, getCourseDetails })
+  })
 
   return (
     <div className={`h-[95%] z-20 flex flex-col relative border-slate-300 border-2 rounded-lg bg-slate-100 shadow-lg mb-2 py-4  motion-reduce:transition-none transition-all ${hasError || open ? 'w-80 min-w-[20rem]' : 'min-w-[4.5rem]'}`}>
