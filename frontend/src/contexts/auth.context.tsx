@@ -33,7 +33,7 @@ export function AuthProvider ({ children, userData }: Props): JSX.Element {
       console.log(err)
       if (err.status === 401) {
         console.log('token invalid or expired, loading re-login page')
-        toast.error('Tu session a expirado. Redireccionando a pagina de inicio de sesion...', {
+        toast.error('Tu sesión ha expirado. Redireccionando a página de inicio de sesión..', {
           toastId: 'ERROR401'
         })
       }
