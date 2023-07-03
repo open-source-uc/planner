@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field
 
 from ...course import PseudoCourse
 
+SUPERBLOCK_PREFIX = "superblock:"
+
 
 class FillerCourse(BaseModel):
     """
@@ -32,6 +34,9 @@ class BaseBlock(BaseModel):
     # The name of this block.
     # Used for debug purposes.
     debug_name: str
+    # Computer-readable code for this block.
+    # Identifies the block.
+    block_code: str
     # The user-facing name of this block.
     # May not be present (eg. the root block has no name).
     name: str | None

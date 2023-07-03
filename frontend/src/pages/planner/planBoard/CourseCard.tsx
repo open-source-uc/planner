@@ -38,17 +38,15 @@ interface CardProps {
 
 const BlockInitials = (courseBlock: string): string => {
   switch (courseBlock) {
-    case 'Ciencias':
+    case 'PlanComun':
       return 'PC'
-    case 'Base':
-      return 'PC'
-    case 'Formacion':
+    case 'FormacionGeneral':
       return 'FG'
     case 'Major':
       return 'M'
     case 'Minor':
       return 'm'
-    case 'Ingeniero':
+    case 'Titulo':
       return 'T'
   }
   return ''
