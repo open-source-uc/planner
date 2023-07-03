@@ -54,7 +54,7 @@ const formatReqExpr = (expr: RequirementExpr): string => {
 }
 const getCourseName = (course: ClassId | PseudoCourseDetail): string => {
   if ('name' in course) {
-    return `${course.name} [${course.code}]`
+    return `"${course.name}" [${course.code}]`
   } else {
   // If the course details are not available, fallback to just the code
     return course.code
