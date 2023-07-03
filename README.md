@@ -95,7 +95,7 @@ Esta sección aún está en ideación y desarrollo.
 
 El ambiente de staging está diseñado para testear las nuevas versiones en un ambiente real antes de pasar a producción.
 
-
+Primero es necesario generar el archivo `cas-mock-users.json` en `backend/mock-data`.
 
 Levantar los servicios en diferentes contenedores utilizando:
 
