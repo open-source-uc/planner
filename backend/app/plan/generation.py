@@ -18,7 +18,6 @@ from .validation.curriculum.solve import (
 )
 from .validation.curriculum.tree import (
     LATEST_CYEAR,
-    Curriculum,
     CurriculumSpec,
     Cyear,
 )
@@ -27,7 +26,7 @@ from .validation.validate import quick_validate_dependencies
 RECOMMENDED_CREDITS_PER_SEMESTER = 50
 
 
-def _extract_active_fillers(
+def _compute_courses_to_pass(
     g: SolvedCurriculum,
 ) -> list[PseudoCourse]:
     """
@@ -62,23 +61,6 @@ def _extract_active_fillers(
             pseudocourse_with_credits(course.fill_with.course, info.active_flow),
         )
     return flattened
-
-
-def _compute_courses_to_pass(
-    courseinfo: CourseInfo,
-    curriculum: Curriculum,
-    passed_classes: list[list[PseudoCourse]],
-) -> list[PseudoCourse]:
-    """
-    Given a curriculum with recommendations, and a plan that is considered as "passed",
-    add classes after the last semester to match the recommended plan.
-    """
-
-    # Determine which curriculum blocks have not been passed yet
-    g = solve_curriculum(courseinfo, curriculum, passed_classes)
-
-    # Extract recommended courses from solved plan
-    return _extract_active_fillers(g)
 
 
 def _find_corequirements(out: list[str], expr: Expr):
@@ -125,6 +107,33 @@ def _get_credits(courseinfo: CourseInfo, courseid: PseudoCourse) -> int:
     if creds is None:
         creds = 0
     return creds
+
+
+SUPERBLOCK_COLOR_ORDER_TABLE: dict[str, int] = {
+    "PlanComun": 0,
+    "Major": 1,
+    "Minor": 2,
+    "Titulo": 3,
+    "FormacionGeneral": 4,
+}
+
+
+def _get_course_color_order(
+    g: SolvedCurriculum,
+    rep_counter: defaultdict[str, int],
+    course: PseudoCourse,
+) -> int:
+    """
+    Get the course "priority", which depends on the "color" of the course.
+    The color of the course is basically what superblock it counts towards.
+    Courses with lower priority number go before courses with a higher priority number.
+    """
+    rep_idx = rep_counter[course.code]
+    rep_counter[course.code] += 1
+    superblock = ""
+    if course.code in g.superblocks and rep_idx < len(g.superblocks[course.code]):
+        superblock = g.superblocks[course.code][rep_idx]
+    return SUPERBLOCK_COLOR_ORDER_TABLE.get(superblock, 1000)
 
 
 def _determine_coreq_components(
@@ -279,8 +288,12 @@ async def generate_recommended_plan(passed: ValidatablePlan):
     courseinfo = await course_info()
     curriculum = await get_curriculum(passed.curriculum)
 
+    # Solve the curriculum to determine which courses have not been passed yet (and need
+    # to be passed)
+    g = solve_curriculum(courseinfo, curriculum, passed.classes)
+
     # Flat list of all curriculum courses left to pass
-    courses_to_pass = _compute_courses_to_pass(courseinfo, curriculum, passed.classes)
+    courses_to_pass = _compute_courses_to_pass(g)
 
     plan = passed.copy(deep=True)
     plan.classes.append([])
@@ -332,8 +345,23 @@ async def generate_recommended_plan(passed: ValidatablePlan):
     while plan.classes and not plan.classes[-1]:
         plan.classes.pop()
 
+    # If any courses simply could not be added, add them now
+    # TODO: Do something about courses with missing requirements
     if courses_to_pass:
         print(f"WARNING: could not add courses {courses_to_pass}")
         plan.classes.append(courses_to_pass)
+
+    # Order courses by their color (ie. superblock assignment)
+    repetition_counter: defaultdict[str, int] = defaultdict(lambda: 0)
+    plan.classes = [
+        [
+            c
+            for _order, c in sorted(
+                ((_get_course_color_order(g, repetition_counter, c), c) for c in sem),
+                key=lambda pair: pair[0],
+            )
+        ]
+        for sem in plan.classes
+    ]
 
     return plan

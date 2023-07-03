@@ -19,6 +19,7 @@ from prisma.models import (
 from ...plan.course import ConcreteId, EquivalenceId, PseudoCourse
 from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
 from ...plan.validation.curriculum.tree import (
+    SUPERBLOCK_PREFIX,
     Block,
     Combination,
     Curriculum,
@@ -197,13 +198,14 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
             creds = 1
         codes_dict = {}
         codes_dict[code] = None
-        for code in codes:
-            codes_dict[code] = 1
+        for accepted_code in codes:
+            codes_dict[accepted_code] = 1
         recommended_order = raw_block.SemestreBloque * 10 + raw_block.OrdenSemestre
         superblock = superblocks.setdefault(raw_block.BloqueAcademico, [])
         superblock.append(
             Leaf(
                 debug_name=raw_block.Nombre,
+                block_code=f"courses:{code}",
                 name=raw_block.Nombre,
                 cap=creds,
                 codes=codes_dict,
@@ -214,11 +216,18 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
         )
 
     # Transform into a somewhat valid curriculum
-    root = Combination(debug_name="Raíz", name=None, cap=-1, children=[])
+    root = Combination(
+        debug_name="Raíz",
+        block_code="root",
+        name=None,
+        cap=-1,
+        children=[],
+    )
     for superblock_name, leaves in superblocks.items():
         root.children.append(
             Combination(
                 debug_name=superblock_name,
+                block_code=f"{SUPERBLOCK_PREFIX}{superblock_name}",
                 name=superblock_name,
                 cap=-1,
                 children=leaves,

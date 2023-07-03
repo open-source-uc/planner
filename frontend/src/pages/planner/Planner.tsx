@@ -140,8 +140,7 @@ const Planner = (): JSX.Element => {
       digest.courses = validatablePlan.classes.map((semester, i) => {
         return semester.map((course, j) => {
           const { code, instance } = planDigest.indexToId[i][j]
-          const rawSuperblock = validationResult?.course_superblocks?.[code]?.[instance] ?? null
-          const superblock = rawSuperblock === null ? '' : rawSuperblock.normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(' ')[0]
+          const superblock = validationResult?.course_superblocks?.[code]?.[instance] ?? ''
           return {
             superblock,
             errorIndices: [],
