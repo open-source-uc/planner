@@ -131,6 +131,13 @@ class CourseInfo:
     def try_equiv(self, code: str) -> EquivDetails | None:
         return self.equivs.get(code)
 
+    def try_any(self, course: PseudoCourse) -> CourseDetails | EquivDetails | None:
+        return (
+            self.try_equiv(course.code)
+            if isinstance(course, EquivalenceId)
+            else self.try_course(course.code)
+        )
+
     def get_credits(self, course: PseudoCourse) -> int | None:
         if isinstance(course, EquivalenceId):
             return course.credits

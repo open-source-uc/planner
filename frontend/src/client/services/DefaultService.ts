@@ -150,9 +150,6 @@ export class DefaultService {
     /**
      * Remove Mod
      * Remove mod access from a user with the specified RUT.
-     *
-     * TODO: add JWT tracking system for mods to be able to instantly revoke unexpired
-     * token access after permission removal.
      * @param rut
      * @returns any Successful Response
      * @throws ApiError
@@ -200,7 +197,7 @@ export class DefaultService {
         offer: boolean = false,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
-            method: 'GET',
+            method: 'POST',
             url: '/sync',
             query: {
                 'courses': courses,

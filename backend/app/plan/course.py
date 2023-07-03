@@ -31,3 +31,14 @@ PseudoCourse = Annotated[
     ConcreteId | EquivalenceId,
     Field(discriminator="is_concrete"),
 ]
+
+
+def pseudocourse_with_credits(pseudocourse: PseudoCourse, credits: int) -> PseudoCourse:
+    """
+    Attempt to create a copy of this equivalence, but with the given amount of credits.
+    """
+    return (
+        pseudocourse.copy(update={"credits": credits})
+        if isinstance(pseudocourse, EquivalenceId)
+        else pseudocourse
+    )

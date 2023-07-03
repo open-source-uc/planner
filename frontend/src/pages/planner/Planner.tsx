@@ -168,8 +168,10 @@ const Planner = (): JSX.Element => {
               if (typeof assoc === 'number') {
                 // This error is associated to a semester
                 const semDigest = digest.semesters[assoc]
-                const diagIndices = diag.is_err ?? true ? semDigest.errorIndices : semDigest.warningIndices
-                diagIndices.push(k)
+                if (semDigest != null) {
+                  const diagIndices = diag.is_err ?? true ? semDigest.errorIndices : semDigest.warningIndices
+                  diagIndices.push(k)
+                }
               } else {
                 // This error is associated to a course
                 const semAndIdx = planDigest.idToIndex[assoc.code]?.[assoc.instance] ?? null
@@ -220,19 +222,20 @@ const Planner = (): JSX.Element => {
     }
   }
 
-  async function getDefaultPlan (ValidatablePlan?: ValidatablePlan): Promise<void> {
+  async function getDefaultPlan (baseValidatablePlan?: ValidatablePlan): Promise<void> {
     try {
       console.log('Getting Basic Plan...')
-      if (ValidatablePlan === undefined) {
-        ValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
+      if (baseValidatablePlan === undefined) {
+        baseValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
       } else {
-        ValidatablePlan = { ...ValidatablePlan }
+        baseValidatablePlan = { ...baseValidatablePlan }
+        baseValidatablePlan.classes = [...baseValidatablePlan.classes]
       }
       // truncate the validatablePlan to the last not empty semester
-      while (ValidatablePlan.classes.length > 0 && ValidatablePlan.classes[ValidatablePlan.classes.length - 1].length === 0) {
-        ValidatablePlan.classes.pop()
+      while (baseValidatablePlan.classes.length > 0 && baseValidatablePlan.classes[baseValidatablePlan.classes.length - 1].length === 0) {
+        baseValidatablePlan.classes.pop()
       }
-      const response: ValidatablePlan = await DefaultService.generatePlan(ValidatablePlan)
+      const response: ValidatablePlan = await DefaultService.generatePlan(baseValidatablePlan)
       await Promise.all([
         getCourseDetails(response.classes.flat()),
         loadCurriculumsData(response.curriculum.cyear.raw, response.curriculum.major),
@@ -264,8 +267,8 @@ const Planner = (): JSX.Element => {
 
   async function fetchData (): Promise<void> {
     try {
-      if (planID !== null && planID !== undefined) {
-        if (validatablePlan !== null) {
+      if (planID != null) {
+        if (validatablePlan != null) {
           await getDefaultPlan(validatablePlan)
         } else {
           await getPlanById(planID)
@@ -585,13 +588,14 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null || prev.curriculum.major === majorCode) return prev
       const newCurriculum = { ...prev.curriculum, major: majorCode }
-      prev.classes.splice(authState?.student?.next_semester ?? 0)
+      const newClasses = [...prev.classes]
+      newClasses.splice(authState?.student?.next_semester ?? 0)
       if (!isMinorValid) {
         newCurriculum.minor = undefined
       }
-      return { ...prev, curriculum: newCurriculum }
+      return { ...prev, classes: newClasses, curriculum: newCurriculum }
     })
-  }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
+  }, [setValidatablePlan, authState]) // this sensitivity list shouldn't contain frequently-changing attributes
 
   const selectMinor = useCallback((minorCode: string | undefined): void => {
     setValidatablePlan((prev) => {
@@ -601,7 +605,7 @@ const Planner = (): JSX.Element => {
       newClasses.splice(authState?.student?.next_semester ?? 0)
       return { ...prev, classes: newClasses, curriculum: newCurriculum }
     })
-  }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
+  }, [setValidatablePlan, authState]) // this sensitivity list shouldn't contain frequently-changing attributes
 
   const selectTitle = useCallback((titleCode: string | undefined): void => {
     setValidatablePlan((prev) => {
@@ -611,7 +615,7 @@ const Planner = (): JSX.Element => {
       newClasses.splice(authState?.student?.next_semester ?? 0)
       return { ...prev, classes: newClasses, curriculum: newCurriculum }
     })
-  }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
+  }, [setValidatablePlan, authState]) // this sensitivity list shouldn't contain frequently-changing attributes
 
   const checkMinorForNewMajor = useCallback(async (major: Major): Promise<void> => {
     const newMinors = await DefaultService.getMinors(major.cyear, major.code)

@@ -37,6 +37,7 @@ model Course {
   credits             Int
   deps                String
   banner_equivs       String[]
+  banner_inv_equivs   String[]
   canonical_equiv     String
   program             String
   school              String
