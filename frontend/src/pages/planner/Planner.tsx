@@ -207,16 +207,19 @@ const Planner = (): JSX.Element => {
         case 404:
           setError('El planner al que estas intentando acceder no existe o no es de tu propiedad')
           break
+        case 429:
+          setError('Se alcanzó el límite de actividad, espera y vuelve a intentarlo')
+          break
         case 500:
           setError(err.message)
           break
         default:
           console.log(err.status)
-          setError('error desconocido')
+          setError('Error desconocido')
           break
       }
     } else if (!isCancelError(err)) {
-      setError('error desconocido')
+      setError('Error desconocido')
       console.error(err)
       setPlannerStatus(PlannerStatus.ERROR)
     }
@@ -285,20 +288,17 @@ const Planner = (): JSX.Element => {
 
   async function getCourseDetails (courses: PseudoCourseId[]): Promise<void> {
     console.log('getting Courses Details...')
-    const coursesCodes = new Set<string>()
-    const equivalenceCodes = new Set<string>()
+    const pseudocourseCodes = new Set<string>()
     for (const courseid of courses) {
       const code = ('failed' in courseid ? courseid.failed : null) ?? courseid.code
       if (!(code in courseDetails)) {
-        if (courseid.is_concrete === true) { coursesCodes.add(code) } else { equivalenceCodes.add(code) }
+        pseudocourseCodes.add(code)
       }
     }
+    if (pseudocourseCodes.size === 0) return
     try {
-      const promises = []
-      if (coursesCodes.size > 0) promises.push(DefaultService.getCourseDetails(Array.from(coursesCodes)))
-      if (equivalenceCodes.size > 0) promises.push(DefaultService.getEquivalenceDetails(Array.from(equivalenceCodes)))
-      const courseDetails = await Promise.all(promises)
-      const dict = courseDetails.flat().reduce((acc: Record<string, PseudoCourseDetail>, curr: PseudoCourseDetail) => {
+      const courseDetails = await DefaultService.getPseudocourseDetails(Array.from(pseudocourseCodes))
+      const dict = courseDetails.reduce((acc: Record<string, PseudoCourseDetail>, curr: PseudoCourseDetail) => {
         acc[curr.code] = curr
         return acc
       }, {})
@@ -466,8 +466,11 @@ const Planner = (): JSX.Element => {
     if ('courses' in equivalence) {
       setModalData({ equivalence, selector: false, semester, index })
     } else {
-      const response = await DefaultService.getEquivalenceDetails([equivalence.code])
-      setModalData({ equivalence: response[0], selector: false, semester, index })
+      const response = (await DefaultService.getPseudocourseDetails([equivalence.code]))[0]
+      if (!('courses' in response)) {
+        throw new Error('expected equivalence details')
+      }
+      setModalData({ equivalence: response, selector: false, semester, index })
     }
     setIsModalOpen(true)
   }, [])
@@ -486,7 +489,10 @@ const Planner = (): JSX.Element => {
           return
         }
       }
-      const details = (await DefaultService.getCourseDetails([selection]))[0]
+      const details = (await DefaultService.getPseudocourseDetails([selection]))[0]
+      if (!('credits' in details)) {
+        throw new Error('expected concrete course')
+      }
       addCourseDetails({ [details.code]: details })
 
       const newValidatablePlan = { ...validatablePlan, classes: [...validatablePlan.classes] }

@@ -200,6 +200,8 @@ class CachedCourseDetailsJson(BaseModel):
 
 
 async def course_info() -> CourseInfo:
+    # TODO: Check in with the central database every so often
+    # This would allow us to run multiple instances
     global _course_info_cache
     if _course_info_cache is None:
         # Derive course rules from courses in database

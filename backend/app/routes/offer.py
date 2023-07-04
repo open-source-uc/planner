@@ -46,7 +46,7 @@ async def get_minors(cyear: str, major_code: str | None = None):
     )
 
 
-@router.get("/offer/title", response_model=list[DbTitle])
+@router.get("/title", response_model=list[DbTitle])
 async def get_titles(cyear: str):
     return await DbTitle.prisma().find_many(
         where={

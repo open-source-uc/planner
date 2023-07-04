@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 from prisma.models import (
     Course as DbCourse,
 )
@@ -13,7 +13,7 @@ from ..plan.courseinfo import (
     make_searchable_name,
 )
 
-router = APIRouter(prefix="/courses")
+router = APIRouter(prefix="/course")
 
 
 class CourseOverview(BaseModel):
@@ -100,7 +100,7 @@ async def search_course_codes(filter: CourseFilter):
     ]
 
 
-@router.get("/courses", response_model=list[CourseDetails | EquivDetails | None])
+@router.get("/details", response_model=list[CourseDetails | EquivDetails | None])
 async def get_pseudocourse_details(
     codes: list[str] = Query(),
 ) -> list[CourseDetails | EquivDetails | None]:
@@ -117,27 +117,3 @@ async def get_pseudocourse_details(
         courseinfo.try_course(code) or courseinfo.try_equiv(code) for code in codes
     ]
     return courses
-
-
-@router.get("/equivalences", response_model=list[EquivDetails])
-async def get_equivalence_details(
-    codes: list[str] = Query(),
-) -> list[EquivDetails]:
-    """
-    For a list of equivalence codes, fetch the raw equivalence details, without any
-    filtering.
-    To filter courses for a specific equivalence, use `search_courses` with an
-    equivalence filter.
-    """
-
-    courseinfo = await course_info()
-    equivs: list[EquivDetails] = []
-    for code in codes:
-        equiv = courseinfo.try_equiv(code)
-        if equiv is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Equivalence '{code}' not found",
-            )
-        equivs.append(equiv)
-    return equivs

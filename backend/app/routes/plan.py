@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from .. import sync
+from ..limiting import ratelimit_guest, ratelimit_user
 from ..plan.courseinfo import (
     course_info,
 )
@@ -29,7 +30,7 @@ from ..user.auth import (
 router = APIRouter(prefix="/plan")
 
 
-@router.get("/plan/empty_for", response_model=ValidatablePlan)
+@router.get("/empty_for", response_model=ValidatablePlan)
 async def empty_plan_for_user(user: UserKey = Depends(require_authentication)):
     """
     Generate an empty plan using the current user as context.
@@ -42,7 +43,7 @@ async def empty_plan_for_user(user: UserKey = Depends(require_authentication)):
     return await generate_empty_plan(user)
 
 
-@router.get("/plan/empty_for_any", response_model=ValidatablePlan)
+@router.get("/empty_for_any", response_model=ValidatablePlan)
 async def empty_plan_for_any_user(
     user_rut: str,
     mod: ModKey = Depends(require_mod_auth),
@@ -55,7 +56,7 @@ async def empty_plan_for_any_user(
     return await generate_empty_plan(mod.as_any_user(user_rut))
 
 
-@router.get("/plan/empty_guest", response_model=ValidatablePlan)
+@router.get("/empty_guest", response_model=ValidatablePlan)
 async def empty_guest_plan():
     """
     Generates a generic empty plan with no user context, using the latest curriculum
@@ -64,18 +65,21 @@ async def empty_guest_plan():
     return await generate_empty_plan(None)
 
 
-@router.post("/plan/validate", response_model=ValidationResult)
-async def validate_guest_plan(plan: ValidatablePlan):
+@router.post("/validate", response_model=ValidationResult)
+async def validate_guest_plan(
+    plan: ValidatablePlan,
+    _limited: None = Depends(ratelimit_guest("7/5second")),
+):
     """
     Validate a plan, generating diagnostics.
     """
     return await diagnose_plan(plan, user_ctx=None)
 
 
-@router.post("/plan/validate_for", response_model=ValidationResult)
+@router.post("/validate_for", response_model=ValidationResult)
 async def validate_plan_for_user(
     plan: ValidatablePlan,
-    user: UserKey = Depends(require_authentication),
+    user: UserKey = Depends(ratelimit_user("7/5second")),
 ):
     """
     Validate a plan, generating diagnostics.
@@ -86,7 +90,7 @@ async def validate_plan_for_user(
     return await diagnose_plan(plan, user_ctx)
 
 
-@router.post("/plan/validate_for_any", response_model=ValidationResult)
+@router.post("/validate_for_any", response_model=ValidationResult)
 async def validate_plan_for_any_user(
     plan: ValidatablePlan,
     user_rut: str,
@@ -101,8 +105,11 @@ async def validate_plan_for_any_user(
     return await diagnose_plan(plan, user_ctx)
 
 
-@router.post("/plan/curriculum_graph")
-async def get_curriculum_validation_graph(plan: ValidatablePlan) -> str:
+@router.post("/curriculum_graph")
+async def get_curriculum_validation_graph(
+    plan: ValidatablePlan,
+    _limited: None = Depends(ratelimit_guest("7/5second")),
+) -> str:
     """
     Get the curriculum validation graph for a certain plan, in Graphviz DOT format.
     Useful for debugging and kind of a bonus easter egg.
@@ -113,8 +120,11 @@ async def get_curriculum_validation_graph(plan: ValidatablePlan) -> str:
     return g.dump_graphviz()
 
 
-@router.post("/plan/generate", response_model=ValidatablePlan)
-async def generate_plan(passed: ValidatablePlan):
+@router.post("/generate", response_model=ValidatablePlan)
+async def generate_plan(
+    passed: ValidatablePlan,
+    _limited: UserKey = Depends(ratelimit_guest("15/minute")),
+):
     """
     From a base plan, generate a new plan that should lead the user to earn their title
     of choice.
@@ -122,7 +132,7 @@ async def generate_plan(passed: ValidatablePlan):
     return await generate_recommended_plan(passed)
 
 
-@router.post("/plan/storage", response_model=PlanView)
+@router.post("/storage", response_model=PlanView)
 async def save_plan(
     name: str,
     plan: ValidatablePlan,
@@ -135,7 +145,7 @@ async def save_plan(
     return await store_plan(plan_name=name, user=user, plan=plan)
 
 
-@router.post("/plan/storage/any", response_model=PlanView)
+@router.post("/storage/any", response_model=PlanView)
 async def save_any_plan(
     name: str,
     plan: ValidatablePlan,
@@ -146,13 +156,13 @@ async def save_any_plan(
     Same functionality as `save_plan`, but works for any user identified by
     their RUT with `user_rut`.
     Moderator access is required.
-    All `/plan/storage/any` endpoints (and sub-resources) should require
+    All `/storage/any` endpoints (and sub-resources) should require
     moderator access.
     """
     return await store_plan(plan_name=name, user=mod.as_any_user(user_rut), plan=plan)
 
 
-@router.get("/plan/storage", response_model=list[LowDetailPlanView])
+@router.get("/storage", response_model=list[LowDetailPlanView])
 async def read_plans(
     user: UserKey = Depends(require_authentication),
 ) -> list[LowDetailPlanView]:
@@ -165,7 +175,7 @@ async def read_plans(
     return await get_user_plans(user)
 
 
-@router.get("/plan/storage/any", response_model=list[LowDetailPlanView])
+@router.get("/storage/any", response_model=list[LowDetailPlanView])
 async def read_any_plans(
     user_rut: str,
     mod: ModKey = Depends(require_mod_auth),
@@ -178,7 +188,7 @@ async def read_any_plans(
     return await get_user_plans(mod.as_any_user(user_rut))
 
 
-@router.get("/plan/storage/details", response_model=PlanView)
+@router.get("/storage/details", response_model=PlanView)
 async def read_plan(
     plan_id: str,
     user: UserKey = Depends(require_authentication),
@@ -190,7 +200,7 @@ async def read_plan(
     return await get_plan_details(user=user, plan_id=plan_id)
 
 
-@router.get("/plan/storage/any/details", response_model=PlanView)
+@router.get("/storage/any/details", response_model=PlanView)
 async def read_any_plan(
     plan_id: str,
     user: ModKey = Depends(require_mod_auth),
@@ -203,7 +213,7 @@ async def read_any_plan(
     return await get_plan_details(user=user, plan_id=plan_id, mod_access=True)
 
 
-@router.put("/plan/storage", response_model=PlanView)
+@router.put("/storage", response_model=PlanView)
 async def update_plan(
     plan_id: str,
     new_plan: ValidatablePlan,
@@ -217,7 +227,7 @@ async def update_plan(
     return await modify_validatable_plan(user=user, plan_id=plan_id, new_plan=new_plan)
 
 
-@router.put("/plan/storage/any", response_model=PlanView)
+@router.put("/storage/any", response_model=PlanView)
 async def update_any_plan(
     plan_id: str,
     new_plan: ValidatablePlan,
@@ -236,7 +246,7 @@ async def update_any_plan(
     )
 
 
-@router.put("/plan/storage/metadata", response_model=PlanView)
+@router.put("/storage/metadata", response_model=PlanView)
 async def update_plan_metadata(
     plan_id: str,
     set_name: str | None = None,
@@ -258,7 +268,7 @@ async def update_plan_metadata(
     )
 
 
-@router.put("/plan/storage/any/metadata", response_model=PlanView)
+@router.put("/storage/any/metadata", response_model=PlanView)
 async def update_any_plan_metadata(
     plan_id: str,
     set_name: str | None = None,
@@ -280,7 +290,7 @@ async def update_any_plan_metadata(
     )
 
 
-@router.delete("/plan/storage", response_model=PlanView)
+@router.delete("/storage", response_model=PlanView)
 async def delete_plan(
     plan_id: str,
     user: UserKey = Depends(require_authentication),
@@ -293,7 +303,7 @@ async def delete_plan(
     return await remove_plan(user=user, plan_id=plan_id)
 
 
-@router.delete("/plan/storage/any", response_model=PlanView)
+@router.delete("/storage/any", response_model=PlanView)
 async def delete_any_plan(
     plan_id: str,
     mod: ModKey = Depends(require_mod_auth),
