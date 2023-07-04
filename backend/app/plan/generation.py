@@ -1,4 +1,5 @@
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
+from collections.abc import Iterable
 
 from .. import sync
 from ..sync import get_curriculum
@@ -27,9 +28,13 @@ from .validation.validate import quick_validate_dependencies
 RECOMMENDED_CREDITS_PER_SEMESTER = 50
 
 
+def _count_credits(courseinfo: CourseInfo, sem: Iterable[PseudoCourse]) -> int:
+    return sum(courseinfo.get_credits(course) or 0 for course in sem)
+
+
 def _extract_active_fillers(
     g: SolvedCurriculum,
-) -> list[PseudoCourse]:
+) -> OrderedDict[int, PseudoCourse]:
     """
     Extract course recommendations from a solved curriculum.
     If missing credits are found, `to_pass` is filled with the corresponding filler
@@ -56,11 +61,14 @@ def _extract_active_fillers(
     to_pass.sort(key=lambda c: c[1].fill_with.order)
 
     # Flatten into plain pseudocourse ids, taking active credits into account
-    flattened: list[PseudoCourse] = []
+    i = 0
+    flattened: OrderedDict[int, PseudoCourse] = OrderedDict()
     for info, course in to_pass:
-        flattened.append(
-            pseudocourse_with_credits(course.fill_with.course, info.active_flow),
+        flattened[i] = pseudocourse_with_credits(
+            course.fill_with.course,
+            info.active_flow,
         )
+        i += 1
     return flattened
 
 
@@ -68,7 +76,7 @@ def _compute_courses_to_pass(
     courseinfo: CourseInfo,
     curriculum: Curriculum,
     passed_classes: list[list[PseudoCourse]],
-) -> list[PseudoCourse]:
+) -> OrderedDict[int, PseudoCourse]:
     """
     Given a curriculum with recommendations, and a plan that is considered as "passed",
     add classes after the last semester to match the recommended plan.
@@ -81,98 +89,79 @@ def _compute_courses_to_pass(
     return _extract_active_fillers(g)
 
 
-def _find_corequirements(out: list[str], expr: Expr):
+def _extract_corequirements(out: set[str], expr: Expr):
     if isinstance(expr, ReqCourse) and expr.coreq:
-        out.append(expr.code)
+        out.add(expr.code)
     elif isinstance(expr, And | Or):
         for child in expr.children:
-            _find_corequirements(out, child)
+            _extract_corequirements(out, child)
 
 
-def _get_corequirements(courseinfo: CourseInfo, courseid: PseudoCourse) -> list[str]:
-    out: list[str] = []
-    info = None
-    if isinstance(courseid, EquivalenceId):
-        equiv_info = courseinfo.try_equiv(courseid.code)
-        if equiv_info is None or not equiv_info.is_homogeneous:
-            return out
-        for concrete in equiv_info.courses:
-            info = courseinfo.try_course(concrete)
-            if info is not None:
-                break
-    else:
-        info = courseinfo.try_course(courseid.code)
+def _get_course_corequirements(
+    courseinfo: CourseInfo,
+    course: PseudoCourse,
+) -> set[str]:
+    out: set[str] = set()
+    if isinstance(course, EquivalenceId):
+        return out
+    info = courseinfo.try_course(course.code)
     if info is not None:
-        _find_corequirements(out, info.deps)
+        _extract_corequirements(out, info.deps)
     return out
 
 
-def _is_course_in_list_of_codes(
+def _find_mutual_coreqs(
     courseinfo: CourseInfo,
-    course: PseudoCourse,
-    codes: list[str],
-) -> bool:
-    if isinstance(course, ConcreteId):
-        return course.code in codes
-    info = courseinfo.try_equiv(course.code)
-    if info is None:
-        return False
-    return any(code in codes for code in info.courses)
-
-
-def _get_credits(courseinfo: CourseInfo, courseid: PseudoCourse) -> int:
-    creds = courseinfo.get_credits(courseid)
-    if creds is None:
-        creds = 0
-    return creds
-
-
-def _determine_coreq_components(
-    courseinfo: CourseInfo,
-    courses_to_pass: list[PseudoCourse],
-) -> dict[PseudoCourse, list[PseudoCourse]]:
+    courses_to_pass: OrderedDict[int, PseudoCourse],
+) -> list[list[int]]:
     """
-    Determine which courses have to be taken together because they are
-    mutual corequirements.
+    For each course, find which other courses in the list are mutual corequirements.
+    A course is considered a mutual corequirement of itself, always.
+    Wonky stuff may happen if there are duplicated concrete courses in the
+    `courses_to_pass` list.
+    Equivalences are ignored entirely, only concrete courses are taken into account.
     """
 
-    # First, determine an overall list of corequirements for each course to pass
-    coreqs: list[list[str]] = []
-    for courseid in courses_to_pass:
-        coreqs.append(_get_corequirements(courseinfo, courseid))
+    # First, create a mapping from course code to courses in `courses_to_pass`
+    code_to_idx: dict[str, int] = {}
+    for idx, course in courses_to_pass.items():
+        if isinstance(course, ConcreteId):
+            code_to_idx[course.code] = idx
 
-    # Start off with each course in its own connected component
-    coreq_components: dict[PseudoCourse, list[PseudoCourse]] = {
-        courseid: [courseid] for courseid in courses_to_pass
-    }
-
-    # Determine which pairs of courses are corequirements of each other
-    for i, course1 in enumerate(courses_to_pass):
-        for j in range(i + 1, len(courses_to_pass)):
-            course2 = courses_to_pass[j]
-            if _is_course_in_list_of_codes(
+    # Now, get the raw list of corequirements for each course to pass
+    coreqs_of: list[set[str]] = []
+    for courseid in courses_to_pass.values():
+        coreqs_of.append(
+            _get_course_corequirements(
                 courseinfo,
-                course2,
-                coreqs[i],
-            ) and _is_course_in_list_of_codes(courseinfo, course1, coreqs[j]):
-                # `course1` and `course2` are mutual corequirements, they must be taken
-                # together
-                # Merge the connected components
-                dst = coreq_components[course1]
-                src = coreq_components[course2]
-                dst.extend(src)
-                for c in src:
-                    coreq_components[c] = dst
+                courseid,
+            ),
+        )
 
-    return coreq_components
+    # For each course, filter the corequirements which are mutual
+    mutual_coreqs: list[list[int]] = []
+    for idx, course in courses_to_pass.items():
+        # I am always my own mutual corequirement
+        mutual = [idx]
+        # Check each corequirement for mutuality
+        for coreq_code in coreqs_of[idx]:
+            if coreq_code in code_to_idx:
+                # Ok, this corequirement exists in the `courses_to_pass`
+                coreq_idx = code_to_idx[coreq_code]
+                if course.code in coreqs_of[coreq_idx]:
+                    # I am a corequirement of my corequirement, so it's mutual
+                    mutual.append(coreq_idx)
+        mutual_coreqs.append(mutual)
+
+    return mutual_coreqs
 
 
 def _try_add_course_group(
     courseinfo: CourseInfo,
     plan: ValidatablePlan,
-    courses_to_pass: list[PseudoCourse],
+    courses_to_pass: OrderedDict[int, PseudoCourse],
     current_credits: int,
-    course_group: list[PseudoCourse],
+    course_group: list[int],
 ) -> bool:
     """
     Attempt to add a group of courses to the last semester of the given plan.
@@ -184,7 +173,10 @@ def _try_add_course_group(
     # Bail if the semestrality is wrong for any course (but it could be right in
     # another semester)
     sem_i = len(plan.classes) - 1
-    for course in course_group:
+    for idx in course_group:
+        if idx not in courses_to_pass:
+            continue
+        course = courses_to_pass[idx]
         info = courseinfo.try_course(course.code)
         if info is None:
             continue
@@ -192,7 +184,10 @@ def _try_add_course_group(
             return False
 
     # Determine total credits of this group
-    group_credits = sum(_get_credits(courseinfo, c) for c in course_group)
+    group_credits = _count_credits(
+        courseinfo,
+        (courses_to_pass[idx] for idx in course_group if idx in courses_to_pass),
+    )
 
     # Bail if there is not enough space in this semester
     if current_credits + group_credits > RECOMMENDED_CREDITS_PER_SEMESTER:
@@ -201,18 +196,25 @@ def _try_add_course_group(
     # Temporarily add to plan
     semester = plan.classes[-1]
     original_length = len(semester)
-    for course in course_group:
-        semester.append(course)
+    for idx in course_group:
+        if idx not in courses_to_pass:
+            continue
+        semester.append(courses_to_pass[idx])
 
     # Check the dependencies for each course
-    for i, course in enumerate(course_group):
+    index_within_semester = original_length - 1
+    for idx in course_group:
+        if idx not in courses_to_pass:
+            continue
+        course = courses_to_pass[idx]
+        index_within_semester += 1
         if courseinfo.try_course(course.code) is None:
             continue
         if not quick_validate_dependencies(
             courseinfo,
             plan,
             len(plan.classes) - 1,
-            original_length + i,
+            index_within_semester,
         ):
             # Requirements are not met
             # Undo changes and cancel
@@ -222,8 +224,9 @@ def _try_add_course_group(
 
     # Added course successfully
     # Remove added courses from `courses_to_pass`
-    for course in course_group:
-        courses_to_pass.remove(course)
+    for idx in course_group:
+        if idx in courses_to_pass:
+            del courses_to_pass[idx]
 
     return True
 
@@ -286,18 +289,18 @@ async def generate_recommended_plan(passed: ValidatablePlan):
     plan.classes.append([])
 
     # Precompute corequirements for courses
-    coreq_components = _determine_coreq_components(courseinfo, courses_to_pass)
+    coreq_components = _find_mutual_coreqs(courseinfo, courses_to_pass)
 
     while courses_to_pass:
         # Attempt to add a single course at the end of the last semester
 
         # Precompute the amount of credits in this semester
-        credits = sum(_get_credits(courseinfo, c) for c in plan.classes[-1])
+        credits = _count_credits(courseinfo, plan.classes[-1])
 
         # Go in order, attempting to add each course to the semester
         added_course = False
-        for try_course in courses_to_pass:
-            course_group = coreq_components[try_course]
+        for idx in courses_to_pass:
+            course_group = coreq_components[idx]
 
             could_add = _try_add_course_group(
                 courseinfo,
@@ -333,7 +336,8 @@ async def generate_recommended_plan(passed: ValidatablePlan):
         plan.classes.pop()
 
     if courses_to_pass:
-        print(f"WARNING: could not add courses {courses_to_pass}")
-        plan.classes.append(courses_to_pass)
+        print(f"WARNING: could not add courses {list(courses_to_pass.values())}")
+        plan.classes.append(list(courses_to_pass.values()))
+
 
     return plan
