@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter
 from prisma.models import (
     Major as DbMajor,
@@ -8,6 +10,7 @@ from prisma.models import (
 from prisma.models import (
     Title as DbTitle,
 )
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/offer")
 
@@ -53,3 +56,19 @@ async def get_titles(cyear: str):
             "cyear": cyear,
         },
     )
+
+
+class FullOffer(BaseModel):
+    majors: list[DbMajor]
+    minors: list[DbMinor]
+    titles: list[DbTitle]
+
+
+@router.get("/", response_model=FullOffer)
+async def get_offer(cyear: str, major_code: str | None = None):
+    majors, minors, titles = await asyncio.gather(
+        get_majors(cyear),
+        get_minors(cyear, major_code),
+        get_titles(cyear),
+    )
+    return FullOffer(majors=majors, minors=minors, titles=titles)

@@ -6,6 +6,7 @@ import type { CourseDetails } from '../models/CourseDetails';
 import type { CourseFilter } from '../models/CourseFilter';
 import type { CourseOverview } from '../models/CourseOverview';
 import type { EquivDetails } from '../models/EquivDetails';
+import type { FullOffer } from '../models/FullOffer';
 import type { LowDetailPlanView } from '../models/LowDetailPlanView';
 import type { Major } from '../models/Major';
 import type { Minor } from '../models/Minor';
@@ -258,6 +259,30 @@ export class DefaultService {
             url: '/offer/title',
             query: {
                 'cyear': cyear,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Get Offer
+     * @param cyear
+     * @param majorCode
+     * @returns FullOffer Successful Response
+     * @throws ApiError
+     */
+    public static getOffer(
+        cyear: string,
+        majorCode?: string,
+    ): CancelablePromise<FullOffer> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/offer/',
+            query: {
+                'cyear': cyear,
+                'major_code': majorCode,
             },
             errors: {
                 422: `Validation Error`,

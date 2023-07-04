@@ -22,6 +22,8 @@ export interface CurriculumData {
   majors: Record<string, Major>
   minors: Record<string, Minor>
   titles: Record<string, Title>
+  ofCyear: string
+  ofMajor?: string
 }
 
 type ModalData = { equivalence: EquivDetails | undefined, selector: boolean, semester: number, index?: number } | undefined
@@ -440,26 +442,42 @@ const Planner = (): JSX.Element => {
   }, []) // moveCourse should not depend on `validatablePlan`, so that memoing does its work
 
   async function loadCurriculumsData (cYear: string, cMajor?: string): Promise<void> {
-    const [majors, minors, titles] = await Promise.all([
-      DefaultService.getMajors(cYear),
-      DefaultService.getMinors(cYear, cMajor),
-      DefaultService.getTitles(cYear)
-    ])
-    const curriculumData: CurriculumData = {
-      majors: majors.reduce((dict: Record<string, Major>, m: Major) => {
-        dict[m.code] = m
-        return dict
-      }, {}),
-      minors: minors.reduce((dict: Record<string, Minor>, m: Minor) => {
-        dict[m.code] = m
-        return dict
-      }, {}),
-      titles: titles.reduce((dict: Record<string, Title>, t: Title) => {
-        dict[t.code] = t
-        return dict
-      }, {})
+    function listToRecord<T> (list: Array<T & { code: string }>): Record<string, T> {
+      const dict: Record<string, T> = {}
+      for (const item of list) {
+        dict[item.code] = item
+      }
+      return dict
     }
-    setCurriculumData(curriculumData)
+
+    const { majors, minors, titles } = await (async () => {
+      if (curriculumData != null && curriculumData.ofCyear === cYear) {
+        if (curriculumData.ofMajor === cMajor) {
+          return curriculumData
+        } else {
+          return {
+            majors: curriculumData.majors,
+            minors: listToRecord(await DefaultService.getMinors(cYear, cMajor)),
+            titles: curriculumData.titles
+          }
+        }
+      } else {
+        const response = await DefaultService.getOffer(cYear, cMajor)
+        return {
+          majors: listToRecord(response.majors),
+          minors: listToRecord(response.minors),
+          titles: listToRecord(response.titles)
+        }
+      }
+    })()
+
+    setCurriculumData({
+      majors,
+      minors,
+      titles,
+      ofMajor: cMajor,
+      ofCyear: cYear
+    })
   }
 
   const openModal = useCallback(async (equivalence: EquivDetails | EquivalenceId, semester: number, index?: number): Promise<void> => {
