@@ -1,8 +1,20 @@
 from fastapi import APIRouter, Depends
+from prisma.models import (
+    Major as DbMajor,
+)
+from prisma.models import (
+    Minor as DbMinor,
+)
+from prisma.models import (
+    Title as DbTitle,
+)
+from pydantic import BaseModel
 
 from .. import sync
 from ..limiting import ratelimit_guest, ratelimit_user
 from ..plan.courseinfo import (
+    CourseDetails,
+    EquivDetails,
     course_info,
 )
 from ..plan.generation import generate_empty_plan, generate_recommended_plan
@@ -26,6 +38,7 @@ from ..user.auth import (
     require_authentication,
     require_mod_auth,
 )
+from .offer import get_majors, get_minors, get_titles
 
 router = APIRouter(prefix="/plan")
 
@@ -123,13 +136,85 @@ async def get_curriculum_validation_graph(
 @router.post("/generate", response_model=ValidatablePlan)
 async def generate_plan(
     passed: ValidatablePlan,
-    _limited: UserKey = Depends(ratelimit_guest("15/minute")),
+    _limited: UserKey = Depends(ratelimit_guest("5/15second")),
 ):
     """
     From a base plan, generate a new plan that should lead the user to earn their title
     of choice.
     """
     return await generate_recommended_plan(passed)
+
+
+class BootstrapBundle(BaseModel):
+    plan: ValidatablePlan
+    validation: ValidationResult
+    details: list[CourseDetails | EquivDetails]
+    majors: list[DbMajor] | None
+    minors: list[DbMinor] | None
+    titles: list[DbTitle] | None
+
+
+class BootstrapArgs(BaseModel):
+    fetch_details: bool = False
+    fetch_majors: bool = False
+    fetch_minors: bool = False
+    fetch_titles: bool = False
+    passed: ValidatablePlan | None = None
+
+    async def fetch(self, *, user: UserKey | None) -> BootstrapBundle:
+        passed = self.passed
+        # Initialize empty plan
+        if passed is None:
+            passed = await generate_empty_plan(user)
+        # Generate recommendations
+        plan = await generate_recommended_plan(passed)
+        # Validate plan
+        user_ctx = None if user is None else await sync.get_student_data(user)
+        validation = await diagnose_plan(plan, user_ctx)
+        # Bundle it
+        bundle = BootstrapBundle(
+            plan=plan,
+            validation=validation,
+            details=[],
+            majors=None,
+            minors=None,
+            titles=None,
+        )
+        # Optionally fetch course details
+        if self.fetch_details:
+            courseinfo = await course_info()
+            details: dict[str, CourseDetails | EquivDetails] = {}
+            for sem in plan.classes:
+                for course in sem:
+                    info = courseinfo.try_any(course)
+                    if info is not None:
+                        details[course.code] = info
+            bundle.details = list(details.values())
+        # Optionally fetch offer
+        if self.fetch_majors:
+            bundle.majors = await get_majors(plan.curriculum.cyear.raw)
+        if self.fetch_minors:
+            bundle.minors = await get_minors(
+                plan.curriculum.cyear.raw,
+                plan.curriculum.major,
+            )
+        if self.fetch_titles:
+            bundle.titles = await get_titles(plan.curriculum.cyear.raw)
+
+        return bundle
+
+
+@router.post("/bootstrap_guest", response_model=BootstrapBundle)
+async def bootstrap_guest(args: BootstrapArgs = Depends()):
+    return await args.fetch(user=None)
+
+
+@router.post("/bootstrap_for", response_model=BootstrapBundle)
+async def bootstrap_for_user(
+    args: BootstrapArgs = Depends(),
+    user: UserKey = Depends(require_authentication),
+):
+    return await args.fetch(user=user)
 
 
 @router.post("/storage", response_model=PlanView)
