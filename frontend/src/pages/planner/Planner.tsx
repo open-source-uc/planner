@@ -193,7 +193,6 @@ const Planner = (): JSX.Element => {
   function handleErrors (err: unknown): void {
     if (isApiError(err)) {
       console.error(err)
-      setPlannerStatus(PlannerStatus.ERROR)
       switch (err.status) {
         case 401:
           console.log('token invalid or expired, loading re-login page')
@@ -208,8 +207,8 @@ const Planner = (): JSX.Element => {
           setError('El planner al que estas intentando acceder no existe o no es de tu propiedad')
           break
         case 429:
-          setError('Se alcanzó el límite de actividad, espera y vuelve a intentarlo')
-          break
+          toast.error('Se alcanzó el límite de actividad, espera y vuelve a intentarlo')
+          return
         case 500:
           setError(err.message)
           break
@@ -218,6 +217,7 @@ const Planner = (): JSX.Element => {
           setError('Error desconocido')
           break
       }
+      setPlannerStatus(PlannerStatus.ERROR)
     } else if (!isCancelError(err)) {
       setError('Error desconocido')
       console.error(err)

@@ -68,7 +68,7 @@ async def empty_guest_plan():
 @router.post("/validate", response_model=ValidationResult)
 async def validate_guest_plan(
     plan: ValidatablePlan,
-    _limited: None = Depends(ratelimit_guest("7/5second")),
+    _limited: None = Depends(ratelimit_guest("5/5second")),
 ):
     """
     Validate a plan, generating diagnostics.
