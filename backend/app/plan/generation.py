@@ -11,6 +11,7 @@ from .plan import (
     ValidatablePlan,
 )
 from .validation.courses.logic import And, Expr, Or, ReqCourse
+from .validation.courses.validate import ValidationContext
 from .validation.curriculum.solve import (
     FilledCourse,
     LayerCourse,
@@ -23,7 +24,6 @@ from .validation.curriculum.tree import (
     CurriculumSpec,
     Cyear,
 )
-from .validation.validate import quick_validate_dependencies
 
 RECOMMENDED_CREDITS_PER_SEMESTER = 50
 
@@ -158,9 +158,8 @@ def _find_mutual_coreqs(
 
 def _try_add_course_group(
     courseinfo: CourseInfo,
-    plan: ValidatablePlan,
+    plan_ctx: ValidationContext,
     courses_to_pass: OrderedDict[int, PseudoCourse],
-    current_credits: int,
     course_group: list[int],
 ) -> bool:
     """
@@ -172,7 +171,7 @@ def _try_add_course_group(
 
     # Bail if the semestrality is wrong for any course (but it could be right in
     # another semester)
-    sem_i = len(plan.classes) - 1
+    sem_i = len(plan_ctx.plan.classes) - 1
     for idx in course_group:
         if idx not in courses_to_pass:
             continue
@@ -190,37 +189,36 @@ def _try_add_course_group(
     )
 
     # Bail if there is not enough space in this semester
+    current_credits = plan_ctx.approved_credits[-1]
+    if len(plan_ctx.approved_credits) >= 2:
+        current_credits -= plan_ctx.approved_credits[-2]
     if current_credits + group_credits > RECOMMENDED_CREDITS_PER_SEMESTER:
         return False
 
     # Temporarily add to plan
-    semester = plan.classes[-1]
-    original_length = len(semester)
+    added_n = 0
     for idx in course_group:
         if idx not in courses_to_pass:
             continue
-        semester.append(courses_to_pass[idx])
+        plan_ctx.append_course(courses_to_pass[idx])
+        added_n += 1
 
     # Check the dependencies for each course
-    index_within_semester = original_length - 1
+    i = 0
     for idx in course_group:
         if idx not in courses_to_pass:
             continue
         course = courses_to_pass[idx]
-        index_within_semester += 1
-        if courseinfo.try_course(course.code) is None:
-            continue
-        if not quick_validate_dependencies(
-            courseinfo,
-            plan,
-            len(plan.classes) - 1,
-            index_within_semester,
+        if not plan_ctx.check_dependencies_for(
+            sem_i,
+            len(plan_ctx.plan.classes[-1]) - added_n + i,
         ):
             # Requirements are not met
             # Undo changes and cancel
-            while len(semester) > original_length:
-                semester.pop()
+            for _ in range(added_n):
+                plan_ctx.pop_course()
             return False
+        i += 1
 
     # Added course successfully
     # Remove added courses from `courses_to_pass`
@@ -279,23 +277,26 @@ async def generate_recommended_plan(passed: ValidatablePlan):
     Take a base plan that the user has already passed, and recommend a plan that should
     lead to the user getting the title in whatever major-minor-career they chose.
     """
+    from time import monotonic as t
+
+    t0 = t()
     courseinfo = await course_info()
     curriculum = await get_curriculum(passed.curriculum)
+    t1 = t()
 
     # Flat list of all curriculum courses left to pass
     courses_to_pass = _compute_courses_to_pass(courseinfo, curriculum, passed.classes)
+    t2 = t()
 
-    plan = passed.copy(deep=True)
-    plan.classes.append([])
+    plan_ctx = ValidationContext(courseinfo, passed.copy(deep=True), user_ctx=None)
+    plan_ctx.append_semester()
 
     # Precompute corequirements for courses
     coreq_components = _find_mutual_coreqs(courseinfo, courses_to_pass)
+    t21 = t()
 
     while courses_to_pass:
         # Attempt to add a single course at the end of the last semester
-
-        # Precompute the amount of credits in this semester
-        credits = _count_credits(courseinfo, plan.classes[-1])
 
         # Go in order, attempting to add each course to the semester
         added_course = False
@@ -304,9 +305,8 @@ async def generate_recommended_plan(passed: ValidatablePlan):
 
             could_add = _try_add_course_group(
                 courseinfo,
-                plan,
+                plan_ctx,
                 courses_to_pass,
-                credits,
                 course_group,
             )
             if could_add:
@@ -322,14 +322,21 @@ async def generate_recommended_plan(passed: ValidatablePlan):
         # We could not add any course, try adding another semester
         # However, we do not want to enter an infinite loop if nothing can be added, so
         # only do this if we cannot add courses for 2 empty semesters
-        if len(plan.classes) >= 2 and not plan.classes[-1] and not plan.classes[-2]:
+        if (
+            len(plan_ctx.plan.classes) >= 2
+            and not plan_ctx.plan.classes[-1]
+            and not plan_ctx.plan.classes[-2]
+        ):
             # Stuck :(
             break
 
         # Maybe some requirements are not met, maybe the semestrality is wrong, maybe
         # we reached the credit limit for this semester
         # Anyway, if we are stuck let's try adding a new semester and see if it helps
-        plan.classes.append([])
+        plan_ctx.append_semester()
+
+    # Unwrap plan
+    plan = plan_ctx.plan
 
     # Remove empty semesters at the end (if any)
     while plan.classes and not plan.classes[-1]:
@@ -339,5 +346,15 @@ async def generate_recommended_plan(passed: ValidatablePlan):
         print(f"WARNING: could not add courses {list(courses_to_pass.values())}")
         plan.classes.append(list(courses_to_pass.values()))
 
+    t3 = t()
+
+    def p(t: float):
+        return f"{round(t*1000, 2)}ms"
+
+    print(f"generation: {p(t3-t0)}")
+    print(f"  resource lookup: {p(t1-t0)}")
+    print(f"  solve: {p(t2-t1)}")
+    print(f"  coreq: {p(t21-t2)}")
+    print(f"  insert: {p(t3-t21)}")
 
     return plan
