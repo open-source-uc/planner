@@ -40,19 +40,12 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any
 
-from ...course import ConcreteId, EquivalenceId, PseudoCourse
+from ...course import ConcreteId, PseudoCourse
 from ...courseinfo import CourseInfo
 from .tree import Block, Curriculum, FillerCourse, Leaf
 
-# Cost of using a concrete course.
-TAKEN_CONCRETE_COST = 10**1
-# Cost of using an equivalence.
-# An equivalence is basically tagged to count towards a certain curriculum block, so of
-# course it should cost less to use an equivalence.
-# In particular, when the user selects a concrete course from an equivalence, we would
-# still like to course to count towards the equivalence, and not towards some unrelated
-# block.
-TAKEN_EQUIV_COST = 10**0
+# Cost of using a taken course.
+TAKEN_COST = 10**1
 # Cost of using a filler course. In contrast with a taken course, filler courses are
 # virtual courses that are not actually taken by the user. Instead, filler courses serve
 # as a "fallback" when a curriculum can't be filled with taken courses.
@@ -479,19 +472,22 @@ def _prepare_course_connection(
         # Cannot connect to more than `max_multiplicity` courses at once
         return None
 
-    # Figure out the edge cost
-    cost = TAKEN_CONCRETE_COST
+    # Do not connect equivalences to unrelated blocks
     if (
         isinstance(course, ConcreteId)
         and course.equivalence is not None
-        and course.equivalence.code in block.codes
-    ) or isinstance(course, EquivalenceId):
-        # Prefer equivalence edges over non-equivalence edges
-        # This makes sure that equivalences always count towards their corresponding
-        # blocks if there is the option
-        cost = TAKEN_EQUIV_COST
-    if isinstance(origin, FilledCourse):
-        cost = FILLER_COST + origin.fill_with.cost
+        and course.equivalence.code not in block.codes
+    ):
+        # It becomes very confusing when courses count towards blocks that are not their
+        # equivalence
+        return None
+
+    # Figure out the edge cost
+    cost = (
+        FILLER_COST + origin.fill_with.cost
+        if isinstance(origin, FilledCourse)
+        else TAKEN_COST
+    )
 
     # Connect
     return CourseToConnect(

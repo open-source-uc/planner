@@ -142,6 +142,11 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                 limited = {}
                 unlimited = {}
                 for code, mult in block.codes.items():
+                    if courseinfo.try_equiv(code) is not None:
+                        # Equivalences should count for both
+                        limited[code] = mult
+                        unlimited[code] = mult
+                        continue
                     if is_limited(courseinfo, code):
                         limited[code] = mult
                     else:
@@ -247,7 +252,7 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
 
     # Meter los codigos en un diccionario
     opi_dict: dict[str, int | None] = {opi_code: None}
-    ipre_dict: dict[str, int | None] = {}
+    ipre_dict: dict[str, int | None] = {opi_code: None}
     for code in opi_equiv.courses:
         info = courseinfo.try_course(code)
         if info is None:
