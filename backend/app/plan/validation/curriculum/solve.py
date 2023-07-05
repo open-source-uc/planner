@@ -413,24 +413,34 @@ class SolvedCurriculum:
 
             flow = 0
             if isinstance(block, Leaf):
-                for layer in by_block.values():
+                for layer_id, layer in by_block.items():
                     if id(block) not in layer:
                         continue
                     for info, edge in layer[id(block)]:
                         is_filler = isinstance(info.origin, FillerCourseInst)
+                        graph_edge = self.edges[edge.edge_id]
+                        if is_filler and graph_edge.flow == 0:
+                            continue
+                        style = " style=dotted" if graph_edge.flow == 0 else ""
+                        style += ' color="red"' if is_filler else ""
 
                         label = info.origin.course.code
-                        if info.origin.repeat_index > 0:
-                            label = f"{label} (#{info.origin.repeat_index+1})"
-                        style = " style=dotted" if is_filler else ""
+                        if layer_id != "":
+                            label += f"[{layer_id}]"
+                        label += (
+                            f" (#{info.origin.repeat_index+1})"
+                            if info.origin.repeat_index > 0
+                            else ""
+                        )
+                        label += "\\n(faltante)" if is_filler else ""
                         out += f'v{next_id} [label="{label}"{style}]\n'
 
-                        graph_edge = self.edges[edge.edge_id]
-                        label = f"{graph_edge.flow}/{graph_edge.cap}"
-                        style = " style=dotted" if graph_edge.flow == 0 else ""
+                        label = (
+                            f"{0 if is_filler else graph_edge.flow}/{graph_edge.cap}"
+                        )
                         out += f'v{next_id} -> {vid} [label="{label}"{style}]\n'
 
-                        flow += graph_edge.flow
+                        flow += 0 if is_filler else graph_edge.flow
                         next_id += 1
             else:
                 for child in block.children:
