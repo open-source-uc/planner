@@ -42,7 +42,7 @@ from typing import Any
 
 from ...course import ConcreteId, PseudoCourse
 from ...courseinfo import CourseInfo
-from .tree import Block, Curriculum, FillerCourse, Leaf
+from .tree import SUPERBLOCK_PREFIX, Block, Curriculum, FillerCourse, Leaf
 
 # Cost of using a taken course.
 TAKEN_COST = 10**1
@@ -239,6 +239,8 @@ class SolvedCurriculum:
     layers: defaultdict[str, LayerCourses]
     # Taken courses.
     taken: TakenCourses
+    # Indicates the main superblock that each course counts towards.
+    superblocks: dict[str, list[str]]
 
     def __init__(self) -> None:
         self.nodes = [Node(debug_name="source"), Node(debug_name="sink")]
@@ -247,6 +249,7 @@ class SolvedCurriculum:
         self.sink = 1
         self.layers = defaultdict(LayerCourses)
         self.taken = TakenCourses(flat=[], mapped=defaultdict(list))
+        self.superblocks = {}
 
     def add(self, node: Node) -> int:
         """
@@ -709,6 +712,59 @@ def _max_flow_min_cost(g: SolvedCurriculum):
             cur = edge.src
 
 
+def _tag_active_edges(g: SolvedCurriculum):
+    for layer in g.layers.values():
+        for courses in layer.courses.values():
+            for course in courses.values():
+                # Find the active edge
+                for edge in course.edges:
+                    if g.edges[edge.edge_id].flow > 0:
+                        course.active_edge = edge
+                        course.active_flow = g.edges[edge.edge_id].flow
+                        break
+
+
+def _tag_superblocks(g: SolvedCurriculum):
+    # Collect all courses
+    all_courses: dict[str, int] = {}
+    for layer in g.layers.values():
+        for code, reps in layer.courses.items():
+            for rep_idx in reps:
+                all_courses[code] = max(all_courses.get(code, 0), rep_idx + 1)
+
+    # Determine superblocks from active edges
+    layer_ids = sorted(g.layers)
+    g.superblocks = {}
+    for code, rep_count in all_courses.items():
+        g.superblocks[code] = []
+
+        for rep_idx in range(rep_count):
+            # Find the active superblock
+            superblock = ""
+
+            # Attempt to find a course superblock in some layer (prioritizing the
+            # default "" layer)
+            for layer_id in layer_ids:
+                layer = g.layers[layer_id]
+                if code not in layer.courses:
+                    continue
+                if rep_idx not in layer.courses[code]:
+                    continue
+                info = layer.courses[code][rep_idx]
+                if info.active_edge is None:
+                    continue
+                # Use the first superblock block in the path
+                for block in info.active_edge.block_path:
+                    if block.block_code.startswith(SUPERBLOCK_PREFIX):
+                        superblock = block.block_code[len(SUPERBLOCK_PREFIX) :]
+                        break
+                if superblock != "":
+                    break
+
+            # Tag it
+            g.superblocks[code].append(superblock)
+
+
 def solve_curriculum(
     courseinfo: CourseInfo,
     curriculum: Curriculum,
@@ -719,15 +775,9 @@ def solve_curriculum(
     # Solve the flow problem on the produced graph
     _max_flow_min_cost(g)
     # Determine active edges
-    for layer in g.layers.values():
-        for courses in layer.courses.values():
-            for course in courses.values():
-                # Find the active edge
-                for edge in course.edges:
-                    if g.edges[edge.edge_id].flow > 0:
-                        course.active_edge = edge
-                        course.active_flow = g.edges[edge.edge_id].flow
-                        break
+    _tag_active_edges(g)
+    # Determine course superblocks
+    _tag_superblocks(g)
     # Ensure that demand is satisfied exactly
     # Recommended courses should always fill in missing demand
     # It's a bug if they cannot fill in the demand

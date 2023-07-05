@@ -35,7 +35,6 @@ from .validation.curriculum.solve import (
 )
 from .validation.curriculum.tree import (
     LATEST_CYEAR,
-    Curriculum,
     CurriculumSpec,
     Cyear,
 )
@@ -45,6 +44,33 @@ RECOMMENDED_CREDITS_PER_SEMESTER = 50
 
 def _count_credits(courseinfo: CourseInfo, sem: Iterable[PseudoCourse]) -> int:
     return sum(courseinfo.get_credits(course) or 0 for course in sem)
+
+
+SUPERBLOCK_COLOR_ORDER_TABLE: dict[str, int] = {
+    "PlanComun": 0,
+    "Major": 1,
+    "Minor": 2,
+    "Titulo": 3,
+    "FormacionGeneral": 4,
+}
+
+
+def _get_course_color_order(
+    g: SolvedCurriculum,
+    rep_counter: defaultdict[str, int],
+    course: PseudoCourse,
+) -> int:
+    """
+    Get the course "priority", which depends on the "color" of the course.
+    The color of the course is basically what superblock it counts towards.
+    Courses with lower priority number go before courses with a higher priority number.
+    """
+    rep_idx = rep_counter[course.code]
+    rep_counter[course.code] += 1
+    superblock = ""
+    if course.code in g.superblocks and rep_idx < len(g.superblocks[course.code]):
+        superblock = g.superblocks[course.code][rep_idx]
+    return SUPERBLOCK_COLOR_ORDER_TABLE.get(superblock, 1000)
 
 
 def _extract_active_fillers(
@@ -189,16 +215,13 @@ def _find_hidden_requirements(
 
 def _compute_courses_to_pass(
     courseinfo: CourseInfo,
-    curriculum: Curriculum,
+    g: SolvedCurriculum,
     passed: ValidatablePlan,
 ) -> tuple[OrderedDict[int, PseudoCourse], list[str]]:
     """
     Given a curriculum with recommendations, and a plan that is considered as "passed",
     add classes after the last semester to match the recommended plan.
     """
-
-    # Determine which curriculum blocks have not been passed yet
-    g = solve_curriculum(courseinfo, curriculum, passed.classes)
 
     # Extract recommended courses from solved plan
     courses_to_pass = _extract_active_fillers(g)
@@ -421,10 +444,14 @@ async def generate_recommended_plan(passed: ValidatablePlan):
     curriculum = await get_curriculum(passed.curriculum)
     t1 = t()
 
+    # Solve the curriculum to determine which courses have not been passed yet (and need
+    # to be passed)
+    g = solve_curriculum(courseinfo, curriculum, passed.classes)
+
     # Flat list of all curriculum courses left to pass
     courses_to_pass, ignore_reqs = _compute_courses_to_pass(
         courseinfo,
-        curriculum,
+        g,
         passed,
     )
     t2 = t()
@@ -485,6 +512,8 @@ async def generate_recommended_plan(passed: ValidatablePlan):
     while plan.classes and not plan.classes[-1]:
         plan.classes.pop()
 
+    # If any courses simply could not be added, add them now
+    # TODO: Do something about courses with missing requirements
     if courses_to_pass:
         print(f"WARNING: could not add courses {list(courses_to_pass.values())}")
         plan.classes.append(list(courses_to_pass.values()))
@@ -499,5 +528,18 @@ async def generate_recommended_plan(passed: ValidatablePlan):
     print(f"  solve: {p(t2-t1)}")
     print(f"  coreq: {p(t21-t2)}")
     print(f"  insert: {p(t3-t21)}")
+
+    # Order courses by their color (ie. superblock assignment)
+    repetition_counter: defaultdict[str, int] = defaultdict(lambda: 0)
+    plan.classes = [
+        [
+            c
+            for _order, c in sorted(
+                ((_get_course_color_order(g, repetition_counter, c), c) for c in sem),
+                key=lambda pair: pair[0],
+            )
+        ]
+        for sem in plan.classes
+    ]
 
     return plan

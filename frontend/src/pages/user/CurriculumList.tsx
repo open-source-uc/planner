@@ -37,7 +37,7 @@ const CurriculumList = (): JSX.Element => {
       await DefaultService.deletePlan(id)
       await readPlans()
       console.log('plan deleted')
-      alert('Malla eliminada exitosamente')
+      toast.success('Malla eliminada exitosamente')
     } catch (err) {
       console.log(err)
       if (isApiError(err) && err.status === 401) {

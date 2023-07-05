@@ -378,12 +378,17 @@ class ValidationContext:
                 set_atoms_in_stone_if(self, inst, expr, lambda atom, sat: sat),
             )
         # Map missing courses to their newest equivalent versions
-        missing_equivalents = map_atoms(missing, self.map_to_equivalent)
+        missing_equivalents = simplify(map_atoms(missing, self.map_to_equivalent))
         # Figure out if we can push this course back and solve the missing requirements
         push_back = find_minimum_semester(self, missing)
         # Figure out if we can pull any dependencies forward
         pull_forward: dict[str, int] = {}
         self.find_pull_forwards(inst, pull_forward, missing)
+        pull_forward = {
+            code: sem
+            for code, sem in pull_forward.items()
+            if sem >= self.start_validation_from
+        }
         # Find absent courses
         absent: dict[str, int] = {}
         self.find_absent(inst, absent, missing_equivalents)
@@ -434,7 +439,10 @@ class ValidationContext:
             for child in expr.children:
                 self.find_absent(inst, absent, child)
         if isinstance(expr, ReqCourse) and expr.code not in self.by_code:
-            add_on_sem = inst.sem - (0 if expr.coreq else 1)
+            add_on_sem = max(
+                inst.sem - (0 if expr.coreq else 1),
+                self.start_validation_from,
+            )
             absent[expr.code] = min(absent.get(expr.code, INFINITY), add_on_sem)
 
     def map_to_equivalent(self, atom: Atom) -> Atom:

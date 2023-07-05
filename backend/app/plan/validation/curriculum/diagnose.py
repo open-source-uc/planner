@@ -14,7 +14,6 @@ from .solve import (
     EquivalentFillerFinder,
     FilledCourse,
     SolvedCurriculum,
-    TakenCourse,
     solve_curriculum,
 )
 from .tree import Curriculum
@@ -78,38 +77,6 @@ def _diagnose_blocks(
                     )
 
 
-def _tag_superblocks(g: SolvedCurriculum, out: ValidationResult):
-    layer_ids = sorted(g.layers)
-    for code, courses in g.layers[""].courses.items():
-        for rep_idx, info in courses.items():
-            if isinstance(info.origin, TakenCourse):
-                # This course is a concrete course the user took
-
-                # Find the active superblock
-                superblock = ""
-                # Attempt to find a course superblock in some layer (prioritizing the
-                # default "" layer)
-                for layer_id in layer_ids:
-                    layer = g.layers[layer_id]
-                    if code not in layer.courses:
-                        continue
-                    if rep_idx not in layer.courses[code]:
-                        continue
-                    info_in_layer = layer.courses[code][rep_idx]
-                    if info_in_layer.active_edge is None:
-                        continue
-                    # Use the first named block in the path
-                    for block in info_in_layer.active_edge.block_path:
-                        if block.name is not None:
-                            superblock = block.name
-                            break
-                    if superblock != "":
-                        break
-
-                # Tag it
-                out.course_superblocks[code][rep_idx] = superblock
-
-
 def diagnose_curriculum(
     courseinfo: CourseInfo,
     curriculum: Curriculum,
@@ -128,7 +95,7 @@ def diagnose_curriculum(
     _diagnose_blocks(courseinfo, out, g)
 
     # Tag each course with its associated superblock
-    _tag_superblocks(g, out)
+    out.course_superblocks = g.superblocks
 
     # Count unassigned credits (including passed courses)
     # However, only emit the warning if there is at least 1 not-yet-passed unassigned
@@ -138,6 +105,8 @@ def diagnose_curriculum(
     for code, instances in out.course_superblocks.items():
         for rep_idx, superblock in enumerate(instances):
             if superblock == "":
+                if code not in g.taken.mapped or rep_idx >= len(g.taken.mapped[code]):
+                    continue
                 course = g.taken.mapped[code][rep_idx]
                 unassigned += courseinfo.get_credits(course.course) or 0
                 if user_ctx is None or course.sem >= user_ctx.next_semester:

@@ -1,6 +1,6 @@
-import { type CurriculumErr, type Cyear, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../client'
-import { type AuthState, useAuth } from '../../contexts/auth.context'
-import { type PseudoCourseId } from './Planner'
+import { type CurriculumErr, type Cyear, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../../client'
+import { type AuthState, useAuth } from '../../../contexts/auth.context'
+import { type PseudoCourseId } from './Types'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
 
@@ -111,12 +111,13 @@ const moveCourseByCode = (plan: ValidatablePlan, code: string, repIdx: number, t
 interface AutoFixProps {
   diag: Diagnostic
   setValidatablePlan: Function
+  getCourseDetails: Function
 }
 
 /**
  * Get the quick fixed for some diagnostic, if any.
  */
-const AutoFix = ({ diag, setValidatablePlan }: AutoFixProps): JSX.Element => {
+const AutoFix = ({ diag, setValidatablePlan, getCourseDetails }: AutoFixProps): JSX.Element => {
   // FIXME: TODO: Los cursos añadidos a traves del autofix les faltan los CourseDetails.
   // No me manejo bien con la implementación del frontend, lo dejo en mejores manos.
   const auth = useAuth()
@@ -126,7 +127,9 @@ const AutoFix = ({ diag, setValidatablePlan }: AutoFixProps): JSX.Element => {
         <button key={i} className="autofix" onClick={() => {
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
-            return fixMissingCurriculumCourse(plan, diag, fillWith, auth)
+            const planArreglado = fixMissingCurriculumCourse(plan, diag, fillWith, auth)
+            void getCourseDetails(planArreglado.classes.flat())
+            return planArreglado
           })
         }}>
           Agregar {fillWithName}
@@ -150,7 +153,9 @@ const AutoFix = ({ diag, setValidatablePlan }: AutoFixProps): JSX.Element => {
         return <button className="autofix" onClick={() => {
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
-            return fixOutdatedPlan(plan, diag, auth)
+            const planArreglado = fixOutdatedPlan(plan, diag, auth)
+            void getCourseDetails(planArreglado.classes)
+            return planArreglado
           })
         }}>Actualizar semestres {diag.associated_to.map(s => s + 1).join(', ')}</button>
       } else {
@@ -188,7 +193,9 @@ const AutoFix = ({ diag, setValidatablePlan }: AutoFixProps): JSX.Element => {
         buttons.push(<button key={buttons.length} className="autofix" onClick={() => {
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
-            return addCourseAt(plan, code, onSem)
+            const planArreglado = addCourseAt(plan, code, onSem)
+            void getCourseDetails(planArreglado.classes.flat().filter(course => course.code === code))
+            return planArreglado
           })
         }}>
           Agregar requisito {code}
