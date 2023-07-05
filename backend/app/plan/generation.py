@@ -5,13 +5,28 @@ from .. import sync
 from ..sync import get_curriculum
 from ..user.auth import UserKey
 from .course import ConcreteId, EquivalenceId, pseudocourse_with_credits
-from .courseinfo import CourseInfo, course_info
+from .courseinfo import CourseDetails, CourseInfo, course_info
 from .plan import (
     PseudoCourse,
     ValidatablePlan,
 )
-from .validation.courses.logic import And, Expr, Or, ReqCourse
-from .validation.courses.validate import ValidationContext
+from .validation.courses.logic import (
+    And,
+    Atom,
+    Const,
+    Expr,
+    MinCredits,
+    Operator,
+    Or,
+    ReqCareer,
+    ReqCourse,
+    ReqLevel,
+    ReqProgram,
+    ReqSchool,
+    map_atoms,
+)
+from .validation.courses.simplify import as_dnf
+from .validation.courses.validate import CourseInstance, ValidationContext
 from .validation.curriculum.solve import (
     FilledCourse,
     LayerCourse,
@@ -72,21 +87,143 @@ def _extract_active_fillers(
     return flattened
 
 
+def _is_satisfiable(plan: ValidatablePlan, ready: set[str], expr: Expr) -> bool:
+    """
+    Check if the requirement is satisfiable given the plan and a set of passed codes.
+    Similar to `_is_satisfied`, but it relaxes some checks.
+    May generate false positives, but never false negatives.
+    """
+    if isinstance(expr, Operator):
+        for child in expr.children:
+            value = _is_satisfiable(plan, ready, child)
+            if value != expr.neutral:
+                return value
+        return expr.neutral
+    if isinstance(expr, MinCredits):
+        # This check is relaxed:
+        # Assume that we can fulfill the credit requirements
+        return True
+    if isinstance(expr, ReqCourse):
+        # This check is relaxed:
+        # Does not check course semesters, and it assumes that there are no impossible
+        # cycles
+        return expr.code in ready
+    if isinstance(expr, ReqLevel):
+        return (plan.level == expr.level) == expr.equal
+    if isinstance(expr, ReqSchool):
+        return (plan.school == expr.school) == expr.equal
+    if isinstance(expr, ReqProgram):
+        return (plan.program == expr.program) == expr.equal
+    if isinstance(expr, ReqCareer):
+        return (plan.career == expr.career) == expr.equal
+    return expr.value
+
+
+def _find_hidden_requirements(
+    courseinfo: CourseInfo,
+    passed: ValidatablePlan,
+    courses_to_pass: OrderedDict[int, PseudoCourse],
+) -> list[list[str]]:
+    """
+    Take the list of courses to pass and compute which necessary requirements are
+    missing.
+    Returns a list of options: each with a set of hidden requirements.
+    The options are sorted by best to worst (where best is the option with least
+    courses).
+    """
+
+    # Compute a big list of taken and to-be-passed courses
+    all_courses: list[CourseDetails] = []
+    for sem in passed.classes:
+        for course in sem:
+            info = courseinfo.try_course(course.code)
+            if info is not None:
+                all_courses.append(info)
+    for course in courses_to_pass.values():
+        info = courseinfo.try_course(course.code)
+        if info is not None:
+            all_courses.append(info)
+
+    # Compute which courses are considered taken
+    ready: set[str] = {course.code for course in all_courses}
+
+    # Find courses with missing requirements, and add them here
+    missing: list[Expr] = []
+    for course in all_courses:
+        if _is_satisfiable(passed, ready, course.deps):
+            continue
+
+        # Something missing!
+        def map(atom: Atom) -> Atom:
+            if _is_satisfiable(passed, ready, atom):
+                # Already satisfiable, don't worry about it
+                return Const(value=True)
+            if isinstance(atom, ReqCourse):
+                # We *could* satisfy this atom by adding a course
+                return atom
+            # Not satisfiable by adding a course
+            # Consider this impossible
+            return Const(value=False)
+
+        missing.append(map_atoms(course.deps, map))
+
+    # Good case: there is nothing missing
+    # Exit early to avoid some computations
+    if not missing:
+        return []
+
+    # Normalize the resulting expression to DNF:
+    # (IIC1000 y IIC1001) o (IIC1000 y IIC1002) o (IIC2000 y IIC1002)
+    # (ie. an OR of ANDs)
+    dnf = as_dnf(And(children=tuple(missing)))
+    print(f"dnfized missing expression: {dnf}")
+    options = [
+        [atom.code for atom in clause.children if isinstance(atom, ReqCourse)]
+        for clause in dnf.children
+    ]
+    for option_courses in options:
+        option_courses.sort()
+    options.sort(key=len)
+    return options
+
+
 def _compute_courses_to_pass(
     courseinfo: CourseInfo,
     curriculum: Curriculum,
-    passed_classes: list[list[PseudoCourse]],
-) -> OrderedDict[int, PseudoCourse]:
+    passed: ValidatablePlan,
+) -> tuple[OrderedDict[int, PseudoCourse], list[str]]:
     """
     Given a curriculum with recommendations, and a plan that is considered as "passed",
     add classes after the last semester to match the recommended plan.
     """
 
     # Determine which curriculum blocks have not been passed yet
-    g = solve_curriculum(courseinfo, curriculum, passed_classes)
+    g = solve_curriculum(courseinfo, curriculum, passed.classes)
 
     # Extract recommended courses from solved plan
-    return _extract_active_fillers(g)
+    courses_to_pass = _extract_active_fillers(g)
+
+    # Find out which requirements are missing from the plan
+    extra_reqs = _find_hidden_requirements(courseinfo, passed, courses_to_pass)
+
+    # Ignore the extra requirements
+    # TODO: Automatically place the extra courses
+    # This has at least 3 problems:
+    # 1. It becomes very obvious that the plan generation algorithm is not optimal in
+    #   amount-of-semesters.
+    # 2. It makes decisions for the user, who should be at least notified that decisions
+    #   were made for them.
+    # 3. Some of these courses might be part of the curriculum, but "hidden" within
+    #   equivalences.
+    #   Automatically adding the courses has the effect of "duplicating" these courses:
+    #   once in an equivalence and then again as a concrete course that serves no
+    #   purpose.
+    #   This could be taken into account, for example by first finding hidden
+    #   requirements and then solving the curriculum, but that would have the effect of
+    #   automatically choosing equivalences, worsening problem #2.
+    consider_as_passed = extra_reqs[0] if extra_reqs else []
+
+    return courses_to_pass, consider_as_passed
 
 
 def _extract_corequirements(out: set[str], expr: Expr):
@@ -285,10 +422,16 @@ async def generate_recommended_plan(passed: ValidatablePlan):
     t1 = t()
 
     # Flat list of all curriculum courses left to pass
-    courses_to_pass = _compute_courses_to_pass(courseinfo, curriculum, passed.classes)
+    courses_to_pass, ignore_reqs = _compute_courses_to_pass(
+        courseinfo,
+        curriculum,
+        passed,
+    )
     t2 = t()
 
     plan_ctx = ValidationContext(courseinfo, passed.copy(deep=True), user_ctx=None)
+    for ignore in ignore_reqs:
+        plan_ctx.by_code[ignore] = CourseInstance(code=ignore, sem=-(10**9), index=0)
     plan_ctx.append_semester()
 
     # Precompute corequirements for courses

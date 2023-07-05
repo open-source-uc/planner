@@ -18,7 +18,6 @@ from ..diagnostic import (
 from .logic import (
     And,
     Atom,
-    BaseOp,
     Const,
     Expr,
     MinCredits,
@@ -29,6 +28,7 @@ from .logic import (
     ReqLevel,
     ReqProgram,
     ReqSchool,
+    map_atoms,
 )
 from .simplify import simplify
 
@@ -523,24 +523,16 @@ def set_atoms_in_stone_if(
     current satisfaction status ("sets the atom in stone").
     Returns a modified copy of `expr` (it does **not** modify `expr`).
     """
-    if isinstance(expr, Operator):
-        # Recursively replace atoms
-        changed = False
-        new_children: list[Expr] = []
-        for child in expr.children:
-            new_child = set_atoms_in_stone_if(ctx, cl, child, should_set_in_stone)
-            new_children.append(new_child)
-            if new_child is not child:
-                changed = True
-        if changed:
-            return BaseOp.create(expr.neutral, tuple(new_children))
-    else:
-        # Maybe replace this atom by its truth value
-        truth = is_satisfied(ctx, cl, expr)
-        if should_set_in_stone(expr, truth):
+
+    def mapping(atom: Atom) -> Atom:
+        # Maybe replace this atom by its constant truth value
+        truth = is_satisfied(ctx, cl, atom)
+        if should_set_in_stone(atom, truth):
             # Fold this atom into its constant truth value
             return Const(value=truth)
-    return expr
+        return atom
+
+    return map_atoms(expr, mapping)
 
 
 def is_course_indirectly_available(courseinfo: CourseInfo, code: str):
@@ -556,22 +548,3 @@ def is_course_indirectly_available(courseinfo: CourseInfo, code: str):
     if modernized_info is not None and modernized_info.is_available:
         return True
     return False
-
-
-def map_atoms(expr: Expr, map: Callable[[Atom], Atom]):
-    """
-    Replace the atoms of the expression according to `apply`.
-    Returns a new expression, leaving the original unmodified.
-    """
-    if isinstance(expr, Operator):
-        # Recursively replace atoms
-        changed = False
-        new_children: list[Expr] = []
-        for child in expr.children:
-            new_child = map_atoms(child, map)
-            new_children.append(new_child)
-            if new_child is not child:
-                changed = True
-        return BaseOp.create(expr.neutral, tuple(new_children)) if changed else expr
-    # Replace this atom
-    return map(expr)
