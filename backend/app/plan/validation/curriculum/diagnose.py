@@ -12,7 +12,7 @@ from ..diagnostic import (
 )
 from .solve import (
     EquivalentFillerFinder,
-    FilledCourse,
+    FillerCourseInst,
     SolvedCurriculum,
     solve_curriculum,
 )
@@ -31,7 +31,7 @@ def _diagnose_blocks(
     for _layer_id, layer in g.layers.items():
         for code, courses in layer.courses.items():
             for rep_idx, course in courses.items():
-                if isinstance(course.origin, FilledCourse):
+                if isinstance(course.origin, FillerCourseInst):
                     # This course was added by the solver because it could not fill
                     # enough credits with the user's courses
 

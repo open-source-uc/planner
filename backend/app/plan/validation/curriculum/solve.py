@@ -58,19 +58,27 @@ INFINITY: int = 10**18
 EQUIVALENT_FILLER_THRESHOLD = 10**3
 
 
-@dataclass
-class FilledCourse:
+class FillerCourseInst(FillerCourse):
     """
     Represents a filler course in the context of a particular user plan.
     """
 
     # The original leaf block that spawned this course.
     block: Leaf
-    # The original `CourseRecommendation` that spawned this course.
-    fill_with: FillerCourse
     # The repetition index.
     # The recommendation repeat indices start after the taken indices.
     repeat_index: int
+
+
+@dataclass
+class FillerCourses:
+    """
+    Remembers which filler courses have been instantiated.
+    """
+
+    by_code: defaultdict[str, dict[int, FillerCourseInst]] = field(
+        default_factory=lambda: defaultdict(dict),
+    )
 
 
 @dataclass
@@ -176,7 +184,7 @@ class LayerCourse:
     """
 
     # The original taken course or filler course
-    origin: FilledCourse | TakenCourse
+    origin: FillerCourseInst | TakenCourse
     # The currently active edge.
     # Each course should only have 1 active edge (that is, only one edge with flow going
     # through it).
@@ -211,7 +219,7 @@ class CourseToConnect:
     Holds the necessary information to create an edge linked to a course.
     """
 
-    origin: TakenCourse | FilledCourse
+    origin: TakenCourse | FillerCourseInst
     layer_id: str
     course: PseudoCourse
     repeat_index: int
@@ -239,6 +247,8 @@ class SolvedCurriculum:
     layers: defaultdict[str, LayerCourses]
     # Taken courses.
     taken: TakenCourses
+    # Filler courses.
+    filler: FillerCourses
     # Indicates the main superblock that each course counts towards.
     superblocks: dict[str, list[str]]
 
@@ -249,6 +259,7 @@ class SolvedCurriculum:
         self.sink = 1
         self.layers = defaultdict(LayerCourses)
         self.taken = TakenCourses(flat=[], mapped=defaultdict(list))
+        self.filler = FillerCourses()
         self.superblocks = {}
 
     def add(self, node: Node) -> int:
@@ -377,7 +388,68 @@ class SolvedCurriculum:
                 ),
             )
 
-    def dump_graphviz(self) -> str:
+    def dump_graphviz(self, curr: Curriculum) -> str:
+        """
+        Dumps a graph resembling the original curriculum.
+        """
+        out = "digraph {\n"
+        next_id = 1
+
+        by_block: defaultdict[
+            str,
+            defaultdict[int, list[tuple[LayerCourse, CourseEdgeInfo]]],
+        ] = defaultdict(lambda: defaultdict(list))
+        for layer_id, layer in self.layers.items():
+            for _code, reps in layer.courses.items():
+                for _rep_idx, course_info in reps.items():
+                    for edge in course_info.edges:
+                        bid = id(edge.block_path[-1])
+                        by_block[layer_id][bid].append((course_info, edge))
+
+        def visit(block: Block) -> tuple[str, int]:
+            nonlocal out, next_id
+            vid = f"v{next_id}"
+            next_id += 1
+
+            flow = 0
+            if isinstance(block, Leaf):
+                for layer in by_block.values():
+                    if id(block) not in layer:
+                        continue
+                    for info, edge in layer[id(block)]:
+                        is_filler = isinstance(info.origin, FillerCourseInst)
+
+                        label = info.origin.course.code
+                        if info.origin.repeat_index > 0:
+                            label = f"{label} (#{info.origin.repeat_index+1})"
+                        style = " style=dotted" if is_filler else ""
+                        out += f'v{next_id} [label="{label}"{style}]\n'
+
+                        graph_edge = self.edges[edge.edge_id]
+                        label = f"{graph_edge.flow}/{graph_edge.cap}"
+                        style = " style=dotted" if graph_edge.flow == 0 else ""
+                        out += f'v{next_id} -> {vid} [label="{label}"{style}]\n'
+
+                        flow += graph_edge.flow
+                        next_id += 1
+            else:
+                for child in block.children:
+                    subid, subflow = visit(child)
+                    flow += subflow
+                    sublabel = f"{subflow}/{child.cap}"
+                    out += f'{subid} -> {vid} [label="{sublabel}"]\n'
+            label = block.debug_name
+            out += f'{vid} [label="{label}"]\n'
+
+            return vid, flow
+
+        vid, flow = visit(curr.root)
+        out += f'v{next_id} [label=""]\n'
+        out += f'{vid} -> v{next_id} [label="{flow}/{curr.root.cap}"]'
+        out += "}"
+        return out
+
+    def dump_graphviz_true(self) -> str:
         """
         Dump the graph representation as a Graphviz DOT file.
         """
@@ -413,7 +485,7 @@ class SolvedCurriculum:
         out += "}"
         return out
 
-    def dump_raw_graphviz(self, node_labels: list[Any] | None = None) -> str:
+    def dump_graphviz_raw(self, node_labels: list[Any] | None = None) -> str:
         """
         Dump the raw graphviz representation using node and edge indices instead of
         names.
@@ -447,7 +519,7 @@ class SolvedCurriculum:
 def _prepare_course_connection(
     courseinfo: CourseInfo,
     block: Leaf,
-    origin: TakenCourse | FilledCourse,
+    origin: TakenCourse | FillerCourseInst,
     block_path: tuple[Block, ...],
 ) -> CourseToConnect | None:
     """
@@ -457,9 +529,7 @@ def _prepare_course_connection(
     If the course in `origin` is repeated and the multiplicity of `block` does not allow
     it, the course is not connected.
     """
-    course = (
-        origin.course if isinstance(origin, TakenCourse) else origin.fill_with.course
-    )
+    course = origin.course
 
     # Figure out the amount of credits
     credits = courseinfo.get_credits(course)
@@ -487,8 +557,8 @@ def _prepare_course_connection(
 
     # Figure out the edge cost
     cost = (
-        FILLER_COST + origin.fill_with.cost
-        if isinstance(origin, FilledCourse)
+        FILLER_COST + origin.cost
+        if isinstance(origin, FillerCourseInst)
         else TAKEN_COST
     )
 
@@ -544,17 +614,20 @@ def _prepare_course_connections(
                     to_connect.append(cc)
 
     # Iterate over the recommended courses for this block
-    fill_index: dict[str, int] = {}
     for rec in block.fill_with:
         code = rec.course.code
-        if code not in fill_index:
-            fill_index[code] = len(g.taken.mapped[code])
-        repeat_index = fill_index[code]
-        filled = FilledCourse(block=block, fill_with=rec, repeat_index=repeat_index)
+        repeat_index = len(g.taken.mapped[code]) + len(g.filler.by_code[code])
+        filled = FillerCourseInst(
+            course=rec.course,
+            order=rec.order,
+            cost=rec.cost,
+            block=block,
+            repeat_index=repeat_index,
+        )
         cc = _prepare_course_connection(courseinfo, block, filled, block_path)
         if cc is not None:
             to_connect.append(cc)
-        fill_index[code] += 1
+            g.filler.by_code[code][repeat_index] = filled
 
     return to_connect
 
@@ -785,7 +858,7 @@ def solve_curriculum(
         raise Exception(
             "maximizing flow does not satisfy the root demand exactly,"
             " even with filler recommendations"
-            f":\n{g.dump_graphviz()}",
+            f":\n{g.dump_graphviz(curriculum)}",
         )
     # Make sure that there is no split flow (ie. there is no course that splits its
     # outgoing flow between two blocks)
@@ -803,7 +876,7 @@ def solve_curriculum(
             raise Exception(
                 "min cost max flow produced invalid split-flow"
                 " (ie. there is some node with 2+ non-zero-flow outgoing edges)"
-                f":\n{g.dump_graphviz()}",
+                f":\n{g.dump_graphviz(curriculum)}",
             )
     return g
 
@@ -874,7 +947,7 @@ class EquivalentFillerFinder:
         for layer in g.layers.values():
             for courses in layer.courses.values():
                 for course in courses.values():
-                    if not isinstance(course.origin, FilledCourse):
+                    if not isinstance(course.origin, FillerCourseInst):
                         continue
                     for edge_info in course.edges:
                         edge = g.edges[edge_info.edge_id]
@@ -888,5 +961,5 @@ class EquivalentFillerFinder:
                             <= EQUIVALENT_FILLER_THRESHOLD
                         ):
                             # This is an equivalent filler!
-                            equivalents.append(course.origin.fill_with.course)
+                            equivalents.append(course.origin.course)
         return equivalents

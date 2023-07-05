@@ -28,7 +28,7 @@ from .validation.courses.logic import (
 from .validation.courses.simplify import as_dnf
 from .validation.courses.validate import CourseInstance, ValidationContext
 from .validation.curriculum.solve import (
-    FilledCourse,
+    FillerCourseInst,
     LayerCourse,
     SolvedCurriculum,
     solve_curriculum,
@@ -83,11 +83,11 @@ def _extract_active_fillers(
     """
     # Make sure to only add courses once
     added: defaultdict[str, set[int]] = defaultdict(set)
-    to_pass: list[tuple[LayerCourse, FilledCourse]] = []
+    to_pass: list[tuple[LayerCourse, FillerCourseInst]] = []
     for layer in g.layers.values():
         for code, courses in layer.courses.items():
             for rep_idx, course in courses.items():
-                if isinstance(course.origin, FilledCourse):
+                if isinstance(course.origin, FillerCourseInst):
                     # Check whether we should add this course
                     if course.active_edge is None:
                         continue
@@ -99,14 +99,14 @@ def _extract_active_fillers(
                     to_pass.append((course, course.origin))
 
     # Sort courses by order
-    to_pass.sort(key=lambda c: c[1].fill_with.order)
+    to_pass.sort(key=lambda c: c[1].order)
 
     # Flatten into plain pseudocourse ids, taking active credits into account
     i = 0
     flattened: OrderedDict[int, PseudoCourse] = OrderedDict()
     for info, course in to_pass:
         flattened[i] = pseudocourse_with_credits(
-            course.fill_with.course,
+            course.course,
             info.active_flow,
         )
         i += 1
