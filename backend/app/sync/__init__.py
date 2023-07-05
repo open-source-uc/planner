@@ -32,7 +32,11 @@ from prisma.models import (
 )
 
 from ..plan.courseinfo import clear_course_info_cache, course_info
-from ..plan.validation.curriculum.tree import Curriculum, CurriculumSpec
+from ..plan.validation.curriculum.tree import (
+    Block,
+    Curriculum,
+    CurriculumSpec,
+)
 from ..settings import settings
 from ..user.auth import UserKey
 from ..user.info import StudentContext
@@ -75,7 +79,7 @@ async def run_upstream_sync(courses: bool = True, offer: bool = True):
     await course_info()
 
 
-async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
+async def _get_curriculum_piece(spec: CurriculumSpec) -> Curriculum:
     """
     Get the curriculum definition for a given spec.
     In other words, fetch the full curriculum corresponding to a given
@@ -115,6 +119,58 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
         curr.json(),
     )
     return curr
+
+
+async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
+    blocks: list[Block] = []
+    # Fetch major (or common plan)
+    blocks.extend(
+        (
+            await _get_curriculum_piece(
+                CurriculumSpec(
+                    cyear=spec.cyear,
+                    major=spec.major,
+                    minor=None,
+                    title=None,
+                ),
+            )
+        ).root.children,
+    )
+    # Fetch minor
+    if spec.minor is not None:
+        blocks.extend(
+            (
+                await _get_curriculum_piece(
+                    CurriculumSpec(
+                        cyear=spec.cyear,
+                        major=None,
+                        minor=spec.minor,
+                        title=None,
+                    ),
+                )
+            ).root.children,
+        )
+    # Fetch title
+    if spec.title is not None:
+        blocks.extend(
+            (
+                await _get_curriculum_piece(
+                    CurriculumSpec(
+                        cyear=spec.cyear,
+                        major=None,
+                        minor=None,
+                        title=spec.title,
+                    ),
+                )
+            ).root.children,
+        )
+
+    # Merge blocks
+    merged: dict[str, Block] = {block.debug_name: block for block in blocks}
+    out = Curriculum.empty()
+    out.root.children = list(merged.values())
+    out.root.cap = sum(block.cap for block in merged.values())
+    return out
 
 
 _student_context_cache: OrderedDict[str, tuple[StudentContext, float]] = OrderedDict()

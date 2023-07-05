@@ -89,19 +89,17 @@ async def _fetch_raw_blocks(
 
     # Remove data if a dummy major/minor was used
     if spec.major is None:
-        raw_blocks = list(
-            filter(
-                lambda raw_block: not raw_block.BloqueAcademico.startswith("Major"),
-                raw_blocks,
-            ),
-        )
+        raw_blocks = [
+            block
+            for block in raw_blocks
+            if not block.BloqueAcademico.startswith("Major")
+        ]
     if spec.minor is None:
-        raw_blocks = list(
-            filter(
-                lambda raw_block: not raw_block.BloqueAcademico.startswith("Minor"),
-                raw_blocks,
-            ),
-        )
+        raw_blocks = [
+            block
+            for block in raw_blocks
+            if not block.BloqueAcademico.startswith("Minor")
+        ]
 
     # Fetch data for unseen equivalences
     for raw_block in raw_blocks:

@@ -86,6 +86,18 @@ class Curriculum(BaseModel):
 
     root: Combination
 
+    @staticmethod
+    def empty() -> "Curriculum":
+        return Curriculum(
+            root=Combination(
+                debug_name="Raíz",
+                block_code="root",
+                name=None,
+                cap=0,
+                children=[],
+            ),
+        )
+
 
 class Cyear(BaseModel, frozen=True):
     """
