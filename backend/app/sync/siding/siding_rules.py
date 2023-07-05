@@ -26,6 +26,14 @@ from ...plan.validation.curriculum.tree import (
 )
 
 
+def _set_block_layer(block: Block, layer: str):
+    if isinstance(block, Leaf):
+        block.layer = layer
+    else:
+        for subblock in block.children:
+            _set_block_layer(subblock, layer)
+
+
 def _skip_extras(curriculum: Curriculum):
     # Saltarse los ramos de 0 creditos del bloque de "Requisitos adicionales para
     # obtener el grado de Licenciado...", excepto por la Practica I
@@ -214,7 +222,83 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                 superblock.children[block_i] = block
 
 
+MINOR_BLOCK_CODE = f"{SUPERBLOCK_PREFIX}Minor"
+MINOR_CREDITS = 50
+
+
+def _minor_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
+    """
+    Aplicar la "transformacion de minor".
+    Todos los minors tienen 50 creditos, y los creditos que puedan chocar con major o
+    titulo se rellenan con optativos complementarios.
+    La idea es duplicar el bloque:
+    - Uno de ellos tiene los optativos complementarios, pero tiene una capacidad de 50
+        creditos. Es decir, tiene mas ramos que capacidad, por lo que no se espera que
+        se tomen todos los optativos complementarios.
+    - El otro tiene los cursos obligatorios de minor. Tiene exactamente 5 ramos de 10
+        creditos (o al menos 50 creditos en ramos) y una capacidad de exactamente 50.
+        Este bloque esta en otra capa, de manera de no tener que "pelear" por los ramos
+        con major y titulo.
+    """
+
+    # Encontrar el bloque de minor
+    minor_index, minor_block = next(
+        (
+            (i, block)
+            for i, block in enumerate(curriculum.root.children)
+            if block.block_code.startswith(MINOR_BLOCK_CODE)
+        ),
+        (-1, None),
+    )
+    if minor_block is None:
+        # Recordar que los planes pueden no tener minor!
+        return
+    if not isinstance(minor_block, Combination):
+        raise Exception("minor block is a leaf?")
+
+    # Asumimos el optativo complementario como el ultimo ramo del minor
+    filler = minor_block.children[-1]
+    if not isinstance(filler, Leaf):
+        raise Exception("optativo complementario is not a leaf?")
+
+    # Ajustamos a 50 creditos usando el optativo complementario
+    creds = 0
+    for i, leaf in enumerate(minor_block.children):
+        creds += leaf.cap
+        if creds > MINOR_CREDITS:
+            minor_block.children = minor_block.children[:i]
+            creds -= leaf.cap
+            break
+    while creds < MINOR_CREDITS:
+        minor_block.children.append(filler.copy(deep=True))
+        creds += filler.cap
+    minor_block.cap = creds
+    if creds != MINOR_CREDITS:
+        raise Exception(f"could not adjust minor credits to exactly {MINOR_CREDITS}")
+
+    # Duplicar el bloque
+    # Llamaremos "exhaustivo" al bloque que tiene exactamente tantos ramos como
+    # capacidad tiene (pero que "comparte" sus ramos porque usa una copia de todos
+    # los ramos)
+    # Llamaremos "exclusivo" al bloque que tiene optativos complementarios de relleno,
+    # pero que tiene que "pelear" con los otros bloques por los ramos
+    exhaustive = minor_block
+    exclusive = exhaustive.copy(deep=True)
+    curriculum.root.children.insert(minor_index + 1, exclusive)
+
+    # Mover el bloque exhaustivo a una capa paralela, para permitir que comparta ramos
+    # con otros bloques
+    _set_block_layer(exhaustive, "minor")
+
+    # Agregar optativos complementarios al bloque exclusivo
+    creds = 0
+    while creds < MINOR_CREDITS:
+        exclusive.children.append(filler.copy(deep=True))
+        creds += filler.cap
+
+
 TITLE_EXCLUSIVE_CREDITS = 130
+TITLE_BLOCK_CODE = f"{SUPERBLOCK_PREFIX}Titulo"
 OPI_CODE = "#OPI"
 OPI_NAME = "Optativos de Ingeniería (OPI)"
 OPI_BLOCK_CODE = f"courses:{OPI_CODE}"
@@ -231,31 +315,28 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     """
 
     # Encontrar el bloque de titulo
-    title_index = None
-    for i, block in enumerate(curriculum.root.children):
-        if block.name is not None and block.name.startswith("Ingeniero"):
-            title_index = i
-            break
+    title_index = next(
+        (
+            i
+            for i, block in enumerate(curriculum.root.children)
+            if block.block_code.startswith(TITLE_BLOCK_CODE)
+        ),
+        None,
+    )
     if title_index is None:
+        # Recordar que los planes pueden no tener titulo!
         return
 
     # Duplicar el bloque
     exhaustive = curriculum.root.children[title_index]
     if not isinstance(exhaustive, Combination):
-        return
+        raise Exception("title block is a leaf?")
     exclusive = exhaustive.copy(deep=True)
     curriculum.root.children.insert(title_index + 1, exclusive)
 
     # Mover el bloque exhaustivo a una capa paralela, para permitir que comparta ramos
     # con otros bloques
-    def set_layer(block: Block):
-        if isinstance(block, Leaf):
-            block.layer = "title"
-        else:
-            for subblock in block.children:
-                set_layer(subblock)
-
-    set_layer(exhaustive)
+    _set_block_layer(exhaustive, "title")
 
     # Recolectar los OPIs y armar una equivalencia ficticia
     opi_equiv = courseinfo.try_equiv(OPI_CODE)
@@ -357,6 +438,7 @@ async def apply_curriculum_rules(
             _merge_ofgs(curriculum)
             _allow_selection_duplication(courseinfo, curriculum)
             _limit_ofg10(courseinfo, curriculum)
+            _minor_transformation(courseinfo, curriculum)
             await _title_transformation(courseinfo, curriculum)
             # TODO: Agregar optativo de ciencias
             #   Se pueden tomar hasta 10 creditos de optativo de ciencias, que es una
@@ -373,10 +455,11 @@ async def apply_curriculum_rules(
             #   Escuela de Ingeniería."
             #   https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/optativos/op_ciencias/alumno_2020/index.phtml
             #   https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/formacion_gral/alumno_2020/index.phtml
-            # TODO: Asegurarse que los optativos complementarios de minor funcionen
-            #   correctamente.
             pass
     return curriculum
+
+
+FORCE_HOMOGENEOUS = ("FIS1523", "FIS1533", "ICS1113")
 
 
 def _fix_nonhomogeneous_equivs(courseinfo: CourseInfo, equiv: EquivDetails):
@@ -388,9 +471,7 @@ def _fix_nonhomogeneous_equivs(courseinfo: CourseInfo, equiv: EquivDetails):
     # "Termodinamica".
     # Lo parcharemos para que estas sean listas homogeneas y con el nombre correcto.
     # Tambien, parcharemos "Optimizacion" como una equivalencia homogenea
-    if ("(LISTA " in equiv.name and ")" in equiv.name) or (
-        len(equiv.courses) >= 1 and equiv.courses[0] == "ICS1113"
-    ):
+    if len(equiv.courses) >= 1 and equiv.courses[0] in FORCE_HOMOGENEOUS:
         equiv.is_homogeneous = True
         equiv.is_unessential = True
         if len(equiv.courses) >= 1:
