@@ -3,7 +3,6 @@ import { Dialog, Transition } from '@headlessui/react'
 
 const AlertModal = ({ title, desc, isOpen, close }: { title: string, desc: string, isOpen: boolean, close: Function }): JSX.Element => {
   const cancelButtonRef = useRef(null)
-
   return (
     <Transition.Root show={isOpen} as={Fragment}>
       <Dialog as="div" className="modal relative" initialFocus={cancelButtonRef} onClose={() => { console.log('alert closed') }}>

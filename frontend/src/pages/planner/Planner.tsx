@@ -8,23 +8,15 @@ import CurriculumSelector from './CurriculumSelector'
 import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react'
-import { DndProvider } from 'react-dnd'
-import { HTML5Backend } from 'react-dnd-html5-backend'
-import { type ApiError, type Major, type Minor, type Title, DefaultService, type ValidatablePlan, type CourseDetails, type EquivDetails, type ConcreteId, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise } from '../../client'
+import { type CourseDetails, type Major, type Minor, type Title, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise } from '../../client'
+import { type CourseId, type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type PlanDigest, type ValidationDigest, isApiError, isCancelError } from './utils/Types'
+import { validateCourseMovement, updateClassesState, getCoursePos } from './utils/planBoardFunctions'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import DebugGraph from '../../components/DebugGraph'
 import deepEqual from 'fast-deep-equal'
-
-export type PseudoCourseId = ConcreteId | EquivalenceId
-export type PseudoCourseDetail = CourseDetails | EquivDetails
-export interface CurriculumData {
-  majors: Record<string, Major>
-  minors: Record<string, Minor>
-  titles: Record<string, Title>
-}
-
-type ModalData = { equivalence: EquivDetails | undefined, selector: boolean, semester: number, index?: number } | undefined
+import { DndProvider } from 'react-dnd'
+import { HTML5Backend } from 'react-dnd-html5-backend'
 
 enum PlannerStatus {
   LOADING = 'LOADING',
@@ -32,48 +24,6 @@ enum PlannerStatus {
   SAVING = 'SAVING',
   ERROR = 'ERROR',
   READY = 'READY',
-}
-
-const isApiError = (err: any): err is ApiError => {
-  return err.status !== undefined
-}
-
-const isCancelError = (err: any): boolean => {
-  return err.name !== undefined && err.name === 'CancelError'
-}
-
-export interface PlanDigest {
-  // Maps `(code, course instance index)` to `(semester, index within semester)`
-  idToIndex: Record<string, Array<[number, number]>>
-  // Maps `(semester, index within semester)` to `(code, course instance index)`
-  indexToId: Array<Array<{ code: string, instance: number }>>
-}
-
-export interface CourseValidationDigest {
-  // Contains the superblock string
-  // The empty string if no superblock is found
-  superblock: string
-  // Contains the indices of any errors associated with this course
-  errorIndices: number[]
-  // Contains the indices of any warnings associated with this course
-  warningIndices: number[]
-}
-
-export interface SemesterValidationDigest {
-  // Contains the indices of any errors associated with this semester.
-  errorIndices: number[]
-  // Contains the indices of any warnings associated with this semester.
-  warningIndices: number[]
-}
-
-export interface ValidationDigest {
-  // Information associated to each semester.
-  semesters: SemesterValidationDigest[]
-  // Information associated to each course.
-  courses: CourseValidationDigest[][]
-  // If `true`, the plan is outdated with respect to the courses that the user has taken.
-  // This is computed from the presence of "outdated" diagnostics.
-  isOutdated: boolean
 }
 
 const reduceCourseDetails = (old: Record<string, PseudoCourseDetail>, add: Record<string, PseudoCourseDetail>): Record<string, PseudoCourseDetail> => {
@@ -140,8 +90,7 @@ const Planner = (): JSX.Element => {
       digest.courses = validatablePlan.classes.map((semester, i) => {
         return semester.map((course, j) => {
           const { code, instance } = planDigest.indexToId[i][j]
-          const rawSuperblock = validationResult?.course_superblocks?.[code]?.[instance] ?? null
-          const superblock = rawSuperblock === null ? '' : rawSuperblock.normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(' ')[0]
+          const superblock = validationResult?.course_superblocks?.[code]?.[instance] ?? ''
           return {
             superblock,
             errorIndices: [],
@@ -379,7 +328,7 @@ const Planner = (): JSX.Element => {
     setPlannerStatus(PlannerStatus.READY)
   }
 
-  const addCourse = useCallback((semIdx: number): void => {
+  const openModalForExtraClass = useCallback((semIdx: number): void => {
     setModalData({
       equivalence: undefined,
       selector: true,
@@ -388,15 +337,20 @@ const Planner = (): JSX.Element => {
     setIsModalOpen(true)
   }, []) // addCourse should not depend on `validatablePlan`, so that memoing does its work
 
-  const remCourse = useCallback((semIdx: number, index: number): void => {
+  const remCourse = useCallback((course: CourseId): void => {
     // its ok to use `setValidatablePlan`
     // its not ok to use `validatablePlan` directly
     setValidatablePlan(prev => {
       if (prev === null) return null
+      const remPos = getCoursePos(prev.classes, course)
+      if (remPos === null) {
+        toast.error('Index no encontrado')
+        return prev
+      }
       const newClases = [...prev.classes]
-      const newClasesSem = [...prev.classes[semIdx]]
-      newClasesSem.splice(index, 1)
-      newClases[semIdx] = newClasesSem
+      const newClasesSem = [...prev.classes[remPos.semester]]
+      newClasesSem.splice(remPos.index, 1)
+      newClases[remPos.semester] = newClasesSem
       while (newClases[newClases.length - 1].length === 0) {
         newClases.pop()
       }
@@ -404,38 +358,21 @@ const Planner = (): JSX.Element => {
     })
   }, []) // remCourse should not depend on `validatablePlan`, so that memoing does its work
 
-  const moveCourse = useCallback((drag: { semester: number, index: number }, drop: { semester: number, index: number }): void => {
-    // move course from drag.semester, drag.index to semester, index
+  const moveCourse = useCallback((drag: CourseId, drop: { semester: number, index: number }): void => {
     setValidatablePlan(prev => {
       if (prev === null) return prev
-      const dragCourse = prev.classes[drag.semester][drag.index]
-      if (dragCourse.is_concrete === true && drop.semester !== drag.semester && drop.semester < prev.classes.length && prev.classes[drop.semester].map(course => course.code).includes(dragCourse.code)) {
-        toast.error('No se puede tener dos cursos iguales en un mismo semestre')
+      const dragIndex = getCoursePos(prev.classes, drag)
+      if (dragIndex === null) {
+        toast.error('Index no encontrado')
         return prev
       }
-      const newClasses = [...prev.classes]
-      while (drop.semester >= newClasses.length) {
-        newClasses.push([])
+      const validationError = validateCourseMovement(prev, dragIndex, drop)
+
+      if (validationError !== null) {
+        toast.error(validationError)
+        return prev
       }
-      const dragSemester = [...newClasses[drag.semester]]
-      const dropSemester = [...newClasses[drop.semester]]
-      if (drop.semester === drag.semester) {
-        dragSemester.splice(drop.index, 0, dragCourse)
-        if (drop.index < drag.index) {
-          dragSemester.splice(drag.index + 1, 1)
-        } else {
-          dragSemester.splice(drag.index, 1)
-        }
-      } else {
-        dropSemester.splice(drop.index, 0, dragCourse)
-        dragSemester.splice(drag.index, 1)
-        newClasses[drop.semester] = dropSemester
-      }
-      newClasses[drag.semester] = dragSemester
-      while (newClasses[newClasses.length - 1].length === 0) {
-        newClasses.pop()
-      }
-      return { ...prev, classes: newClasses }
+      return updateClassesState(prev, dragIndex, drop)
     })
   }, []) // moveCourse should not depend on `validatablePlan`, so that memoing does its work
 
@@ -472,119 +409,125 @@ const Planner = (): JSX.Element => {
     setIsModalOpen(true)
   }, [])
 
-  async function closeModal (selection?: string): Promise<void> {
-    if (selection != null && modalData !== undefined && validatablePlan != null) {
-      let index = modalData.index
-      if (index === undefined) {
-        index = validatablePlan.classes[modalData.semester].length
-      }
-      const pastClass = validatablePlan.classes[modalData.semester][index]
-      if (pastClass !== undefined && selection === pastClass.code) { setIsModalOpen(false); return }
-      for (const existingCourse of validatablePlan.classes[modalData.semester].flat()) {
-        if (existingCourse.code === selection) {
-          toast.error(`${selection} ya se encuentra en este semestre, seleccione otro curso por favor`)
-          return
+  const closeModal = useCallback(async (selection?: CourseDetails): Promise<void> => {
+    if (selection != null && modalData !== undefined) {
+      addCourseDetails({ [selection.code]: selection })
+      setValidatablePlan(prev => {
+        if (prev === null) return prev
+        const newValidatablePlan = { ...prev, classes: [...prev.classes] }
+        while (newValidatablePlan.classes.length <= modalData.semester) {
+          newValidatablePlan.classes.push([])
         }
-      }
-      const details = (await DefaultService.getCourseDetails([selection]))[0]
-      addCourseDetails({ [details.code]: details })
-
-      const newValidatablePlan = { ...validatablePlan, classes: [...validatablePlan.classes] }
-      newValidatablePlan.classes[modalData.semester] = [...newValidatablePlan.classes[modalData.semester]]
-      if (modalData.equivalence === undefined) {
-        newValidatablePlan.classes[modalData.semester][index] = {
-          is_concrete: true,
-          code: selection,
-          equivalence: undefined
-        }
-      } else {
-        const oldEquivalence = 'credits' in pastClass ? pastClass : pastClass.equivalence
-
-        newValidatablePlan.classes[modalData.semester][index] = {
-          is_concrete: true,
-          code: selection,
-          equivalence: oldEquivalence
-        }
-        if (oldEquivalence !== undefined && oldEquivalence.credits !== details.credits) {
-          if (oldEquivalence.credits > details.credits) {
-            newValidatablePlan.classes[modalData.semester].splice(index, 1,
-              {
-                is_concrete: true,
-                code: selection,
-                equivalence: {
-                  ...oldEquivalence,
-                  credits: details.credits
-                }
-              },
-              {
-                is_concrete: false,
-                code: oldEquivalence.code,
-                credits: oldEquivalence.credits - details.credits
-              }
-            )
-          } else {
-            // To-DO: handle when credis exced necesary
-            // General logic: if there are not other courses with the same code then it dosnt matters
-            // If there are other course with the same code, and exact same credits that this card exceed, delete the other
-
-            // On other way, one should decresed credits of other course with the same code
-            // Problem In this part: if i exceed by 5 and have a course of 4 and 10, what do i do
-            // option 1: delete the course with 4 and decresed the one of 10 by 1
-            // option 2: decresed the one of 10 to 5
-
-            // Partial solution: just consume anything we find
-            const semester = newValidatablePlan.classes[modalData.semester]
-            let extra = details.credits - oldEquivalence.credits
-            for (let i = semester.length; i-- > 0;) {
-              const equiv = semester[i]
-              if ('credits' in equiv && equiv.code === oldEquivalence.code) {
-                if (equiv.credits <= extra) {
-                  // Consume this equivalence entirely
-                  semester.splice(index, 1)
-                  extra -= equiv.credits
-                } else {
-                  // Consume part of this equivalence
-                  equiv.credits -= extra
-                  extra = 0
-                }
-              }
-            }
-
-            // Increase the credits of the equivalence
-            // We might not have found all the missing credits, but that's ok
-            newValidatablePlan.classes[modalData.semester].splice(index, 1,
-              {
-                is_concrete: true,
-                code: selection,
-                equivalence: {
-                  ...oldEquivalence,
-                  credits: details.credits
-                }
-              }
-            )
+        const index = modalData.index ?? newValidatablePlan.classes[modalData.semester].length
+        const pastClass = newValidatablePlan.classes[modalData.semester][index]
+        if (pastClass !== undefined && selection.code === pastClass.code) { setIsModalOpen(false); return prev }
+        for (const existingCourse of newValidatablePlan.classes[modalData.semester].flat()) {
+          if (existingCourse.code === selection.code) {
+            toast.error(`${selection.name} ya se encuentra en este semestre, seleccione otro curso por favor`)
+            return prev
           }
         }
-      }
-      setValidatablePlan(newValidatablePlan)
-      setPlannerStatus(PlannerStatus.VALIDATING)
+        newValidatablePlan.classes[modalData.semester] = [...newValidatablePlan.classes[modalData.semester]]
+        if (modalData.equivalence === undefined) {
+          while (newValidatablePlan.classes.length <= modalData.semester) {
+            newValidatablePlan.classes.push([])
+          }
+          newValidatablePlan.classes[modalData.semester][index] = {
+            is_concrete: true,
+            code: selection.code,
+            equivalence: undefined
+          }
+        } else {
+          const oldEquivalence = 'credits' in pastClass ? pastClass : pastClass.equivalence
+
+          newValidatablePlan.classes[modalData.semester][index] = {
+            is_concrete: true,
+            code: selection.code,
+            equivalence: oldEquivalence
+          }
+          if (oldEquivalence !== undefined && oldEquivalence.credits !== selection.credits) {
+            if (oldEquivalence.credits > selection.credits) {
+              newValidatablePlan.classes[modalData.semester].splice(index, 1,
+                {
+                  is_concrete: true,
+                  code: selection.code,
+                  equivalence: {
+                    ...oldEquivalence,
+                    credits: selection.credits
+                  }
+                },
+                {
+                  is_concrete: false,
+                  code: oldEquivalence.code,
+                  credits: oldEquivalence.credits - selection.credits
+                }
+              )
+            } else {
+              // To-DO: handle when credis exced necesary
+              // General logic: if there are not other courses with the same code then it dosnt matters
+              // If there are other course with the same code, and exact same credits that this card exceed, delete the other
+
+              // On other way, one should decresed credits of other course with the same code
+              // Problem In this part: if i exceed by 5 and have a course of 4 and 10, what do i do
+              // option 1: delete the course with 4 and decresed the one of 10 by 1
+              // option 2: decresed the one of 10 to 5
+
+              // Partial solution: just consume anything we find
+              const semester = newValidatablePlan.classes[modalData.semester]
+              let extra = selection.credits - oldEquivalence.credits
+              for (let i = semester.length; i-- > 0;) {
+                const equiv = semester[i]
+                if ('credits' in equiv && equiv.code === oldEquivalence.code) {
+                  if (equiv.credits <= extra) {
+                    // Consume this equivalence entirely
+                    semester.splice(index, 1)
+                    extra -= equiv.credits
+                  } else {
+                    // Consume part of this equivalence
+                    equiv.credits -= extra
+                    extra = 0
+                  }
+                }
+              }
+
+              // Increase the credits of the equivalence
+              // We might not have found all the missing credits, but that's ok
+              newValidatablePlan.classes[modalData.semester].splice(index, 1,
+                {
+                  is_concrete: true,
+                  code: selection.code,
+                  equivalence: {
+                    ...oldEquivalence,
+                    credits: selection.credits
+                  }
+                }
+              )
+            }
+          }
+        }
+        setPlannerStatus(PlannerStatus.VALIDATING)
+        setIsModalOpen(false)
+        return newValidatablePlan
+      })
+    } else {
+      setIsModalOpen(false)
     }
-    setIsModalOpen(false)
-  }
+  }, [setValidatablePlan, setIsModalOpen, modalData])
 
-  function openInfoModal (): void {
+  const openInfoModal = useCallback((): void => {
     setIsLegendModalOpen(true)
-  }
+  }, [setIsLegendModalOpen])
 
-  function closeInfoModal (): void {
+  const closeInfoModal = useCallback((): void => {
     setIsLegendModalOpen(false)
-  }
+  }, [setIsLegendModalOpen])
 
-  function reset (): void {
+  const reset = useCallback((): void => {
     setPlannerStatus(PlannerStatus.LOADING)
     setValidatablePlan(null)
-  }
+  }, [setPlannerStatus, setValidatablePlan])
 
-  const selectMajor = useCallback(async (majorCode: string | undefined, isMinorValid: boolean): Promise<void> => {
+  const selectMajor = useCallback((majorCode: string | undefined, isMinorValid: boolean): void => {
     setValidatablePlan((prev) => {
       if (prev == null || prev.curriculum.major === majorCode) return prev
       const newCurriculum = { ...prev.curriculum, major: majorCode }
@@ -628,17 +571,18 @@ const Planner = (): JSX.Element => {
         isOpen: true
       })
     } else {
-      await selectMajor(major.code, true)
+      selectMajor(major.code, true)
     }
   }, [validatablePlan?.curriculum, setPopUpAlert, selectMajor]) // this sensitivity list shouldn't contain frequently-changing attributes
 
-  async function handlePopUpAlert (isCanceled: boolean): Promise<void> {
-    const major = popUpAlert.major
-    setPopUpAlert({ ...popUpAlert, isOpen: false })
-    if (!isCanceled) {
-      await selectMajor(major, false)
-    }
-  }
+  const handlePopUpAlert = useCallback(async (isCanceled: boolean): Promise<void> => {
+    setPopUpAlert(prev => {
+      if (!isCanceled) {
+        selectMajor(prev.major, false)
+      }
+      return { ...prev, isOpen: false }
+    })
+  }, [setPopUpAlert, selectMajor])
 
   useEffect(() => {
     setPlannerStatus(PlannerStatus.LOADING)
@@ -703,20 +647,21 @@ const Planner = (): JSX.Element => {
                 openModal={openInfoModal}
               />
               <DndProvider backend={HTML5Backend}>
-                {(validatablePlan != null) &&
-                  <PlanBoard
-                    classesGrid={validatablePlan.classes}
-                    classesDetails={courseDetails}
-                    moveCourse={moveCourse}
-                    openModal={openModal}
-                    addCourse={addCourse}
-                    remCourse={remCourse}
-                    validationDigest={validationDigest}
-                  />}
+                <PlanBoard
+                  classesGrid={validatablePlan?.classes ?? []}
+                  planDigest={planDigest}
+                  classesDetails={courseDetails}
+                  moveCourse={moveCourse}
+                  openModal={openModal}
+                  addCourse={openModalForExtraClass}
+                  remCourse={remCourse}
+                  validationDigest={validationDigest}
+                />
               </DndProvider>
             </div>
           <ErrorTray
             setValidatablePlan={setValidatablePlan}
+            getCourseDetails={getCourseDetails}
             diagnostics={validationResult?.diagnostics ?? []}
             validating={plannerStatus === 'VALIDATING'}
           />

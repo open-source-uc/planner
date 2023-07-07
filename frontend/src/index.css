@@ -65,7 +65,13 @@
   .curriculumSelector .selectorElement .curriculumOptions .curriculumOption {
     @apply relative cursor-default select-none py-1.5 pl-8 pr-4;
   }
-
+  .dragged{
+    @apply absolute;
+    @apply w-full;
+    transform: translateZ(0);
+    /*porque #### necesita un z-1 para funcionar en chrome, ni idea*/
+    z-index:1;
+  }
   .card {
     height: 90px;
     border-radius: theme('borderRadius.md');
@@ -103,7 +109,6 @@
   box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.18);
   @apply z-50;
 }
-
 .animated {
   /*transform: rotateZ(360deg);*/
   animation: opacity-animation 1s infinite alternate;

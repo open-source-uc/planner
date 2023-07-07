@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { type ClassId, type CourseRequirementErr, type CurriculumSpec, type ValidationResult } from '../../client'
 import { Spinner } from '../../components/Spinner'
-import AutoFix, { validateCyear } from './AutoFix'
+import AutoFix, { validateCyear } from './utils/AutoFix'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
 type RequirementExpr = CourseRequirementErr['missing']
@@ -137,6 +137,7 @@ const formatMessage = (diag: Diagnostic): string => {
 
 interface MessageProps {
   setValidatablePlan: any
+  getCourseDetails: Function
   diag: Diagnostic
   key: number
   open: boolean
@@ -145,7 +146,7 @@ interface MessageProps {
 /**
  * A single error/warning message.
  */
-const Message = ({ setValidatablePlan, diag, key, open }: MessageProps): JSX.Element => {
+const Message = ({ setValidatablePlan, getCourseDetails, diag, key, open }: MessageProps): JSX.Element => {
   const w = !(diag.is_err ?? true)
 
   return (
@@ -155,13 +156,14 @@ const Message = ({ setValidatablePlan, diag, key, open }: MessageProps): JSX.Ele
     <div className={`min-w-[14rem] ml-2 ${open ? '' : 'hidden'} `}>
       <span className={'font-semibold '}>{`${w ? 'Advertencia' : 'Error'}: `}</span>
       {formatMessage(diag)}
-      <AutoFix setValidatablePlan={setValidatablePlan} diag={diag} />
+      <AutoFix setValidatablePlan={setValidatablePlan} getCourseDetails={getCourseDetails} diag={diag}/>
     </div>
   </div>)
 }
 
 interface ErrorTrayProps {
   setValidatablePlan: any
+  getCourseDetails: Function
   diagnostics: Diagnostic[]
   validating: boolean
 }
@@ -169,10 +171,10 @@ interface ErrorTrayProps {
 /**
  * The error tray shows errors and warnings about the current plan that come from the validation backend.
  */
-const ErrorTray = ({ setValidatablePlan, diagnostics, validating }: ErrorTrayProps): JSX.Element => {
+const ErrorTray = ({ setValidatablePlan, diagnostics, validating, getCourseDetails }: ErrorTrayProps): JSX.Element => {
   const [open, setOpen] = useState(true)
   const hasError = diagnostics.some(diag => diag.is_err)
-  const messageList: JSX.Element[] = diagnostics.map((diag, index) => Message({ setValidatablePlan, diag, key: index, open: open || hasError }))
+  const messageList: JSX.Element[] = diagnostics.map((diag, index) => Message({ setValidatablePlan, getCourseDetails, diag, key: index, open: open || hasError }))
 
   return (
     <div className={`h-[95%] z-20 flex flex-col relative border-slate-300 border-2 rounded-lg bg-slate-100 shadow-lg mb-2 py-4  motion-reduce:transition-none transition-all ${hasError || open ? 'w-80 min-w-[20rem]' : 'min-w-[4.5rem]'}`}>
