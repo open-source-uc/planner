@@ -13,8 +13,8 @@ services:
       - caddy
     depends_on:
       - api
-    environment:
-      - PLANNER_URL=http://localhost
+    env_file:
+      - ./frontend/.env
   api:
     build: ./backend
     ports:
@@ -23,6 +23,10 @@ services:
       - caddy
     depends_on:
       - db
+    volumes:
+      - ./siding-mock-data:/code/siding-mock-data
+    env_file:
+      - ./backend/.env
   db:
     image: postgres:latest
     ports:
@@ -32,9 +36,7 @@ services:
     restart: unless-stopped
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=postgres
-      - POSTGRES_PASSWORD=postgres
+    env_file:
+      - ./database/.env
 volumes:
   postgres-data:
