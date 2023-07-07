@@ -7,7 +7,7 @@ El `.env` indica el URL del servidor de CAS, que en el entorno de desarrollo es 
 Luego, hay que correr un servidor de CAS en `localhost:3004`.
 Esto se puede hacer corriendo el siguiente comando *dentro del container* (esto es importante para que el servidor de backend tenga acceso al servidor CAS):
 
-    npx --yes cas-server-mock --database=$PWD/backend/mock-data/cas-mock-users.json
+    npx --yes cas-server-mock --database=$PWD/cas-mock/data/cas-mock-users.json
 
 Notar que el servidor mock CAS es *muy básico*.
 Por ejemplo, introducir un usuario inexistente produce una excepción en el servidor de mock CAS,
