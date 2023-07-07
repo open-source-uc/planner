@@ -28,6 +28,9 @@ COPY ./pyproject.toml ./poetry.lock* /tmp/
 # Install dependencies
 RUN poetry export -f requirements.txt --without-hashes | pip install --no-cache-dir -r /dev/stdin
 
+# Copy the `.env` file
+COPY ./.env /tmp/.env
+
 # Copy the rest of the application code
 COPY . .
 
@@ -62,7 +65,8 @@ COPY --from=builder /tmp/entrypoint.sh /entrypoint.sh
 COPY --from=builder /tmp/prisma /code/prisma
 RUN prisma generate
 
-# Copy the app code from the builder
+# Copy the .env file and app code from the builder
+COPY --from=builder /tmp/.env /code/.env
 COPY --from=builder /tmp/app /code/app
 
 # Setup entrypoint
