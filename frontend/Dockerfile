@@ -10,9 +10,6 @@ COPY package*.json .
 # Install dependencies
 RUN npm ci
 
-# Create `.env` from `.env.docker`
-COPY ./.env.docker /tmp/.env
-
 # Copy other files to the working directory
 COPY . .
 

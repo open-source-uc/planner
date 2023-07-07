@@ -3,11 +3,6 @@
 # Set working directory
 cd /code
 
-# Load environment variables from .env file
-set -o allexport
-source .env
-set +o allexport
-
 # Apply prisma migrations
 prisma migrate deploy
 

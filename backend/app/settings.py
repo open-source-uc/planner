@@ -1,4 +1,5 @@
 from pathlib import Path
+from urllib.parse import urlencode, urljoin
 
 from dotenv import load_dotenv
 from pydantic import BaseSettings, Field, SecretStr
@@ -24,7 +25,15 @@ class Settings(BaseSettings):
     # authenticated JWT token.
     # In particular, the user browser is redirected to this `next` URL with the JWT
     # token as a query parameter.
-    login_endpoint: str = Field(...)
+    # login_endpoint: str = Field(...)
+    planner_url: str = Field("http://localhost:3000")
+
+    @property
+    def login_endpoint(self):
+        next_url = urljoin(self.planner_url, "/")
+        auth_login_url = urljoin(self.planner_url, "/api/auth/login")
+        params = urlencode({"next": next_url})
+        return f"{auth_login_url}?{params}"
 
     # Admin RUT as string. This user will always be the only admin.
     # TODO: Maybe use the username instead of the RUT, because RUTs can have zeros in
@@ -53,7 +62,7 @@ class Settings(BaseSettings):
     # Siding mock database file.
     # If "", it does not load any mock data.
     # Failing to read the mock database is not a fatal error, only a warning.
-    siding_mock_path: Path = Path("./mock-data/siding-mock.json")
+    siding_mock_path: Path = Path("../siding-mock-data/data.json")
 
     # Where to store recorded SIDING responses.
     # If "", responses are not recorded.
