@@ -25,5 +25,5 @@ COPY --from=builder /tmp/dist /srv
 # Copy Caddyfile for configuration
 COPY conf/Caddyfile /etc/caddy/Caddyfile
 
-# RUN npm run preview
+# Run caddy using config file
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
