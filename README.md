@@ -85,7 +85,7 @@ La app aún está en una etapa muy temprana del desarrollo por lo que podrían h
 El proyecto se integra con dos servicios externos: SIDING (para acceder a mallas y datos de estudiantes) y CAS (para el login UC). Ambos son configurables por medio de variables de entorno, y se proveen mocks para ambos servicios en caso de no tener credenciales para acceder a ellos.
 
 - Para SIDING se provee un mock que se activa automáticamente en ausencia de credenciales. El mock es limitado, y solo permite probar algunas combinaciones de malla.
-- Para CAS, se provee el servicio `cas-server-mock` que corre automáticamente junto a la app. Las cuentas de usuario disponibles son configurables en el archivo `backend/mock-data/cas-mock-users.json`.
+- Para CAS, se provee el servicio `cas-server-mock` que corre automáticamente junto a la app. Las cuentas de usuario disponibles son configurables en el archivo `cas-mock/data/cas-mock-users.json`.
 
 ## Staging Server y Producción
 
@@ -93,32 +93,39 @@ Esta sección aún está en ideación y desarrollo.
 
 ### Staging Server
 
-El ambiente de staging está diseñado para testear las nuevas versiones en un ambiente real antes de pasar a producción.
+El ambiente de staging está diseñado para testear las nuevas versiones del planner en un ambiente real antes de pasar a producción.
 
-Primero es necesario generar el archivo `cas-mock-users.json` en `backend/mock-data`.
+En primer lugar, es necesario generar manualmente los archivos `.env` para cada servicio utilizando los ejemplos ubicados en cada carpeta:
+- _API_ → `backend/.env.staging`
+- _servidor web_ → `frontend/.env.staging`
+- _base de datos_ → `database/.env.staging`
 
-Levantar los servicios en diferentes contenedores utilizando:
+Para correr la aplicación utilizando un servidor mock de **CAS externo** se debe:
+1. Definir las variables `CAS_SERVER_URL` y `CAS_LOGIN_REDIRECTION_URL` en `backend/.env` con la URL del servidor externo.
+2. Levantar los contenedores con `docker compose up -d --build` desde la raíz del repositorio.
+3. Finalmente, se puede detener la app con `docker compose down` desde la misma ubicación.
 
-> docker compose -f docker-compose.yml -f docker-compose.stag.yml up -d --force-recreate --build
-
-Detener los contenedores con el siguiente comando:
-
-> docker compose -f docker-compose.yml -f docker-compose.stag.yml down
+Alternativamente, para correr la aplicación utilizando un servidor mock de **CAS local**:
+1. Dejar las variables `CAS_SERVER_URL` y `CAS_LOGIN_REDIRECTION_URL` en `backend/.env` con los valores predeterminados del archivo de ejemplo `.env.staging`.
+2. Luego, es necesario generar el archivo `cas-mock-users.json` en `cas-mock/data` a partir del ejemplo `cas-mock-users.json.example`.
+3. Levantar los contenedores con `docker compose -f docker-compose.yml -f docker-compose.cas-mock.yml up -d --force-recreate --build` desde la raíz del repositorio.
+4. Finalmente, se puede detener la app con `docker compose -f docker-compose.yml -f docker-compose.cas-mock.yml down` desde la misma ubicación.
 
 ### Producción
 
-El ambiente de producción lo maneja la universidad de forma interna, pero aquí se intentan detallar los pasos para poder replicar el funcionamiento.
+El ambiente de producción es manejado por la universidad de forma interna, por lo que aquí se detallan las **instrucciones para desplegar el planner** de forma manual:
+1. Se deben crear tres archivos `.env`, uno por cada servicio y dentro de su respectiva carpeta:
+- `backend/.env` a partir del ejemplo `backend/.env.production` (_API_)
+- `frontend/.env` a partir del ejemplo `frontend/.env.production` (_servidor web_).
+- `database/.env` a partir del ejemplo `database/.env.production` (_base de datos_).
+2. Levantar los contenedores con `docker compose up -d --build` desde la raíz del repositorio. Requiere _Docker_ y _Docker Compose_ instalados en la máquina.
+3. Revisar el estado de los contenedores con `docker ps` o `docker container ls`.
+4. Finalmente, se puede detener la app con `docker compose down` desde la misma ubicación.
 
-1. Se debe crear un archivo `.env` en la carpeta `backend`. Si es que no existe tal archivo, entonces se utilizará de forma predeterminada el archivo de ejemplo `backend/.env.staging.example`.
-2. Modificar otras variables de entorno directamente en el archivo `docker-compose.prod.yml` (e.g. credenciales de la base de datos y URL del planner).
-- POR DISCUTIR: ¿hacer que todas las variables se puedan configurar a través de un `.env` en vez de cambiarlas directamente en el `docker-compose.prod.yml`?
-3. Levantar toda la aplicación utilizando el siguiente comando (requiere _Docker_ y _Docker Compose_ instalados en la máquina):
+Nota: los comandos podrían variar ligeramente dependiendo del sistema operativo y versión de *Docker Compose*. En particular, podría ser necesario utilizar `docker-compose` en vez de `docker compose` y `sudo docker compose` en vez de `docker compose`.
 
-> docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --force-recreate --build
-
-4. Detener los contenedores con el siguiente comando:
-
-> docker compose -f docker-compose.yml -f docker-compose.prod.yml down
+--
+Cabe mencionar que sería ideal a futuro implementar un **despliegue automático del planner** utilizando técnicas de *CI/CD*, pero de momento esta opción se pospone debido a las restricciones de seguridad y requerimientos de la universidad para hacer un despliegue interno.
 
 ## Equipo
 
