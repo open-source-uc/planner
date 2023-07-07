@@ -5,6 +5,7 @@ networks:
 services:
   web:
     build: ./frontend
+    container_name: planner-web
     restart: unless-stopped
     ports:
       - "80:80"
@@ -17,6 +18,7 @@ services:
       - ./frontend/.env
   api:
     build: ./backend
+    container_name: planner-api
     ports:
       - "8000:8000"
     networks:
@@ -29,6 +31,7 @@ services:
       - ./backend/.env
   db:
     image: postgres:latest
+    container_name: planner-db
     ports:
       - "5432:5432"
     networks:
