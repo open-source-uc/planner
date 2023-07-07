@@ -1,8 +1,18 @@
 from pathlib import Path
-from urllib.parse import urlencode, urljoin
+from urllib.parse import urlencode, urljoin, urlparse
 
 from dotenv import load_dotenv
 from pydantic import BaseSettings, Field, SecretStr
+
+
+def _correct_url(url: str) -> str:
+    try:
+        result = urlparse(url)
+        if not all([result.scheme, result.netloc]):
+            return "http://" + url
+        return url
+    except ValueError:
+        return "http://" + url
 
 
 class Settings(BaseSettings):
@@ -25,13 +35,13 @@ class Settings(BaseSettings):
     # authenticated JWT token.
     # In particular, the user browser is redirected to this `next` URL with the JWT
     # token as a query parameter.
-    # login_endpoint: str = Field(...)
     planner_url: str = Field("http://localhost:3000")
 
     @property
     def login_endpoint(self):
-        next_url = urljoin(self.planner_url, "/")
-        auth_login_url = urljoin(self.planner_url, "/api/auth/login")
+        fixed_url = _correct_url(self.planner_url)
+        next_url = urljoin(fixed_url, "/")
+        auth_login_url = urljoin(fixed_url, "/api/auth/login")
         params = urlencode({"next": next_url})
         return f"{auth_login_url}?{params}"
 
