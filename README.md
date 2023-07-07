@@ -89,8 +89,6 @@ El proyecto se integra con dos servicios externos: SIDING (para acceder a mallas
 
 ## Staging Server y Producción
 
-Esta sección aún está en ideación y desarrollo.
-
 ### Staging Server
 
 El ambiente de staging está diseñado para testear las nuevas versiones del planner en un ambiente real antes de pasar a producción.
@@ -100,7 +98,7 @@ En primer lugar, es necesario generar manualmente los archivos `.env` para cada 
 - _servidor web_ → `frontend/.env.staging`
 - _base de datos_ → `database/.env.staging`
 
-Para correr la aplicación utilizando un servidor mock de **CAS externo** se debe:
+Luego, para correr la aplicación utilizando un servidor mock de **CAS externo** se debe:
 1. Definir las variables `CAS_SERVER_URL` y `CAS_LOGIN_REDIRECTION_URL` en `backend/.env` con la URL del servidor externo.
 2. Levantar los contenedores con `docker compose up -d --build` desde la raíz del repositorio.
 3. Finalmente, se puede detener la app con `docker compose down` desde la misma ubicación.
