@@ -11,7 +11,7 @@
   <a href="#descripción">Descripción</a> •
   <a href="#instalación-y-desarrollo">Instalación</a> •
   <a href="#mocks">Mocks</a> •
-  <a href="#staging-server-y-producción">Staging Server y Producción</a> •
+  <a href="#staging-server-y-producción">Staging y Producción</a> •
   <a href="#equipo">Equipo</a> •
   <a href="#licencia">Licencia</a>
 </p>
@@ -87,13 +87,13 @@ El proyecto se integra con dos servicios externos: SIDING (para acceder a mallas
 - Para SIDING se provee un mock que se activa automáticamente en ausencia de credenciales. El mock es limitado, y solo permite probar algunas combinaciones de malla.
 - Para CAS, se provee el servicio `cas-server-mock` que corre automáticamente junto a la app. Las cuentas de usuario disponibles son configurables en el archivo `cas-mock/data/cas-mock-users.json`.
 
-## Staging Server y Producción
+## Staging y Producción
 
 ### Staging Server
 
 El ambiente de staging está diseñado para testear las nuevas versiones del planner en un ambiente real antes de pasar a producción.
 
-En primer lugar, es necesario generar manualmente los archivos `.env` para cada servicio utilizando los ejemplos ubicados en cada carpeta:
+En primer lugar, es necesario generar manualmente los archivos `.env` y reemplazar los valores según corresponda para cada servicio utilizando los ejemplos ubicados en cada carpeta:
 - _API_ → `backend/.env.staging`
 - _servidor web_ → `frontend/.env.staging`
 - _base de datos_ → `database/.env.staging`
@@ -116,13 +116,15 @@ El ambiente de producción es manejado por la universidad de forma interna, por 
 - `backend/.env` a partir del ejemplo `backend/.env.production` (_API_)
 - `frontend/.env` a partir del ejemplo `frontend/.env.production` (_servidor web_).
 - `database/.env` a partir del ejemplo `database/.env.production` (_base de datos_).
-2. Levantar los contenedores con `docker compose up -d --build` desde la raíz del repositorio. Requiere _Docker_ y _Docker Compose_ instalados en la máquina.
-3. Revisar el estado de los contenedores con `docker ps` o `docker container ls`.
-4. Finalmente, se puede detener la app con `docker compose down` desde la misma ubicación.
+2. Reemplazar los valores de las variables de entorno según corresponda en todos los archivos `.env` creados. **IMPORTANTE:** no olvidar modificar la variable `JWT_SECRET` en `backend/.env` y otras variables que puedan contener secretos para evitar vulnerabilidades de seguridad.
+3. Levantar los contenedores con `docker compose up -d --build` desde la raíz del repositorio. Requiere _Docker_ y _Docker Compose_ instalados en la máquina.
+4. Revisar el estado de los contenedores con `docker ps` o `docker container ls`.
+5. Finalmente, se puede detener la app con `docker compose down` desde la misma ubicación.
 
 Nota: los comandos podrían variar ligeramente dependiendo del sistema operativo y versión de *Docker Compose*. En particular, podría ser necesario utilizar `docker-compose` en vez de `docker compose` y `sudo docker compose` en vez de `docker compose`.
 
---
+---
+
 Cabe mencionar que sería ideal a futuro implementar un **despliegue automático del planner** utilizando técnicas de *CI/CD*, pero de momento esta opción se pospone debido a las restricciones de seguridad y requerimientos de la universidad para hacer un despliegue interno.
 
 ## Equipo
