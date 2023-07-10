@@ -28,8 +28,6 @@ from .validation.courses.logic import (
 from .validation.courses.simplify import as_dnf
 from .validation.courses.validate import CourseInstance, ValidationContext
 from .validation.curriculum.solve import (
-    FillerCourseInst,
-    LayerCourse,
     SolvedCurriculum,
     solve_curriculum,
 )
@@ -58,18 +56,21 @@ SUPERBLOCK_COLOR_ORDER_TABLE: dict[str, int] = {
 def _get_course_color_order(
     g: SolvedCurriculum,
     rep_counter: defaultdict[str, int],
-    course: PseudoCourse,
+    course_code: str,
 ) -> int:
     """
     Get the course "priority", which depends on the "color" of the course.
     The color of the course is basically what superblock it counts towards.
     Courses with lower priority number go before courses with a higher priority number.
     """
-    rep_idx = rep_counter[course.code]
-    rep_counter[course.code] += 1
+    rep_idx = rep_counter[course_code]
+    rep_counter[course_code] += 1
     superblock = ""
-    if course.code in g.superblocks and rep_idx < len(g.superblocks[course.code]):
-        superblock = g.superblocks[course.code][rep_idx]
+    mapped = g.map_class_id(course_code, rep_idx)
+    if mapped is not None:
+        course_code, rep_idx = mapped
+        if course_code in g.superblocks and rep_idx < len(g.superblocks[course_code]):
+            superblock = g.superblocks[course_code][rep_idx]
     return SUPERBLOCK_COLOR_ORDER_TABLE.get(superblock, 1000)
 
 
@@ -83,34 +84,32 @@ def _extract_active_fillers(
     """
     # Make sure to only add courses once
     added: defaultdict[str, set[int]] = defaultdict(set)
-    to_pass: list[tuple[LayerCourse, FillerCourseInst]] = []
+    to_pass: list[tuple[int, PseudoCourse]] = []
     for layer in g.layers.values():
-        for code, courses in layer.courses.items():
-            for rep_idx, course in courses.items():
-                if isinstance(course.origin, FillerCourseInst):
-                    # Check whether we should add this course
-                    if course.active_edge is None:
-                        continue
-                    if rep_idx in added[code]:
-                        continue
-                    added[code].add(rep_idx)
+        for code, layercourse in layer.courses.items():
+            for j, active_edge in enumerate(layercourse.active_filler_edges):
+                # Check whether we should add this course
+                if active_edge is None:
+                    continue
+                active_edge, missing_credits = active_edge
+                if j in added[code]:
+                    continue
+                added[code].add(j)
 
-                    # Add this course
-                    to_pass.append((course, course.origin))
+                # Add this course
+                filler = g.usable[code].filler_list[j]
+                to_pass.append(
+                    (
+                        filler.order,
+                        pseudocourse_with_credits(filler.course, missing_credits),
+                    ),
+                )
 
     # Sort courses by order
-    to_pass.sort(key=lambda c: c[1].order)
+    to_pass.sort()
 
-    # Flatten into plain pseudocourse ids, taking active credits into account
-    i = 0
-    flattened: OrderedDict[int, PseudoCourse] = OrderedDict()
-    for info, course in to_pass:
-        flattened[i] = pseudocourse_with_credits(
-            course.course,
-            info.active_flow,
-        )
-        i += 1
-    return flattened
+    # Remove order information
+    return OrderedDict({i: course for i, (_order, course) in enumerate(to_pass)})
 
 
 def _is_satisfiable(plan: ValidatablePlan, ready: set[str], expr: Expr) -> bool:
@@ -447,6 +446,7 @@ async def generate_recommended_plan(passed: ValidatablePlan):
     # Solve the curriculum to determine which courses have not been passed yet (and need
     # to be passed)
     g = solve_curriculum(courseinfo, curriculum, passed.classes)
+    print(g.dump_graphviz_pretty(curriculum))
 
     # Flat list of all curriculum courses left to pass
     courses_to_pass, ignore_reqs = _compute_courses_to_pass(
@@ -535,7 +535,10 @@ async def generate_recommended_plan(passed: ValidatablePlan):
         [
             c
             for _order, c in sorted(
-                ((_get_course_color_order(g, repetition_counter, c), c) for c in sem),
+                (
+                    (_get_course_color_order(g, repetition_counter, c.code), c)
+                    for c in sem
+                ),
                 key=lambda pair: pair[0],
             )
         ]

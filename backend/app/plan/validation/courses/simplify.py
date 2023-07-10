@@ -407,6 +407,10 @@ def defactor_and(expr: Operator) -> Expr:
     return defactor(expr)
 
 
+# TODO: Simplify using business logic, for example:
+# IIC2233 y IIC2233(c) -> IIC2233
+
+
 # A list of techniques to try when simplifying
 simplification_methods = [
     assoc,

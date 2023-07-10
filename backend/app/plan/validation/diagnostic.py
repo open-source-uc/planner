@@ -180,9 +180,9 @@ class CurriculumErr(DiagnosticErr):
 
     kind: Literal["curr"] = Field(default="curr", const=True)
     associated_to: None = None
-    block: list[str]
+    blocks: list[list[str]]
     credits: int
-    recommend: list[tuple[PseudoCourse, str]]
+    recommend: list[PseudoCourse]
 
 
 class UnassignedWarn(DiagnosticWarn):

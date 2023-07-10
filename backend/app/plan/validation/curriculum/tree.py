@@ -4,7 +4,7 @@ Models a flow network in the context of curriculums.
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from ...course import PseudoCourse
 
@@ -23,11 +23,6 @@ class FillerCourse(BaseModel):
     # The order indicates if the course should be taken early or late in the
     # student's career plan.
     order: int
-    # When there is an option on which courses to fill with, this cost determines which
-    # course is used.
-    # This cost is added with a big number to determine the actual cost of filling with
-    # this course.
-    cost: int = 0
 
 
 class BaseBlock(BaseModel):
@@ -51,22 +46,16 @@ class Combination(BaseBlock):
 
 class Leaf(BaseBlock):
     # A set of course codes that comprise this leaf.
-    # The value of the dictionary is the maximum amount of repetitions allowed to still
-    # count as valid credits.
-    # In most cases this should be `1`, but for example equivalences should count
-    # unlimited times (`None`), and selecciones deportivas can count twice.
-    codes: dict[str, int | None]
-    # Indicates courses which will be used to fill the credits for this block if it
-    # can't be done with taken courses.
-    # If there are more filler courses than missing credits, the list is truncated.
-    # Therefore, prefer to place courses with a high `order` number first.
-    fill_with: list[FillerCourse] = Field(default_factory=list)
+    # This should include the equivalence code!
+    codes: set[str]
     # Course nodes are deduplicated by their codes.
     # However, this behavior can be controlled by the `layer` property.
     # Course nodes with different `layer` values will not be deduplicated.
     # Useful to model the title exclusive-credit requirements.
     # The default layer is just an empty string.
     layer: str = ""
+    # An additive cost to apply when connecting to this block.
+    cost: int = 0
 
 
 Block = Combination | Leaf
@@ -82,9 +71,29 @@ class Curriculum(BaseModel):
     least one for every possible course in the curriculum definition).
     Instead, we store a representation of the curriculum that is optimized for quickly
     building a graph for a particular (curriculum, user) pair.
+
+    - root: The root of the curriculum tree.
+    - mutiplicity: Specifies the multiplicity of each course, in credits.
+        Multiplicity limits the amount of times a course can be repeated.
+        For example, if course TTF010 has a multiplicity of 15 credits, and the course
+        TTF010 is worth 10 credits, then taking the TTF010 course twice only accounts to
+        15 total credits.
+        If a course has no multiplicity, then it defaults to the amount of credits of
+        the course (eg. the TTF010 example above would have a 10-credit multiplicity).
+        This makes it so that by default each course only counts at most once.
+        For equivalencies that have no associated credit count, the multiplicity is
+        infinite (eg. multiplicity["!L1"] = `None`).
+    - equivalencies: Specifies a course as being equivalent to another course. All
+        courses in an equivalence must point to the same course code.
+        (eg. FIS1523 -> FIS1523, IEE1523 -> FIS1523).
+        If not present for a particular course, it defaults to being equivalent with
+        itself.
     """
 
     root: Combination
+    fillers: dict[str, list[FillerCourse]]
+    multiplicity: dict[str, int | None]
+    equivalencies: dict[str, str]
 
     @staticmethod
     def empty() -> "Curriculum":
@@ -96,7 +105,18 @@ class Curriculum(BaseModel):
                 cap=0,
                 children=[],
             ),
+            fillers={},
+            multiplicity={},
+            equivalencies={},
         )
+
+    def extend(self, other: "Curriculum"):
+        self.root.children.extend(other.root.children)
+        self.root.cap += other.root.cap
+        for code, fillers in other.fillers.items():
+            self.fillers.setdefault(code, []).extend(fillers)
+        self.multiplicity.update(other.multiplicity)
+        self.equivalencies.update(other.equivalencies)
 
 
 class Cyear(BaseModel, frozen=True):

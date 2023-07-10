@@ -146,6 +146,13 @@ class CourseInfo:
             return None
         return info.credits
 
+    def get_ghost_credits(self, course: PseudoCourse) -> int | None:
+        """
+        Like `get_credits` but 0-credit courses return 1 instead.
+        """
+        creds = self.get_credits(course)
+        return 1 if creds == 0 else creds
+
 
 _course_info_cache: CourseInfo | None = None
 

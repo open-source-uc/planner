@@ -88,18 +88,23 @@ async def _fetch_raw_blocks(
     )
 
     # Remove data if a dummy major/minor was used
-    if spec.major is None:
-        raw_blocks = [
-            block
-            for block in raw_blocks
-            if not block.BloqueAcademico.startswith("Major")
-        ]
-    if spec.minor is None:
-        raw_blocks = [
-            block
-            for block in raw_blocks
-            if not block.BloqueAcademico.startswith("Minor")
-        ]
+    keep_others = spec.major is not None or (
+        spec.major is None and spec.minor is None and spec.title is None
+    )
+    keep_major = spec.major is not None
+    keep_minor = spec.minor is not None
+    keep_title = spec.title is not None
+
+    def should_keep(block: BloqueMalla) -> bool:
+        if block.BloqueAcademico.startswith("Major"):
+            return keep_major
+        if block.BloqueAcademico.startswith("Minor"):
+            return keep_minor
+        if block.BloqueAcademico.startswith("Ingeniero"):
+            return keep_title
+        return keep_others
+
+    raw_blocks = [block for block in raw_blocks if should_keep(block)]
 
     # Fetch data for unseen equivalences
     for raw_block in raw_blocks:
@@ -157,6 +162,30 @@ def _patch_capacities(block: Block):
             block.cap = c
 
 
+def _patch_equivalencies(curriculum: Curriculum, block: Block):
+    if isinstance(block, Combination):
+        for child in block.children:
+            _patch_equivalencies(curriculum, child)
+    else:
+        to_add: set[str] = set()
+        for code in block.codes:
+            if code in curriculum.equivalencies:
+                equiv = curriculum.equivalencies[code]
+                if equiv != code and equiv not in block.codes:
+                    to_add.add(code)
+        block.codes.update(to_add)
+
+
+def _auto_costs(block: Block, counter: list[int]):
+    if isinstance(block, Combination):
+        for child in block.children:
+            _auto_costs(child, counter)
+    else:
+        if block.cost == 0:
+            counter[0] += 1
+            block.cost = counter[0]
+
+
 async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curriculum:
     """
     Call into the SIDING webservice and get the curriculum definition for a given spec.
@@ -165,6 +194,7 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
     print(f"fetching curriculum from siding for spec {spec}")
 
     raw_blocks = await _fetch_raw_blocks(courseinfo, spec)
+    curriculum = Curriculum.empty()
 
     # Group into superblocks
     superblocks: dict[str, list[Block]] = {}
@@ -173,7 +203,7 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
             # Concrete course
             code = raw_block.CodSigla
             recommended = ConcreteId(code=code)
-            codes = [code]
+            codes = {code}
         else:
             # Equivalence
             if raw_block.CodLista is not None:
@@ -183,21 +213,21 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
                 code = f"?{raw_block.CodSigla}"
             else:
                 raise Exception("siding api returned invalid curriculum block")
-            recommended = EquivalenceId(code=code, credits=raw_block.Creditos)
             # Fetch equivalence data
             info = courseinfo.try_equiv(code)
             assert info is not None
-            codes = info.courses
-            if info.is_homogeneous and len(codes) >= 1:
-                recommended = ConcreteId(code=codes[0], equivalence=recommended)
-        creds = raw_block.Creditos
-        if creds == 0:
-            # 0-credit courses get a single ghost credit
-            creds = 1
-        codes_dict = {}
-        codes_dict[code] = None
-        for accepted_code in codes:
-            codes_dict[accepted_code] = 1
+            codes = set(info.courses)
+            codes.add(code)
+            # Create filler course
+            recommended = EquivalenceId(code=code, credits=raw_block.Creditos)
+            # Special treatment if the equivalence is homogeneous
+            if info.is_homogeneous and len(info.courses) >= 1:
+                recommended = ConcreteId(code=info.courses[0], equivalence=recommended)
+                for equivalent in info.courses:
+                    curriculum.equivalencies[equivalent] = info.courses[0]
+                curriculum.equivalencies[code] = info.courses[0]
+        # 0-credit courses get a single ghost credit
+        creds = 1 if raw_block.Creditos == 0 else raw_block.Creditos
         recommended_order = raw_block.SemestreBloque * 10 + raw_block.OrdenSemestre
         superblock = superblocks.setdefault(raw_block.BloqueAcademico, [])
         superblock.append(
@@ -206,15 +236,15 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
                 block_code=f"courses:{code}",
                 name=raw_block.Nombre,
                 cap=creds,
-                codes=codes_dict,
-                fill_with=[
-                    FillerCourse(course=recommended, order=recommended_order),
-                ],
+                codes=codes,
             ),
+        )
+        curriculum.fillers.setdefault(recommended.code, []).append(
+            FillerCourse(course=recommended, order=recommended_order),
         )
 
     # Transform into a somewhat valid curriculum
-    root = Combination(
+    curriculum.root = Combination(
         debug_name="Raíz",
         block_code="root",
         name=None,
@@ -222,7 +252,7 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
         children=[],
     )
     for superblock_name, leaves in superblocks.items():
-        root.children.append(
+        curriculum.root.children.append(
             Combination(
                 debug_name=superblock_name,
                 block_code=f"{SUPERBLOCK_PREFIX}{superblock_name}",
@@ -231,13 +261,18 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
                 children=leaves,
             ),
         )
-    curriculum = Curriculum(root=root)
 
     # Apply custom cyear-dependent transformations
     curriculum = await siding_rules.apply_curriculum_rules(courseinfo, spec, curriculum)
 
     # Patch any `-1` capacities to be the sum of child capacities
     _patch_capacities(curriculum.root)
+
+    # Make sure equivalents of a course are always considered
+    _patch_equivalencies(curriculum, curriculum.root)
+
+    # Assign costs in order
+    _auto_costs(curriculum.root, [0])
 
     return curriculum
 

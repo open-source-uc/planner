@@ -33,7 +33,6 @@ from prisma.models import (
 
 from ..plan.courseinfo import clear_course_info_cache, course_info
 from ..plan.validation.curriculum.tree import (
-    Block,
     Curriculum,
     CurriculumSpec,
 )
@@ -122,54 +121,43 @@ async def _get_curriculum_piece(spec: CurriculumSpec) -> Curriculum:
 
 
 async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
-    blocks: list[Block] = []
+    out = Curriculum.empty()
+
     # Fetch major (or common plan)
-    blocks.extend(
-        (
-            await _get_curriculum_piece(
-                CurriculumSpec(
-                    cyear=spec.cyear,
-                    major=spec.major,
-                    minor=None,
-                    title=None,
-                ),
-            )
-        ).root.children,
+    major = await _get_curriculum_piece(
+        CurriculumSpec(
+            cyear=spec.cyear,
+            major=spec.major,
+            minor=None,
+            title=None,
+        ),
     )
+    out.extend(major)
+
     # Fetch minor
     if spec.minor is not None:
-        blocks.extend(
-            (
-                await _get_curriculum_piece(
-                    CurriculumSpec(
-                        cyear=spec.cyear,
-                        major=None,
-                        minor=spec.minor,
-                        title=None,
-                    ),
-                )
-            ).root.children,
+        minor = await _get_curriculum_piece(
+            CurriculumSpec(
+                cyear=spec.cyear,
+                major=None,
+                minor=spec.minor,
+                title=None,
+            ),
         )
+        out.extend(minor)
+
     # Fetch title
     if spec.title is not None:
-        blocks.extend(
-            (
-                await _get_curriculum_piece(
-                    CurriculumSpec(
-                        cyear=spec.cyear,
-                        major=None,
-                        minor=None,
-                        title=spec.title,
-                    ),
-                )
-            ).root.children,
+        title = await _get_curriculum_piece(
+            CurriculumSpec(
+                cyear=spec.cyear,
+                major=None,
+                minor=None,
+                title=spec.title,
+            ),
         )
+        out.extend(title)
 
-    # Merge blocks
-    merged: dict[str, Block] = {block.debug_name: block for block in blocks}
-    out = Curriculum.empty()
-    out.root.children = list(merged.values())
-    out.root.cap = sum(block.cap for block in merged.values())
     return out
 
 
