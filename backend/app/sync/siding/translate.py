@@ -176,16 +176,6 @@ def _patch_equivalencies(curriculum: Curriculum, block: Block):
         block.codes.update(to_add)
 
 
-def _auto_costs(block: Block, counter: list[int]):
-    if isinstance(block, Combination):
-        for child in block.children:
-            _auto_costs(child, counter)
-    else:
-        if block.cost == 0:
-            counter[0] += 1
-            block.cost = counter[0]
-
-
 async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curriculum:
     """
     Call into the SIDING webservice and get the curriculum definition for a given spec.
@@ -270,9 +260,6 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
 
     # Make sure equivalents of a course are always considered
     _patch_equivalencies(curriculum, curriculum.root)
-
-    # Assign costs in order
-    _auto_costs(curriculum.root, [0])
 
     return curriculum
 

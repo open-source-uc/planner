@@ -108,6 +108,7 @@ async def validate_plan_for_any_user(
 @router.post("/curriculum_graph")
 async def get_curriculum_validation_graph(
     plan: ValidatablePlan,
+    mode: str,
     _limited: None = Depends(ratelimit_guest("7/5second")),
 ) -> str:
     """
@@ -117,6 +118,10 @@ async def get_curriculum_validation_graph(
     courseinfo = await course_info()
     curriculum = await sync.get_curriculum(plan.curriculum)
     g = solve_curriculum(courseinfo, curriculum, plan.classes)
+    if mode == 'raw':
+        return g.dump_graphviz_raw()
+    if mode == 'debug':
+        return g.dump_graphviz_debug(curriculum)
     return g.dump_graphviz_pretty(curriculum)
 
 

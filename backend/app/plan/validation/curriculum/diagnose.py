@@ -1,8 +1,7 @@
 from collections import defaultdict
-from dataclasses import dataclass, field
 
 from ....user.info import StudentContext
-from ...course import ConcreteId, EquivalenceId, PseudoCourse
+from ...course import PseudoCourse
 from ...courseinfo import CourseInfo
 from ...plan import ValidatablePlan
 from ..diagnostic import (
@@ -12,18 +11,11 @@ from ..diagnostic import (
     ValidationResult,
 )
 from .solve import (
-    EquivalentFillerFinder,
     SolvedCurriculum,
+    extract_filler_groups,
     solve_curriculum,
 )
 from .tree import Curriculum
-
-
-@dataclass
-class MissingCourse:
-    credits: int = 0
-    blocks: list[list[str]] = field(default_factory=list)
-    fillers: set[str] = field(default_factory=set)
 
 
 def _diagnose_blocks(
@@ -31,49 +23,30 @@ def _diagnose_blocks(
     out: ValidationResult,
     g: SolvedCurriculum,
 ):
-    equivalent_finder: EquivalentFillerFinder | None = None
+    def fetch_name(filler: PseudoCourse):
+        info = courseinfo.try_any(filler)
+        return (filler, "?" if info is None else info.name)
 
-    # Extract the amount of credits missing and which blocks require it
-    missing: defaultdict[str, MissingCourse] = defaultdict(MissingCourse)
-    for layer in g.layers.values():
-        for code, layercourse in layer.courses.items():
-            # Check if this course code is missing some credits
-            total_missing = 0
-            for block_edge in layercourse.block_edges:
-                if block_edge.filler_flow > 0:
-                    # This course-block edge is missing credits!
-                    # It is missing exactly filler_flow credits
-                    total_missing += block_edge.filler_flow
-                    # Mark this block as lacking
-                    missing[code].blocks.append(
-                        [b.name for b in block_edge.block_path if b.name is not None],
-                    )
-                    # Find which courses could be used to supply this block
-                    if equivalent_finder is None:
-                        equivalent_finder = EquivalentFillerFinder(g)
-                    missing[code].fillers |= equivalent_finder.find_equivalents(
-                        block_edge,
-                    )
-            if total_missing > 0:
-                missing[code].credits = max(missing[code].credits, total_missing)
+    # Check which curriculum blocks are incomplete, report that they are missing and
+    # suggest fillers for it
+    for filler_group in extract_filler_groups(g):
+        # Deduplicate filler courses with the same code
+        by_code: dict[str, PseudoCourse] = {
+            filler.course.code: filler.course
+            for filler in filler_group.fillers.values()
+        }
 
-    # Diagnose using the missing set of codes
-    for miss in missing.values():
-        # Adjust filler credits and fetch names
-        fillers: list[PseudoCourse] = []
-        for filler_code in miss.fillers:
-            info = courseinfo.try_equiv(filler_code)
-            if info is not None:
-                fillers.append(EquivalenceId(code=filler_code, credits=miss.credits))
-            else:
-                fillers.append(ConcreteId(code=filler_code))
-
-        # Create diagnostic
         out.add(
             CurriculumErr(
-                blocks=miss.blocks,
-                credits=miss.credits,
-                recommend=fillers,
+                blocks=[
+                    [block.name for block in block_path if block.name]
+                    for block_path in filler_group.blocks.values()
+                ],
+                credits=filler_group.credits,
+                fill_options=[
+                    fetch_name(filler)
+                    for filler in by_code.values()
+                ],
             ),
         )
 

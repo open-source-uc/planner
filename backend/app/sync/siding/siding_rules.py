@@ -168,7 +168,7 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
     def is_limited(courseinfo: CourseInfo, code: str):
         info = courseinfo.try_course(code)
         if info is None:
-            return False
+            return "both"
         if info.credits != 5:
             return False
         return (
@@ -187,9 +187,10 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                 limited: set[str] = set()
                 unlimited: set[str] = set()
                 for code in block.codes:
-                    if is_limited(courseinfo, code):
+                    limit = is_limited(courseinfo, code)
+                    if limit == "both" or limit:
                         limited.add(code)
-                    else:
+                    if limit == "both" or not limit:
                         unlimited.add(code)
                 # Separar el bloque en 2
                 limited_block = Leaf(
@@ -212,8 +213,24 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                     name=block.name,
                     cap=block.cap,
                     children=[
-                        limited_block,
+                        # Este orden es importante!
+                        # El solver aun no soporta manejar el caso cuando ocurre
+                        # "split-flow", que es cuando un curso divide su creditaje entre
+                        # dos bloques.
+                        # Esto *probablemente* no es legal, pero es *muy* dificil que
+                        # ocurra realmente.
+                        # Sin embargo, si las prioridades estan mal seteadas, puede
+                        # ocurrir un caso en que el solver en su intento de optimizar
+                        # cause split-flow
+                        # Si estuviera `limited_block` primero, `unlimited_block`
+                        # segundo y hubiera un ramo DPT de 5 creditos, se llenaria
+                        # `limited_block` con el ramo DPT, y la siguiente equivalencia
+                        # de 10 creditos se repartiria 5 en `limited_block` (porque
+                        # quedan 5 creditos de espacio) y 5 en `unlimited_block`, porque
+                        # `limited_block` tendria mas prioridad.
+                        # Por ahora lo podemos arreglar invirtiendo las prioridades.
                         unlimited_block,
+                        limited_block,
                     ],
                 )
                 superblock.children[block_i] = block
@@ -390,7 +407,7 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
 
     # Meter los codigos en un diccionario
     opi_set: set[str] = {OPI_CODE}
-    ipre_set: set[str] = set()
+    ipre_set: set[str] = {OPI_CODE}
     for code in opi_equiv.courses:
         info = courseinfo.try_course(code)
         if info is None:
@@ -420,6 +437,9 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
             name=OPI_NAME,
             cap=TITLE_EXCLUSIVE_CREDITS,
             children=[
+                # Este orden es importante!
+                # Ver el comentario sobre el orden de `limited_block` y
+                # `unlimited_block` en los OFGs.
                 Leaf(
                     debug_name=f"{OPI_NAME} (genérico)",
                     block_code=f"{OPI_BLOCK_CODE}:any",

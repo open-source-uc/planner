@@ -182,7 +182,7 @@ class CurriculumErr(DiagnosticErr):
     associated_to: None = None
     blocks: list[list[str]]
     credits: int
-    recommend: list[PseudoCourse]
+    fill_options: list[tuple[PseudoCourse, str]]
 
 
 class UnassignedWarn(DiagnosticWarn):

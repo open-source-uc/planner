@@ -82,26 +82,33 @@ def _extract_active_fillers(
     If missing credits are found, `to_pass` is filled with the corresponding filler
     courses from the `fill_with` fields.
     """
-    # Make sure to only add courses once
-    added: defaultdict[str, set[int]] = defaultdict(set)
     to_pass: list[tuple[int, PseudoCourse]] = []
-    for layer in g.layers.values():
-        for code, layercourse in layer.courses.items():
-            for j, active_edge in enumerate(layercourse.active_filler_edges):
-                # Check whether we should add this course
-                if active_edge is None:
+    for code, usable in g.usable.items():
+        for inst_idx, usable_inst in enumerate(usable.instances):
+            if usable_inst.filler is None:
+                continue
+            need_flow = 0
+            for layer in g.layers.values():
+                if code not in layer.courses:
                     continue
-                active_edge, missing_credits = active_edge
-                if j in added[code]:
+                layercourse = layer.courses[code]
+                layer_inst = layercourse.instances[inst_idx]
+                if layer_inst is None or layer_inst.active_edge is None:
                     continue
-                added[code].add(j)
 
+                # We need a certain amount of credits in this layer
+                # Get the maximum amount of credits we need across all layers, and
+                # generate that
+                need_flow = max(need_flow, layer_inst.active_edge.active_flow)
+            if need_flow > 0:
                 # Add this course
-                filler = g.usable[code].filler_list[j]
                 to_pass.append(
                     (
-                        filler.order,
-                        pseudocourse_with_credits(filler.course, missing_credits),
+                        usable_inst.filler.order,
+                        pseudocourse_with_credits(
+                            usable_inst.filler.course,
+                            need_flow,
+                        ),
                     ),
                 )
 
@@ -446,7 +453,6 @@ async def generate_recommended_plan(passed: ValidatablePlan):
     # Solve the curriculum to determine which courses have not been passed yet (and need
     # to be passed)
     g = solve_curriculum(courseinfo, curriculum, passed.classes)
-    print(g.dump_graphviz_pretty(curriculum))
 
     # Flat list of all curriculum courses left to pass
     courses_to_pass, ignore_reqs = _compute_courses_to_pass(

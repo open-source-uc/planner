@@ -7,6 +7,7 @@ from typing import Literal, Optional
 from pydantic import BaseModel
 
 from ...course import PseudoCourse
+from ...courseinfo import CourseInfo
 
 SUPERBLOCK_PREFIX = "superblock:"
 
@@ -54,8 +55,6 @@ class Leaf(BaseBlock):
     # Useful to model the title exclusive-credit requirements.
     # The default layer is just an empty string.
     layer: str = ""
-    # An additive cost to apply when connecting to this block.
-    cost: int = 0
 
 
 Block = Combination | Leaf
@@ -117,6 +116,19 @@ class Curriculum(BaseModel):
             self.fillers.setdefault(code, []).extend(fillers)
         self.multiplicity.update(other.multiplicity)
         self.equivalencies.update(other.equivalencies)
+
+    def multiplicity_of(self, courseinfo: CourseInfo, course_code: str) -> int | None:
+        if course_code in self.multiplicity:
+            return self.multiplicity[course_code]
+        info = courseinfo.try_course(course_code)
+        if info is not None:
+            return info.credits or 1
+        # TODO: Limit equivalence multiplicity to the total amount of credits in the
+        # equivalence.
+        # Ideally, we would want to store the total amount of credits in a field in the
+        # equivalence, otherwise it is probably too costly to visit the 2000+ course
+        # OFG equivalence.
+        return None
 
 
 class Cyear(BaseModel, frozen=True):
