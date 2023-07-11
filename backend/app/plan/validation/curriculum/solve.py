@@ -508,7 +508,7 @@ class SolvedCurriculum:
         out += "}"
         return out
 
-    def dump_graphviz_debug(self, curriculum: Curriculum) -> str:
+    def dump_graphviz_debug(self, curriculum: Curriculum) -> str:  # noqa: C901 (debug)
         """
         Dump the graph representation as a Graphviz DOT file.
         """

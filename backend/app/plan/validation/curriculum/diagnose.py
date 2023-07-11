@@ -43,10 +43,7 @@ def _diagnose_blocks(
                     for block_path in filler_group.blocks.values()
                 ],
                 credits=filler_group.credits,
-                fill_options=[
-                    fetch_name(filler)
-                    for filler in by_code.values()
-                ],
+                fill_options=[fetch_name(filler) for filler in by_code.values()],
             ),
         )
 
