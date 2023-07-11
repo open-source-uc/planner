@@ -1,32 +1,23 @@
 from pathlib import Path
-from urllib.parse import urlencode, urljoin, urlparse
+from typing import Literal
+from urllib.parse import urlencode, urljoin
 
 from dotenv import load_dotenv
-from pydantic import BaseSettings, Field, SecretStr
-
-
-def _correct_url(url: str) -> str:
-    try:
-        result = urlparse(url)
-        if not all([result.scheme, result.netloc]):
-            return "http://" + url
-        return url
-    except ValueError:
-        return "http://" + url
+from pydantic import AnyHttpUrl, BaseSettings, Field, SecretStr
 
 
 class Settings(BaseSettings):
     # URL to the CAS verification server.
     # When a user arrives with a CAS token the backend verifies the token directly with
     # this server.
-    cas_server_url: str = Field(...)
+    cas_server_url: AnyHttpUrl = Field(...)
 
     # URL to the CAS login server.
     # The client's browser is redirected to this URL when they want to log in.
     # If left empty, the same URL as `cas_server_url` is used.
     # If the backend server is in a different network than the client's browser, it may
     # need to use a different address to reach the CAS server.
-    cas_login_redirection_url: str = ""
+    cas_login_redirection_url: AnyHttpUrl | Literal[""] = ""
 
     # URL to the backend endpoint that performs authentication.
     # This URL needs to be whitelisted in the CAS server.
@@ -35,13 +26,12 @@ class Settings(BaseSettings):
     # authenticated JWT token.
     # In particular, the user browser is redirected to this `next` URL with the JWT
     # token as a query parameter.
-    planner_url: str = Field("http://localhost:3000")
+    planner_url: AnyHttpUrl = Field("http://localhost:3000")
 
     @property
     def login_endpoint(self):
-        fixed_url = _correct_url(self.planner_url)
-        next_url = urljoin(fixed_url, "/")
-        auth_login_url = urljoin(fixed_url, "/api/auth/login")
+        next_url = urljoin(self.planner_url, "/")
+        auth_login_url = urljoin(self.planner_url, "/api/auth/login")
         params = urlencode({"next": next_url})
         return f"{auth_login_url}?{params}"
 
