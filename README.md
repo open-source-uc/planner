@@ -117,6 +117,7 @@ El ambiente de producción es manejado por la universidad de forma interna, por 
 - `frontend/.env` a partir del ejemplo `frontend/.env.production` (_servidor web_).
 - `database/.env` a partir del ejemplo `database/.env.production` (_base de datos_).
 2. Reemplazar los valores de las variables de entorno según corresponda en todos los archivos `.env` creados. **IMPORTANTE:** no olvidar modificar la variable `JWT_SECRET` en `backend/.env` y otras variables que puedan contener secretos para evitar vulnerabilidades de seguridad.
+- Para generar una clave `JWT_SECRET` segura y aleatoria se puede utilizar el comando `openssl rand -base64 32`.
 3. Levantar los contenedores con `docker compose up planner -d --build` desde la raíz del repositorio. Requiere _Docker_ y _Docker Compose_ instalados en la máquina.
 4. Revisar el estado de los contenedores con `docker ps` o `docker container ls`.
 5. Finalmente, se puede detener la app con `docker compose down` desde la misma ubicación.
