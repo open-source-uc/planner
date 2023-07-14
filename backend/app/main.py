@@ -1,6 +1,9 @@
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
+from pydantic import BaseModel
+from unidecode import unidecode
+
 from prisma.models import (
     AccessLevel as DbAccessLevel,
 )
@@ -17,8 +20,6 @@ from prisma.models import (
     Title as DbTitle,
 )
 from prisma.types import CourseWhereInput, CourseWhereInputRecursive2
-from pydantic import BaseModel
-from unidecode import unidecode
 
 from . import sync
 from .database import prisma
