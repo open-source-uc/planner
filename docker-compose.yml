@@ -58,3 +58,6 @@ services:
       - ./cas-mock/data/cas-mock-users.json:/app/data/cas-mock-users.json
 volumes:
   postgres-data:
+  caddy_data:
+    external: true
+  caddy_config:

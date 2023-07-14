@@ -1,5 +1,5 @@
-# ========= BUILD =========
-FROM node:16-alpine as builder
+# ========= BUILD APP =========
+FROM node:16-alpine as app-builder
 
 # Set the working directory
 WORKDIR /tmp
@@ -16,14 +16,24 @@ COPY . .
 # Build the application
 RUN npm run build
 
+# ========= BUILD CADDY =========
+FROM caddy:2-builder-alpine AS caddy-builder
+RUN xcaddy build \
+    --with github.com/greenpau/caddy-security \
+    --with github.com/greenpau/caddy-trace \
+    --with github.com/abiosoft/caddy-exec
+
 # ========= RUN =========
 FROM caddy:2-alpine
+
+# Copy Caddy binary from its builder stage
+COPY --from=caddy-builder /usr/bin/caddy /usr/bin/caddy
 
 # Install curl for healthcheck
 RUN apk --no-cache add curl
 
-# Copy the build folder from builder stage to the Caddy directory
-COPY --from=builder /tmp/dist /srv
+# Copy the build folder from the app builder stage to the Caddy directory
+COPY --from=app-builder /tmp/dist /srv
 
 # Copy Caddyfile for configuration
 COPY conf/Caddyfile /etc/caddy/Caddyfile
