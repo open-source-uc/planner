@@ -1,6 +1,8 @@
 import asyncio
 
 from fastapi import APIRouter
+from pydantic import BaseModel
+
 from prisma.models import (
     Major as DbMajor,
 )
@@ -10,7 +12,6 @@ from prisma.models import (
 from prisma.models import (
     Title as DbTitle,
 )
-from pydantic import BaseModel
 
 router = APIRouter(prefix="/offer")
 
