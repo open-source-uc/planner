@@ -1,0 +1,60 @@
+version: '3.8'
+
+networks:
+  caddy:
+services:
+  planner:
+    build: ./frontend
+    container_name: planner-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - caddy
+    depends_on:
+      - api
+    env_file:
+      - ./frontend/.env
+  api:
+    build: ./backend
+    container_name: planner-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    networks:
+      - caddy
+    depends_on:
+      - db
+    volumes:
+      - ./siding-mock-data:/code/siding-mock-data
+    env_file:
+      - ./backend/.env
+  db:
+    image: postgres:latest
+    container_name: planner-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    networks:
+      - caddy
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    env_file:
+      - ./database/.env
+  cas_mock_server:
+    # Run a local cas mock server container for developing purposes.
+    # Don't run this service in production.
+    image: node:16-alpine
+    container_name: cas-mock-server
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "3004:3004"
+    networks:
+      - caddy
+    command: npx --yes cas-server-mock --port=3004 --database=/app/data/cas-mock-users.json
+    volumes:
+      - ./cas-mock/data/cas-mock-users.json:/app/data/cas-mock-users.json
+volumes:
+  postgres-data:

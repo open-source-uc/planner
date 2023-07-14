@@ -2,9 +2,10 @@ from datetime import datetime
 
 import pydantic
 from fastapi import HTTPException
+from pydantic import BaseModel
+
 from prisma.models import Plan as DbPlan
 from prisma.types import PlanCreateInput
-from pydantic import BaseModel
 
 from ..plan.plan import ValidatablePlan
 from ..user.key import ModKey, UserKey
