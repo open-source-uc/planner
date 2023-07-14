@@ -3,7 +3,7 @@ version: '3.8'
 networks:
   caddy:
 services:
-  web:
+  planner:
     build: ./frontend
     container_name: planner-web
     restart: unless-stopped
@@ -41,5 +41,18 @@ services:
       - postgres-data:/var/lib/postgresql/data
     env_file:
       - ./database/.env
+  cas_mock_server:
+    # Run a local cas mock server container for developing purposes.
+    # Don't run this service in production.
+    image: node:16-alpine
+    container_name: cas-mock-server
+    working_dir: /app
+    ports:
+      - "3004:3004"
+    networks:
+      - caddy
+    command: npx --yes cas-server-mock --port=3004 --database=/app/data/cas-mock-users.json
+    volumes:
+      - ./cas-mock/data/cas-mock-users.json:/app/data/cas-mock-users.json
 volumes:
   postgres-data:

@@ -100,14 +100,14 @@ En primer lugar, es necesario generar manualmente los archivos `.env` y reemplaz
 
 Luego, para correr la aplicación utilizando un servidor mock de **CAS externo** se debe:
 1. Definir las variables `CAS_SERVER_URL` y `CAS_LOGIN_REDIRECTION_URL` en `backend/.env` con la URL del servidor externo.
-2. Levantar los contenedores con `docker compose up -d --build` desde la raíz del repositorio.
-3. Finalmente, se puede detener la app con `docker compose down` desde la misma ubicación.
+2. Levantar los contenedores con `docker compose up planner -d --build` desde la raíz del repositorio.
 
 Alternativamente, para correr la aplicación utilizando un servidor mock de **CAS local**:
 1. Dejar las variables `CAS_SERVER_URL` y `CAS_LOGIN_REDIRECTION_URL` en `backend/.env` con los valores predeterminados del archivo de ejemplo `.env.staging`.
 2. Luego, es necesario generar el archivo `cas-mock-users.json` en `cas-mock/data` a partir del ejemplo `cas-mock-users.json.example`.
-3. Levantar los contenedores con `docker compose -f docker-compose.yml -f docker-compose.cas-mock.yml up -d --force-recreate --build` desde la raíz del repositorio.
-4. Finalmente, se puede detener la app con `docker compose -f docker-compose.yml -f docker-compose.cas-mock.yml down` desde la misma ubicación.
+3. Levantar los contenedores con `docker compose up -d --build` desde la raíz del repositorio.
+
+Finalmente, se puede detener la app con `docker compose down` desde la raíz del repositorio.
 
 ### Producción
 
@@ -117,7 +117,8 @@ El ambiente de producción es manejado por la universidad de forma interna, por 
 - `frontend/.env` a partir del ejemplo `frontend/.env.production` (_servidor web_).
 - `database/.env` a partir del ejemplo `database/.env.production` (_base de datos_).
 2. Reemplazar los valores de las variables de entorno según corresponda en todos los archivos `.env` creados. **IMPORTANTE:** no olvidar modificar la variable `JWT_SECRET` en `backend/.env` y otras variables que puedan contener secretos para evitar vulnerabilidades de seguridad.
-3. Levantar los contenedores con `docker compose up -d --build` desde la raíz del repositorio. Requiere _Docker_ y _Docker Compose_ instalados en la máquina.
+- Para generar una clave `JWT_SECRET` segura y aleatoria se puede utilizar el comando `openssl rand -base64 32`.
+3. Levantar los contenedores con `docker compose up planner -d --build` desde la raíz del repositorio. Requiere _Docker_ y _Docker Compose_ instalados en la máquina.
 4. Revisar el estado de los contenedores con `docker ps` o `docker container ls`.
 5. Finalmente, se puede detener la app con `docker compose down` desde la misma ubicación.
 
