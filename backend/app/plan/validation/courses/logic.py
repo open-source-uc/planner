@@ -4,6 +4,7 @@ Implements logical expressions in the context of course requirements.
 
 
 from abc import abstractmethod
+from collections.abc import Callable
 from hashlib import blake2b as good_hash
 from typing import Annotated, Any, ClassVar, Literal
 
@@ -262,3 +263,30 @@ ReqSchool.update_forward_refs()
 ReqProgram.update_forward_refs()
 ReqCareer.update_forward_refs()
 ReqCourse.update_forward_refs()
+
+
+class AndClause(And):
+    children: tuple[Atom, ...]
+
+
+class DnfExpr(Or):
+    children: tuple[AndClause, ...]
+
+
+def map_atoms(expr: Expr, map: Callable[[Atom], Atom]):
+    """
+    Replace the atoms of the expression according to `apply`.
+    Returns a new expression, leaving the original unmodified.
+    """
+    if isinstance(expr, Operator):
+        # Recursively replace atoms
+        changed = False
+        new_children: list[Expr] = []
+        for child in expr.children:
+            new_child = map_atoms(child, map)
+            new_children.append(new_child)
+            if new_child is not child:
+                changed = True
+        return BaseOp.create(expr.neutral, tuple(new_children)) if changed else expr
+    # Replace this atom
+    return map(expr)

@@ -6,6 +6,7 @@ import type { CourseDetails } from '../models/CourseDetails';
 import type { CourseFilter } from '../models/CourseFilter';
 import type { CourseOverview } from '../models/CourseOverview';
 import type { EquivDetails } from '../models/EquivDetails';
+import type { FullOffer } from '../models/FullOffer';
 import type { LowDetailPlanView } from '../models/LowDetailPlanView';
 import type { Major } from '../models/Major';
 import type { Minor } from '../models/Minor';
@@ -46,69 +47,27 @@ export class DefaultService {
     }
 
     /**
-     * Authenticate
-     * Redirect the browser to this page to initiate authentication.
-     * @param next
-     * @param ticket
+     * Sync Database
+     * Initiate a synchronization of the internal database from external sources.
+     * @param courses
+     * @param offer
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static authenticate(
-        next?: string,
-        ticket?: string,
+    public static syncDatabase(
+        courses: boolean = false,
+        offer: boolean = false,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
-            method: 'GET',
-            url: '/auth/login',
+            method: 'POST',
+            url: '/admin/sync',
             query: {
-                'next': next,
-                'ticket': ticket,
+                'courses': courses,
+                'offer': offer,
             },
             errors: {
                 422: `Validation Error`,
             },
-        });
-    }
-
-    /**
-     * Check Auth
-     * Request succeeds if user authentication was successful.
-     * Otherwise, the request fails with 401 Unauthorized.
-     * @returns any Successful Response
-     * @throws ApiError
-     */
-    public static checkAuth(): CancelablePromise<any> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/auth/check',
-        });
-    }
-
-    /**
-     * Check Mod
-     * Request succeeds if user authentication and mod authorization were successful.
-     * Otherwise, the request fails with 401 Unauthorized or 403 Forbidden.
-     * @returns any Successful Response
-     * @throws ApiError
-     */
-    public static checkMod(): CancelablePromise<any> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/auth/check/mod',
-        });
-    }
-
-    /**
-     * Check Admin
-     * Request succeeds if user authentication and admin authorization were successful.
-     * Otherwise, the request fails with 401 Unauthorized or 403 Forbidden.
-     * @returns any Successful Response
-     * @throws ApiError
-     */
-    public static checkAdmin(): CancelablePromise<any> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/auth/check/admin',
         });
     }
 
@@ -121,7 +80,7 @@ export class DefaultService {
     public static viewMods(): CancelablePromise<Array<AccessLevelOverview>> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/auth/mod',
+            url: '/admin/mod',
         });
     }
 
@@ -137,7 +96,7 @@ export class DefaultService {
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/auth/mod',
+            url: '/admin/mod',
             query: {
                 'rut': rut,
             },
@@ -159,49 +118,9 @@ export class DefaultService {
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/auth/mod',
+            url: '/admin/mod',
             query: {
                 'rut': rut,
-            },
-            errors: {
-                422: `Validation Error`,
-            },
-        });
-    }
-
-    /**
-     * Get Student Info
-     * Get the student info for the currently logged in user.
-     * Requires authentication (!)
-     * This forwards a request to the SIDING service.
-     * @returns StudentContext Successful Response
-     * @throws ApiError
-     */
-    public static getStudentInfo(): CancelablePromise<StudentContext> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/student/info',
-        });
-    }
-
-    /**
-     * Sync Database
-     * Initiate a synchronization of the internal database from external sources.
-     * @param courses
-     * @param offer
-     * @returns any Successful Response
-     * @throws ApiError
-     */
-    public static syncDatabase(
-        courses: boolean = false,
-        offer: boolean = false,
-    ): CancelablePromise<any> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/sync',
-            query: {
-                'courses': courses,
-                'offer': offer,
             },
             errors: {
                 422: `Validation Error`,
@@ -222,7 +141,7 @@ export class DefaultService {
     ): CancelablePromise<Array<CourseOverview>> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/courses/search/details',
+            url: '/course/search/details',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -245,7 +164,7 @@ export class DefaultService {
     ): CancelablePromise<Array<string>> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/courses/search/codes',
+            url: '/course/search/codes',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -255,64 +174,119 @@ export class DefaultService {
     }
 
     /**
-     * Get Course Details
-     * For a list of course codes, fetch a corresponding list of course details.
+     * Get Pseudocourse Details
+     * For a list of course or equivalence codes, fetch a corresponding list of
+     * course/equivalence details.
+     * Returns null in the corresponding slot if the code is unknown.
      *
      * Request example: `/api/courses?codes=IIC2233&codes=IIC2173`
      * @param codes
-     * @returns CourseDetails Successful Response
-     * @throws ApiError
-     */
-    public static getCourseDetails(
-        codes: Array<string>,
-    ): CancelablePromise<Array<CourseDetails>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/courses',
-            query: {
-                'codes': codes,
-            },
-            errors: {
-                422: `Validation Error`,
-            },
-        });
-    }
-
-    /**
-     * Get Equivalence Details
-     * For a list of equivalence codes, fetch the raw equivalence details, without any
-     * filtering.
-     * To filter courses for a specific equivalence, use `search_courses` with an
-     * equivalence filter.
-     * @param codes
-     * @returns EquivDetails Successful Response
-     * @throws ApiError
-     */
-    public static getEquivalenceDetails(
-        codes: Array<string>,
-    ): CancelablePromise<Array<EquivDetails>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/equivalences',
-            query: {
-                'codes': codes,
-            },
-            errors: {
-                422: `Validation Error`,
-            },
-        });
-    }
-
-    /**
-     * Rebuild Validation Rules
-     * Recache course information from internal database.
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static rebuildValidationRules(): CancelablePromise<any> {
+    public static getPseudocourseDetails(
+        codes: Array<string>,
+    ): CancelablePromise<Array<(CourseDetails | EquivDetails)>> {
         return __request(OpenAPI, {
-            method: 'POST',
-            url: '/plan/rebuild',
+            method: 'GET',
+            url: '/course/details',
+            query: {
+                'codes': codes,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Get Majors
+     * Get all the available majors for a given curriculum version (cyear).
+     * @param cyear
+     * @returns Major Successful Response
+     * @throws ApiError
+     */
+    public static getMajors(
+        cyear: string,
+    ): CancelablePromise<Array<Major>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/offer/major',
+            query: {
+                'cyear': cyear,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Get Minors
+     * @param cyear
+     * @param majorCode
+     * @returns Minor Successful Response
+     * @throws ApiError
+     */
+    public static getMinors(
+        cyear: string,
+        majorCode?: string,
+    ): CancelablePromise<Array<Minor>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/offer/minor',
+            query: {
+                'cyear': cyear,
+                'major_code': majorCode,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Get Titles
+     * @param cyear
+     * @returns Title Successful Response
+     * @throws ApiError
+     */
+    public static getTitles(
+        cyear: string,
+    ): CancelablePromise<Array<Title>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/offer/title',
+            query: {
+                'cyear': cyear,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * Get Offer
+     * @param cyear
+     * @param majorCode
+     * @returns FullOffer Successful Response
+     * @throws ApiError
+     */
+    public static getOffer(
+        cyear: string,
+        majorCode?: string,
+    ): CancelablePromise<FullOffer> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/offer/',
+            query: {
+                'cyear': cyear,
+                'major_code': majorCode,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
         });
     }
 
@@ -448,16 +422,21 @@ export class DefaultService {
      * Get Curriculum Validation Graph
      * Get the curriculum validation graph for a certain plan, in Graphviz DOT format.
      * Useful for debugging and kind of a bonus easter egg.
+     * @param mode
      * @param requestBody
      * @returns string Successful Response
      * @throws ApiError
      */
     public static getCurriculumValidationGraph(
+        mode: string,
         requestBody: ValidatablePlan,
     ): CancelablePromise<string> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/plan/curriculum_graph',
+            query: {
+                'mode': mode,
+            },
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -640,7 +619,7 @@ export class DefaultService {
      * Same functionality as `save_plan`, but works for any user identified by
      * their RUT with `user_rut`.
      * Moderator access is required.
-     * All `/plan/storage/any` endpoints (and sub-resources) should require
+     * All `/storage/any` endpoints (and sub-resources) should require
      * moderator access.
      * @param name
      * @param userRut
@@ -801,20 +780,23 @@ export class DefaultService {
     }
 
     /**
-     * Get Majors
-     * Get all the available majors for a given curriculum version (cyear).
-     * @param cyear
-     * @returns Major Successful Response
+     * Authenticate
+     * Redirect the browser to this page to initiate authentication.
+     * @param next
+     * @param ticket
+     * @returns any Successful Response
      * @throws ApiError
      */
-    public static getMajors(
-        cyear: string,
-    ): CancelablePromise<Array<Major>> {
+    public static authenticate(
+        next?: string,
+        ticket?: string,
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/offer/major',
+            url: '/user/login',
             query: {
-                'cyear': cyear,
+                'next': next,
+                'ticket': ticket,
             },
             errors: {
                 422: `Validation Error`,
@@ -823,47 +805,59 @@ export class DefaultService {
     }
 
     /**
-     * Get Minors
-     * @param cyear
-     * @param majorCode
-     * @returns Minor Successful Response
+     * Check Auth
+     * Request succeeds if user authentication was successful.
+     * Otherwise, the request fails with 401 Unauthorized.
+     * @returns any Successful Response
      * @throws ApiError
      */
-    public static getMinors(
-        cyear: string,
-        majorCode?: string,
-    ): CancelablePromise<Array<Minor>> {
+    public static checkAuth(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/offer/minor',
-            query: {
-                'cyear': cyear,
-                'major_code': majorCode,
-            },
-            errors: {
-                422: `Validation Error`,
-            },
+            url: '/user/check',
         });
     }
 
     /**
-     * Get Titles
-     * @param cyear
-     * @returns Title Successful Response
+     * Check Mod
+     * Request succeeds if user authentication and mod authorization were successful.
+     * Otherwise, the request fails with 401 Unauthorized or 403 Forbidden.
+     * @returns any Successful Response
      * @throws ApiError
      */
-    public static getTitles(
-        cyear: string,
-    ): CancelablePromise<Array<Title>> {
+    public static checkMod(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/offer/title',
-            query: {
-                'cyear': cyear,
-            },
-            errors: {
-                422: `Validation Error`,
-            },
+            url: '/user/check/mod',
+        });
+    }
+
+    /**
+     * Check Admin
+     * Request succeeds if user authentication and admin authorization were successful.
+     * Otherwise, the request fails with 401 Unauthorized or 403 Forbidden.
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static checkAdmin(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/user/check/admin',
+        });
+    }
+
+    /**
+     * Get Student Info
+     * Get the student info for the currently logged in user.
+     * Requires authentication (!)
+     * This forwards a request to the SIDING service.
+     * @returns StudentContext Successful Response
+     * @throws ApiError
+     */
+    public static getStudentInfo(): CancelablePromise<StudentContext> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/user/info',
         });
     }
 

@@ -8,7 +8,7 @@ import CurriculumSelector from './CurriculumSelector'
 import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react'
-import { type CourseDetails, type Major, type Minor, type Title, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise } from '../../client'
+import { type CourseDetails, type Major, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise } from '../../client'
 import { type CourseId, type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type PlanDigest, type ValidationDigest, isApiError, isCancelError } from './utils/Types'
 import { validateCourseMovement, updateClassesState, getCoursePos } from './utils/planBoardFunctions'
 import { useAuth } from '../../contexts/auth.context'
@@ -142,7 +142,6 @@ const Planner = (): JSX.Element => {
   function handleErrors (err: unknown): void {
     if (isApiError(err)) {
       console.error(err)
-      setPlannerStatus(PlannerStatus.ERROR)
       switch (err.status) {
         case 401:
           console.log('token invalid or expired, loading re-login page')
@@ -156,16 +155,20 @@ const Planner = (): JSX.Element => {
         case 404:
           setError('El planner al que estas intentando acceder no existe o no es de tu propiedad')
           break
+        case 429:
+          toast.error('Se alcanzó el límite de actividad, espera y vuelve a intentarlo')
+          return
         case 500:
           setError(err.message)
           break
         default:
           console.log(err.status)
-          setError('error desconocido')
+          setError('Error desconocido')
           break
       }
+      setPlannerStatus(PlannerStatus.ERROR)
     } else if (!isCancelError(err)) {
-      setError('error desconocido')
+      setError('Error desconocido')
       console.error(err)
       setPlannerStatus(PlannerStatus.ERROR)
     }
@@ -234,20 +237,17 @@ const Planner = (): JSX.Element => {
 
   async function getCourseDetails (courses: PseudoCourseId[]): Promise<void> {
     console.log('getting Courses Details...')
-    const coursesCodes = new Set<string>()
-    const equivalenceCodes = new Set<string>()
+    const pseudocourseCodes = new Set<string>()
     for (const courseid of courses) {
       const code = ('failed' in courseid ? courseid.failed : null) ?? courseid.code
       if (!(code in courseDetails)) {
-        if (courseid.is_concrete === true) { coursesCodes.add(code) } else { equivalenceCodes.add(code) }
+        pseudocourseCodes.add(code)
       }
     }
+    if (pseudocourseCodes.size === 0) return
     try {
-      const promises = []
-      if (coursesCodes.size > 0) promises.push(DefaultService.getCourseDetails(Array.from(coursesCodes)))
-      if (equivalenceCodes.size > 0) promises.push(DefaultService.getEquivalenceDetails(Array.from(equivalenceCodes)))
-      const courseDetails = await Promise.all(promises)
-      const dict = courseDetails.flat().reduce((acc: Record<string, PseudoCourseDetail>, curr: PseudoCourseDetail) => {
+      const courseDetails = await DefaultService.getPseudocourseDetails(Array.from(pseudocourseCodes))
+      const dict = courseDetails.reduce((acc: Record<string, PseudoCourseDetail>, curr: PseudoCourseDetail) => {
         acc[curr.code] = curr
         return acc
       }, {})
@@ -377,34 +377,53 @@ const Planner = (): JSX.Element => {
   }, []) // moveCourse should not depend on `validatablePlan`, so that memoing does its work
 
   async function loadCurriculumsData (cYear: string, cMajor?: string): Promise<void> {
-    const [majors, minors, titles] = await Promise.all([
-      DefaultService.getMajors(cYear),
-      DefaultService.getMinors(cYear, cMajor),
-      DefaultService.getTitles(cYear)
-    ])
-    const curriculumData: CurriculumData = {
-      majors: majors.reduce((dict: Record<string, Major>, m: Major) => {
-        dict[m.code] = m
-        return dict
-      }, {}),
-      minors: minors.reduce((dict: Record<string, Minor>, m: Minor) => {
-        dict[m.code] = m
-        return dict
-      }, {}),
-      titles: titles.reduce((dict: Record<string, Title>, t: Title) => {
-        dict[t.code] = t
-        return dict
-      }, {})
+    function listToRecord<T> (list: Array<T & { code: string }>): Record<string, T> {
+      const dict: Record<string, T> = {}
+      for (const item of list) {
+        dict[item.code] = item
+      }
+      return dict
     }
-    setCurriculumData(curriculumData)
+
+    const { majors, minors, titles } = await (async () => {
+      if (curriculumData != null && curriculumData.ofCyear === cYear) {
+        if (curriculumData.ofMajor === cMajor) {
+          return curriculumData
+        } else {
+          return {
+            majors: curriculumData.majors,
+            minors: listToRecord(await DefaultService.getMinors(cYear, cMajor)),
+            titles: curriculumData.titles
+          }
+        }
+      } else {
+        const response = await DefaultService.getOffer(cYear, cMajor)
+        return {
+          majors: listToRecord(response.majors),
+          minors: listToRecord(response.minors),
+          titles: listToRecord(response.titles)
+        }
+      }
+    })()
+
+    setCurriculumData({
+      majors,
+      minors,
+      titles,
+      ofMajor: cMajor,
+      ofCyear: cYear
+    })
   }
 
   const openModal = useCallback(async (equivalence: EquivDetails | EquivalenceId, semester: number, index?: number): Promise<void> => {
     if ('courses' in equivalence) {
       setModalData({ equivalence, selector: false, semester, index })
     } else {
-      const response = await DefaultService.getEquivalenceDetails([equivalence.code])
-      setModalData({ equivalence: response[0], selector: false, semester, index })
+      const response = (await DefaultService.getPseudocourseDetails([equivalence.code]))[0]
+      if (!('courses' in response)) {
+        throw new Error('expected equivalence details')
+      }
+      setModalData({ equivalence: response, selector: false, semester, index })
     }
     setIsModalOpen(true)
   }, [])
