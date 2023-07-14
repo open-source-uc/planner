@@ -281,4 +281,4 @@ $RECYCLE.BIN/
 .eslintcache
 
 # Dummy CAS database
-/data/cas-mock-users.json
+/cas-mock/data/cas-mock-users.json

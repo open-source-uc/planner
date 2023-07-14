@@ -6,7 +6,7 @@
 		"cpus": 4,
 		"memory": "8gb"
 	},
-	"dockerComposeFile": "docker-compose.yml",
+	"dockerComposeFile": "docker-compose.dev.yml",
 	"service": "app",
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 	"features": {
