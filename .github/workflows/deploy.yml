@@ -1,0 +1,35 @@
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to staging
+    env:
+      MACHINE: mallastest # This is the staging server
+    steps:
+      - name: Setup Tailscale
+        uses: tailscale/github-action@main
+        with:
+          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_SECRET }}
+          version: 1.44.0
+          tags: planner-ci
+        
+      - name: Add SSH key
+        env:
+          SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          MACHINE_IP="$(tailscale ip -6 $MACHINE)"
+          ssh-keyscan $MACHINE_IP >> ~/.ssh/known_hosts
+          printf "%s" "$SSH_KEY" > ~/.ssh/key
+          chmod 600 ~/.ssh/key
+
+      - name: Deploy to server
+        run: |
+          MACHINE_IP="$(tailscale ip -6 $MACHINE)"
+          USERHOST="planner@$MACHINE_IP"
+          ssh -i ~/.ssh/key USERHOST "cd /opt/planner && just deploy staging"

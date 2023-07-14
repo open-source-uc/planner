@@ -1,4 +1,4 @@
-{$PLANNER_URL} , :80 {
+{$PLANNER_URL} {
 	handle_path /api/* {
 		reverse_proxy api:8000
 	}

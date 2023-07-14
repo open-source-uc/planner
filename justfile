@@ -1,6 +1,6 @@
 # This is the [INFO] prefix in bold cyan
-
 info_prefix := `echo "\e[1;36m[Info]\e[0m"`
+set dotenv-load := true
 
 default:
     @just --list
@@ -87,3 +87,38 @@ db-reset:
 db-generate:
     @echo "{{ info_prefix }} \e[1mGenerating Prisma client...\e[0m"
     cd backend && poetry run prisma generate
+
+set positional-arguments := true
+default_environment := "development"
+deploy environment=default_environment:
+    #!/usr/bin/env bash
+    set -eEuo pipefail
+    DEPLOY_ENVIRONMENT={{ environment }}
+    # If DEPLOY_ENVIRONMENT is not development, staging or production, exit
+    if [[ "$DEPLOY_ENVIRONMENT" != "development" && "$DEPLOY_ENVIRONMENT" != "staging" && "$DEPLOY_ENVIRONMENT" != "production" ]]; then
+        echo "Invalid deployment target: $DEPLOY_ENVIRONMENT"
+        exit 1
+    fi
+    echo -e "{{ info_prefix }} \e[1mDeploying to $DEPLOY_ENVIRONMENT...\e[0m"
+    echo -e "{{ info_prefix }} \e[1mStopping and removing containers...\e[0m"
+    docker compose down --remove-orphans
+    # If deploy is not development, fetch code first
+    if [[ "$DEPLOY_ENVIRONMENT" != "development" ]]; then
+        echo -e "{{ info_prefix }} \e[1mFetching code from main...\e[0m"
+        git config advice.detachedHead false
+        git fetch --all
+        git checkout --force origin/main
+    fi
+    echo -e "{{ info_prefix }} \e[1mBuilding containers...\e[0m"
+    docker compose build --pull --build-arg DEPLOY_ENVIRONMENT=$DEPLOY_ENVIRONMENT
+    # If DEPLOY_ENVIRONMENT is production, then we need to
+    # only deploy the planner service, otherwise we deploy
+    # all services
+    # Define target service
+    if [[ "$DEPLOY_ENVIRONMENT" == "production" ]]; then
+        TARGET_SERVICE=planner
+    else
+        TARGET_SERVICE=""
+    fi
+    echo -e "{{ info_prefix }} \e[1mStarting containers...\e[0m"
+    docker compose up --remove-orphans --force-recreate --detach --wait $TARGET_SERVICE

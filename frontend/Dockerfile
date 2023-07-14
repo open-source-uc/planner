@@ -27,3 +27,6 @@ COPY conf/Caddyfile /etc/caddy/Caddyfile
 
 # Run caddy using config file
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+
+# Healthcheck
+HEALTHCHECK CMD curl --fail http://localhost:80/ || exit 1

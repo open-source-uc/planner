@@ -74,3 +74,6 @@ ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
 
 # Expose the necessary port
 EXPOSE 8000
+
+# Setup healthcheck
+HEALTHCHECK CMD curl -f http://localhost:8000/health || exit 1
