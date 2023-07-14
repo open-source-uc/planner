@@ -19,6 +19,9 @@ RUN npm run build
 # ========= RUN =========
 FROM caddy:2-alpine
 
+# Install curl for healthcheck
+RUN apk --no-cache add curl
+
 # Copy the build folder from builder stage to the Caddy directory
 COPY --from=builder /tmp/dist /srv
 

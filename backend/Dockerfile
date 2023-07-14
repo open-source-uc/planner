@@ -48,7 +48,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Install system packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
+    build-essential curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Prisma CLI
