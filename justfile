@@ -100,8 +100,6 @@ deploy environment=default_environment:
         exit 1
     fi
     echo -e "{{ info_prefix }} \e[1mDeploying to $DEPLOY_ENVIRONMENT...\e[0m"
-    echo -e "{{ info_prefix }} \e[1mStopping and removing containers...\e[0m"
-    docker compose down --remove-orphans
     # If deploy is not development, fetch code first
     if [[ "$DEPLOY_ENVIRONMENT" != "development" ]]; then
         echo -e "{{ info_prefix }} \e[1mFetching code from main...\e[0m"
@@ -120,5 +118,5 @@ deploy environment=default_environment:
         TARGET_SERVICE="planner"
     fi
     echo -e "{{ info_prefix }} \e[1mStarting containers...\e[0m"
-    docker compose up --remove-orphans --force-recreate --detach --wait $TARGET_SERVICE
+    docker compose up --build --remove-orphans --force-recreate --detach --wait $TARGET_SERVICE
     echo -e "{{ info_prefix }} \e[1mDeployed to $DEPLOY_ENVIRONMENT successfully 🚀.\e[0m"
