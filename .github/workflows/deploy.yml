@@ -32,4 +32,4 @@ jobs:
         run: |
           MACHINE_IP="$(tailscale ip -6 $MACHINE)"
           USERHOST="planner@$MACHINE_IP"
-          ssh -i ~/.ssh/key USERHOST "cd /opt/planner && just deploy staging"
+          ssh -i ~/.ssh/key $USERHOST "cd /opt/planner && just deploy staging"
