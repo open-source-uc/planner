@@ -23,13 +23,13 @@ jobs:
           SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          MACHINE_IP="$(tailscale ip -6 $MACHINE)"
+          MACHINE_IP="$(tailscale ip -4 $MACHINE)"
           ssh-keyscan $MACHINE_IP >> ~/.ssh/known_hosts
           printf "%s" "$SSH_KEY" > ~/.ssh/key
           chmod 600 ~/.ssh/key
 
       - name: Deploy to server
         run: |
-          MACHINE_IP="$(tailscale ip -6 $MACHINE)"
+          MACHINE_IP="$(tailscale ip -4 $MACHINE)"
           USERHOST="planner@$MACHINE_IP"
           ssh -i ~/.ssh/key USERHOST "cd /opt/planner && just deploy staging"
