@@ -21,15 +21,20 @@ jobs:
       - name: Add SSH key
         env:
           SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
           mkdir -p ~/.ssh
           MACHINE_IP="$(tailscale ip -6 $MACHINE)"
           ssh-keyscan $MACHINE_IP >> ~/.ssh/known_hosts
-          printf "%s" "$SSH_KEY" > ~/.ssh/key
+          echo "$SSH_KEY" | tr -d '\r' > ~/.ssh/key
           chmod 600 ~/.ssh/key
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-add ~/.ssh/key
 
       - name: Deploy to server
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
           MACHINE_IP="$(tailscale ip -6 $MACHINE)"
           USERHOST="planner@$MACHINE_IP"
-          ssh -i ~/.ssh/key $USERHOST "cd /opt/planner && just deploy staging"
+          ssh $USERHOST "cd /opt/planner && just deploy staging"
