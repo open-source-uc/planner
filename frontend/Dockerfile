@@ -1,3 +1,10 @@
+# ========= BUILD CADDY =========
+FROM caddy:2-builder-alpine AS caddy-builder
+RUN xcaddy build \
+    --with github.com/greenpau/caddy-security \
+    --with github.com/greenpau/caddy-trace \
+    --with github.com/abiosoft/caddy-exec
+
 # ========= BUILD APP =========
 FROM node:16-alpine as app-builder
 
@@ -15,13 +22,6 @@ COPY . .
 
 # Build the application
 RUN npm run build
-
-# ========= BUILD CADDY =========
-FROM caddy:2-builder-alpine AS caddy-builder
-RUN xcaddy build \
-    --with github.com/greenpau/caddy-security \
-    --with github.com/greenpau/caddy-trace \
-    --with github.com/abiosoft/caddy-exec
 
 # ========= RUN =========
 FROM caddy:2-alpine

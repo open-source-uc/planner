@@ -111,14 +111,13 @@ deploy environment=default_environment:
     fi
     echo -e "{{ info_prefix }} \e[1mBuilding containers...\e[0m"
     docker compose build --pull --build-arg DEPLOY_ENVIRONMENT=$DEPLOY_ENVIRONMENT
-    # If DEPLOY_ENVIRONMENT is production, then we need to
-    # only deploy the planner service, otherwise we deploy
-    # all services
+    # If DEPLOY_ENVIRONMENT is development, then we need to
+    # also deploy the CAS mock service
     # Define target service
-    if [[ "$DEPLOY_ENVIRONMENT" == "production" ]]; then
-        TARGET_SERVICE=planner
-    else
+    if [[ "$DEPLOY_ENVIRONMENT" == "development" ]]; then
         TARGET_SERVICE=""
+    else
+        TARGET_SERVICE="planner"
     fi
     echo -e "{{ info_prefix }} \e[1mStarting containers...\e[0m"
     docker compose up --remove-orphans --force-recreate --detach --wait $TARGET_SERVICE
