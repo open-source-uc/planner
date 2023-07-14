@@ -26,7 +26,7 @@ function Navbar (): JSX.Element {
                 }
                 <li>
                     {authState?.user == null
-                      ? <a href="/api/auth/login" className="block py-2 pl-3 pr-4 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0">Iniciar sesión</a>
+                      ? <a href="/api/user/login" className="block py-2 pl-3 pr-4 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0">Iniciar sesión</a>
                       : <Link to="/logout" className="block py-2 pl-3 pr-4 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0">Cerrar sesión</Link>}
                 </li>
             </ul>

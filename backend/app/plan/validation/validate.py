@@ -1,8 +1,8 @@
 from ...sync import get_curriculum
 from ...user.info import StudentContext
-from ..courseinfo import CourseInfo, course_info
+from ..courseinfo import course_info
 from ..plan import ValidatablePlan
-from .courses.validate import CourseInstance, ValidationContext, is_satisfied
+from .courses.validate import ValidationContext
 from .curriculum.diagnose import diagnose_curriculum
 from .diagnostic import ValidationResult
 from .user import validate_against_owner
@@ -33,24 +33,3 @@ async def diagnose_plan(
         validate_against_owner(plan, user_ctx, out)
 
     return out
-
-
-def quick_validate_dependencies(
-    courseinfo: CourseInfo,
-    plan: ValidatablePlan,
-    sem: int,
-    index: int,
-) -> bool:
-    """
-    Validate only the dependencies of the course at the given position.
-    """
-    course = plan.classes[sem][index]
-    info = courseinfo.try_course(course.code)
-    if info is None:
-        return False
-    course_ctx = ValidationContext(courseinfo, plan, user_ctx=None)
-    return is_satisfied(
-        course_ctx,
-        CourseInstance(code=course.code, sem=sem, index=index),
-        info.deps,
-    )

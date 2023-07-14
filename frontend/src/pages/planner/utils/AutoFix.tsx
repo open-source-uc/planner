@@ -123,7 +123,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails }: AutoFixProps): 
   const auth = useAuth()
   switch (diag.kind) {
     case 'curr': {
-      const buttons = diag.recommend.map(([fillWith, fillWithName], i) => (
+      const buttons = diag.fill_options.map(([fillWith, fillWithName], i) => (
         <button key={i} className="autofix" onClick={() => {
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null

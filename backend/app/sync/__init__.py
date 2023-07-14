@@ -32,7 +32,10 @@ from prisma.models import (
 )
 
 from ..plan.courseinfo import clear_course_info_cache, course_info
-from ..plan.validation.curriculum.tree import Curriculum, CurriculumSpec
+from ..plan.validation.curriculum.tree import (
+    Curriculum,
+    CurriculumSpec,
+)
 from ..settings import settings
 from ..user.auth import UserKey
 from ..user.info import StudentContext
@@ -75,7 +78,7 @@ async def run_upstream_sync(courses: bool = True, offer: bool = True):
     await course_info()
 
 
-async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
+async def _get_curriculum_piece(spec: CurriculumSpec) -> Curriculum:
     """
     Get the curriculum definition for a given spec.
     In other words, fetch the full curriculum corresponding to a given
@@ -115,6 +118,47 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
         curr.json(),
     )
     return curr
+
+
+async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
+    out = Curriculum.empty()
+
+    # Fetch major (or common plan)
+    major = await _get_curriculum_piece(
+        CurriculumSpec(
+            cyear=spec.cyear,
+            major=spec.major,
+            minor=None,
+            title=None,
+        ),
+    )
+    out.extend(major)
+
+    # Fetch minor
+    if spec.minor is not None:
+        minor = await _get_curriculum_piece(
+            CurriculumSpec(
+                cyear=spec.cyear,
+                major=None,
+                minor=spec.minor,
+                title=None,
+            ),
+        )
+        out.extend(minor)
+
+    # Fetch title
+    if spec.title is not None:
+        title = await _get_curriculum_piece(
+            CurriculumSpec(
+                cyear=spec.cyear,
+                major=None,
+                minor=None,
+                title=spec.title,
+            ),
+        )
+        out.extend(title)
+
+    return out
 
 
 _student_context_cache: OrderedDict[str, tuple[StudentContext, float]] = OrderedDict()
