@@ -1,11 +1,26 @@
 {$PLANNER_URL} {
+	handle /* {
+		root * /srv
+		file_server
+		# This acts as the index file (SPA)
+		try_files {path} /index.html
+		# Enable compression
+		encode zstd gzip
+	}
+	
+	# The handle_path performs path rewriting 
+	# to strip the /api prefix
 	handle_path /api/* {
 		reverse_proxy api:8000
 	}
 
-	handle /* {
-		root * /srv
-		file_server
-		try_files {path} /index.html
+	# Health check
+	handle_path /health {
+		respond 200 "OK"
+	}
+
+	# Teapot
+	handle_path /teapot {
+		respond 418 "I'm a teapot"
 	}
 }

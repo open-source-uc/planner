@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "tigerpath-api"
+name = "panguipath-api"
 version = "0.1.0"
 description = ""
 authors = ["Open Source UC <hello-world@osuc.dev>"]
