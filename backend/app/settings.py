@@ -29,9 +29,17 @@ class Settings(BaseSettings):
     planner_url: AnyHttpUrl = Field("http://localhost:3000")
 
     @property
-    def login_endpoint(self):
+    def cas_callback_url(self):
+        """
+        Get the "CAS callback URL", also known as "service URL" in CAS terms.
+        After the user enters their username and password in the CAS webpage, the CAS
+        webpage will redirect the user's browser to this URL, with the CAS token
+        attached as a URL parameter.
+        Therefore, this URL must be able to receive the CAS token, create a JWT token
+        and hand it to the frontend.
+        """
         next_url = urljoin(self.planner_url, "/")
-        auth_login_url = urljoin(self.planner_url, "/api/auth/login")
+        auth_login_url = urljoin(self.planner_url, "/api/user/login")
         params = urlencode({"next": next_url})
         return f"{auth_login_url}?{params}"
 
