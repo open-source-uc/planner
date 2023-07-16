@@ -1,0 +1,352 @@
+---
+- name: Deploy planner
+  hosts: all
+  become: true
+  gather_facts: true
+  connection: ssh
+  vars_prompt:
+    - name: "machine_name"
+      prompt: "Desired machine name (e.g. staging, optional)"
+      private: false
+    - name: "netdata_token"
+      prompt: "Netdata Claim Token (optional)"
+    - name: "netdata_room_id"
+      prompt: "Netdata Room ID (optional)"
+    - name: "tailscale_authkey"
+      prompt: "Tailscale Authkey (optional)"
+  tasks:
+    - name: Check that we're running Rocky Linux 9
+      ansible.builtin.assert:
+        that: ansible_distribution == 'Rocky' and ansible_distribution_major_version == '9'
+        fail_msg: "This playbook is only for Rocky Linux 9"
+
+    - name: Configure hostname
+      ansible.builtin.hostname:
+        name: "planner-{{ machine_name }}"
+      when: machine_name | length > 0
+      notify:
+        - Configure /etc/hosts
+
+    - name: Install EPEL repo
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+
+    - name: Install Docker repo
+      ansible.builtin.command:
+        cmd: dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+        creates: /etc/yum.repos.d/docker-ce.repo
+
+    - name: Upgrade all packages
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        update_only: true
+
+    - name: Install packages
+      ansible.builtin.dnf:
+        name:
+          # Basics
+          - sudo
+          - wget
+          - git
+          - python3
+          - python3-pip
+          - tar
+          - unzip
+          - tree
+          - traceroute
+          - ca-certificates
+          - net-tools
+          - bind-utils
+          - nmap
+          - btop
+          - nano
+
+          # Docker
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+
+          # To make DNF management simpler
+          - dnf-plugins-core
+          # To replace iptables
+          - firewalld
+          # Automatic updates
+          - dnf-automatic
+          # NTS-compatible NTP client
+          - chrony
+          # For the tailscale selinux policy
+          - selinux-policy-devel
+
+          # Misc
+          - fish
+          - fortune-mod
+          - neofetch
+
+        state: present
+
+    - name: Install and configure micro editor # noqa: risky-shell-pipe command-instead-of-module
+      ansible.builtin.shell:
+        cmd: curl https://getmic.ro/r | bash
+        creates: /usr/bin/micro
+        chdir: /usr/bin
+
+    - name: Enable selinux
+      ansible.posix.selinux:
+        policy: targeted
+        state: enforcing
+
+    - name: Enable firewalld
+      ansible.builtin.service:
+        name: firewalld
+        enabled: true
+        state: started
+
+    - name: Open HTTP port
+      ansible.posix.firewalld:
+        service: http
+        permanent: true
+        state: enabled
+        immediate: true
+
+    - name: Open HTTPS port
+      ansible.posix.firewalld:
+        service: https
+        permanent: true
+        state: enabled
+        immediate: true
+
+    - name: Open HTTP/3 port
+      ansible.posix.firewalld:
+        service: http3
+        permanent: true
+        state: enabled
+        immediate: true
+
+    - name: Install and connect to Tailscale network
+      ansible.builtin.include_role:
+        name: artis3n.tailscale
+      vars:
+        tailscale_args: "--ssh"
+        tailscale_up_skip: "{{ tailscale_authkey | length == 0 }}"
+      register: tailscale_role
+
+    - name: Notify Tailscale changes # noqa: no-handler
+      ansible.builtin.debug:
+        msg: "Tailscale changed, notifying handlers"
+      when: tailscale_role.changed
+      notify:
+        - Clone Tailscale selinux policy
+        - Compile Tailscale selinux policy
+        - Stop tailscale
+        - Load Tailscale selinux policy
+        - Start tailscale
+
+    - name: Enable memory overcommit (for Redis)
+      ansible.posix.sysctl:
+        name: vm.overcommit_memory
+        value: 1
+        state: present
+
+    - name: Check if Transparent Huge Pages are disabled
+      ansible.builtin.command:
+        cmd: cat /sys/kernel/mm/transparent_hugepage/enabled
+      register: tph_check
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Disable Transparent Huge Pages (for Redis)
+      ansible.builtin.shell:
+        cmd: echo never > /sys/kernel/mm/transparent_hugepage/enabled
+      when: tph_check.stdout != 'never'
+      changed_when: true
+
+    - name: Check if there is enough disk space (10 GB)
+      ansible.builtin.assert:
+        that: (ansible_mounts|selectattr("mount", "equalto", "/")|list)[0].size_available > 10 * 1024 * 1024 * 1024
+      vars:
+        fail_msg: "Not enough disk space to continue"
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Check that swap is enabled
+      ansible.builtin.command:
+        cmd: swapon --show
+      register: swap_check
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Enable swap
+      ansible.builtin.command:
+        cmd:
+          # Allocate a 4 GB swapfile
+          - fallocate -l 4G /swapfile
+          - chmod 600 /swapfile
+          # Mark as swap
+          - mkswap /swapfile
+          # Enable the swapfile
+          - swapon /swapfile
+        creates: /swapfile
+      when: swap_check.rc != 0
+
+    - name: Configure automatic security updates
+      community.general.ini_file:
+        path: /etc/dnf/automatic.conf
+        section: commands
+        option: upgrade_type
+        value: security
+        mode: "0644"
+
+    - name: Enable automatic updates
+      ansible.builtin.service:
+        name: dnf-automatic-install.timer
+        enabled: true
+        state: started
+
+    - name: Configure timezone
+      community.general.timezone:
+        name: America/Santiago
+
+    - name: Configure NTP to use Cloudflare Time Services
+      ansible.builtin.lineinfile:
+        path: /etc/chrony.conf
+        regexp: '^pool'
+        line: 'pool time.cloudflare.com iburst nts'
+        state: present
+        validate: 'chronyd -p -f %s'
+        insertafter: '^# Please consider joining the pool'
+        firstmatch: true
+      notify: Restart (and enable) chronyd
+
+    - name: Set Docker to start on boot
+      ansible.builtin.service:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Check if netdata is installed
+      ansible.builtin.command:
+        cmd: netdata -v
+      register: netdata_installed
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Download netdata kickstart
+      ansible.builtin.get_url:
+        url: https://my-netdata.io/kickstart.sh
+        dest: /tmp/netdata-kickstart.sh
+        mode: '0755'
+      when: netdata_installed.rc != 0 and (netdata_token | length > 0) and (netdata_room_id | length > 0)
+
+    - name: Install and claim Netdata
+      ansible.builtin.command:
+        cmd: sh /tmp/netdata-kickstart.sh {{ i_args }}
+        creates: /sbin/netdata
+      when: netdata_installed.rc != 0 and (netdata_token | length > 0) and (netdata_room_id | length > 0)
+      vars:
+        i_args: "--claim-token {{ netdata_token }} --claim-rooms {{ netdata_room_id }} --non-interactive --stable-channel --disable-telemetry"
+
+    - name: Start and enable Netdata
+      ansible.builtin.service:
+        name: netdata
+        enabled: true
+        state: started
+
+    - name: Get location of fish
+      ansible.builtin.command:
+        cmd: which fish
+      register: fish_location
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Add fish to /etc/shells
+      ansible.builtin.lineinfile:
+        path: /etc/shells
+        line: "{{ fish_location.stdout }}"
+        state: present
+        create: true
+        mode: "0644"
+
+    - name: Create "planner" user
+      ansible.builtin.user:
+        name: planner
+        shell: "{{ fish_location.stdout }}"
+        createhome: true
+        home: /home/planner
+        groups:
+          - docker
+        state: present
+
+    - name: Clone the planner repo # noqa: latest
+      ansible.builtin.git:
+        repo: "https://github.com/open-source-uc/planner.git"
+        dest: /opt/planner/
+
+    - name: Give planner user ownership of /opt/planner
+      ansible.builtin.file:
+        path: /opt/planner
+        owner: planner
+        group: planner
+        recurse: true
+
+    - name: Create symlink to planner repo
+      ansible.builtin.file:
+        src: /opt/planner
+        dest: /home/planner/planner
+        state: link
+
+  handlers:
+    - name: Restart (and enable) chronyd
+      ansible.builtin.service:
+        name: chronyd
+        state: restarted
+
+    - name: Configure /etc/hosts
+      ansible.builtin.template:
+        src: templates/hosts.j2
+        dest: /etc/hosts
+        owner: root
+        group: root
+        mode: "0644"
+      when: machine_name | length > 0
+
+    - name: Clone Tailscale selinux policy
+      ansible.builtin.git:
+        repo: "git@github.com:abhiseksanyal/tailscale-selinux-policy.git"
+        dest: /usr/share/selinux/devel/tailscale
+        version: "83c908e4c2bb6521054afd03390ebbc20ab9e9e7"
+
+    - name: Compile Tailscale selinux policy
+      ansible.builtin.command:
+        cmd:
+          - make -f ../Makefile tailscaled.pp
+        creates: /usr/share/selinux/devel/tailscale/tailscale.pp
+        chdir: /usr/share/selinux/devel/tailscale
+
+    - name: Stop tailscale
+      ansible.builtin.service:
+        name: tailscaled
+        state: stopped
+
+    - name: Load Tailscale selinux policy
+      ansible.builtin.command:
+        cmd:
+          - semodule -i tailscaled.pp
+          - restorecon /usr/sbin/tailscaled
+          - restorecon /lib/systemd/system/tailscaled.service
+          - restorecon -R /var/lib/tailscale
+          - restorecon -R /var/run/tailscale
+        chdir: /usr/share/selinux/devel/tailscale
+      changed_when: true
+
+    - name: Start tailscale
+      ansible.builtin.service:
+        name: tailscaled
+        state: started
