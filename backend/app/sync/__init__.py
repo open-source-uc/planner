@@ -4,6 +4,7 @@ Currently using unofficial sources until we get better API access.
 """
 
 import time
+import traceback
 from collections import OrderedDict
 
 from prisma.models import (
@@ -30,6 +31,7 @@ from prisma.models import (
 from prisma.models import (
     Title as DbTitle,
 )
+from pydantic import ValidationError
 
 from ..plan.courseinfo import clear_course_info_cache, course_info
 from ..plan.validation.curriculum.tree import (
@@ -99,7 +101,11 @@ async def _get_curriculum_piece(spec: CurriculumSpec) -> Curriculum:
         },
     )
     if db_curr is not None:
-        return Curriculum.parse_raw(db_curr.curriculum)
+        try:
+            return Curriculum.parse_raw(db_curr.curriculum)
+        except ValidationError:
+            print(f"regenerating curriculum for {spec}: failed to parse cache")
+            traceback.print_exc()
 
     courseinfo = await course_info()
     curr = await siding_translate.fetch_curriculum(courseinfo, spec)
