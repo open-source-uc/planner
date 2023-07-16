@@ -16,7 +16,7 @@ In the context of an engineering student: None
 from collections.abc import Callable
 from typing import TypeVar
 
-from .logic import And, BaseOp, Const, Expr, Operator, Or
+from .logic import And, AndClause, Atom, BaseOp, Const, DnfExpr, Expr, Operator, Or
 
 T = TypeVar("T")
 
@@ -29,7 +29,7 @@ def simplify(expr: Expr) -> Expr:
         # Try to simplify using all available methods
         previous = expr
         for method in simplification_methods:
-            if not isinstance(expr, And | Or):
+            if not isinstance(expr, Operator):
                 break
             expr = method(expr)
         # Finish simplifying if no progress is made
@@ -38,22 +38,78 @@ def simplify(expr: Expr) -> Expr:
     return expr
 
 
+def as_dnf(expr: Expr) -> DnfExpr:
+    """
+    Convert an expression to Disjunctive-Normal-Form.
+    Ie. make the expression be an `Or` clause of `And` clauses.
+    Ie. make it so that no `And` contains `Or`s.
+    Ie. make it so the expression has the form:
+        (A & B) | (A & C) | (D)
+    Useful because then we have several possible "scenarios", each of them being a set
+    of assumptions.
+    """
+    # Start by simplifying the entire expression
+    expr = simplify(expr)
+
+    # Now go step by step expanding the expression
+    while True:
+        # Try to simplify using all available methods
+        previous = expr
+        for method in dnf_methods:
+            if not isinstance(expr, Operator):
+                break
+            expr = method(expr)
+        # Finish simplifying if no progress is made
+        if expr is previous:
+            break
+
+    # Fit into the `DnfExpr` format
+    conjunctions: list[AndClause] = []
+    if not isinstance(expr, Or):
+        expr = Or(children=(expr,))
+    for subexpr in expr.children:
+        if isinstance(subexpr, And):
+            subsubatoms: list[Atom] = []
+            for subsubatom in subexpr.children:
+                if not isinstance(subsubatom, Atom):
+                    raise Exception(f"dnf simplification failed: {expr}")
+                subsubatoms.append(subsubatom)
+            conjunctions.append(AndClause(children=tuple(subsubatoms)))
+        elif isinstance(subexpr, Or):
+            # This can never happen, because it would be an Or within an Or and
+            # there are simplification rules that take care of that
+            raise Exception(f"dnf simplification failed: {expr}")
+        else:
+            conjunctions.append(AndClause(children=(subexpr,)))
+
+    return DnfExpr(children=tuple(conjunctions))
+
+
 def apply_simplification(
     expr: Operator,
     ctx: T,
     rule: Callable[[T, Operator, list[Expr], Expr], bool],
 ) -> Operator:
     """
-    Apply a simplification rule to this connector.
-    The rule is evaluated for each child.
-    If the rule returns false, it's assumed the rule does not affect this child,
-    and the child is passed through to the `new` children list.
-    If the rule returns true, it's assumed that the rule code added the child to
-    the new children list.
+    Apply a simplification rule to this operator.
+    (Note that this function can only be called on operators!)
 
+    The rule is evaluated once for each child.
     Rule parameters:
         rule(context, expression, new list of children, child in consideration)
+    - `context` is an arbitrary type passed to every invocation of the rule
+    - `expression` is the value of `expr`, the same parent expression always
+    - `new_children` is a mutable list where the new list of children is built
+    - `child` is the child being considered in this invocation
+
+    If the rule returns `False`, the child is added as-is to `new_children`
+    automatically.
+    If the rule returns `True`, the child is *not* added automatically: the rule can
+    decide whether to add it or not.
+    If all invocations return `False`, the expression is left unchanged (!) no matter
+    the contents of `new_children`.
     """
+
     new_children: list[Expr] = []
     changed = False
     for child in expr.children:
@@ -67,7 +123,25 @@ def apply_simplification(
     return BaseOp.create(expr.neutral, tuple(new_children)) if changed else expr
 
 
-def simplify_children_rule(
+def _dnfize_chilren_rule(ctx: None, op: Operator, new: list[Expr], child: Expr) -> bool:
+    if isinstance(child, And):
+        new_child = defactor(child)
+        if new_child is not child:
+            # Child was defactores
+            new.append(new_child)
+            return True
+    return False
+
+
+def dnfize_children(expr: Operator) -> Expr:
+    """
+    Defactorize any children `And` operators.
+    This makes it so that no `And` has an `Or` clause as a child.
+    """
+    return apply_simplification(expr, None, _dnfize_chilren_rule)
+
+
+def _simplify_children_rule(
     ctx: None,
     op: Operator,
     new: list[Expr],
@@ -85,7 +159,7 @@ def simplify_children(expr: Operator) -> Expr:
     """
     Simplify the children expressions of this operator.
     """
-    return apply_simplification(expr, None, simplify_children_rule)
+    return apply_simplification(expr, None, _simplify_children_rule)
 
 
 def degen(expr: Operator) -> Expr:
@@ -100,7 +174,7 @@ def degen(expr: Operator) -> Expr:
     return expr
 
 
-def assoc_rule(ctx: None, op: Operator, new: list[Expr], child: Expr) -> bool:
+def _assoc_rule(ctx: None, op: Operator, new: list[Expr], child: Expr) -> bool:
     if isinstance(child, Operator) and child.neutral == op.neutral:
         # Nested operations of the same type
         # Peel this level off
@@ -115,10 +189,10 @@ def assoc(expr: Operator) -> Expr:
     Apply associativity: (a & b) & c  <->  a & b & c
     In other words, peel redundant layers.
     """
-    return apply_simplification(expr, None, assoc_rule)
+    return apply_simplification(expr, None, _assoc_rule)
 
 
-def anihil_rule(
+def _anihil_rule(
     anihilate: list[bool],
     op: Operator,
     new: list[Expr],
@@ -138,10 +212,10 @@ def anihil(expr: Operator) -> Expr:
     """
     Apply anihilation: a & 0  <->  0
     """
-    return apply_simplification(expr, [False], anihil_rule)
+    return apply_simplification(expr, [False], _anihil_rule)
 
 
-def ident_rule(ctx: None, op: Operator, new: list[Expr], child: Expr) -> bool:
+def _ident_rule(ctx: None, op: Operator, new: list[Expr], child: Expr) -> bool:
     if isinstance(child, Const) and child.value == op.neutral:
         # Skip this child, since it adds nothing to the expression
         return True
@@ -152,10 +226,10 @@ def ident(expr: Operator) -> Expr:
     """
     Apply identity: a & 1  <->  a
     """
-    return apply_simplification(expr, None, ident_rule)
+    return apply_simplification(expr, None, _ident_rule)
 
 
-def idem_rule(seen: set[bytes], op: Operator, new: list[Expr], child: Expr) -> bool:
+def _idem_rule(seen: set[bytes], op: Operator, new: list[Expr], child: Expr) -> bool:
     if child.hash in seen:
         # Skip this duplicate term
         return True
@@ -169,10 +243,10 @@ def idem(expr: Operator) -> Expr:
     In other words, remove duplicates.
     """
     seen: set[bytes] = set()
-    return apply_simplification(expr, seen, idem_rule)
+    return apply_simplification(expr, seen, _idem_rule)
 
 
-def absorp_rule(
+def _absorp_rule(
     children: set[bytes],
     op: Operator,
     new: list[Expr],
@@ -189,13 +263,14 @@ def absorp_rule(
 def absorp(expr: Operator) -> Expr:
     """
     Apply absorption: a & (a | b)  <->  a
+                      a | (a & b)  <->  a
     In other words, if a grandchild is duplicated with a child, remove the entire
     parent of the grandchild.
     """
     children: set[bytes] = set()
     for child in expr.children:
         children.add(child.hash)
-    return apply_simplification(expr, children, absorp_rule)
+    return apply_simplification(expr, children, _absorp_rule)
 
 
 def factor(expr: Operator) -> Expr:
@@ -259,6 +334,83 @@ def factor(expr: Operator) -> Expr:
     return degen(BaseOp.create(expr.neutral, tuple(outer)))
 
 
+def defactor(expr: Operator) -> Expr:
+    """
+    Defactorize the expression: a & (b | c) -> (a & b) | (a & c)
+    In order to simplify towards DNF form, it only defactorizes AND operators, so the
+    dual conversion is not done:
+        a | (b & c) -/> (a | b) & (a | c)
+    """
+
+    # For each children, derive a list of the "options" we can choose
+    # Eg.   a & (b | c) & (d | e)
+    #    -> [a] & [b, c] & [d, e]
+    options: list[tuple[Expr, ...]] = []
+    for child in expr.children:
+        if isinstance(child, Operator) and child.neutral != expr.neutral:
+            options.append(child.children)
+        else:
+            options.append((child,))
+
+    # If there is nothing meaningful to do, exit early
+    for opt in options:
+        if len(opt) > 1:
+            break
+        if len(opt) == 0:
+            # This is a special case:
+            #    a & () & c & d
+            # -> a & 0 & c & d
+            # -> 0
+            return expr
+    else:
+        # There are no options to pick from
+        # Exit early
+        return expr
+
+    # Now, we have to choose all combinations of options, and join them
+    # Eg.   [a] & [b, c] & [d, e]
+    #    -> (a & b & d) | (a & b & e) | (a & c & d) | (a & c & e)
+    cur_choice = [0 for _opt in options]
+    new_children: list[Expr] = []
+    while True:
+        # Add this combination
+        new_children.append(
+            BaseOp.create(
+                expr.neutral,
+                tuple(options[i][cur_choice[i]] for i in range(len(options))),
+            ),
+        )
+
+        # Check the next choice combination
+        for i, opt in enumerate(options):
+            cur_choice[i] += 1
+            if cur_choice[i] >= len(opt):
+                cur_choice[i] = 0
+            else:
+                break
+        else:
+            # Remember that the `else` block runs when no `break` occurs
+            # This means that all choices were reset back to zero
+            # (and therefore we already tried all options)
+            break
+
+    return BaseOp.create(not expr.neutral, tuple(new_children))
+
+
+def defactor_and(expr: Operator) -> Expr:
+    """
+    Defactorize, but only `And` operators.
+    Leave `Or` operators as-is.
+    """
+    if isinstance(expr, Or):
+        return expr
+    return defactor(expr)
+
+
+# TODO: Simplify using business logic, for example:
+# IIC2233 y IIC2233(c) -> IIC2233
+
+
 # A list of techniques to try when simplifying
 simplification_methods = [
     assoc,
@@ -269,4 +421,17 @@ simplification_methods = [
     absorp,
     degen,
     factor,
+]
+
+# A list of techniques to try when doing DNF
+dnf_methods = [
+    simplify_children,
+    dnfize_children,
+    assoc,
+    anihil,
+    ident,
+    idem,
+    absorp,
+    degen,
+    defactor_and,
 ]

@@ -17,13 +17,13 @@ from .key import AdminKey, ModKey, UserKey
 # CASClient abuses class constructors (__new__),
 # so we are using the versioned class directly
 cas_verify_client: CASClientV3 = CASClientV3(
-    service_url=settings.login_endpoint,
+    service_url=settings.cas_callback_url,
     server_url=settings.cas_server_url,
 )
 
 # Use a separate dummy CAS client instance to get the login URL.
 cas_redirect_client: CASClientV3 = CASClientV3(
-    service_url=settings.login_endpoint,
+    service_url=settings.cas_callback_url,
     server_url=settings.cas_login_redirection_url or settings.cas_server_url,
 )
 

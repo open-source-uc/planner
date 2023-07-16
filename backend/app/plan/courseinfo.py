@@ -5,6 +5,9 @@ Cache course info from the database in memory, for easy access.
 from dataclasses import dataclass
 
 import pydantic
+from pydantic import BaseModel
+from unidecode import unidecode
+
 from prisma.models import (
     CachedCourseInfo as DbCachedCourseInfo,
 )
@@ -13,8 +16,6 @@ from prisma.models import (
     Equivalence,
     EquivalenceCourse,
 )
-from pydantic import BaseModel
-from unidecode import unidecode
 
 from .course import EquivalenceId, PseudoCourse
 from .validation.courses.logic import Expr
@@ -146,6 +147,13 @@ class CourseInfo:
             return None
         return info.credits
 
+    def get_ghost_credits(self, course: PseudoCourse) -> int | None:
+        """
+        Like `get_credits` but 0-credit courses return 1 instead.
+        """
+        creds = self.get_credits(course)
+        return 1 if creds == 0 else creds
+
 
 _course_info_cache: CourseInfo | None = None
 
@@ -181,6 +189,7 @@ async def add_equivalence(equiv: EquivDetails):
             f"({i}, $1, ${2+i})",
         )  # NOTE: No user-input is injected here
         query_args.append(code)
+    assert value_tuples
     await EquivalenceCourse.prisma().query_raw(
         f"""
         INSERT INTO "EquivalenceCourse" (index, equiv_code, course_code)
@@ -200,6 +209,8 @@ class CachedCourseDetailsJson(BaseModel):
 
 
 async def course_info() -> CourseInfo:
+    # TODO: Check in with the central database every so often
+    # This would allow us to run multiple instances
     global _course_info_cache
     if _course_info_cache is None:
         # Derive course rules from courses in database

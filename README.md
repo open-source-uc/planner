@@ -10,6 +10,8 @@
 <p align="center">
   <a href="#descripción">Descripción</a> •
   <a href="#instalación-y-desarrollo">Instalación</a> •
+  <a href="#mocks">Mocks</a> •
+  <a href="#staging-server-y-producción">Staging y Producción</a> •
   <a href="#equipo">Equipo</a> •
   <a href="#licencia">Licencia</a>
 </p>
@@ -58,6 +60,7 @@ Sigue en la sección [Desarrollo general](#desarrollo-general).
 
 Una vez listo, podrás entrar a la app en [http://localhost:3000](http://localhost:3000) 🎉
 
+
 Necesitaras un nombre de usuario para acceder a CAS. Puedes acceder con `testuser` o con otros usuarios definidos en `cas-mock-users.json`. 
 
 
@@ -82,7 +85,48 @@ La app aún está en una etapa muy temprana del desarrollo por lo que podrían h
 El proyecto se integra con dos servicios externos: SIDING (para acceder a mallas y datos de estudiantes) y CAS (para el login UC). Ambos son configurables por medio de variables de entorno, y se proveen mocks para ambos servicios en caso de no tener credenciales para acceder a ellos.
 
 - Para SIDING se provee un mock que se activa automáticamente en ausencia de credenciales. El mock es limitado, y solo permite probar algunas combinaciones de malla.
-- Para CAS, se provee el servicio `cas-server-mock` que corre automáticamente junto a la app. Las cuentas de usuario disponibles son configurables en el archivo `data/cas-mock-users.json`.
+- Para CAS, se provee el servicio `cas-server-mock` que corre automáticamente junto a la app. Las cuentas de usuario disponibles son configurables en el archivo `cas-mock/data/cas-mock-users.json`.
+
+## Staging y Producción
+
+### Staging Server
+
+El ambiente de staging está diseñado para testear las nuevas versiones del planner en un ambiente real antes de pasar a producción.
+
+En primer lugar, es necesario generar manualmente los archivos `.env` y reemplazar los valores según corresponda para cada servicio utilizando los ejemplos ubicados en cada carpeta:
+- _API_ → `backend/.env.staging`
+- _servidor web_ → `frontend/.env.staging`
+- _base de datos_ → `database/.env.staging`
+
+Luego, para correr la aplicación utilizando un servidor mock de **CAS externo** se debe:
+1. Definir las variables `CAS_SERVER_URL` y `CAS_LOGIN_REDIRECTION_URL` en `backend/.env` con la URL del servidor externo.
+2. Levantar los contenedores con `docker compose up planner -d --build` desde la raíz del repositorio.
+
+Alternativamente, para correr la aplicación utilizando un servidor mock de **CAS local**:
+1. Dejar las variables `CAS_SERVER_URL` y `CAS_LOGIN_REDIRECTION_URL` en `backend/.env` con los valores predeterminados del archivo de ejemplo `.env.staging`.
+2. Luego, es necesario generar el archivo `cas-mock-users.json` en `cas-mock/data` a partir del ejemplo `cas-mock-users.json.example`.
+3. Levantar los contenedores con `docker compose up -d --build` desde la raíz del repositorio.
+
+Finalmente, se puede detener la app con `docker compose down` desde la raíz del repositorio.
+
+### Producción
+
+El ambiente de producción es manejado por la universidad de forma interna, por lo que aquí se detallan las **instrucciones para desplegar el planner** de forma manual:
+1. Se deben crear tres archivos `.env`, uno por cada servicio y dentro de su respectiva carpeta:
+- `backend/.env` a partir del ejemplo `backend/.env.production` (_API_)
+- `frontend/.env` a partir del ejemplo `frontend/.env.production` (_servidor web_).
+- `database/.env` a partir del ejemplo `database/.env.production` (_base de datos_).
+2. Reemplazar los valores de las variables de entorno según corresponda en todos los archivos `.env` creados. **IMPORTANTE:** no olvidar modificar la variable `JWT_SECRET` en `backend/.env` y otras variables que puedan contener secretos para evitar vulnerabilidades de seguridad.
+- Para generar una clave `JWT_SECRET` segura y aleatoria se puede utilizar el comando `openssl rand -base64 32`.
+3. Levantar los contenedores con `docker compose up planner -d --build` desde la raíz del repositorio. Requiere _Docker_ y _Docker Compose_ instalados en la máquina.
+4. Revisar el estado de los contenedores con `docker ps` o `docker container ls`.
+5. Finalmente, se puede detener la app con `docker compose down` desde la misma ubicación.
+
+Nota: los comandos podrían variar ligeramente dependiendo del sistema operativo y versión de *Docker Compose*. En particular, podría ser necesario utilizar `docker-compose` en vez de `docker compose` y `sudo docker compose` en vez de `docker compose`.
+
+---
+
+Cabe mencionar que sería ideal a futuro implementar un **despliegue automático del planner** utilizando técnicas de *CI/CD*, pero de momento esta opción se pospone debido a las restricciones de seguridad y requerimientos de la universidad para hacer un despliegue interno.
 
 ## Equipo
 
