@@ -514,7 +514,13 @@ async def apply_curriculum_rules(
     return curriculum
 
 
-FORCE_HOMOGENEOUS = ("FIS1523", "FIS1533", "ICS1113")
+FORCE_HOMOGENEOUS = (
+    {"FIS1523", "ICM1003", "IIQ1003", "IIQ103H"},
+    {"FIS1533", "IEE1533"},
+    {"ICS1113", "ICS113H"},
+)
+FORCE_HOMOGENEOUS_MIN = min(len(homogeneous) for homogeneous in FORCE_HOMOGENEOUS)
+FORCE_HOMOGENEOUS_MAX = max(len(homogeneous) for homogeneous in FORCE_HOMOGENEOUS)
 
 
 def _fix_nonhomogeneous_equivs(courseinfo: CourseInfo, equiv: EquivDetails):
@@ -528,13 +534,14 @@ def _fix_nonhomogeneous_equivs(courseinfo: CourseInfo, equiv: EquivDetails):
     # Tambien, parcharemos "Optimizacion" como una equivalencia homogenea
     # Colocamos un limite maximo de cursos para evitar parchar listas grandes que tengan
     # estos cursos de primero.
-    if 1 <= len(equiv.courses) <= 6 and equiv.courses[0] in FORCE_HOMOGENEOUS:
+    if FORCE_HOMOGENEOUS_MIN <= len(equiv.courses) <= FORCE_HOMOGENEOUS_MAX and any(
+        set(equiv.courses) == homogeneous for homogeneous in FORCE_HOMOGENEOUS
+    ):
         equiv.is_homogeneous = True
         equiv.is_unessential = True
-        if len(equiv.courses) >= 1:
-            info = courseinfo.try_course(equiv.courses[0])
-            if info is not None:
-                equiv.name = info.name
+        info = courseinfo.try_course(equiv.courses[0])
+        if info is not None:
+            equiv.name = info.name
 
 
 def _mark_unessential_equivs(equiv: EquivDetails):
