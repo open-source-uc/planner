@@ -38,7 +38,11 @@ deps-back:
     cd backend && poetry config virtualenvs.in-project true
     cd backend && poetry install
 
-deps: deps-front deps-back
+deps-infra:
+    @echo "{{ info_prefix }} \e[1mInstalling infrastructure dependencies...\e[0m"
+    cd infra && ansible-galaxy install -r requirements.yml
+
+deps: deps-front deps-back deps-infra
 
 lint-front:
     @echo "{{ info_prefix }} \e[1mLinting front-end...\e[0m"
