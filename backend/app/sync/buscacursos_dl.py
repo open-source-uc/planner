@@ -5,10 +5,9 @@ from typing import NoReturn
 
 import pydantic
 import requests
-from pydantic import BaseModel
-
 from prisma.models import Course as DbCourse
 from prisma.types import CourseCreateWithoutRelationsInput
+from pydantic import BaseModel
 
 from ..plan.courseinfo import make_searchable_name
 from ..plan.validation.courses.logic import (

@@ -8,9 +8,8 @@ from fastapi import Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import ExpiredSignatureError, JWTError, jwt
-from pydantic import BaseModel
-
 from prisma.models import AccessLevel as DbAccessLevel
+from pydantic import BaseModel
 
 from ..settings import settings
 from .key import AdminKey, ModKey, UserKey
