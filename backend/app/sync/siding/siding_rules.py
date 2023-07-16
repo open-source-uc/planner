@@ -588,8 +588,14 @@ async def apply_curriculum_rules(
             #   Una posibilidad es por ahora hardcodear estos programas en nuestro
             #   formato (ie. hardcodearlo como `Curriculum` y no como
             #   `list[BloqueMalla]`).
+            #   Tambien hay majors faltantes simplemente porque la Dipre no los ha
+            #   ingresado al parecer.
             #
             #   Programas faltantes:
+            #   - (M235) Major en Ingeniería, Diseño e Innovación - Track en Ingeniería
+            #       Vs.02
+            #   - (M143) Major en Ingeniería Física - Track Ingeniería Vs.01
+            #   - (M149) Major en Ingeniería Física - Track Física Vs.01
             #   - (N242) Innovación Tecnológica Vs.01
             #   - (N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02
             #   - (N707) Minor de Profundidad de Articulación Proyectos de Diseño
