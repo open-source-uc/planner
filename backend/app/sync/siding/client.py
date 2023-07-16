@@ -56,7 +56,7 @@ class PlanEstudios(BaseModel):
     CodCurriculum: str
     CodMajor: str
     CodMinor: str
-    CodTitulo: str
+    CodTitulo: str | None
 
 
 class Curso(BaseModel):

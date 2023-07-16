@@ -6,6 +6,7 @@ Definitions of basic student information.
 from pydantic import BaseModel
 
 from ..plan.course import PseudoCourse
+from ..plan.validation.curriculum.tree import MajorCode, MinorCode, TitleCode
 
 
 class StudentInfo(BaseModel):
@@ -21,11 +22,11 @@ class StudentInfo(BaseModel):
     # E.g `(2021, 1)` for the first semester of the year 2021
     admission: tuple[int, int]
     # The self-reported major code.
-    reported_major: str | None
+    reported_major: MajorCode | None
     # The self-reported minor code.
-    reported_minor: str | None
+    reported_minor: MinorCode | None
     # The self-reported title code.
-    reported_title: str | None
+    reported_title: TitleCode | None
 
 
 class StudentContext(BaseModel):
