@@ -13,7 +13,7 @@ el que habra que tocar.
 
 from unidecode import unidecode
 
-from ...plan.course import EquivalenceId
+from ...plan.course import EquivalenceId, pseudocourse_with_credits
 from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
 from ...plan.validation.curriculum.tree import (
     SUPERBLOCK_PREFIX,
@@ -238,20 +238,22 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
 
 COURSE_PREFIX = "courses:"
 MINOR_BLOCK_CODE = f"{SUPERBLOCK_PREFIX}Minor"
-MINOR_CREDITS = 50
 
 
 def _minor_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     """
     Aplicar la "transformacion de minor".
-    Todos los minors tienen 50 creditos, y los creditos que puedan chocar con major o
-    titulo se rellenan con optativos complementarios.
-    La idea es duplicar el bloque:
-    - Uno de ellos tiene los optativos complementarios, pero tiene una capacidad de 50
-        creditos. Es decir, tiene mas ramos que capacidad, por lo que no se espera que
-        se tomen todos los optativos complementarios.
-    - El otro tiene los cursos obligatorios de minor. Tiene exactamente 5 ramos de 10
-        creditos (o al menos 50 creditos en ramos) y una capacidad de exactamente 50.
+    Los minors tienen una cierta cantidad de cursos minimos, pero si los cursos ya estan
+    usados en otra parte del plan academico, se rellenan con optativos complementarios.
+    Los optativos complementarios estan marcados como cursos de 0 creditos.
+
+    Para modelar esto, duplicamos el arbol de este minor en dos copias:
+    - Una de ellas tiene los optativos complementarios, pero tiene una capacidad de 50
+        (o la cantidad original que sea) creditos. Es decir, tiene mas ramos que
+        capacidad, por lo que no se espera que se tomen todos los optativos
+        complementarios.
+    - La otra tiene los cursos obligatorios de minor. No tiene los optativos
+        complementarios, por lo que es necesario tomar todos los ramos del bloque.
         Este bloque esta en otra capa, de manera de no tener que "pelear" por los ramos
         con major y titulo.
     """
@@ -271,32 +273,25 @@ def _minor_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     if not isinstance(minor_block, Combination):
         raise Exception("minor block is a leaf?")
 
-    # Asumimos el optativo complementario como el ultimo ramo del minor
-    filler = minor_block.children[-1]
+    # El optativo complementario es el unico ramo con cero creditos
+    # Encontrarlo
+    filler_candidates = [block for block in minor_block.children if block.cap == 0]
+    if not filler_candidates:
+        # Este minor no tiene optativos complementarios
+        return
+    if len(filler_candidates) > 1:
+        raise Exception("more than one optativo complementario?")
+    filler = filler_candidates[0]
     if not isinstance(filler, Leaf):
         raise Exception("optativo complementario is not a leaf?")
 
-    # Eliminamos todas las instancias de optativo complementario del minor
+    # Eliminamos el optativo complementario del minor
     minor_block.children = [
         block for block in minor_block.children if block.block_code != filler.block_code
     ]
 
-    # Ajustamos a 50 creditos usando el optativo complementario
-    # Calculamos cuantos creditos de optativo complementario se tienen que usar de forma
-    # "normal"
-    normally_used_creds = MINOR_CREDITS - sum(
-        block.cap for block in minor_block.children
-    )
-    if normally_used_creds < 0:
-        raise Exception(f"minor has over {MINOR_CREDITS} credits?")
-    if normally_used_creds > 0:
-        minor_block.children.append(
-            filler.copy(
-                update={"cap": normally_used_creds},
-                deep=True,
-            ),
-        )
-    minor_block.cap = MINOR_CREDITS
+    # Calculamos el creditaje total de este minor
+    minor_credits = sum(block.cap for block in minor_block.children)
 
     # Duplicar el bloque
     # Llamaremos "exhaustivo" al bloque que tiene exactamente tantos ramos como
@@ -312,24 +307,24 @@ def _minor_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     # con otros bloques
     _set_block_layer(exhaustive, "minor")
 
-    # Agregamos optativos complementarios al bloque exclusivo, hasta completar 50
-    if not exclusive.children or exclusive.children[-1].block_code != filler.block_code:
-        exclusive.children.append(filler.copy())
-    exclusive.children[-1].cap = MINOR_CREDITS
-    # exclusive.children[-1].cost = 1  # Preferir los ramos normales por un poquito
-    exclusive.name = f"{exclusive.name} ({MINOR_CREDITS} créditos exclusivos)"
-    exclusive.debug_name += f" ({MINOR_CREDITS} créditos exclusivos)"
+    # Agregamos el optativo complementario al bloque exclusivo
+    # Agregamos suficientes creditos para poder completarlo a punta de optativos
+    # complementarios
+    exclusive.children.append(filler.copy())
+    exclusive.children[-1].cap = minor_credits
+    exclusive.name = f"{exclusive.name} ({minor_credits} créditos exclusivos)"
+    exclusive.debug_name += f" ({minor_credits} créditos exclusivos)"
 
-    # Nos aseguramos que hayan 50 creditos de cursos recomendados de optativo
+    # Nos aseguramos que hayan suficientes creditos de cursos recomendados de optativo
     # complementario
     assert filler.block_code.startswith(COURSE_PREFIX)
     filler_code = filler.block_code[len(COURSE_PREFIX) :]
-    filler_course = curriculum.fillers[filler_code][-1]
-    filler_course_creds = courseinfo.get_credits(filler_course.course)
-    assert filler_course_creds is not None
-    curriculum.fillers[filler_code] = [
-        filler_course for _ in range(_ceil_div(MINOR_CREDITS, filler_course_creds))
-    ]
+    filler_course = curriculum.fillers[filler_code][-1]  # Asumimos que es el ultimo
+    assert isinstance(filler_course.course, EquivalenceId)
+    filler_course.course = pseudocourse_with_credits(
+        filler_course.course,
+        minor_credits,
+    )
 
 
 TITLE_EXCLUSIVE_CREDITS = 130
