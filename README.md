@@ -136,6 +136,17 @@ Cabe mencionar que sería ideal a futuro implementar un **despliegue automático
 - [@fagiannoni](https://github.com/fagiannoni) - Backend
 - [@agucova](https://github.com/agucova) - Apoyo Backend/Frontend
 
+## Contribuidores
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+
 ## Licencia
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./license.md)
