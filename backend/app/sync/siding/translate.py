@@ -213,6 +213,11 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
             # Special treatment if the equivalence is homogeneous
             if info.is_homogeneous and len(info.courses) >= 1:
                 recommended = ConcreteId(code=info.courses[0], equivalence=recommended)
+                # TODO: Make equivalences actually global
+                # For example, ICS1113 and ICS113H should be equivalent.
+                # However, if there is no ICS1113-ICS113H homogeneous equivalence in the
+                # current plan, they will not be considered equivalent!
+                # Equivalencies should "spread" across curriculums.
                 for equivalent in info.courses:
                     curriculum.equivalencies[equivalent] = info.courses[0]
                 curriculum.equivalencies[code] = info.courses[0]

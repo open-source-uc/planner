@@ -508,7 +508,9 @@ def _fix_nonhomogeneous_equivs(courseinfo: CourseInfo, equiv: EquivDetails):
     # "Termodinamica".
     # Lo parcharemos para que estas sean listas homogeneas y con el nombre correcto.
     # Tambien, parcharemos "Optimizacion" como una equivalencia homogenea
-    if len(equiv.courses) >= 1 and equiv.courses[0] in FORCE_HOMOGENEOUS:
+    # Colocamos un limite maximo de cursos para evitar parchar listas grandes que tengan
+    # estos cursos de primero.
+    if 1 <= len(equiv.courses) <= 6 and equiv.courses[0] in FORCE_HOMOGENEOUS:
         equiv.is_homogeneous = True
         equiv.is_unessential = True
         if len(equiv.courses) >= 1:
