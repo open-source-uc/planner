@@ -24,6 +24,9 @@ ruff = "^0.0.275"
 black = "^23.3.0"
 tomli = "^2.0.1"
 pyright = "^1.1.315"
+pytest = "^7.4.0"
+pytest-xdist = "^3.3.1"
+hypothesis = "^6.81.2"
 
 
 [tool.poetry.group.infra.dependencies]
@@ -76,10 +79,8 @@ ignore = [
 max-complexity = 15
 
 [tool.pyright]
+root = "backend/"
 pythonVersion = "3.11"
 pythonPlatform = "Linux"
 typeCheckingMode = "strict"
-stubPath = "../typings"
-
-# Rules
-# https://github.com/tiangolo/fastapi/issues/4487
+stubPath = "backend/typings"
