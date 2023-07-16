@@ -542,9 +542,13 @@ const Planner = (): JSX.Element => {
     setIsLegendModalOpen(false)
   }, [setIsLegendModalOpen])
 
-  const openSavePlanModal = useCallback((): void => {
-    setIsSavePlanModalOpen(true)
-  }, [setIsSavePlanModalOpen])
+  const openSavePlanModal = useCallback(async (): Promise<void> => {
+    if (planName == null || planName === '') {
+      setIsSavePlanModalOpen(true)
+    } else {
+      await savePlan(planName)
+    }
+  }, [setIsSavePlanModalOpen, planName])
 
   const closeSavePlanModal = useCallback((): void => {
     setIsSavePlanModalOpen(false)

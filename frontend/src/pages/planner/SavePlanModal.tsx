@@ -52,7 +52,10 @@ const SavePlanModal = ({ isOpen, onClose, savePlan }: { isOpen: boolean, onClose
                     type="button"
                     disabled={isSaveButtonDisabled}
                     className='inline-flex w-full justify-center rounded-md text-sm btn shadow-sm sm:ml-3 sm:w-auto disabled:bg-gray-400'
-                    onClick={() => savePlan(planName)}
+                    onClick={() => {
+                      savePlan(planName)
+                      onClose()
+                    }}
                   >
                     Guardar
                   </button>
