@@ -170,7 +170,7 @@ class SoapClient:
         self.record_path = None
 
     def on_startup(self):
-        # Load mockup data
+        # Load mock data
         if settings.siding_mock_path != "":
             try:
                 with settings.siding_mock_path.open() as file:

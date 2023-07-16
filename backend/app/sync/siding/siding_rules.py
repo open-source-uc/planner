@@ -492,7 +492,25 @@ async def apply_curriculum_rules(
             #   Escuela de Ingeniería."
             #   https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/optativos/op_ciencias/alumno_2020/index.phtml
             #   https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/formacion_gral/alumno_2020/index.phtml
+            # TODO: Some minors and titles have special requirements, and are missing
+            #   from the mock.
+            #   These minors/titles require a more flexible format than what SIDING
+            #   provides.
+            #   Possibly hardcode them (in our format) for now.
+            #   Missing programs:
+            #   - (N242) Innovación Tecnológica Vs.01
+            #   - (N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02
+            #   - (N707) Minor de Profundidad de Articulación Proyectos de Diseño
+            #   - (N234) Minor de Articulación Premedicina Vs.02
+            #   - (N227) Minor de Profundidad Articulación Arquitectura Vs.02
+            #   - (N180) Track 1: Fundamentos de Optimización Vs.02
+            #   - (N181) Track 2: Fundamentos de Análisis Numérico Vs.02
+            #   - (N182) Track 3: Cuantificación de Incertidumbre Vs.02
+            #   - (N183) Track 4: Teoría de la Computación Vs.02
+            #   - (N184) Track 5: Data Science Vs.02
+            #   - (40023) Ingeniero Civil Matemático y Computacional
             pass
+        # TODO: C2022
     return curriculum
 
 
