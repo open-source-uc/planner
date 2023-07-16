@@ -136,39 +136,9 @@ Cabe mencionar que sería ideal a futuro implementar un **despliegue automático
 - [@fagiannoni](https://github.com/fagiannoni) - Backend
 - [@agucova](https://github.com/agucova) - Apoyo Backend/Frontend
 
-## Contribuidores
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<table>
-  <tbody>
-    <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/nicoabarca"><img src="https://avatars.githubusercontent.com/u/29152538?v=4?s=100" width="100px;" alt="Nicolás Abarca"/><br /><sub><b>Nicolás Abarca</b></sub></a><br /><a href="#design-nicoabarca" title="Design">🎨</a></td>
-    </tr>
-  </tbody>
-</table>
-
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
-
-<!-- ALL-CONTRIBUTORS-LIST:END -->
-
 
 ## Licencia
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./license.md)
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
-
-## Contributors ✨
-
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
-
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
-<!-- ALL-CONTRIBUTORS-LIST:END -->
-
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
