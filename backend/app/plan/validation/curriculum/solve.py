@@ -759,7 +759,8 @@ def _taken_block_courses_iter(
         for inst in usable.instances
         if not (
             # Skips instances with mismatching tagged equivalence
-            isinstance(inst.original_pseudocourse, ConcreteId)
+            block.layer == ""
+            and isinstance(inst.original_pseudocourse, ConcreteId)
             and inst.original_pseudocourse.equivalence is not None
             and inst.original_pseudocourse.equivalence.code not in block.codes
         )
