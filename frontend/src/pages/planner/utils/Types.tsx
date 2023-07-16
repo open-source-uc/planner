@@ -52,5 +52,9 @@ export const isCancelError = (err: any): boolean => {
 }
 
 export const isDiagWithAssociatedCourses = (diag: any): diag is (CourseRequirementErr | UnknownCourseErr | SemestralityWarn | UnavailableCourseWarn | AmbiguousCourseErr) => {
-  return diag.associated_to !== undefined && typeof diag.associated_to[0] === 'object'
+  return 'associated_to' in diag && diag.associated_to !== null && diag.associated_to !== undefined && typeof diag.associated_to[0] === 'object'
+}
+
+export const isCourseRequirementErr = (diag: any): diag is CourseRequirementErr => {
+  return diag.kind === 'req'
 }

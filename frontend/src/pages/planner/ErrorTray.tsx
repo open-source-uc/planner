@@ -1,12 +1,11 @@
-import { useState } from 'react'
+import { useState, memo, type ReactNode } from 'react'
 import { type ClassId, type CourseRequirementErr, type CurriculumSpec, type ValidationResult } from '../../client'
-import { type PseudoCourseDetail, isDiagWithAssociatedCourses } from './utils/Types'
+import { type PseudoCourseDetail, isCourseRequirementErr, isDiagWithAssociatedCourses } from './utils/Types'
 import { Spinner } from '../../components/Spinner'
-import AutoFix, { validateCyear } from './utils/AutoFix'
+import AutoFix, { validateCyear, collectRequirements } from './utils/AutoFix'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
 type RequirementExpr = CourseRequirementErr['missing']
-
 /**
  * This is what is displayed when there are no errors or warnings.
  */
@@ -25,14 +24,14 @@ const NoMessages = ({ open }: { open: boolean }): JSX.Element => {
 /**
  * Format a course requirement expression.
  */
-const formatReqExpr = (expr: RequirementExpr): string => {
+const formatReqExpr = (expr: RequirementExpr, reqCourses: any): string => {
   // Este switch gigante esta chequeado por typescript
   // Si no se chequean exactamente todas las opciones tira error
   switch (expr.expr) {
     case 'and': case 'or':
       return expr.children.map(subexpr => {
-        if (subexpr.expr === 'and' || subexpr.expr === 'or') return `(${formatReqExpr(subexpr)})`
-        else return formatReqExpr(subexpr)
+        if (subexpr.expr === 'and' || subexpr.expr === 'or') return `(${formatReqExpr(subexpr, reqCourses)})`
+        else return formatReqExpr(subexpr, reqCourses)
       }).join(expr.expr === 'and' ? ' y ' : ' o ')
     case 'const':
       return expr.value ? 'true' : 'false'
@@ -47,12 +46,16 @@ const formatReqExpr = (expr: RequirementExpr): string => {
     case 'career':
       return `Carrera ${expr.equal ? '=' : '!='} ${expr.career}`
     case 'req':
-      return `${expr.code}${expr.coreq ? '(c)' : ''}`
+      return `${getCourseName(reqCourses[expr.code] ?? { code: expr.code })}${expr.coreq ? '(c)' : ''}`
     case undefined:
       return '?'
   }
 }
-const getCourseName = (course: ClassId | PseudoCourseDetail): string => {
+
+/**
+ * Show the name of a course with the code if it is loaded, if not show the code only.
+ */
+export const getCourseName = (course: ClassId | PseudoCourseDetail): string => {
   if ('name' in course) {
     return `"${course.name}" [${course.code}]`
   } else {
@@ -86,7 +89,7 @@ const formatCurriculum = (curr: CurriculumSpec): string => {
 /**
  * Get the error message for a given diagnostic.
  */
-const formatMessage = (diag: Diagnostic): string => {
+const formatMessage = (diag: Diagnostic, reqCourses: any): string => {
   // Este switch gigante esta chequeado por typescript
   // Si no se chequean exactamente todas las opciones tira error
   switch (diag.kind) {
@@ -124,7 +127,7 @@ const formatMessage = (diag: Diagnostic): string => {
     case 'outdatedcurrent':
       return 'Esta malla no está actualizada con los cursos que estás tomando.'
     case 'req':
-      return `Faltan requisitos para el curso ${getCourseName(diag.associated_to[0])}: ${formatReqExpr(diag.modernized_missing)}`
+      return `Faltan requisitos para el curso ${getCourseName(diag.associated_to[0])}: ${formatReqExpr(diag.modernized_missing, reqCourses)}`
     case 'sem': {
       const sem = diag.only_available_on === 0 ? 'impares' : diag.only_available_on === 1 ? 'pares' : '?'
       const s = diag.associated_to.length !== 1
@@ -153,12 +156,13 @@ interface MessageProps {
   diag: Diagnostic
   key: number
   open: boolean
+  reqCourses: any
 }
 
 /**
  * A single error/warning message.
  */
-const Message = ({ setValidatablePlan, getCourseDetails, diag, key, open }: MessageProps): JSX.Element => {
+const Message = ({ setValidatablePlan, getCourseDetails, reqCourses, diag, key, open }: MessageProps): JSX.Element => {
   const w = !(diag.is_err ?? true)
 
   return (
@@ -167,10 +171,11 @@ const Message = ({ setValidatablePlan, getCourseDetails, diag, key, open }: Mess
     <span className="sr-only">Info</span>
     <div className={`min-w-[14rem] ml-2 ${open ? '' : 'hidden'} `}>
       <span className={'font-semibold '}>{`${w ? 'Advertencia' : 'Error'}: `}</span>
-      {formatMessage(diag)}
-      <AutoFix setValidatablePlan={setValidatablePlan} getCourseDetails={getCourseDetails} diag={diag}/>
+      {formatMessage(diag, reqCourses)}
+      <AutoFix setValidatablePlan={setValidatablePlan} getCourseDetails={getCourseDetails} reqCourses={reqCourses} diag={diag}/>
     </div>
-  </div>)
+  </div>
+  )
 }
 
 interface ErrorTrayProps {
@@ -190,8 +195,18 @@ const ErrorTray = ({ setValidatablePlan, diagnostics, validating, courseDetails,
 
   const messageList: JSX.Element[] = diagnostics.map((diag, index) => {
     let diagWithAssociated = diag
+    const reqCourses: any = {}
     if (isDiagWithAssociatedCourses(diag)) diagWithAssociated = { ...diag, associated_to: diag.associated_to.map((course: ClassId) => courseDetails[course.code] ?? course.code) }
-    return Message({ setValidatablePlan, diag: diagWithAssociated, key: index, open: open || hasError, getCourseDetails })
+    if (isCourseRequirementErr(diag)) {
+      const reqCodes = new Set<string>()
+      collectRequirements(diag.modernized_missing, reqCodes)
+      for (const code of reqCodes) {
+        console.log(code, courseDetails[code])
+        reqCourses[code] = courseDetails[code] ?? code
+      }
+      console.log(reqCourses)
+    }
+    return Message({ setValidatablePlan, diag: diagWithAssociated, key: index, open: open || hasError, getCourseDetails, reqCourses })
   })
 
   return (
@@ -213,7 +228,7 @@ const ErrorTray = ({ setValidatablePlan, diagnostics, validating, courseDetails,
         {(hasError || open) && <p className="whitespace-nowrap ml-2 text-xl font-semibold text-center h-7 overflow-hidden">Errores y Advertencias </p>}
       </div>
       <div className="h-full flex flex-col gap-2 px-3 overflow-y-auto overflow-x-hidden ">
-          {validating ? <div> <Spinner message={`${hasError || open ? 'Validando...' : ''}`}/></div> : <>{messageList.length > 0 ? messageList : <NoMessages open={hasError || open}/>}</>}
+          {validating ? <div> <Spinner message={`${hasError || open ? 'Validando...' : ''}`}/></div> : <>{messageList.length > 0 ? messageList : <NoMessages open={open}/>}</>}
       </div>
     </div>
   )
