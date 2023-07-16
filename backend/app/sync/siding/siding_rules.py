@@ -390,6 +390,8 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
             # existen cursos de otras facultades que se consideran como OPIs.
             # Si no hay una lista programatica en SIDING que los liste, habria que
             # incluirla textualmente.
+            # TODO: Agregar cursos de la escuela de gobierno que debieran ser
+            # considerados como OPIs segun los PDFs de plan de estudio.
             if (
                 (len(code) >= 6 and code[3] == "3")
                 or course.name == "Investigacion o Proyecto"
