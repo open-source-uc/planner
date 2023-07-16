@@ -79,8 +79,9 @@ ignore = [
 max-complexity = 15
 
 [tool.pyright]
-root = "backend/"
 pythonVersion = "3.11"
 pythonPlatform = "Linux"
 typeCheckingMode = "strict"
-stubPath = "backend/typings"
+stubPath = "typings"
+exclude = ["typings"]
+reportMissingTypeStubs = false
