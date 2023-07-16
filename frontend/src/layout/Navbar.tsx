@@ -1,11 +1,11 @@
 
 import { Link, useRouter } from '@tanstack/react-router'
-import { useAuth } from '../contexts/auth.context'
+// import { useAuth } from '../contexts/auth.context'
 import { ReactComponent as PanguiPath } from '../assets/PanguiPath.svg'
 import { memo } from 'react'
 
 function Navbar (): JSX.Element {
-  const authState = useAuth()
+  // const authState = useAuth()
   const router = useRouter()
   return (
 <nav className="bg-gray border-slate-200 px-2 sm:px-4 py-2.5 rounded border">
@@ -17,18 +17,22 @@ function Navbar (): JSX.Element {
                 <li>
                     <Link to="/" className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${router.state.currentLocation.pathname === '/' ? 'text-white bg-blue-700 md:bg-transparent md:text-blue-700' : ''}`}>Inicio</Link>
                 </li>
-                { authState?.user !== null && <li>
-                    <Link to="/planner/new" className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${router.state.currentLocation.pathname === '/planner/new' ? 'text-white bg-blue-700 md:bg-transparent md:text-blue-700' : ''}`}>Nueva planificación</Link>
-                </li> }
-                { authState?.user !== null && <li>
-                    <Link to="/user" className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${router.state.currentLocation.pathname === '/user' ? 'text-white bg-blue-700 md:bg-transparent md:text-blue-700' : ''}`}>Mis mallas</Link>
-                </li>
-                }
                 <li>
-                    {authState?.user == null
-                      ? <a href="/api/user/login" className="block py-2 pl-3 pr-4 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0">Iniciar sesión</a>
-                      : <Link to="/logout" className="block py-2 pl-3 pr-4 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0">Cerrar sesión</Link>}
+                    <Link to="/planner/new" className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${router.state.currentLocation.pathname === '/planner/new' ? 'text-white bg-blue-700 md:bg-transparent md:text-blue-700' : ''}`}>Planificar</Link>
                 </li>
+                {
+                /*
+                    { authState?.user !== null && <li>
+                        <Link to="/user" className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${router.state.currentLocation.pathname === '/user' ? 'text-white bg-blue-700 md:bg-transparent md:text-blue-700' : ''}`}>Mis mallas</Link>
+                    </li>
+                    }
+                    <li>
+                        {authState?.user == null
+                        ? <a href="/api/user/login" className="block py-2 pl-3 pr-4 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0">Iniciar sesión</a>
+                        : <Link to="/logout" className="block py-2 pl-3 pr-4 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0">Cerrar sesión</Link>}
+                    </li>
+                */
+                }
             </ul>
         </div>
     </div>
