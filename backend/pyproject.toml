@@ -75,6 +75,8 @@ ignore = [
     "S101",   # "Use of `assert` detected" (debug assertions are useful)
 ]
 
+extend-exclude = ["typings/"]
+
 [tool.ruff.mccabe]
 max-complexity = 15
 
