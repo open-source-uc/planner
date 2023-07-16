@@ -34,14 +34,6 @@
         "editor.defaultFormatter": "vscode.css-language-features"
     },
     // Backend
-    "[python]": {
-        "editor.defaultFormatter": "ms-python.python",
-        "editor.formatOnSave": true,
-        "editor.codeActionsOnSave": {
-            "source.organizeImports": true
-        }
-    },
-    "python.formatting.provider": "black",
     "python.defaultInterpreterPath": "/workspaces/planner/backend/.venv/bin/python",
     "python.analysis.typeCheckingMode": "strict",
     "python.analysis.inlayHints.functionReturnTypes": true,
@@ -51,5 +43,16 @@
     "ruff.args": [
         "--config=/workspaces/planner/backend/pyproject.toml"
     ],
-    "ruff.organizeImports": true,
+    // Black + Ruff
+    "python.formatting.provider": "none",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll": true,
+            "source.organizeImports": true
+        },
+        // Prevents ruff-vscode#128
+        "source.organizeImports.isort": true,
+    },
 }

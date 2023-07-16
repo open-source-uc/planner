@@ -21,6 +21,7 @@ export type { CurriculumSpec } from './models/CurriculumSpec';
 export type { Cyear } from './models/Cyear';
 export type { EquivalenceId } from './models/EquivalenceId';
 export type { EquivDetails } from './models/EquivDetails';
+export type { FullOffer } from './models/FullOffer';
 export type { HTTPValidationError } from './models/HTTPValidationError';
 export type { LowDetailPlanView } from './models/LowDetailPlanView';
 export type { Major } from './models/Major';

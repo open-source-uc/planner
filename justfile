@@ -1,6 +1,6 @@
 # This is the [INFO] prefix in bold cyan
-
 info_prefix := `echo "\e[1;36m[Info]\e[0m"`
+set dotenv-load := true
 
 default:
     @just --list
@@ -38,7 +38,11 @@ deps-back:
     cd backend && poetry config virtualenvs.in-project true
     cd backend && poetry install
 
-deps: deps-front deps-back
+deps-infra:
+    @echo "{{ info_prefix }} \e[1mInstalling infrastructure dependencies...\e[0m"
+    cd infra && ansible-galaxy install -r requirements.yml
+
+deps: deps-front deps-back deps-infra
 
 lint-front:
     @echo "{{ info_prefix }} \e[1mLinting front-end...\e[0m"
@@ -65,8 +69,9 @@ format: format-front format-back
 init: deps
     @echo "{{ info_prefix }} \e[1mInitializing developer environment...\e[0m"
     @echo "{{ info_prefix }} \e[1mCreating default files...\e[0m"
-    cd backend && cp -n .env.example .env
-    cd data && cp -n cas-mock-users.json.example cas-mock-users.json
+    cd backend && cp -n .env.development .env
+    cd frontend && cp -n .env.development .env
+    cd cas-mock/data && cp -n cas-mock-users.json.example cas-mock-users.json
     @echo "{{ info_prefix }} \e[1mSetting up database...\e[0m"
     @just db-reset
     @echo "{{ info_prefix }} \e[1mInitialized developer environment successfully 🚀.\e[0m"
@@ -86,3 +91,36 @@ db-reset:
 db-generate:
     @echo "{{ info_prefix }} \e[1mGenerating Prisma client...\e[0m"
     cd backend && poetry run prisma generate
+
+set positional-arguments := true
+default_environment := "development"
+deploy environment=default_environment:
+    #!/usr/bin/env bash
+    set -eEuo pipefail
+    DEPLOY_ENVIRONMENT={{ environment }}
+    # If DEPLOY_ENVIRONMENT is not development, staging or production, exit
+    if [[ "$DEPLOY_ENVIRONMENT" != "development" && "$DEPLOY_ENVIRONMENT" != "staging" && "$DEPLOY_ENVIRONMENT" != "production" ]]; then
+        echo "Invalid deployment target: $DEPLOY_ENVIRONMENT"
+        exit 1
+    fi
+    echo -e "{{ info_prefix }} \e[1mDeploying to $DEPLOY_ENVIRONMENT...\e[0m"
+    # If deploy is not development, fetch code first
+    if [[ "$DEPLOY_ENVIRONMENT" != "development" ]]; then
+        echo -e "{{ info_prefix }} \e[1mFetching code from main...\e[0m"
+        git config advice.detachedHead false
+        git fetch --all
+        git checkout --force origin/main
+    fi
+    echo -e "{{ info_prefix }} \e[1mBuilding containers...\e[0m"
+    docker compose build --pull --build-arg DEPLOY_ENVIRONMENT=$DEPLOY_ENVIRONMENT
+    # If DEPLOY_ENVIRONMENT is development, then we need to
+    # also deploy the CAS mock service
+    # Define target service
+    if [[ "$DEPLOY_ENVIRONMENT" == "development" ]]; then
+        TARGET_SERVICE=""
+    else
+        TARGET_SERVICE="planner"
+    fi
+    echo -e "{{ info_prefix }} \e[1mStarting containers...\e[0m"
+    docker compose up --build --remove-orphans --force-recreate --detach --wait $TARGET_SERVICE
+    echo -e "{{ info_prefix }} \e[1mDeployed to $DEPLOY_ENVIRONMENT successfully 🚀.\e[0m"

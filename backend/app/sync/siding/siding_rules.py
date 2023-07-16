@@ -11,9 +11,12 @@ el que habra que tocar.
 """
 
 
+from unidecode import unidecode
+
 from ...plan.course import EquivalenceId
 from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
 from ...plan.validation.curriculum.tree import (
+    SUPERBLOCK_PREFIX,
     Block,
     Combination,
     Curriculum,
@@ -21,6 +24,21 @@ from ...plan.validation.curriculum.tree import (
     FillerCourse,
     Leaf,
 )
+
+
+def _set_block_layer(block: Block, layer: str):
+    if isinstance(block, Leaf):
+        block.layer = layer
+    else:
+        for subblock in block.children:
+            _set_block_layer(subblock, layer)
+
+
+def _ceil_div(a: int, b: int) -> int:
+    """
+    Compute `ceil(a / b)` without floating point errors.
+    """
+    return -(a // -b)
 
 
 def _skip_extras(curriculum: Curriculum):
@@ -51,11 +69,37 @@ def _skip_extras(curriculum: Curriculum):
         ]
 
 
-def _is_ofg(block: Block) -> bool:
-    """
-    Check if the given block is an OFG block or not.
-    """
-    return isinstance(block, Leaf) and next(iter(block.codes.keys()), None) == "!L1"
+# Tabla que mapea la primera palabra del nombre textual de un bloque academico a un
+# nombre mas machine-readable
+SUPERBLOCK_TABLE = {
+    "ciencias": "PlanComun",
+    "base": "PlanComun",
+    "formacion": "FormacionGeneral",
+    "major": "Major",
+    "minor": "Minor",
+    "ingeniero": "Titulo",
+}
+
+
+def _identify_superblocks(curriculum: Curriculum):
+    # Cambia los codigos de los bloques academicos a nombres "machine readable".
+    # Por ejemplo, cambia "Ingeniero Civil en Computación" a 'title'
+    for superblock in curriculum.root.children:
+        if not superblock.block_code.startswith(SUPERBLOCK_PREFIX):
+            continue
+        # Heuristica: tomar la primera palabra, normalizarla (quitarle los tildes y todo
+        # a minúscula) y buscar en una tabla hardcodeada.
+        id_words = (
+            unidecode(superblock.block_code[len(SUPERBLOCK_PREFIX) :]).lower().split()
+        )
+        if len(id_words) < 1:
+            continue
+        superblock_id = SUPERBLOCK_TABLE.get(id_words[0], "")
+        superblock.block_code = f"{SUPERBLOCK_PREFIX}{superblock_id}"
+
+
+# Identifica a los bloques de OFG.
+OFG_BLOCK_CODE = "courses:!L1"
 
 
 def _merge_ofgs(curriculum: Curriculum):
@@ -64,27 +108,27 @@ def _merge_ofgs(curriculum: Curriculum):
     for superblock in curriculum.root.children:
         if not isinstance(superblock, Combination):
             continue
-        l1_blocks: list[Leaf] = []
-        for block in superblock.children:
-            if not isinstance(block, Leaf):
-                continue
-            if _is_ofg(block):
-                l1_blocks.append(block)
+        # Junta todos los bloques que son OFG en una lista
+        l1_blocks: list[Leaf] = [
+            block
+            for block in superblock.children
+            if isinstance(block, Leaf) and block.block_code == OFG_BLOCK_CODE
+        ]
         if len(l1_blocks) > 0:
+            # Elimina todos los bloques que son OFG de `superblock.children`
             superblock.children = [
-                block for block in superblock.children if not _is_ofg(block)
+                block
+                for block in superblock.children
+                if block.block_code != OFG_BLOCK_CODE
             ]
+            # Juntar todos los bloques OFG en un bloque y agregarlo de vuelta
             total_cap = sum(block.cap for block in l1_blocks)
-            fill_with: list[FillerCourse] = []
-            for block in l1_blocks:
-                fill_with.extend(block.fill_with)
-            fill_with.sort(key=lambda rec: rec.order, reverse=True)
             superblock.children.append(
                 Leaf(
                     debug_name=l1_blocks[0].debug_name,
+                    block_code=OFG_BLOCK_CODE,
                     name=l1_blocks[0].name,
                     cap=total_cap,
-                    fill_with=fill_with,
                     codes=l1_blocks[0].codes,
                 ),
             )
@@ -98,7 +142,7 @@ def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum)
         if not isinstance(superblock, Combination):
             continue
         for block in superblock.children:
-            if isinstance(block, Leaf) and _is_ofg(block):
+            if isinstance(block, Leaf) and block.block_code == OFG_BLOCK_CODE:
                 for code in block.codes:
                     if not code.startswith("DPT"):
                         continue
@@ -108,7 +152,8 @@ def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum)
                     if info.name.startswith("Seleccion ") or info.name.startswith(
                         "Selección ",
                     ):
-                        block.codes[code] = 2
+                        # Permitir que cuenten por el doble de creditos de lo normal
+                        curriculum.multiplicity[code] = 2 * info.credits
 
 
 def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
@@ -123,7 +168,7 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
     def is_limited(courseinfo: CourseInfo, code: str):
         info = courseinfo.try_course(code)
         if info is None:
-            return False
+            return "both"
         if info.credits != 5:
             return False
         return (
@@ -137,39 +182,161 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
         if not isinstance(superblock, Combination):
             continue
         for block_i, block in enumerate(superblock.children):
-            if isinstance(block, Leaf) and _is_ofg(block):
+            if isinstance(block, Leaf) and block.block_code == OFG_BLOCK_CODE:
                 # Segregar los cursos de 5 creditos que cumplan los requisitos
-                limited = {}
-                unlimited = {}
-                for code, mult in block.codes.items():
-                    if is_limited(courseinfo, code):
-                        limited[code] = mult
-                    else:
-                        unlimited[code] = mult
+                limited: set[str] = set()
+                unlimited: set[str] = set()
+                for code in block.codes:
+                    limit = is_limited(courseinfo, code)
+                    if limit == "both" or limit:
+                        limited.add(code)
+                    if limit == "both" or not limit:
+                        unlimited.add(code)
                 # Separar el bloque en 2
                 limited_block = Leaf(
                     debug_name=f"{block.debug_name} (máx. 10 creds. DPT y otros)",
+                    block_code=f"{OFG_BLOCK_CODE}:limited",
                     name=None,
                     cap=10,
                     codes=limited,
                 )
                 unlimited_block = Leaf(
                     debug_name=f"{block.debug_name} (genérico)",
+                    block_code=f"{OFG_BLOCK_CODE}:unlimited",
                     name=None,
                     cap=block.cap,
                     codes=unlimited,
-                    fill_with=block.fill_with,
                 )
                 block = Combination(
                     debug_name=block.debug_name,
+                    block_code=f"{OFG_BLOCK_CODE}:root",
                     name=block.name,
                     cap=block.cap,
                     children=[
-                        limited_block,
+                        # Este orden es importante!
+                        # El solver aun no soporta manejar el caso cuando ocurre
+                        # "split-flow", que es cuando un curso divide su creditaje entre
+                        # dos bloques.
+                        # Esto *probablemente* no es legal, pero es *muy* dificil que
+                        # ocurra realmente.
+                        # Sin embargo, si las prioridades estan mal seteadas, puede
+                        # ocurrir un caso en que el solver en su intento de optimizar
+                        # cause split-flow
+                        # Si estuviera `limited_block` primero, `unlimited_block`
+                        # segundo y hubiera un ramo DPT de 5 creditos, se llenaria
+                        # `limited_block` con el ramo DPT, y la siguiente equivalencia
+                        # de 10 creditos se repartiria 5 en `limited_block` (porque
+                        # quedan 5 creditos de espacio) y 5 en `unlimited_block`, porque
+                        # `limited_block` tendria mas prioridad.
+                        # Por ahora lo podemos arreglar invirtiendo las prioridades.
                         unlimited_block,
+                        limited_block,
                     ],
                 )
                 superblock.children[block_i] = block
+
+
+COURSE_PREFIX = "courses:"
+MINOR_BLOCK_CODE = f"{SUPERBLOCK_PREFIX}Minor"
+MINOR_CREDITS = 50
+
+
+def _minor_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
+    """
+    Aplicar la "transformacion de minor".
+    Todos los minors tienen 50 creditos, y los creditos que puedan chocar con major o
+    titulo se rellenan con optativos complementarios.
+    La idea es duplicar el bloque:
+    - Uno de ellos tiene los optativos complementarios, pero tiene una capacidad de 50
+        creditos. Es decir, tiene mas ramos que capacidad, por lo que no se espera que
+        se tomen todos los optativos complementarios.
+    - El otro tiene los cursos obligatorios de minor. Tiene exactamente 5 ramos de 10
+        creditos (o al menos 50 creditos en ramos) y una capacidad de exactamente 50.
+        Este bloque esta en otra capa, de manera de no tener que "pelear" por los ramos
+        con major y titulo.
+    """
+
+    # Encontrar el bloque de minor
+    minor_index, minor_block = next(
+        (
+            (i, block)
+            for i, block in enumerate(curriculum.root.children)
+            if block.block_code.startswith(MINOR_BLOCK_CODE)
+        ),
+        (-1, None),
+    )
+    if minor_block is None:
+        # Recordar que los planes pueden no tener minor!
+        return
+    if not isinstance(minor_block, Combination):
+        raise Exception("minor block is a leaf?")
+
+    # Asumimos el optativo complementario como el ultimo ramo del minor
+    filler = minor_block.children[-1]
+    if not isinstance(filler, Leaf):
+        raise Exception("optativo complementario is not a leaf?")
+
+    # Eliminamos todas las instancias de optativo complementario del minor
+    minor_block.children = [
+        block for block in minor_block.children if block.block_code != filler.block_code
+    ]
+
+    # Ajustamos a 50 creditos usando el optativo complementario
+    # Calculamos cuantos creditos de optativo complementario se tienen que usar de forma
+    # "normal"
+    normally_used_creds = MINOR_CREDITS - sum(
+        block.cap for block in minor_block.children
+    )
+    if normally_used_creds < 0:
+        raise Exception(f"minor has over {MINOR_CREDITS} credits?")
+    if normally_used_creds > 0:
+        minor_block.children.append(
+            filler.copy(
+                update={"cap": normally_used_creds},
+                deep=True,
+            ),
+        )
+    minor_block.cap = MINOR_CREDITS
+
+    # Duplicar el bloque
+    # Llamaremos "exhaustivo" al bloque que tiene exactamente tantos ramos como
+    # capacidad tiene (pero que "comparte" sus ramos porque usa una copia de todos
+    # los ramos)
+    # Llamaremos "exclusivo" al bloque que tiene optativos complementarios de relleno,
+    # pero que tiene que "pelear" con los otros bloques por los ramos
+    exhaustive = minor_block
+    exclusive = exhaustive.copy(deep=True)
+    curriculum.root.children.insert(minor_index + 1, exclusive)
+
+    # Mover el bloque exhaustivo a una capa paralela, para permitir que comparta ramos
+    # con otros bloques
+    _set_block_layer(exhaustive, "minor")
+
+    # Agregamos optativos complementarios al bloque exclusivo, hasta completar 50
+    if not exclusive.children or exclusive.children[-1].block_code != filler.block_code:
+        exclusive.children.append(filler.copy())
+    exclusive.children[-1].cap = MINOR_CREDITS
+    # exclusive.children[-1].cost = 1  # Preferir los ramos normales por un poquito
+    exclusive.name = f"{exclusive.name} ({MINOR_CREDITS} créditos exclusivos)"
+    exclusive.debug_name += f" ({MINOR_CREDITS} créditos exclusivos)"
+
+    # Nos aseguramos que hayan 50 creditos de cursos recomendados de optativo
+    # complementario
+    assert filler.block_code.startswith(COURSE_PREFIX)
+    filler_code = filler.block_code[len(COURSE_PREFIX) :]
+    filler_course = curriculum.fillers[filler_code][-1]
+    filler_course_creds = courseinfo.get_credits(filler_course.course)
+    assert filler_course_creds is not None
+    curriculum.fillers[filler_code] = [
+        filler_course for _ in range(_ceil_div(MINOR_CREDITS, filler_course_creds))
+    ]
+
+
+TITLE_EXCLUSIVE_CREDITS = 130
+TITLE_BLOCK_CODE = f"{SUPERBLOCK_PREFIX}Titulo"
+OPI_CODE = "#OPI"
+OPI_NAME = "Optativos de Ingeniería (OPI)"
+OPI_BLOCK_CODE = f"courses:{OPI_CODE}"
 
 
 async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
@@ -182,39 +349,32 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
         el titulo y otro bloque simultaneamente (llamemoslo "exhaustive").
     """
 
-    opi_code = "#OPI"
-    opi_name = "Optativos de Ingeniería (OPI)"
-    title_exclusive_creds = 130
-
     # Encontrar el bloque de titulo
-    title_index = None
-    for i, block in enumerate(curriculum.root.children):
-        if block.name is not None and block.name.startswith("Ingeniero"):
-            title_index = i
-            break
+    title_index = next(
+        (
+            i
+            for i, block in enumerate(curriculum.root.children)
+            if block.block_code.startswith(TITLE_BLOCK_CODE)
+        ),
+        None,
+    )
     if title_index is None:
+        # Recordar que los planes pueden no tener titulo!
         return
 
     # Duplicar el bloque
     exhaustive = curriculum.root.children[title_index]
     if not isinstance(exhaustive, Combination):
-        return
+        raise Exception("title block is a leaf?")
     exclusive = exhaustive.copy(deep=True)
     curriculum.root.children.insert(title_index + 1, exclusive)
 
     # Mover el bloque exhaustivo a una capa paralela, para permitir que comparta ramos
     # con otros bloques
-    def set_layer(block: Block):
-        if isinstance(block, Leaf):
-            block.layer = "title"
-        else:
-            for subblock in block.children:
-                set_layer(subblock)
-
-    set_layer(exhaustive)
+    _set_block_layer(exhaustive, "title")
 
     # Recolectar los OPIs y armar una equivalencia ficticia
-    opi_equiv = courseinfo.try_equiv(opi_code)
+    opi_equiv = courseinfo.try_equiv(OPI_CODE)
     if opi_equiv is None:
         opis: list[str] = []
         for code, course in courseinfo.courses.items():
@@ -237,8 +397,8 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
             ):
                 opis.append(code)
         opi_equiv = EquivDetails(
-            code=opi_code,
-            name=opi_name,
+            code=OPI_CODE,
+            name=OPI_NAME,
             is_homogeneous=False,
             is_unessential=True,
             courses=opis,
@@ -246,53 +406,62 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
         await add_equivalence(opi_equiv)
 
     # Meter los codigos en un diccionario
-    opi_dict: dict[str, int | None] = {opi_code: None}
-    ipre_dict: dict[str, int | None] = {}
+    opi_set: set[str] = {OPI_CODE}
+    ipre_set: set[str] = {OPI_CODE}
     for code in opi_equiv.courses:
         info = courseinfo.try_course(code)
         if info is None:
             continue
+        # TODO: Preguntar cual es la multiplicidad de las IPres
         if (
             info.name == "Investigacion o Proyecto"
             or info.name == "Investigación o Proyecto"
         ):
-            ipre_dict[code] = 1
+            ipre_set.add(code)
         else:
-            opi_dict[code] = 1
+            opi_set.add(code)
 
-    # Agregar OPIs y reducir el limite de creditos al exclusivo
-    fill_with: list[FillerCourse] = [
+    # Si faltan creditos, rellenar con cursos OPI de 10 creditos
+    curriculum.fillers.setdefault(OPI_CODE, []).extend(
         FillerCourse(
-            course=EquivalenceId(code=opi_code, credits=10),
-            order=1000,
-            cost=1,
+            course=EquivalenceId(code=OPI_CODE, credits=10),
+            order=1000,  # Colocarlos al final
         )
-        for _i in range((title_exclusive_creds + 9) // 10)
-    ]
+        # Rellenar con ceil(creditos_de_titulo/10) cursos
+        for _i in range(_ceil_div(TITLE_EXCLUSIVE_CREDITS, 10))
+    )
     exclusive.children.append(
         Combination(
-            debug_name=opi_name,
-            name=opi_name,
-            cap=title_exclusive_creds,
+            debug_name=OPI_NAME,
+            block_code=f"{OPI_BLOCK_CODE}:root",
+            name=OPI_NAME,
+            cap=TITLE_EXCLUSIVE_CREDITS,
             children=[
+                # Este orden es importante!
+                # Ver el comentario sobre el orden de `limited_block` y
+                # `unlimited_block` en los OFGs.
                 Leaf(
-                    debug_name=f"{opi_name} (genérico)",
+                    debug_name=f"{OPI_NAME} (genérico)",
+                    block_code=f"{OPI_BLOCK_CODE}:any",
                     name=None,
-                    cap=title_exclusive_creds,
-                    codes=opi_dict,
-                    fill_with=fill_with,
+                    cap=TITLE_EXCLUSIVE_CREDITS,
+                    codes=opi_set,
+                    # cost=1,  # Preferir los ramos normales por un poquito
                 ),
                 Leaf(
-                    debug_name=f"{opi_name} (IPre)",
+                    debug_name=f"{OPI_NAME} (IPre)",
+                    block_code=f"{OPI_BLOCK_CODE}:ipre",
                     name=None,
                     cap=20,
-                    codes=ipre_dict,
+                    codes=ipre_set,
+                    # cost=1,  # Preferir los ramos normales por un poquito
                 ),
             ],
         ),
     )
-    exclusive.cap = title_exclusive_creds
-    exclusive.name = f"{exclusive.name} (130 créditos exclusivos)"
+    exclusive.cap = TITLE_EXCLUSIVE_CREDITS
+    exclusive.name = f"{exclusive.name} ({TITLE_EXCLUSIVE_CREDITS} créditos exclusivos)"
+    exclusive.debug_name += f" ({TITLE_EXCLUSIVE_CREDITS} créditos exclusivos)"
 
 
 async def apply_curriculum_rules(
@@ -301,6 +470,7 @@ async def apply_curriculum_rules(
     curriculum: Curriculum,
 ) -> Curriculum:
     _skip_extras(curriculum)
+    _identify_superblocks(curriculum)
 
     match spec.cyear.raw:
         case "C2020":
@@ -308,6 +478,7 @@ async def apply_curriculum_rules(
             _merge_ofgs(curriculum)
             _allow_selection_duplication(courseinfo, curriculum)
             _limit_ofg10(courseinfo, curriculum)
+            _minor_transformation(courseinfo, curriculum)
             await _title_transformation(courseinfo, curriculum)
             # TODO: Agregar optativo de ciencias
             #   Se pueden tomar hasta 10 creditos de optativo de ciencias, que es una
@@ -324,10 +495,11 @@ async def apply_curriculum_rules(
             #   Escuela de Ingeniería."
             #   https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/optativos/op_ciencias/alumno_2020/index.phtml
             #   https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/formacion_gral/alumno_2020/index.phtml
-            # TODO: Asegurarse que los optativos complementarios de minor funcionen
-            #   correctamente.
             pass
     return curriculum
+
+
+FORCE_HOMOGENEOUS = ("FIS1523", "FIS1533", "ICS1113")
 
 
 def _fix_nonhomogeneous_equivs(courseinfo: CourseInfo, equiv: EquivDetails):
@@ -339,9 +511,7 @@ def _fix_nonhomogeneous_equivs(courseinfo: CourseInfo, equiv: EquivDetails):
     # "Termodinamica".
     # Lo parcharemos para que estas sean listas homogeneas y con el nombre correcto.
     # Tambien, parcharemos "Optimizacion" como una equivalencia homogenea
-    if ("(LISTA " in equiv.name and ")" in equiv.name) or (
-        len(equiv.courses) >= 1 and equiv.courses[0] == "ICS1113"
-    ):
+    if len(equiv.courses) >= 1 and equiv.courses[0] in FORCE_HOMOGENEOUS:
         equiv.is_homogeneous = True
         equiv.is_unessential = True
         if len(equiv.courses) >= 1:

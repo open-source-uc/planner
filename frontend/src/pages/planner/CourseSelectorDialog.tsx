@@ -3,6 +3,7 @@ import { Dialog, Transition, Switch } from '@headlessui/react'
 import { DefaultService, type EquivDetails, type CourseOverview, type CourseDetails, type CancelablePromise } from '../../client'
 import { Spinner } from '../../components/Spinner'
 import { Info } from '../../components/Info'
+import { type PseudoCourseDetail } from './utils/Types'
 
 // TODO: fetch school list from backend
 // Existen escuelas en buscacursos que no tienen cursos: 'Acad Inter de Filosofía'
@@ -58,12 +59,15 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     if (coursesCodes.length === 0) return
     setLoadingCoursesData(true)
 
-    const promise = DefaultService.getCourseDetails(coursesCodes)
+    const promise = DefaultService.getPseudocourseDetails(coursesCodes)
     setPromiseInstance(promise)
     const response = await promise
     setPromiseInstance(null)
 
-    const dict = response.reduce((acc: Record<string, CourseDetails>, curr: CourseDetails) => {
+    const dict = response.reduce((acc: Record<string, CourseDetails>, curr: PseudoCourseDetail) => {
+      if (!('credits' in curr)) {
+        throw new Error('expected only concrete courses in equivalence')
+      }
       acc[curr.code] = curr
       return acc
     }, {})

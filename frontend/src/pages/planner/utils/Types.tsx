@@ -11,6 +11,8 @@ export interface CurriculumData {
   majors: Record<string, Major>
   minors: Record<string, Minor>
   titles: Record<string, Title>
+  ofCyear: string
+  ofMajor?: string
 }
 export interface PlanDigest {
   // Maps `(code, course instance index)` to `(semester, index within semester)`

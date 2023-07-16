@@ -41,7 +41,7 @@
             "name": "CAS Server",
             "type": "node-terminal",
             "request": "launch",
-            "command": "npx --yes cas-server-mock --database=$PWD/data/cas-mock-users.json",
+            "command": "npx --yes cas-server-mock --database=$PWD/cas-mock/data/cas-mock-users.json",
             "cwd": "${workspaceFolder}",
         },
         {

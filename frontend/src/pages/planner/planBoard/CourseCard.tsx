@@ -38,17 +38,15 @@ interface CardProps {
 
 const BlockInitials = (courseBlock: string): string => {
   switch (courseBlock) {
-    case 'Ciencias':
+    case 'PlanComun':
       return 'PC'
-    case 'Base':
-      return 'PC'
-    case 'Formacion':
+    case 'FormacionGeneral':
       return 'FG'
     case 'Major':
       return 'M'
     case 'Minor':
       return 'm'
-    case 'Ingeniero':
+    case 'Titulo':
       return 'T'
   }
   return ''
@@ -115,7 +113,7 @@ const CourseCard = memo(function _CourseCard ({ courseBlock, course, credits, na
       }
       <div className='flex items-center justify-center text-center flex-col'>
         <div className={`text-xs line-clamp-2 ${'failed' in course && course.failed !== null ? 'line-through' : ''}`}>{ name}</div>
-        <div className='text-[0.6rem] opacity-75'>{course.is_concrete !== true ? 'Seleccionar Curso' : course.code}</div>
+        <div className='text-[0.6rem] opacity-75'>{course.is_concrete !== true ? 'Seleccionar Curso' : ('failed' in course ? course.failed : null) ?? course.code}</div>
       </div>
       <div className='absolute bottom-2 left-2 text-[0.5rem] opacity-75'>{credits} créd.</div>
       { isCurrent ? <div className='opacity-60 absolute w-3 bottom-2 right-2'> <CurrentIcon/> </div> : null}

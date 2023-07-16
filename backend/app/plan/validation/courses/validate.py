@@ -2,7 +2,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from ....user.info import StudentContext
-from ...course import ConcreteId, EquivalenceId
+from ...course import ConcreteId, EquivalenceId, PseudoCourse
 from ...courseinfo import CourseInfo
 from ...plan import ClassId, ValidatablePlan
 from ..diagnostic import (
@@ -18,7 +18,6 @@ from ..diagnostic import (
 from .logic import (
     And,
     Atom,
-    BaseOp,
     Const,
     Expr,
     MinCredits,
@@ -29,6 +28,7 @@ from .logic import (
     ReqLevel,
     ReqProgram,
     ReqSchool,
+    map_atoms,
 )
 from .simplify import simplify
 
@@ -57,11 +57,27 @@ class CourseInstance:
     index: int
 
 
+def _get_equivalents(courseinfo: CourseInfo, course: PseudoCourse) -> list[str]:
+    """
+    Get all of the course codes that are equivalent to `course`, including itself.
+    """
+    info = courseinfo.try_course(course.code)
+    if info is None:
+        return []
+    equiv_codes = info.banner_equivs.copy()
+    equiv_codes.append(course.code)
+    return equiv_codes
+
+
 class ValidationContext:
     """
     Pre-processing of a validatable plan, created once and used to validate the course
     rules for all classes.
     """
+
+    # NOTE: When changing the fields of `ValidationContext`, you have to make sure that
+    # `append_semester`, `append_course` and `pop_course` keep the fields properly in
+    # sync.
 
     courseinfo: CourseInfo
     # A dictionary from course code to the first time the course appears in the plan.
@@ -93,16 +109,9 @@ class ValidationContext:
         self.by_code = {}
         for sem_i, sem in enumerate(plan.classes):
             for i, course in enumerate(sem):
-                # Determine which courses are equivalent to this course
-                equiv_codes = [course.code]
-                info = courseinfo.try_course(course.code)
-                if info is not None:
-                    for equiv in info.banner_equivs:
-                        equiv_codes.append(equiv)
-
                 # Map the equivalent courses to this course instance
                 course_inst = CourseInstance(code=course.code, sem=sem_i, index=i)
-                for code in equiv_codes:
+                for code in _get_equivalents(courseinfo, course):
                     if code not in self.by_code:
                         self.by_code[code] = course_inst
 
@@ -132,6 +141,66 @@ class ValidationContext:
         self.courseinfo = courseinfo
         self.plan = plan
         self.user_ctx = user_ctx
+
+    def append_semester(self):
+        """
+        Add an empty semester to the plan, updating the validation context.
+        """
+        self.class_ids.append([])
+        self.approved_credits.append(self.approved_credits[-1])
+        self.plan.classes.append([])
+
+    def append_course(self, course: PseudoCourse):
+        """
+        Add a course at the last semester.
+        """
+        assert len(self.plan.classes) > 0
+
+        # Get positioning indices
+        rep_idx = 0
+        for sem in self.plan.classes:
+            for c in sem:
+                if c.code == course.code:
+                    rep_idx += 1
+        sem_idx = len(self.plan.classes) - 1
+        order_idx = len(self.plan.classes[-1])
+
+        # Actually add course
+        self.plan.classes[-1].append(course)
+        self.class_ids[-1].append(ClassId(code=course.code, instance=rep_idx))
+        self.approved_credits[-1] += self.courseinfo.get_credits(course) or 0
+
+        # Update passed codes
+        inst = CourseInstance(code=course.code, sem=sem_idx, index=order_idx)
+        for code in _get_equivalents(self.courseinfo, course):
+            if code not in self.by_code:
+                self.by_code[code] = inst
+
+    def pop_course(self):
+        """
+        Pop the last course of the last semester.
+        (There must be at least 1 course in the last semester)
+        """
+        assert len(self.plan.classes) > 0
+        assert len(self.plan.classes[-1]) > 0
+
+        # Get the position of the course to remove
+        sem_idx = len(self.plan.classes) - 1
+        order_idx = len(self.plan.classes[-1]) - 1
+
+        # Remove course
+        course = self.plan.classes[-1].pop()
+        self.class_ids[-1].pop()
+        self.approved_credits[-1] -= self.courseinfo.get_credits(course) or 0
+
+        # Update passed codes
+        for code in _get_equivalents(self.courseinfo, course):
+            inst = self.by_code[code]
+            if inst.sem == sem_idx and inst.index == order_idx:
+                # This is the earliest course compatible with this code
+                # Because this is the last course, once this course is removed there can
+                # be no other compatible course
+                del self.by_code[code]
 
     def validate_all_unknown(self, out: ValidationResult):
         """
@@ -309,12 +378,17 @@ class ValidationContext:
                 set_atoms_in_stone_if(self, inst, expr, lambda atom, sat: sat),
             )
         # Map missing courses to their newest equivalent versions
-        missing_equivalents = map_atoms(missing, self.map_to_equivalent)
+        missing_equivalents = simplify(map_atoms(missing, self.map_to_equivalent))
         # Figure out if we can push this course back and solve the missing requirements
         push_back = find_minimum_semester(self, missing)
         # Figure out if we can pull any dependencies forward
         pull_forward: dict[str, int] = {}
         self.find_pull_forwards(inst, pull_forward, missing)
+        pull_forward = {
+            code: sem
+            for code, sem in pull_forward.items()
+            if sem >= self.start_validation_from
+        }
         # Find absent courses
         absent: dict[str, int] = {}
         self.find_absent(inst, absent, missing_equivalents)
@@ -329,6 +403,18 @@ class ValidationContext:
                 add_absent=absent,
             ),
         )
+
+    def check_dependencies_for(self, sem: int, idx: int) -> bool:
+        """
+        Very basic yes/no checker for the dependencies of course at the given index.
+        Return "yes" if the course is not a concrete course or is not known.
+        """
+        course = self.plan.classes[sem][idx]
+        info = self.courseinfo.try_course(course.code)
+        if info is None:
+            return True
+        cl = CourseInstance(course.code, sem, idx)
+        return is_satisfied(self, cl, info.deps)
 
     def find_pull_forwards(
         self,
@@ -353,7 +439,10 @@ class ValidationContext:
             for child in expr.children:
                 self.find_absent(inst, absent, child)
         if isinstance(expr, ReqCourse) and expr.code not in self.by_code:
-            add_on_sem = inst.sem - (0 if expr.coreq else 1)
+            add_on_sem = max(
+                inst.sem - (0 if expr.coreq else 1),
+                self.start_validation_from,
+            )
             absent[expr.code] = min(absent.get(expr.code, INFINITY), add_on_sem)
 
     def map_to_equivalent(self, atom: Atom) -> Atom:
@@ -442,24 +531,16 @@ def set_atoms_in_stone_if(
     current satisfaction status ("sets the atom in stone").
     Returns a modified copy of `expr` (it does **not** modify `expr`).
     """
-    if isinstance(expr, Operator):
-        # Recursively replace atoms
-        changed = False
-        new_children: list[Expr] = []
-        for child in expr.children:
-            new_child = set_atoms_in_stone_if(ctx, cl, child, should_set_in_stone)
-            new_children.append(new_child)
-            if new_child is not child:
-                changed = True
-        if changed:
-            return BaseOp.create(expr.neutral, tuple(new_children))
-    else:
-        # Maybe replace this atom by its truth value
-        truth = is_satisfied(ctx, cl, expr)
-        if should_set_in_stone(expr, truth):
+
+    def mapping(atom: Atom) -> Atom:
+        # Maybe replace this atom by its constant truth value
+        truth = is_satisfied(ctx, cl, atom)
+        if should_set_in_stone(atom, truth):
             # Fold this atom into its constant truth value
             return Const(value=truth)
-    return expr
+        return atom
+
+    return map_atoms(expr, mapping)
 
 
 def is_course_indirectly_available(courseinfo: CourseInfo, code: str):
@@ -475,22 +556,3 @@ def is_course_indirectly_available(courseinfo: CourseInfo, code: str):
     if modernized_info is not None and modernized_info.is_available:
         return True
     return False
-
-
-def map_atoms(expr: Expr, map: Callable[[Atom], Atom]):
-    """
-    Replace the atoms of the expression according to `apply`.
-    Returns a new expression, leaving the original unmodified.
-    """
-    if isinstance(expr, Operator):
-        # Recursively replace atoms
-        changed = False
-        new_children: list[Expr] = []
-        for child in expr.children:
-            new_child = map_atoms(child, map)
-            new_children.append(new_child)
-            if new_child is not child:
-                changed = True
-        return BaseOp.create(expr.neutral, tuple(new_children)) if changed else expr
-    # Replace this atom
-    return map(expr)

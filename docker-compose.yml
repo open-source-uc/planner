@@ -1,0 +1,76 @@
+version: '3.8'
+
+networks:
+  caddy:
+  api:
+
+services:
+  planner:
+    build: ./frontend
+    container_name: planner-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      # - "443:443" # TODO: Re-enable once SSL is configured
+    networks:
+      - caddy
+    depends_on:
+      - api
+    env_file:
+      - ./frontend/.env
+  api:
+    build: ./backend
+    container_name: planner-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    networks:
+      - caddy
+      - api
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./siding-mock-data:/code/siding-mock-data
+    env_file:
+      - ./backend/.env
+  db:
+    image: postgres:15
+    container_name: planner-db
+    restart: unless-stopped
+    networks:
+      - api
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    env_file:
+      - ./database/.env
+
+  redis:
+    image: redis:7
+    container_name: planner-redis
+    restart: unless-stopped
+    networks:
+      - api
+    command: redis-server --save 60 1
+    volumes:
+      - redis-data:/data
+
+  cas_mock_server:
+    # Run a local cas mock server container for developing purposes.
+    # Don't run this service in production.
+    image: node:16-alpine
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "3004:3004"
+    networks:
+      - caddy
+    volumes:
+      - ./cas-mock/data/cas-mock-users.json:/app/data/cas-mock-users.json
+
+volumes:
+  postgres-data:
+  redis-data:
+  caddy_config:
+  caddy_data:
+    external: true
