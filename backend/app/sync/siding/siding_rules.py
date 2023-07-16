@@ -332,6 +332,17 @@ TITLE_BLOCK_CODE = f"{SUPERBLOCK_PREFIX}Titulo"
 OPI_CODE = "#OPI"
 OPI_NAME = "Optativos de Ingeniería (OPI)"
 OPI_BLOCK_CODE = f"courses:{OPI_CODE}"
+OPI_EXTRAS = [
+    "GOB3001",
+    "GOB3004",
+    "GOB3006",
+    "GOB3007",
+    "GOB3008",
+    "GOB3009",
+    "GOB3010",
+    "GOB3011",
+    "GOB3012",
+]
 
 
 async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
@@ -385,14 +396,13 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
             # existen cursos de otras facultades que se consideran como OPIs.
             # Si no hay una lista programatica en SIDING que los liste, habria que
             # incluirla textualmente.
-            # TODO: Agregar cursos de la escuela de gobierno que debieran ser
-            # considerados como OPIs segun los PDFs de plan de estudio.
             if (
                 (len(code) >= 6 and code[3] == "3")
                 or course.name == "Investigacion o Proyecto"
                 or course.name == "Investigación o Proyecto"
             ):
                 opis.append(code)
+        opis.extend(OPI_EXTRAS)
         opi_equiv = EquivDetails(
             code=OPI_CODE,
             name=OPI_NAME,
@@ -492,12 +502,14 @@ async def apply_curriculum_rules(
             #   Escuela de Ingeniería."
             #   https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/optativos/op_ciencias/alumno_2020/index.phtml
             #   https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/formacion_gral/alumno_2020/index.phtml
-            # TODO: Some minors and titles have special requirements, and are missing
-            #   from the mock.
-            #   These minors/titles require a more flexible format than what SIDING
-            #   provides.
-            #   Possibly hardcode them (in our format) for now.
-            #   Missing programs:
+            # TODO: Algunos minors y titulos tienen requerimientos especiales que no son
+            #   representables en el formato que provee SIDING, y por ende faltan del
+            #   mock (y estan incompletos en el webservice real).
+            #   Una posibilidad es por ahora hardcodear estos programas en nuestro
+            #   formato (ie. hardcodearlo como `Curriculum` y no como
+            #   `list[BloqueMalla]`).
+            #
+            #   Programas faltantes:
             #   - (N242) Innovación Tecnológica Vs.01
             #   - (N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02
             #   - (N707) Minor de Profundidad de Articulación Proyectos de Diseño
