@@ -169,7 +169,7 @@ class CurriculumCode(str):
     A code for a major or a minor.
     """
 
-    pattern: str | None = None
+    pattern: re.Pattern[str] | None = None
 
     @classmethod
     def __get_validators__(
@@ -183,7 +183,7 @@ class CurriculumCode(str):
         if not isinstance(value, str):  # type: ignore
             raise TypeError("string required")
         value = value.strip().upper()
-        m = re.fullmatch(cls.pattern, value)
+        m = cls.pattern.fullmatch(value)
         if m is None:
             raise ValueError(f"Invalid {cls.__name__} code {value}")
         return cls(value)
@@ -194,7 +194,7 @@ class CurriculumCode(str):
 
 
 class MajorCode(CurriculumCode):
-    pattern = "^M[0-9]{3}$"
+    pattern = re.compile(r"^M[0-9]{3}$")
 
     @classmethod
     def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
@@ -206,7 +206,7 @@ class MajorCode(CurriculumCode):
 
 
 class MinorCode(CurriculumCode):
-    pattern = "^N[0-9]{3}$"
+    pattern = re.compile(r"^N[0-9]{3}$")
 
     @classmethod
     def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
@@ -218,7 +218,7 @@ class MinorCode(CurriculumCode):
 
 
 class TitleCode(CurriculumCode):
-    pattern = "^4[0-9]{4}$"
+    pattern = re.compile(r"^4[0-9]{4}(?:-[0-9])?$")
 
     @classmethod
     def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
