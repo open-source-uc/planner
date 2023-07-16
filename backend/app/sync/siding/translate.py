@@ -110,7 +110,11 @@ async def _fetch_raw_blocks(
     for raw_block in raw_blocks:
         equiv = None
         if raw_block.CodLista is not None:
-            code = f"!{raw_block.CodLista}"
+            code = await siding_rules.map_equivalence_code(
+                courseinfo,
+                spec,
+                f"!{raw_block.CodLista}",
+            )
             if courseinfo.try_equiv(code) is not None:
                 continue
             raw_courses = await client.get_predefined_list(raw_block.CodLista)
@@ -131,7 +135,11 @@ async def _fetch_raw_blocks(
                 courses=codes,
             )
         elif raw_block.CodSigla is not None and raw_block.Equivalencias is not None:
-            code = f"?{raw_block.CodSigla}"
+            code = await siding_rules.map_equivalence_code(
+                courseinfo,
+                spec,
+                f"?{raw_block.CodSigla}",
+            )
             if courseinfo.try_equiv(code) is not None:
                 continue
             codes = [raw_block.CodSigla]
@@ -203,6 +211,7 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
                 code = f"?{raw_block.CodSigla}"
             else:
                 raise Exception("siding api returned invalid curriculum block")
+            code = await siding_rules.map_equivalence_code(courseinfo, spec, code)
             # Fetch equivalence data
             info = courseinfo.try_equiv(code)
             assert info is not None
