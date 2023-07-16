@@ -9,7 +9,6 @@ from pydantic import BaseModel, parse_obj_as
 from zeep import AsyncClient
 from zeep.transports import AsyncTransport
 
-from ...plan.validation.curriculum.tree import MajorCode, MinorCode, TitleCode
 from ...settings import settings
 
 
@@ -55,9 +54,9 @@ class Titulo(BaseModel):
 
 class PlanEstudios(BaseModel):
     CodCurriculum: str
-    CodMajor: MajorCode
-    CodMinor: MinorCode
-    CodTitulo: TitleCode | None
+    CodMajor: str
+    CodMinor: str
+    CodTitulo: str | None
 
 
 class Curso(BaseModel):
