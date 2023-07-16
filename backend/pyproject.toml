@@ -77,6 +77,11 @@ ignore = [
 
 extend-exclude = ["typings/"]
 
+[tool.black]
+extend-exclude = """
+^/typings
+"""
+
 [tool.ruff.mccabe]
 max-complexity = 15
 
@@ -85,5 +90,10 @@ pythonVersion = "3.11"
 pythonPlatform = "Linux"
 typeCheckingMode = "strict"
 stubPath = "typings"
-exclude = ["typings"]
+exclude = [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.*",
+    "typings",
+]
 reportMissingTypeStubs = false
