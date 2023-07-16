@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   check-backend:
-    name: Run linters for the back-end
+    name: Run test and linters for the back-end
     runs-on: ubuntu-latest
 
     defaults:
@@ -58,7 +58,7 @@ jobs:
       - name: Run type checker
         run: poetry run pyright .
 
-      - name: Test
+      - name: Run pytest
         run: poetry run pytest
 
   lint-frontend:
