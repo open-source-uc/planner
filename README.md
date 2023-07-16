@@ -9,6 +9,7 @@
   <a href="#mocks">Mocks</a> •
   <a href="#staging-y-producción">Staging y Producción</a> •
   <a href="#equipo">Equipo</a> •
+  <a href="contributors.md">Contribuidores</a> •
   <a href="#licencia">Licencia</a>
 </p>
 
@@ -136,6 +137,7 @@ Cabe mencionar que sería ideal a futuro implementar un **despliegue automático
 - [@fagiannoni](https://github.com/fagiannoni) - Backend
 - [@agucova](https://github.com/agucova) - Apoyo Backend/Frontend
 
+Además del equipo núcleo, nos apoyan los contribuidores al proyecto. Puedes ver [la lista completa de contribuidores aquí.](contributors.md)
 
 ## Licencia
 
