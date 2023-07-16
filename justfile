@@ -76,6 +76,7 @@ lint-fix-back:
     cd backend && poetry run black .
     cd backend && poetry run ruff check . --fix
     cd backend && poetry run pyright
+    cd backend && poetry run pytest
 
 lint-fix: lint-fix-back lint-fix-front
 
