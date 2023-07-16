@@ -105,10 +105,13 @@ const moveCourseByCode = (plan: ValidatablePlan, code: string, repIdx: number, t
           course = sem[j]
           i = plan.classes.length
           break
+        } else {
+          repIdx--
         }
       }
     }
   }
+  console.log(code, repIdx, semIdx, courseIdx, course)
   if (semIdx == null || courseIdx == null || course == null) return plan
   if (semIdx === toSem) return plan
 
@@ -184,6 +187,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: Aut
         buttons.push(<button key={buttons.length} className="autofix" onClick={() => {
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
+            console.log(diag.associated_to[0])
             return moveCourseByCode(plan, diag.associated_to[0].code, diag.associated_to[0].instance, pushBackTo)
           })
         }}>

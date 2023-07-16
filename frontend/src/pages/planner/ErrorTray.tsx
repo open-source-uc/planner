@@ -1,4 +1,4 @@
-import { useState, memo, type ReactNode } from 'react'
+import { useState } from 'react'
 import { type ClassId, type CourseRequirementErr, type CurriculumSpec, type ValidationResult } from '../../client'
 import { type PseudoCourseDetail, isCourseRequirementErr, isDiagWithAssociatedCourses } from './utils/Types'
 import { Spinner } from '../../components/Spinner'
@@ -196,15 +196,13 @@ const ErrorTray = ({ setValidatablePlan, diagnostics, validating, courseDetails,
   const messageList: JSX.Element[] = diagnostics.map((diag, index) => {
     let diagWithAssociated = diag
     const reqCourses: any = {}
-    if (isDiagWithAssociatedCourses(diag)) diagWithAssociated = { ...diag, associated_to: diag.associated_to.map((course: ClassId) => courseDetails[course.code] ?? course.code) }
+    if (isDiagWithAssociatedCourses(diag)) diagWithAssociated = { ...diag, associated_to: diag.associated_to.map((course: ClassId) => courseDetails[course.code] !== undefined ? { ...courseDetails[course.code], instance: course.instance } : course.code) }
     if (isCourseRequirementErr(diag)) {
       const reqCodes = new Set<string>()
       collectRequirements(diag.modernized_missing, reqCodes)
       for (const code of reqCodes) {
-        console.log(code, courseDetails[code])
         reqCourses[code] = courseDetails[code] ?? code
       }
-      console.log(reqCourses)
     }
     return Message({ setValidatablePlan, diag: diagWithAssociated, key: index, open: open || hasError, getCourseDetails, reqCourses })
   })
