@@ -366,8 +366,10 @@ def _minor_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
         raise Exception("minor block is a leaf?")
 
     # El optativo complementario es el unico ramo con cero creditos
+    # Sin embargo, al cargar los datos desde SIDING los ramos con cero creditos reciben
+    # 1 credito "fantasma", por lo que tenemos que buscar ramos con 1 credito
     # Encontrarlo
-    filler_candidates = [block for block in minor_block.children if block.cap == 0]
+    filler_candidates = [block for block in minor_block.children if block.cap <= 1]
     if not filler_candidates:
         # Este minor no tiene optativos complementarios
         return
@@ -404,6 +406,7 @@ def _minor_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     # complementarios
     exclusive.children.append(filler.copy())
     exclusive.children[-1].cap = minor_credits
+    exclusive.cap = minor_credits
     exclusive.name = f"{exclusive.name} ({minor_credits} créditos exclusivos)"
     exclusive.debug_name += f" ({minor_credits} créditos exclusivos)"
 

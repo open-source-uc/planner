@@ -652,6 +652,10 @@ class SolvedCurriculum:
             if edge.flow == 0:
                 attrs += " style=dotted"
             out += f"  v{edge.src} -> v{edge.dst} [{attrs}];\n"
+        out += '  ssink [label=""];\n'
+        sink_flow = self.nodes[self.sink].flow(self)
+        sink_cap = '?' if curriculum is None else curriculum.root.cap
+        out += f'  v{self.sink} -> ssink [label="{sink_flow}/{sink_cap}"];\n'
         out += "}"
         return out
 
