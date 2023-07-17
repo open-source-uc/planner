@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from .. import sync
 from ..sync import get_curriculum
 from ..user.auth import UserKey
-from .course import ConcreteId, EquivalenceId, pseudocourse_with_credits
+from .course import ConcreteId, EquivalenceId
 from .courseinfo import CourseDetails, CourseInfo, course_info
 from .plan import (
     PseudoCourse,
@@ -88,20 +88,11 @@ def _extract_active_fillers(
             if inst.filler is None or not inst.used:
                 continue
 
-            # Find out how many credits are missing
-            missing_creds = 0
-            for layer in inst.layers.values():
-                if (
-                    layer.active_edge is not None
-                    and layer.active_edge.flow > missing_creds
-                ):
-                    missing_creds = layer.active_edge.flow
-
             # Add this course
             to_pass.append(
                 (
                     inst.filler.order,
-                    pseudocourse_with_credits(inst.filler.course, missing_creds),
+                    inst.filler.course,
                 ),
             )
 

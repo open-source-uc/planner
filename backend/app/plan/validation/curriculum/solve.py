@@ -130,8 +130,7 @@ class BlockEdgeInfo:
 
     block_path: tuple[Block, ...]
 
-    flow: int
-    flow_var: cpsat.IntVar
+    active: bool
     active_var: cpsat.IntVar
 
 
@@ -300,7 +299,7 @@ class SolvedCurriculum:
                             layer_id,
                             inst.code,
                             vid,
-                            edge.flow,
+                            inst.credits if edge.active else 0,
                             inst.credits,
                             inst.filler is not None,
                         )
@@ -400,7 +399,7 @@ class SolvedCurriculum:
 
                         total_inst_flow = 0
                         for block_edge in layer.block_edges:
-                            total_inst_flow += block_edge.flow
+                            total_inst_flow += inst.credits if block_edge.active else 0
 
                         label = f"{code} #{inst.instance_idx+1}"
                         style = ""
@@ -418,11 +417,11 @@ class SolvedCurriculum:
                         mkedge(
                             inst_id,
                             vid,
-                            f"{edge.flow}/{inst.credits}",
-                            dotted_flow=edge.flow,
+                            f"{inst.credits if edge.active else 0}/{inst.credits}",
+                            dotted_flow=inst.credits if edge.active else 0,
                         )
 
-                        flow += edge.flow
+                        flow += inst.credits if edge.active else 0
             else:
                 for child in block.children:
                     subid, subflow = visit(child)
@@ -483,7 +482,7 @@ def _connect_course_instance(
     block_order: int,
     block_path: tuple[Block, ...],
     inst: UsableInstance,
-) -> IntExpr:
+) -> cpsat.IntVar:
     """
     Connect the course instance `inst` to the graph node `connect_to`.
     Creates a minimal amount of nodes and edges to model the connection in the graph.
@@ -508,8 +507,7 @@ def _connect_course_instance(
     layer.block_edges.append(
         BlockEdgeInfo(
             block_path=block_path,
-            flow=0,
-            flow_var=flow_var,
+            active=False,
             active_var=active_var,
         ),
     )
@@ -568,7 +566,7 @@ def _build_visit(
     g: SolvedCurriculum,
     visit_state: VisitState,
     block: Block,
-) -> IntExpr:
+) -> cpsat.IntVar:
     """
     Recursively visit a block of the curriculum tree, building it as we go.
     Connect all of the children, and then connect this node to `connect_to`.
@@ -604,11 +602,11 @@ def _build_visit(
 
     visit_state.stack.pop()
 
-    # If this block requires capacity restrictions, add a constraint to model it
-    if max_in_flow > block.cap:
-        # 0 <= in_flow <= cap
-        g.model.AddLinearConstraint(in_flow, 0, block.cap)
-    return in_flow
+    out_flow = g.model.NewIntVar(0, block.cap, block.block_code)
+    # out_flow <= in_flow
+    g.model.AddLinearConstraint(in_flow - out_flow, 0, max_in_flow)
+
+    return out_flow
 
 
 def _add_usable_course(
@@ -730,6 +728,8 @@ def _build_problem(
     for usable in g.usable.values():
         for inst in usable.instances:
             for layer in inst.layers.values():
+                if len(layer.block_edges) <= 1:
+                    continue
                 g.model.AddAtMostOne(edge.active_var for edge in layer.block_edges)
 
     # Minimize the amount of used courses
@@ -751,8 +751,8 @@ def _tag_edge_flow(solver: cpsat.CpSolver, g: SolvedCurriculum):
             inst.used = solver.BooleanValue(inst.used_var)
             for layer in inst.layers.values():
                 for edge in layer.block_edges:
-                    edge.flow = solver.Value(edge.flow_var)
-                    if edge.flow > 0:
+                    edge.active = solver.BooleanValue(edge.active_var)
+                    if edge.active:
                         layer.active_edge = edge
 
 

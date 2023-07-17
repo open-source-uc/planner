@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from ....user.info import StudentContext
-from ...course import PseudoCourse, pseudocourse_with_credits
+from ...course import PseudoCourse
 from ...courseinfo import CourseInfo
 from ...plan import ValidatablePlan
 from ..diagnostic import (
@@ -35,15 +35,6 @@ def _diagnose_blocks(
             if inst.filler is None or not inst.used:
                 continue
 
-            # Find out how many credits are missing
-            missing_creds = 0
-            for layer in inst.layers.values():
-                if (
-                    layer.active_edge is not None
-                    and layer.active_edge.flow > missing_creds
-                ):
-                    missing_creds = layer.active_edge.flow
-
             # This filler is active, therefore something is missing
             out.add(
                 CurriculumErr(
@@ -56,13 +47,10 @@ def _diagnose_blocks(
                         for layer in inst.layers.values()
                         if layer.active_edge is not None
                     ],
-                    credits=missing_creds,
+                    credits=courseinfo.get_credits(inst.filler.course) or 0,
                     fill_options=[
                         fetch_name(
-                            pseudocourse_with_credits(
-                                inst.filler.course,
-                                missing_creds,
-                            ),
+                            inst.filler.course,
                         ),
                     ],
                 ),
