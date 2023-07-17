@@ -415,12 +415,17 @@ def _minor_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     # complementario
     assert filler.block_code.startswith(COURSE_PREFIX)
     filler_code = filler.block_code[len(COURSE_PREFIX) :]
-    filler_course = curriculum.fillers[filler_code][-1]  # Asumimos que es el ultimo
+    filler_course = curriculum.fillers[filler_code].pop()  # Asumimos que es el ultimo
     assert isinstance(filler_course.course, EquivalenceId)
-    filler_course.course = pseudocourse_with_credits(
-        filler_course.course,
-        minor_credits,
-    )
+    filler_credits = minor_credits
+    while filler_credits > 0:
+        creds = min(filler_credits, 10)
+        filler_course.course = pseudocourse_with_credits(
+            filler_course.course,
+            creds,
+        )
+        curriculum.fillers[filler_code].append(filler_course.copy())
+        filler_credits -= creds
 
 
 TITLE_EXCLUSIVE_CREDITS = 130
