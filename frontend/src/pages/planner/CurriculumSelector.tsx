@@ -1,7 +1,8 @@
-import { Fragment, memo } from 'react'
+import { Fragment, memo, useEffect } from 'react'
 import { Listbox, Transition } from '@headlessui/react'
 import { type Major, type Minor, type Title, type CurriculumSpec } from '../../client'
 import { type CurriculumData } from './utils/Types'
+import { toast } from 'react-toastify'
 
 interface CurriculumSelectorProps {
   planName: string
@@ -13,6 +14,7 @@ interface CurriculumSelectorProps {
   selectYear: Function
 }
 interface SelectorProps {
+  name: string
   canDeselect: boolean
   data: Record<string, Major | Minor | Title>
   value: string | null | undefined
@@ -20,12 +22,22 @@ interface SelectorProps {
 }
 
 const Selector = memo(function _Selector ({
-  canDeselect,
+  name,
   data,
   value,
+  canDeselect,
   onChange
 }: SelectorProps): JSX.Element {
-  const selectedOption = value !== undefined && value !== null && value in data ? data[value] : { name: 'Por Seleccionar', code: null }
+  const selectedOption = value !== undefined && value !== null ? (data[value] ?? { name: 'Minor desconocido', code: value }) : { name: 'Por Seleccionar', code: null }
+  if (value !== undefined && value !== null && data[value] === undefined) {
+    useEffect(() => {
+      toast.warn(`Tu ${name} todavía no está soportado oficialmente. Los cursos pueden estar incorrectos, revisa dos veces.`, {
+        toastId: `UNSUPPORTED_${name}`,
+        autoClose: false,
+        position: 'bottom-left'
+      })
+    }, [value])
+  }
   return (
     <Listbox value={selectedOption.code} onChange={onChange}>
       <Listbox.Button className="selectorButton">
@@ -115,6 +127,7 @@ const CurriculumSelector = memo(function CurriculumSelector ({
           <div className={'selectorName'}>Major:</div>
           {curriculumData != null
             ? <Selector
+              name="major"
               canDeselect={false}
               data={curriculumData.majors}
               value={curriculumSpec.major}
@@ -135,6 +148,7 @@ const CurriculumSelector = memo(function CurriculumSelector ({
           <div className={'selectorName'}>Minor:</div>
           {curriculumData != null
             ? <Selector
+              name="minor"
               canDeselect={true}
               data={curriculumData.minors}
               value={curriculumSpec.minor}
@@ -155,7 +169,8 @@ const CurriculumSelector = memo(function CurriculumSelector ({
           <div className={'selectorName'}>Titulo:</div>
           {curriculumData != null &&
             <Selector
-            canDeselect={true}
+              name="título"
+              canDeselect={true}
               data={curriculumData.titles}
               value={curriculumSpec.title}
               onChange={(t) => selectTitle(t)}
