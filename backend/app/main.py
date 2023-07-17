@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
+from prisma.models import Major as DbMajor
 
 from . import routes, sync
 from .database import prisma
@@ -35,23 +36,23 @@ async def startup():
     await prisma.connect()
     # Setup SIDING webservice
     siding_soap_client.on_startup()
-    # Sync courses if database is empty
+    # Autosync courses if enabled
     await sync.run_upstream_sync(
         courses=settings.autosync_courses,
         curriculums=settings.autosync_curriculums,
         offer=settings.autosync_offer,
         courseinfo=settings.autosync_courseinfo,
     )
-    # Prime course info cache
+    # Reload database if empty
     courseinfo = await course_info()
-    if not courseinfo.courses:
-        # Auto-sync database if there are no courses
-        await sync.run_upstream_sync(
-            courses=True,
-            curriculums=False,
-            offer=False,
-            courseinfo=False,
-        )
+    offer_sample = await DbMajor.prisma().find_first()
+    # Auto-sync database if there are no courses
+    await sync.run_upstream_sync(
+        courses=len(courseinfo.courses) == 0,
+        curriculums=False,
+        offer=offer_sample is None,
+        courseinfo=False,
+    )
 
 
 @app.on_event("shutdown")  # type: ignore
