@@ -256,14 +256,10 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                   <label className="mr-3 my-auto" htmlFor="creditsFilter">Creditos: </label>
                   <select className="grow rounded py-1" id="creditsFilter" value={filter.credits} onChange={e => { setFilter({ ...filter, credits: e.target.value }) }}>
                     <option value={''}>-</option>
-                    <option value={'4'}>4</option>
                     <option value={'5'}>5</option>
-                    <option value={'6'}>6</option>
-                    <option value={'8'}>8</option>
                     <option value={'10'}>10</option>
                     <option value={'15'}>15</option>
                     <option value={'20'}>20</option>
-                    <option value={'30'}>30</option>
                   </select>
                 </div>
 

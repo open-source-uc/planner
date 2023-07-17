@@ -665,7 +665,7 @@ const Planner = (): JSX.Element => {
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
       <LegendModal open={isLegendModalOpen} onClose={closeLegendModal}/>
       <SavePlanModal isOpen={isSavePlanModalOpen} onClose={closeSavePlanModal} savePlan={savePlan}/>
-      <AlertModal title={popUpAlert.title} desc={popUpAlert.desc} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}/>
+      <AlertModal title={popUpAlert.title} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}>{popUpAlert.desc}</AlertModal>
       {plannerStatus === 'LOADING' &&
         <div className="absolute w-screen h-full z-50 bg-white flex flex-col justify-center items-center">
           <Spinner message='Cargando planificación...' />
