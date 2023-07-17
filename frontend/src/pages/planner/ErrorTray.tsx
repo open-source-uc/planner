@@ -196,7 +196,7 @@ const ErrorTray = ({ setValidatablePlan, diagnostics, validating, courseDetails,
   const messageList: JSX.Element[] = diagnostics.map((diag, index) => {
     let diagWithAssociated = diag
     const reqCourses: any = {}
-    if (isDiagWithAssociatedCourses(diag)) diagWithAssociated = { ...diag, associated_to: diag.associated_to.map((course: ClassId) => courseDetails[course.code] !== undefined ? { ...courseDetails[course.code], instance: course.instance } : course.code) }
+    if (isDiagWithAssociatedCourses(diag)) diagWithAssociated = { ...diag, associated_to: diag.associated_to.map((course: ClassId) => courseDetails[course.code] !== undefined ? { ...courseDetails[course.code], instance: course.instance } : { code: course.code }) }
     if (isCourseRequirementErr(diag)) {
       const reqCodes = new Set<string>()
       collectRequirements(diag.modernized_missing, reqCodes)
