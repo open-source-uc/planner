@@ -47,9 +47,9 @@ const Planner = (): JSX.Element => {
   const [plannerStatus, setPlannerStatus] = useState<PlannerStatus>(PlannerStatus.LOADING)
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [popUpAlert, setPopUpAlert] = useState<{ title: string, major: string, desc: string, isOpen: boolean }>({ title: '', major: '', desc: '', isOpen: false })
+  const [popUpAlert, setPopUpAlert] = useState<{ title: string, major?: string, year?: 'C2020' | 'C2022', deleteMajor: boolean, desc: string, isOpen: boolean }>({ title: '', major: '', deleteMajor: false, desc: '', isOpen: false })
 
-  const previousCurriculum = useRef<{ major: string | undefined, minor: string | undefined, title: string | undefined }>({ major: '', minor: '', title: '' })
+  const previousCurriculum = useRef<{ major: string | undefined, minor: string | undefined, title: string | undefined, cyear: 'C2020' | 'C2022' }>({ major: '', minor: '', title: '', cyear: '' })
   const previousClasses = useRef<PseudoCourseId[][]>([[]])
 
   const [validationPromise, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
@@ -189,6 +189,7 @@ const Planner = (): JSX.Element => {
       while (baseValidatablePlan.classes.length > 0 && baseValidatablePlan.classes[baseValidatablePlan.classes.length - 1].length === 0) {
         baseValidatablePlan.classes.pop()
       }
+      console.log(baseValidatablePlan)
       const response: ValidatablePlan = await DefaultService.generatePlan(baseValidatablePlan)
       await Promise.all([
         getCourseDetails(response.classes.flat()),
@@ -269,7 +270,11 @@ const Planner = (): JSX.Element => {
         validationPromise.cancel()
         setValidationPromise(null)
       }
-
+      if (validatablePlan.classes.flat().length === 0) {
+        setValidationResult(null)
+        setPlannerStatus(PlannerStatus.READY)
+        return
+      }
       const promise = authState?.user == null ? DefaultService.validateGuestPlan(validatablePlan) : DefaultService.validatePlanForUser(validatablePlan)
       setValidationPromise(promise)
       const response = await promise
@@ -277,7 +282,8 @@ const Planner = (): JSX.Element => {
       previousCurriculum.current = {
         major: validatablePlan.curriculum.major,
         minor: validatablePlan.curriculum.minor,
-        title: validatablePlan.curriculum.title
+        title: validatablePlan.curriculum.title,
+        cyear: validatablePlan.curriculum.cyear.raw
       }
       // Order diagnostics by putting errors first, then warnings.
       response.diagnostics.sort((a, b) => {
@@ -563,6 +569,23 @@ const Planner = (): JSX.Element => {
     setValidatablePlan(null)
   }, [setPlannerStatus, setValidatablePlan])
 
+  const selectYear = useCallback((cYear: 'C2020' | 'C2022', isMajorValid: boolean, isMinorValid: boolean): void => {
+    setValidatablePlan((prev) => {
+      if (prev == null || prev.curriculum.cyear.raw === cYear) return prev
+      const newCurriculum = { ...prev.curriculum, cyear: { raw: cYear } }
+      const newClasses = [...prev.classes]
+      newClasses.splice(authState?.student?.next_semester ?? 0)
+      if (!isMinorValid) {
+        newCurriculum.minor = undefined
+      }
+      if (!isMajorValid) {
+        newCurriculum.minor = undefined
+      }
+      return { ...prev, classes: newClasses, curriculum: newCurriculum }
+    })
+  }, [setValidatablePlan, authState])
+
+  // this sensitivity list shouldn't contain frequently-changing attributes
   const selectMajor = useCallback((majorCode: string | undefined, isMinorValid: boolean): void => {
     setValidatablePlan((prev) => {
       if (prev == null || prev.curriculum.major === majorCode) return prev
@@ -604,6 +627,7 @@ const Planner = (): JSX.Element => {
         title: 'Minor incompatible',
         desc: 'Advertencia: La selección del nuevo major no es compatible con el minor actual. Continuar con esta selección requerirá eliminar el minor actual. ¿Desea continuar y eliminar su minor?',
         major: major.code,
+        deleteMajor: false,
         isOpen: true
       })
     } else {
@@ -611,14 +635,46 @@ const Planner = (): JSX.Element => {
     }
   }, [validatablePlan?.curriculum, setPopUpAlert, selectMajor]) // this sensitivity list shouldn't contain frequently-changing attributes
 
+  const checkMajorAndMinorForNewYear = useCallback(async (cyear: 'C2020' | 'C2022'): Promise<void> => {
+    const newMajors = await DefaultService.getMajors(cyear)
+    const isValidMajor = validatablePlan?.curriculum.major === null || validatablePlan?.curriculum.major === undefined || newMajors.some(m => m.code === validatablePlan?.curriculum.major)
+
+    if (!isValidMajor) {
+      setPopUpAlert({
+        title: 'Major incompatible',
+        desc: 'Advertencia: La selección del nuevo año no es compatible con el major actual. Continuar con esta selección requerirá eliminar el major y minor actual. ¿Desea continuar y eliminar su minor?',
+        year: cyear,
+        deleteMajor: true,
+        isOpen: true
+      })
+    } else {
+      let isValidMinor = true
+      if (validatablePlan?.curriculum.major !== null && validatablePlan?.curriculum.major !== undefined) {
+        const newMinors = await DefaultService.getMinors(cyear, validatablePlan.curriculum.major)
+        isValidMinor = validatablePlan?.curriculum.minor === null || validatablePlan?.curriculum.minor === undefined || newMinors.some(m => m.code === validatablePlan?.curriculum.minor)
+      } if (!isValidMinor) {
+        setPopUpAlert({
+          title: 'Minor incompatible',
+          desc: 'Advertencia: La selección del nuevo año no es compatible con el minor actual. Continuar con esta selección requerirá eliminar el minor actual. ¿Desea continuar y eliminar su minor?',
+          year: cyear,
+          deleteMajor: false,
+          isOpen: true
+        })
+      } else {
+        selectYear(cyear, true, true)
+      }
+    }
+  }, [validatablePlan?.curriculum, setPopUpAlert, selectYear])
+
   const handlePopUpAlert = useCallback(async (isCanceled: boolean): Promise<void> => {
     setPopUpAlert(prev => {
       if (!isCanceled) {
-        selectMajor(prev.major, false)
+        if ('major' in prev) selectMajor(prev.major, false)
+        if ('year' in prev && prev.year !== undefined) selectYear(prev.year, false, false)
       }
       return { ...prev, isOpen: false }
     })
-  }, [setPopUpAlert, selectMajor])
+  }, [setPopUpAlert, selectMajor, selectYear])
 
   useEffect(() => {
     setPlannerStatus(PlannerStatus.LOADING)
@@ -633,11 +689,12 @@ const Planner = (): JSX.Element => {
 
   useEffect(() => {
     if (validatablePlan != null) {
-      const { major, minor, title } = validatablePlan.curriculum
+      const { major, minor, title, cyear } = validatablePlan.curriculum
       const curriculumChanged =
           major !== previousCurriculum.current.major ||
           minor !== previousCurriculum.current.minor ||
-          title !== previousCurriculum.current.title
+          title !== previousCurriculum.current.title ||
+          cyear.raw !== previousCurriculum.current.cyear
       if (curriculumChanged) {
         setPlannerStatus(PlannerStatus.LOADING)
       } else {
@@ -677,6 +734,7 @@ const Planner = (): JSX.Element => {
                 selectMajor={checkMinorForNewMajor}
                 selectMinor={selectMinor}
                 selectTitle={selectTitle}
+                selectYear={checkMajorAndMinorForNewYear}
               />
               <ControlTopBar
                 reset={reset}
