@@ -3,13 +3,13 @@ from collections.abc import Callable
 import limits
 from fastapi import Depends, HTTPException, Request
 
+from .settings import settings
 from .user.auth import require_authentication
 from .user.key import UserKey
 
 LIMIT_REACHED_ERROR = HTTPException(429, detail="Too many requests")
 
-# TODO: Use Redis storage to support multiple instances.
-storage = limits.storage.MemoryStorage()
+storage = limits.storage.RedisStorage(settings.redis_uri)
 
 
 class Limiter:
