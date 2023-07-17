@@ -136,5 +136,5 @@ deploy environment=default_environment:
         TARGET_SERVICE="planner"
     fi
     echo -e "{{ info_prefix }} \e[1mStarting containers...\e[0m"
-    docker compose up --build --remove-orphans --force-recreate --detach --wait $TARGET_SERVICE
+    docker compose up --build --remove-orphans --force-recreate --detach --wait-timeout 300 --wait $TARGET_SERVICE
     echo -e "{{ info_prefix }} \e[1mDeployed to $DEPLOY_ENVIRONMENT successfully 🚀.\e[0m"
