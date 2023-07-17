@@ -1,21 +1,10 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from ....user.info import StudentContext
-from ...course import ConcreteId, EquivalenceId, PseudoCourse
-from ...courseinfo import CourseInfo
-from ...plan import ClassId, ValidatablePlan
-from ..diagnostic import (
-    AmbiguousCourseErr,
-    CourseRequirementErr,
-    SemesterCreditsErr,
-    SemesterCreditsWarn,
-    SemestralityWarn,
-    UnavailableCourseWarn,
-    UnknownCourseErr,
-    ValidationResult,
-)
-from .logic import (
+from app.plan.course import ConcreteId, EquivalenceId, PseudoCourse
+from app.plan.courseinfo import CourseInfo
+from app.plan.plan import ClassId, ValidatablePlan
+from app.plan.validation.courses.logic import (
     And,
     Atom,
     Const,
@@ -30,7 +19,18 @@ from .logic import (
     ReqSchool,
     map_atoms,
 )
-from .simplify import simplify
+from app.plan.validation.courses.simplify import simplify
+from app.plan.validation.diagnostic import (
+    AmbiguousCourseErr,
+    CourseRequirementErr,
+    SemesterCreditsErr,
+    SemesterCreditsWarn,
+    SemestralityWarn,
+    UnavailableCourseWarn,
+    UnknownCourseErr,
+    ValidationResult,
+)
+from app.user.info import StudentContext
 
 # Students can only take this amount of credits if they meet certain criteria.
 # Currently, that criteria is not failing any course in the previous X

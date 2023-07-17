@@ -1,16 +1,14 @@
 from collections import OrderedDict, defaultdict
 from collections.abc import Iterable
 
-from .. import sync
-from ..sync import get_curriculum
-from ..user.auth import UserKey
-from .course import ConcreteId, EquivalenceId
-from .courseinfo import CourseDetails, CourseInfo, course_info
-from .plan import (
+from app import sync
+from app.plan.course import ConcreteId, EquivalenceId
+from app.plan.courseinfo import CourseDetails, CourseInfo, course_info
+from app.plan.plan import (
     PseudoCourse,
     ValidatablePlan,
 )
-from .validation.courses.logic import (
+from app.plan.validation.courses.logic import (
     And,
     Atom,
     Const,
@@ -25,17 +23,19 @@ from .validation.courses.logic import (
     ReqSchool,
     map_atoms,
 )
-from .validation.courses.simplify import as_dnf
-from .validation.courses.validate import CourseInstance, ValidationContext
-from .validation.curriculum.solve import (
+from app.plan.validation.courses.simplify import as_dnf
+from app.plan.validation.courses.validate import CourseInstance, ValidationContext
+from app.plan.validation.curriculum.solve import (
     SolvedCurriculum,
     solve_curriculum,
 )
-from .validation.curriculum.tree import (
+from app.plan.validation.curriculum.tree import (
     LATEST_CYEAR,
     CurriculumSpec,
     Cyear,
 )
+from app.sync import get_curriculum
+from app.user.auth import UserKey
 
 RECOMMENDED_CREDITS_PER_SEMESTER = 50
 

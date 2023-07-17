@@ -5,17 +5,17 @@ since guests (with no associated user context) can also validate plans.
 """
 
 
-from ...user.info import StudentContext
-from ..course import EquivalenceId, PseudoCourse
-from ..plan import ValidatablePlan
-from .curriculum.tree import CurriculumSpec
-from .diagnostic import (
+from app.plan.course import EquivalenceId, PseudoCourse
+from app.plan.plan import ValidatablePlan
+from app.plan.validation.curriculum.tree import CurriculumSpec
+from app.plan.validation.diagnostic import (
     MismatchedCurriculumSelectionWarn,
     MismatchedCyearErr,
     OutdatedCurrentSemesterErr,
     OutdatedPlanErr,
     ValidationResult,
 )
+from app.user.info import StudentContext
 
 
 def _check_sem_eq(sem1: list[PseudoCourse], sem2: list[PseudoCourse]) -> bool:
