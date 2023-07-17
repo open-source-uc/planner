@@ -49,6 +49,7 @@ import threading
 import time
 import warnings
 from collections.abc import Iterable
+from typing import Self
 
 from ortools.sat import cp_model_pb2, sat_parameters_pb2
 from ortools.sat.python import cp_model_helper as cmh
@@ -171,13 +172,15 @@ class LinearExpr:
     """
 
     @classmethod
-    def Sum(cls, expressions):
+    def Sum(cls: type[Self], expressions: Iterable[IntOrLinearExpr]) -> LinearExpr:
         """Creates the expression sum(expressions)."""
         if len(expressions) == 1:
             return expressions[0]
         return _SumArray(expressions)
     @classmethod
-    def WeightedSum(cls, expressions, coefficients):
+    def WeightedSum(
+        cls: type[Self], expressions: Iterable[IntOrLinearExpr], coefficients: Iterable[int],
+    ) -> LinearExpr:
         """Creates the expression sum(expressions[i] * coefficients[i])."""
         if LinearExpr.IsEmptyOrAllNull(coefficients):
             return 0

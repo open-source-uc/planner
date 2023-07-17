@@ -81,7 +81,6 @@ has output capacity is useless.
 """
 
 from collections import defaultdict
-from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 from ortools.sat.python import cp_model as cpsat
@@ -213,6 +212,9 @@ class SolvedCurriculum:
     model: cpsat.CpModel
     # Taken courses (and filler courses).
     usable: dict[str, UsableCourse]
+    # Taken course codes.
+    # The keys of `usable`.
+    usable_keys: set[str]
     # Indicates the main superblock that each course counts towards.
     superblocks: dict[str, list[str]]
     # Maps from original (code, repeat index) to curriculum (code, repeat index).
@@ -221,6 +223,7 @@ class SolvedCurriculum:
     def __init__(self) -> None:
         self.model = cpsat.CpModel()
         self.usable = {}
+        self.usable_keys = set()
         self.superblocks = {}
         self.mapping = {}
 
@@ -402,6 +405,7 @@ class SolvedCurriculum:
                             total_inst_flow += inst.credits if block_edge.active else 0
 
                         label = f"{code} #{inst.instance_idx+1}"
+                        label += f"\n{inst.original_pseudocourse}"
                         style = ""
                         if inst.filler is not None:
                             label += "\n(faltante)"
@@ -490,16 +494,14 @@ def _connect_course_instance(
 
     # TODO: Per-edge cost
 
-    name = f"{inst.code} #{inst.instance_idx+1} -> {block_path[-1].block_code}"
-
     # Indicates whether the course counts towards the block
-    active_var = g.model.NewBoolVar(f"{name} [bool]")
+    active_var = g.model.NewBoolVar("")
 
     # The course instance must be used for this edge to be active
     g.model.AddImplication(active_var, inst.used_var)
 
     # There can only be flow if active is true
-    flow_var = g.model.NewIntVar(0, inst.credits, name)
+    flow_var = g.model.NewIntVar(0, inst.credits, "")
     # flow <= active * credits
     g.model.AddLinearConstraint(active_var * inst.credits - flow_var, 0, inst.credits)
 
@@ -515,46 +517,6 @@ def _connect_course_instance(
     return flow_var
 
 
-def _taken_block_courses_iter(
-    g: SolvedCurriculum,
-    block: Leaf,
-) -> Iterable[UsableInstance]:
-    """
-    Iterate over the course instances whose codes match the given block.
-    The instances are given in an arbitrary order.
-    """
-    if len(block.codes) < len(g.usable):
-        # This block has little codes, iterate over the block codes
-        return (
-            inst
-            for code in block.codes
-            if code in g.usable
-            for inst in g.usable[code].instances
-            if not (
-                # Skips instances with mismatching tagged equivalence
-                block.layer == ""
-                and isinstance(inst.original_pseudocourse, ConcreteId)
-                and inst.original_pseudocourse.equivalence is not None
-                and inst.original_pseudocourse.equivalence.code not in block.codes
-            )
-        )
-    # This block has too many codes.
-    # Iterate over the taken courses instead
-    return (
-        inst
-        for code, usable in g.usable.items()
-        if code in block.codes
-        for inst in usable.instances
-        if not (
-            # Skips instances with mismatching tagged equivalence
-            block.layer == ""
-            and isinstance(inst.original_pseudocourse, ConcreteId)
-            and inst.original_pseudocourse.equivalence is not None
-            and inst.original_pseudocourse.equivalence.code not in block.codes
-        )
-    )
-
-
 @dataclass
 class VisitState:
     stack: list[Block] = field(default_factory=list)
@@ -566,7 +528,7 @@ def _build_visit(
     g: SolvedCurriculum,
     visit_state: VisitState,
     block: Block,
-) -> cpsat.IntVar:
+) -> list[cpsat.IntVar]:
     """
     Recursively visit a block of the curriculum tree, building it as we go.
     Connect all of the children, and then connect this node to `connect_to`.
@@ -577,36 +539,52 @@ def _build_visit(
         # A list of courses
         visit_state.flat_order += 1
 
-        in_flow: IntExpr = 0
+        in_flows: list[cpsat.IntVar] = []
         max_in_flow = 0
         block_path = tuple(visit_state.stack)
-        for inst in _taken_block_courses_iter(g, block):
-            child_flow = _connect_course_instance(
-                courseinfo,
-                g,
-                block.layer,
-                visit_state.flat_order,
-                block_path,
-                inst,
-            )
-            in_flow += child_flow
-            max_in_flow += inst.credits
+        for code in block.codes.intersection(g.usable_keys):
+            for inst in g.usable[code].instances:
+                if (
+                    block.layer == ""
+                    and isinstance(inst.original_pseudocourse, ConcreteId)
+                    and inst.original_pseudocourse.equivalence is not None
+                    and inst.original_pseudocourse.equivalence.code not in block.codes
+                ):
+                    # Skips instances with mismatching tagged equivalence
+                    continue
+                child_flow = _connect_course_instance(
+                    courseinfo,
+                    g,
+                    block.layer,
+                    visit_state.flat_order,
+                    block_path,
+                    inst,
+                )
+                in_flows.append(child_flow)
+                max_in_flow += inst.credits
     else:
         # A combination of blocks
         max_in_flow = 0
-        in_flow: IntExpr = 0
+        in_flows: list[cpsat.IntVar] = []
         for c in block.children:
             child_flow = _build_visit(courseinfo, g, visit_state, c)
-            in_flow += child_flow
+            in_flows.extend(child_flow)
             max_in_flow += c.cap
 
     visit_state.stack.pop()
 
-    out_flow = g.model.NewIntVar(0, block.cap, block.block_code)
-    # out_flow <= in_flow
-    g.model.AddLinearConstraint(in_flow - out_flow, 0, max_in_flow)
+    out_flows = in_flows
+    if max_in_flow > block.cap:
+        out_flow = g.model.NewIntVar(0, block.cap, "")
+        # out_flow <= in_flow
+        g.model.AddLinearConstraint(
+            cpsat.LinearExpr.Sum(in_flows) - out_flow,
+            0,
+            max_in_flow,
+        )
+        out_flows = [out_flow]
 
-    return out_flow
+    return out_flows
 
 
 def _add_usable_course(
@@ -614,6 +592,7 @@ def _add_usable_course(
     curriculum: Curriculum,
     g: SolvedCurriculum,
     flat_order: int,
+    credit_cap: int,
     to_add: PseudoCourse | FillerCourse,
 ):
     """
@@ -635,16 +614,22 @@ def _add_usable_course(
             instances=[],
         )
         g.usable[code] = usable
+        g.usable_keys.add(code)
 
-    if (  # noqa: SIM102 (for clarity)
-        usable.multiplicity and usable.total >= usable.multiplicity
-    ):
+    if usable.multiplicity is not None and usable.multiplicity < credit_cap:
+        credit_cap = usable.multiplicity
+    if usable.total >= credit_cap:  # noqa: SIM102 (for clarity)
         # This course is already full
         # If the course we are adding is equivalent to some previous course, just skip
         # it
         # For this to work correctly, fillers must be added after taken courses!
         if any(
-            previous.original_pseudocourse == og_course for previous in usable.instances
+            previous.original_pseudocourse == og_course
+            or (
+                isinstance(previous.original_pseudocourse, ConcreteId)
+                and previous.original_pseudocourse.equivalence is None
+            )
+            for previous in usable.instances
         ):
             return
 
@@ -671,7 +656,7 @@ def _add_usable_course(
             flat_order=flat_order,
             original_pseudocourse=og_course,
             used=False,
-            used_var=g.model.NewBoolVar(f"{code} #{inst_idx+1}"),
+            used_var=g.model.NewBoolVar(""),
         ),
     )
     usable.total += credits
@@ -689,42 +674,69 @@ def _build_problem(
     solvable graph that represents this curriculum.
     """
 
+    t0 = t()
     g = SolvedCurriculum()
 
     # Fill in credit pool from approved courses and filler credits
+    t1 = t()
     flat_order = 0
+    filler_cap: dict[str, int] = {
+        code: sum(courseinfo.get_credits(filler.course) or 0 for filler in fillers)
+        for code, fillers in curriculum.fillers.items()
+    }
     for sem in taken_semesters:
         for c in sorted(sem, key=lambda c: c.code):
             if courseinfo.try_any(c) is None:
                 continue
-            _add_usable_course(courseinfo, curriculum, g, flat_order, c)
+            _add_usable_course(
+                courseinfo,
+                curriculum,
+                g,
+                flat_order,
+                filler_cap[c.code] if c.code in filler_cap else INFINITY,
+                c,
+            )
             flat_order += 1
-    for fillers in curriculum.fillers.values():
+    for code, fillers in curriculum.fillers.items():
         for filler in fillers:
-            _add_usable_course(courseinfo, curriculum, g, flat_order, filler)
+            _add_usable_course(
+                courseinfo,
+                curriculum,
+                g,
+                flat_order,
+                filler_cap[code],
+                filler,
+            )
             flat_order += 1
 
     # Build curriculum graph from the curriculum tree
+    t2 = t()
     root_flow = _build_visit(courseinfo, g, VisitState(), curriculum.root)
 
     # Ensure the maximum amount of flow reaches the root
+    t3 = t()
     g.model.AddLinearConstraint(
-        root_flow,
+        cpsat.LinearExpr.Sum(root_flow),
         curriculum.root.cap,
         curriculum.root.cap,
     )
 
     # Apply multiplicity limits
     # Each course can only be taken once (or, a certain number of times)
+    t4 = t()
     for usable in g.usable.values():
         if not usable.multiplicity or usable.total <= usable.multiplicity:
             continue
-        course_flow: IntExpr = 0
-        for inst in usable.instances:
-            course_flow += inst.used_var * inst.credits
-        g.model.AddLinearConstraint(course_flow, 0, usable.multiplicity)
+        vars = [inst.used_var for inst in usable.instances]
+        coeffs = [inst.credits for inst in usable.instances]
+        g.model.AddLinearConstraint(
+            cpsat.LinearExpr.WeightedSum(vars, coeffs),
+            0,
+            usable.multiplicity,
+        )
 
     # Each course instance can only feed one block per layer
+    t5 = t()
     for usable in g.usable.values():
         for inst in usable.instances:
             for layer in inst.layers.values():
@@ -733,11 +745,25 @@ def _build_problem(
                 g.model.AddAtMostOne(edge.active_var for edge in layer.block_edges)
 
     # Minimize the amount of used courses
-    cost: IntExpr = 0
+    t6 = t()
+    vars: list[cpsat.IntVar] = []
+    coeffs: list[int] = []
     for usable in g.usable.values():
         for inst in usable.instances:
-            cost += inst.used_var * (1 if inst.filler is None else 1000)
-    g.model.Minimize(cost)
+            vars.append(inst.used_var)
+            coeffs.append(1 if inst.filler is None else 1000)
+    g.model.Minimize(cpsat.LinearExpr.WeightedSum(vars, coeffs))
+
+    t7 = t()
+
+    print(f"      {flat_order} instances")
+    print(f"      init: {p(t1 - t0)}")
+    print(f"      collect: {p(t2 - t1)}")
+    print(f"      visit: {p(t3 - t2)}")
+    print(f"      root-flow: {p(t4 - t3)}")
+    print(f"      multiplicity: {p(t5 - t4)}")
+    print(f"      no-split: {p(t6 - t5)}")
+    print(f"      cost: {p(t7 - t6)}")
 
     return g
 
@@ -790,8 +816,10 @@ def solve_curriculum(
     taken: list[list[PseudoCourse]],
 ) -> SolvedCurriculum:
     # Take the curriculum blueprint, and produce a graph for this student
+    t0 = t()
     g = _build_problem(courseinfo, curriculum, taken)
     # Solve the integer optimization problem
+    t1 = t()
     solve_status = solver.Solve(g.model)
     if not (solve_status == cpsat.OPTIMAL or solve_status == cpsat.FEASIBLE):
         dbg = f"\n{g.dump_graphviz_debug(curriculum)}"
@@ -799,7 +827,23 @@ def solve_curriculum(
             f"failed to solve curriculum: {solver.StatusName()}{dbg}",
         )
     # Extract solution from solver
+    t2 = t()
     _tag_edge_flow(solver, g)
     # Determine course superblocks
+    t3 = t()
     _tag_superblocks(g)
+    t4 = t()
+
+    print(f"    build: {p(t1 - t0)}")
+    print(f"    solve: {p(t2 - t1)}")
+    print(f"    fetch: {p(t3 - t2)}")
+    print(f"    superblock: {p(t4 - t3)}")
+
     return g
+
+
+from time import monotonic as t
+
+
+def p(t: float):
+    return f"{round(t*1000, 2)}ms"
