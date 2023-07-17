@@ -43,7 +43,7 @@ COPY --from=requirements-stage /tmp/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
 
 # Copy the application code
-COPY / /app
+COPY ./ /app
 WORKDIR /app
 
 # Copy the .env file
@@ -51,6 +51,8 @@ COPY .env /app/.env
 
 # Generate the Prisma client
 RUN prisma generate
+
+ARG PRE_START_PATH=/app/app/scripts
 
 # Monitor the app
 HEALTHCHECK --start-period=5m CMD curl -f http://localhost:80/health || exit 1
