@@ -1,5 +1,5 @@
 
-import { type ApiError, type Major, type Minor, type Title, type CourseDetails, type EquivDetails, type ConcreteId, type EquivalenceId } from '../../../client'
+import { type CourseRequirementErr, type UnknownCourseErr, type SemestralityWarn, type UnavailableCourseWarn, type AmbiguousCourseErr, type ApiError, type Major, type Minor, type Title, type CourseDetails, type EquivDetails, type ConcreteId, type EquivalenceId } from '../../../client'
 
 export interface CoursePos { semester: number, index: number }
 export interface CourseId { code: string, instance: number }
@@ -49,4 +49,12 @@ export const isApiError = (err: any): err is ApiError => {
 }
 export const isCancelError = (err: any): boolean => {
   return err.name !== undefined && err.name === 'CancelError'
+}
+
+export const isDiagWithAssociatedCourses = (diag: any): diag is (CourseRequirementErr | UnknownCourseErr | SemestralityWarn | UnavailableCourseWarn | AmbiguousCourseErr) => {
+  return 'associated_to' in diag && diag.associated_to !== null && diag.associated_to !== undefined && typeof diag.associated_to[0] === 'object'
+}
+
+export const isCourseRequirementErr = (diag: any): diag is CourseRequirementErr => {
+  return diag.kind === 'req'
 }

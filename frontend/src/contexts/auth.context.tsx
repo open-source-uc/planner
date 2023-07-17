@@ -23,22 +23,28 @@ export function AuthProvider ({ children, userData }: Props): JSX.Element {
   const [user, setUser] = React.useState<UserData | null>(userData)
   const [student, setStudent] = useState<StudentContext | null>(null)
 
-  const getInfo = async (): Promise<void> => {
-    const response = await DefaultService.getStudentInfo()
-    setStudent(response)
-  }
-
   useEffect(() => {
-    getInfo().catch(err => {
-      console.log(err)
+    void DefaultService.getStudentInfo().catch(err => {
       if (err.status === 401) {
-        console.log('token invalid or expired, loading re-login page')
+        console.log('Token invalid or expired, loading re-login page...')
         toast.error('Tu sesión ha expirado. Redireccionando a página de inicio de sesión..', {
           toastId: 'ERROR401'
         })
+      } else if (err.status === 403) {
+        // Ignore
+      } else {
+        toast.error('Error al cargar información del usuario', {
+          toastId: 'ERROR401'
+        })
       }
-    })
-  }, [user])
+    }).then(
+      student => {
+        if (student != null) {
+          setStudent((_prevStudent) => student)
+        }
+      })
+  }, [user]
+  )
 
   return (
     <AuthContext.Provider value={{ user, setUser, student }}>
