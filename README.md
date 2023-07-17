@@ -7,7 +7,7 @@
   <a href="#descripción">Descripción</a> •
   <a href="#instalación-y-desarrollo">Instalación</a> •
   <a href="#mocks">Mocks</a> •
-  <a href="#staging-y-producción">Staging y Producción</a> •
+  <a href="#deployment">Deployment</a> •
   <a href="#equipo">Equipo</a> •
   <a href="contributors.md">Contribuidores</a> •
   <a href="#licencia">Licencia</a>
