@@ -528,6 +528,13 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
         )
         await add_equivalence(opi_equiv)
 
+    # TODO: Agregar el curso ETI188
+    # "El curso ETI188 - Etica para Ingenieria se incorpora al plan de estudios como un
+    # requisito necesario para obtener el titulo profesional.
+    # En caso de querer realizarlo dentro de la Licenciatura este puede ser reconocido
+    # como Optativo de Fundamentos o bien dentro de los creditos libres del plan de
+    # formacion general."
+
     # Meter los codigos en un diccionario
     opi_set: set[str] = {OPI_CODE}
     ipre_set: set[str] = {OPI_CODE}
