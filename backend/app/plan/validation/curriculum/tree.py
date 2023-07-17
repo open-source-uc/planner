@@ -19,6 +19,9 @@ class FillerCourse(BaseModel):
     """
     Fill a block with a certain course or equivalency.
     If a filler course has to be used, the plan is considered incomplete.
+
+    NOTE: Remember to reset the cache in the database after any changes, either manually
+    or through migrations.
     """
 
     # The code of the filler course or equivalency.
@@ -30,6 +33,11 @@ class FillerCourse(BaseModel):
 
 
 class BaseBlock(BaseModel):
+    """
+    NOTE: Remember to reset the cache in the database after any changes, either manually
+    or through migrations.
+    """
+
     # The name of this block.
     # Used for debug purposes.
     debug_name: str
@@ -44,11 +52,21 @@ class BaseBlock(BaseModel):
 
 
 class Combination(BaseBlock):
+    """
+    NOTE: Remember to reset the cache in the database after any changes, either manually
+    or through migrations.
+    """
+
     # Children nodes that supply flow to this block.
     children: list["Block"]
 
 
 class Leaf(BaseBlock):
+    """
+    NOTE: Remember to reset the cache in the database after any changes, either manually
+    or through migrations.
+    """
+
     # A set of course codes that comprise this leaf.
     # This should include the equivalence code!
     codes: set[str]
@@ -58,6 +76,9 @@ class Leaf(BaseBlock):
     # Useful to model the title exclusive-credit requirements.
     # The default layer is just an empty string.
     layer: str = ""
+    # Additive offset on the cost of this block.
+    # Can be used to tweak the blocks that the generator chooses.
+    cost_offset: int = 0
 
 
 Block = Combination | Leaf
@@ -90,6 +111,9 @@ class Curriculum(BaseModel):
         (eg. FIS1523 -> FIS1523, IEE1523 -> FIS1523).
         If not present for a particular course, it defaults to being equivalent with
         itself.
+
+    NOTE: Remember to reset the cache in the database after any changes, either manually
+    or through migrations.
     """
 
     root: Combination
@@ -141,6 +165,9 @@ class Cyear(BaseModel, frozen=True):
     exhaustively on the `raw` field (using Python's `match` statement).
     This allows the linter to pinpoint all places that need to be updated whenever a
     new curriculum version is added.
+
+    NOTE: Remember to reset the cache in the database after any changes, either manually
+    or through migrations.
     """
 
     raw: Literal["C2020"]
@@ -237,6 +264,9 @@ class CurriculumSpec(BaseModel, frozen=True):
     Represents a curriculum specification.
     This specification should uniquely identify a curriculum, although it contains no
     information about the curriculum itself.
+
+    NOTE: Remember to reset the cache in the database after any changes, either manually
+    or through migrations.
     """
 
     cyear: Annotated[Cyear, Field(description="The curriculum version.")]

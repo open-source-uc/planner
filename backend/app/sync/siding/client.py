@@ -182,7 +182,7 @@ class SoapClient:
         self.record_path = None
 
     def on_startup(self):
-        # Load mockup data
+        # Load mock data
         if settings.siding_mock_path != "":
             try:
                 self.mock_db = json.loads(settings.siding_mock_path.read_text())

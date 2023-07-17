@@ -16,16 +16,23 @@ router = APIRouter(prefix="/admin")
 
 @router.post("/sync")
 async def sync_database(
-    courses: bool = False,
-    offer: bool = False,
+    courses: bool,
+    curriculums: bool,
+    offer: bool,
+    courseinfo: bool,
     admin: AdminKey = Depends(require_admin_auth),
 ):
     """
     Initiate a synchronization of the internal database from external sources.
     """
-    await sync.run_upstream_sync(courses, offer)
+    await sync.run_upstream_sync(
+        courses=courses,
+        curriculums=curriculums,
+        offer=offer,
+        courseinfo=courseinfo,
+    )
     return {
-        "message": "Database updated from external sources",
+        "message": "Synchronized",
     }
 
 

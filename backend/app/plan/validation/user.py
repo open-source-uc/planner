@@ -55,7 +55,11 @@ def _validate_possibly_outdated(
 
 
 def _is_mismatched(selected: str | None, reported: str | None):
-    return reported is not None and selected is not None and reported != selected
+    return (
+        reported is not None
+        and selected is not None
+        and not selected.startswith(reported)
+    )
 
 
 def validate_against_owner(

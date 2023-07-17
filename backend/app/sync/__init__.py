@@ -4,6 +4,7 @@ Currently using unofficial sources until we get better API access.
 """
 
 import time
+import traceback
 from collections import OrderedDict
 
 from prisma.models import (
@@ -30,6 +31,7 @@ from prisma.models import (
 from prisma.models import (
     Title as DbTitle,
 )
+from pydantic import ValidationError
 
 from ..plan.courseinfo import clear_course_info_cache, course_info
 from ..plan.validation.curriculum.tree import (
@@ -43,39 +45,55 @@ from . import buscacursos_dl
 from .siding import translate as siding_translate
 
 
-async def clear_upstream_data(courses: bool = True, offer: bool = True):
-    print("  clearing upstream data from database")
-    await DbEquivalenceCourse.prisma().delete_many()
-    await DbEquivalence.prisma().delete_many()
+async def run_upstream_sync(
+    *,
+    courses: bool,
+    curriculums: bool,
+    offer: bool,
+    courseinfo: bool,
+):
+    """
+    Populate database with "official" data.
+    """
+
+    if curriculums or courses:
+        # If we delete courses, we must also delete equivalences (because equivalences
+        # reference courses)
+        # If we delete equivalences, we must also delete curriculums (because
+        # curriculums reference equivalences)
+
+        print("deleting curriculum cache...")
+        # Equivalences and curriculums are cached lazily
+        # Therefore, we can delete them without refetching them
+        await DbEquivalenceCourse.prisma().delete_many()
+        await DbEquivalence.prisma().delete_many()
+        await DbCurriculum.prisma().delete_many()
+
     if courses:
+        print("syncing course database...")
+        # Clear previous courses
         await DbCourse.prisma().delete_many()
+        # Get course data from "official" source
+        # Currently we have no official source
+        await buscacursos_dl.fetch_to_database()
 
     if offer:
+        print("syncing curriculum offer...")
+        # Clear available programs
         await DbMajor.prisma().delete_many()
         await DbMinor.prisma().delete_many()
         await DbTitle.prisma().delete_many()
         await DbMajorMinor.prisma().delete_many()
-
-    await DbCurriculum.prisma().delete_many()
-
-
-async def run_upstream_sync(courses: bool = True, offer: bool = True):
-    """
-    Populate database with "official" data.
-    """
-    print("syncing database with external sources...")
-    # Remove previous data
-    await clear_upstream_data(courses, offer)
-    if courses:
-        # Get course data from "official" source
-        # Currently we have no official source
-        await buscacursos_dl.fetch_to_database()
-    # Fetch major, minor and title offer to database
-    if offer:
+        # Refetch available programs
         await siding_translate.load_siding_offer_to_database()
-    # Recache course info
-    await clear_course_info_cache()
-    await course_info()
+
+    if courseinfo or courses:
+        # If we updated the courses, we must update the cache too
+
+        print("caching courseinfo...")
+        # Recache courseinfo
+        await clear_course_info_cache()
+        await course_info()
 
 
 async def _get_curriculum_piece(spec: CurriculumSpec) -> Curriculum:
@@ -99,7 +117,11 @@ async def _get_curriculum_piece(spec: CurriculumSpec) -> Curriculum:
         },
     )
     if db_curr is not None:
-        return Curriculum.parse_raw(db_curr.curriculum)
+        try:
+            return Curriculum.parse_raw(db_curr.curriculum)
+        except ValidationError:
+            print(f"regenerating curriculum for {spec}: failed to parse cache")
+            traceback.print_exc()
 
     courseinfo = await course_info()
     curr = await siding_translate.fetch_curriculum(courseinfo, spec)
