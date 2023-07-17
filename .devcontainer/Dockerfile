@@ -20,4 +20,4 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 
 # Install HTTPie via pip
 RUN python -m pip install --upgrade pip wheel
-RUN python -m pip install httpie
+RUN python -m pip install httpie ansible
