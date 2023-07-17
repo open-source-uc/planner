@@ -18,7 +18,8 @@
 	"forwardPorts": [
 		3000,
 		8000,
-		5432
+		5432,
+		6379
 	],
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": "just init",
