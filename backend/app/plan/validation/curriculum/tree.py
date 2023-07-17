@@ -170,11 +170,11 @@ class Cyear(BaseModel, frozen=True):
     or through migrations.
     """
 
-    raw: Literal["C2020"]
+    raw: Literal["C2020"] | Literal["C2022"]
 
     @staticmethod
     def from_str(cyear: str) -> Optional["Cyear"]:
-        if cyear == "C2020":
+        if cyear == "C2020" or cyear == "C2022":
             return Cyear(raw=cyear)
         return None
 
@@ -187,8 +187,7 @@ class Cyear(BaseModel, frozen=True):
         return self.raw
 
 
-# TODO: Document this?
-LATEST_CYEAR = Cyear(raw="C2020")
+LATEST_CYEAR = Cyear(raw="C2022")
 
 
 class CurriculumCode(str):

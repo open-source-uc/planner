@@ -3,7 +3,8 @@ import { type ClassId, type CourseRequirementErr, type CurriculumSpec, type Vali
 import { type PseudoCourseDetail, isCourseRequirementErr, isDiagWithAssociatedCourses } from './utils/Types'
 import { Spinner } from '../../components/Spinner'
 import AutoFix from './utils/AutoFix'
-import { collectRequirements, validateCyear, getCourseName, getCourseNameWithCode } from './utils/utils'
+import { collectRequirements, getCourseName, getCourseNameWithCode } from './utils/utils'
+import { validateCyear } from './utils/planBoardFunctions'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
 type RequirementExpr = CourseRequirementErr['missing']

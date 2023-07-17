@@ -47,9 +47,11 @@ def _decode_curriculum_versions(input: StringArray | None) -> list[str]:
     Transform this type into a more manageable `list[str]`.
     """
     if input is None:
-        # Why are curriculum versions empty??
-        # TODO: Figure out why and remove this code
-        return ["C2020"]
+        # Curriculum lists are currently empty for some SIDING reason
+        # We are currently patching through the mock
+        # TODO: Once this is fixed remove patching code
+        print("WARNING: null curriculum version list")
+        return []
     return input.strings.string
 
 
@@ -79,6 +81,9 @@ async def _fetch_raw_blocks(
     # Later, remove this information
     major = "M" if spec.major is None else spec.major
     minor = "N" if spec.minor is None else spec.minor
+    if spec.major is None and spec.minor is None and spec.title is None:
+        # Use M245 as a dummy major to get Plan Comun
+        major = MajorCode("M245")
 
     # Fetch raw curriculum blocks for the given cyear-major-minor-title combination
     raw_blocks = await client.get_curriculum_for_spec(
@@ -156,7 +161,7 @@ async def _fetch_raw_blocks(
                 courses=codes,
             )
         if equiv is not None:
-            equiv = await siding_rules.apply_equivalence_rules(courseinfo, spec, equiv)
+            equiv = await siding_rules.apply_equivalence_rules(courseinfo, equiv)
             await add_equivalence(equiv)
 
     return raw_blocks

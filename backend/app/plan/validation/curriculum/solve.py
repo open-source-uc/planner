@@ -496,7 +496,8 @@ class SolvedCurriculum:
                     subid, subflow = visit(child)
                     flow += subflow
                     sublabel = f"{subflow}/{child.cap}"
-                    out += f'{subid} -> {vid} [label="{sublabel}"]\n'
+                    style = "" if subflow > 0 else " style=dotted"
+                    out += f'{subid} -> {vid} [label="{sublabel}"{style}]\n'
             label = block.debug_name
             out += f'{vid} [label="{label}"]\n'
 

@@ -1,4 +1,4 @@
-import { type CourseRequirementErr, type Cyear, type ClassId } from '../../../client'
+import { type CourseRequirementErr, type ClassId } from '../../../client'
 
 import { type PseudoCourseDetail } from './Types'
 type RequirementExpr = CourseRequirementErr['missing']
@@ -14,25 +14,6 @@ export const collectRequirements = (expr: RequirementExpr, into: Set<string>): v
       into.add(expr.code)
       break
   }
-}
-
-export const validateCyear = (raw: string): Cyear | null => {
-    // Ensure that an array stays in sync with a union of string literals
-    // https://stackoverflow.com/a/70694878/5884836
-    type ValueOf<T> = T[keyof T]
-    type NonEmptyArray<T> = [T, ...T[]]
-    type MustInclude<T, U extends T[]> = [T] extends [ValueOf<U>] ? U : never
-    function stringUnionToArray<T> () {
-      return <U extends NonEmptyArray<T>>(...elements: MustInclude<T, U>) => elements
-    }
-
-    const validCyears = stringUnionToArray<Cyear['raw']>()('C2020')
-    for (const cyear of validCyears) {
-      if (raw === cyear) {
-        return { raw: cyear }
-      }
-    }
-    return null
 }
 
 /**

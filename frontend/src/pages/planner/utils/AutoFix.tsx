@@ -1,8 +1,9 @@
 import { type CurriculumErr, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../../client'
 import { type AuthState, useAuth } from '../../../contexts/auth.context'
 import { type PseudoCourseId } from './Types'
+import { validateCyear } from './planBoardFunctions'
 import { CourseName } from '../ErrorTray'
-import { validateCyear } from './utils'
+
 type Diagnostic = ValidationResult['diagnostics'][number]
 
 const findSemesterWithLeastCourses = (newClasses: ValidatablePlan['classes'], auth: AuthState | null, until: number | null): number => {
