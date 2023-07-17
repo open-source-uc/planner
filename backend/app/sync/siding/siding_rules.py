@@ -99,9 +99,9 @@ def _identify_superblocks(curriculum: Curriculum):
 
 
 # Identifica a los bloques de OFG.
-OFG_BLOCK_CODE = "courses:!L1"
+C2020_OFG_BLOCK_CODE = "courses:!L1"
 # Los cursos de optativo en ciencias.
-OFG_SCIENCE_OPTS = {
+C2020_OFG_SCIENCE_OPTS = {
     "BIO014",
     "EYP2355",
     "ELM2431",
@@ -154,21 +154,21 @@ def _merge_ofgs(curriculum: Curriculum):
         l1_blocks: list[Leaf] = [
             block
             for block in superblock.children
-            if isinstance(block, Leaf) and block.block_code == OFG_BLOCK_CODE
+            if isinstance(block, Leaf) and block.block_code == C2020_OFG_BLOCK_CODE
         ]
         if len(l1_blocks) > 0:
             # Elimina todos los bloques que son OFG de `superblock.children`
             superblock.children = [
                 block
                 for block in superblock.children
-                if block.block_code != OFG_BLOCK_CODE
+                if block.block_code != C2020_OFG_BLOCK_CODE
             ]
             # Juntar todos los bloques OFG en un bloque y agregarlo de vuelta
             total_cap = sum(block.cap for block in l1_blocks)
             superblock.children.append(
                 Leaf(
                     debug_name=l1_blocks[0].debug_name,
-                    block_code=OFG_BLOCK_CODE,
+                    block_code=C2020_OFG_BLOCK_CODE,
                     name=l1_blocks[0].name,
                     cap=total_cap,
                     codes=l1_blocks[0].codes,
@@ -184,7 +184,7 @@ def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum)
         if not isinstance(superblock, Combination):
             continue
         for block in superblock.children:
-            if isinstance(block, Leaf) and block.block_code == OFG_BLOCK_CODE:
+            if isinstance(block, Leaf) and block.block_code == C2020_OFG_BLOCK_CODE:
                 for code in block.codes:
                     if not code.startswith("DPT"):
                         continue
@@ -196,6 +196,8 @@ def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum)
                     ):
                         # Permitir que cuenten por el doble de creditos de lo normal
                         curriculum.multiplicity[code] = 2 * info.credits
+                # Only do it once
+                return
 
 
 def _ofg_check_limited(info: CourseDetails):
@@ -212,7 +214,7 @@ def _ofg_is_limited(courseinfo: CourseInfo, code: str):
     info = courseinfo.try_course(code)
     if info is None:
         return True
-    if info.code in OFG_SCIENCE_OPTS:
+    if info.code in C2020_OFG_SCIENCE_OPTS:
         return False
     return _ofg_check_limited(info)
 
@@ -221,7 +223,7 @@ def _ofg_is_unlimited(courseinfo: CourseInfo, code: str):
     info = courseinfo.try_course(code)
     if info is None:
         return True
-    if info.code in OFG_SCIENCE_OPTS:
+    if info.code in C2020_OFG_SCIENCE_OPTS:
         return False
     return not _ofg_check_limited(info)
 
@@ -230,7 +232,7 @@ def _ofg_is_science(courseinfo: CourseInfo, code: str):
     info = courseinfo.try_course(code)
     if info is None:
         return True
-    return info.code in OFG_SCIENCE_OPTS
+    return info.code in C2020_OFG_SCIENCE_OPTS
 
 
 def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
@@ -264,7 +266,7 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
         if not isinstance(superblock, Combination):
             continue
         for block_i, block in enumerate(superblock.children):
-            if isinstance(block, Leaf) and block.block_code == OFG_BLOCK_CODE:
+            if isinstance(block, Leaf) and block.block_code == C2020_OFG_BLOCK_CODE:
                 # Segregar los cursos de 5 creditos que cumplan los requisitos
                 limited: set[str] = set()
                 unlimited: set[str] = set()
@@ -279,28 +281,28 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                 # Separar el bloque en 3
                 limited_block = Leaf(
                     debug_name=f"{block.debug_name} (máx. 10 creds. DPT y otros)",
-                    block_code=f"{OFG_BLOCK_CODE}:limited",
+                    block_code=f"{C2020_OFG_BLOCK_CODE}:limited",
                     name=None,
                     cap=10,
                     codes=limited,
                 )
                 unlimited_block = Leaf(
                     debug_name=f"{block.debug_name} (genérico)",
-                    block_code=f"{OFG_BLOCK_CODE}:unlimited",
+                    block_code=f"{C2020_OFG_BLOCK_CODE}:unlimited",
                     name=None,
                     cap=block.cap,
                     codes=unlimited,
                 )
                 science_block = Leaf(
                     debug_name=f"{block.debug_name} (optativo de ciencias)",
-                    block_code=f"{OFG_BLOCK_CODE}:science",
+                    block_code=f"{C2020_OFG_BLOCK_CODE}:science",
                     name=None,
                     cap=10,
                     codes=science,
                 )
                 block = Combination(
                     debug_name=block.debug_name,
-                    block_code=f"{OFG_BLOCK_CODE}:root",
+                    block_code=f"{C2020_OFG_BLOCK_CODE}:root",
                     name=block.name,
                     cap=block.cap,
                     children=[
@@ -607,8 +609,18 @@ async def apply_curriculum_rules(
             #   - (N183) Track 4: Teoría de la Computación Vs.02
             #   - (N184) Track 5: Data Science Vs.02
             #   - (40023) Ingeniero Civil Matemático y Computacional
-            pass
-        # TODO: C2022
+        case "C2022":
+            # TODO: Las listas de OFG para C2022 vienen vacias desde SIDING por alguna
+            #   razon.
+            #   Por ahora las estamos parchando con el mock, pero hay que ver por que y
+            #   que hacer al respecto.
+            # TODO: Asegurarse que el area de libre eleccion no incluya las areas
+            #   prohibidas.
+            # TODO: Averiguar como funcionan los OFG y si requieren alguna regla
+            #   especial.
+            _allow_selection_duplication(courseinfo, curriculum)
+            _minor_transformation(courseinfo, curriculum)
+            await _title_transformation(courseinfo, curriculum)
     return curriculum
 
 
@@ -642,31 +654,42 @@ def _fix_nonhomogeneous_equivs(courseinfo: CourseInfo, equiv: EquivDetails):
             equiv.name = info.name
 
 
+UNESSENTIAL_EQUIVS = {"!L1", "!L2"}
+
+
 def _mark_unessential_equivs(equiv: EquivDetails):
     # Hacer que los OFGs y los teologicos sean no-esenciales (ie. que no emitan un
     # error cuando no se selecciona un OFG o un teologico)
-    if equiv.code == "!L1" or equiv.code == "!L2":
+    if equiv.code in UNESSENTIAL_EQUIVS:
         equiv.is_unessential = True
 
 
-def _add_science_optative_courses(equiv: EquivDetails):
+def _add_c2020_science_optative_courses(equiv: EquivDetails):
     # La lista `!L1` (OFGs del curriculum C2020) no contiene los optativos de ciencias.
     # Agreguemoslos a la fuerza
     if equiv.code == "!L1":
-        equiv.courses.extend(OFG_SCIENCE_OPTS)
+        equiv.courses.extend(C2020_OFG_SCIENCE_OPTS)
 
 
 async def apply_equivalence_rules(
     courseinfo: CourseInfo,
-    spec: CurriculumSpec,
     equiv: EquivDetails,
 ) -> EquivDetails:
+    """
+    Modificar las equivalencias al momento de crearlas.
+    Dado que las equivalencias son globales, no es posible modificarlas dependiendo de
+    la version del curriculum o el programa.
+    Si se quiere hacer esto, hay que separar las equivalencias en dos codigos distintos
+    usando `map_equivalence_code` y luego modificar cada codigo por separado.
+    Ej. `!L1` -> `!L1-C2020`, `!L1-C2022`
+    """
+
     # Arreglar Termodinamica y Electricidad y Magnetismo
     _fix_nonhomogeneous_equivs(courseinfo, equiv)
     # Hacer que los OFGs no emitan un diagnostico de "falta desambiguar"
     _mark_unessential_equivs(equiv)
     # Agregar Optativos de Ciencias a los OFGs de C2020
-    _add_science_optative_courses(equiv)
+    _add_c2020_science_optative_courses(equiv)
 
     return equiv
 

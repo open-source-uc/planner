@@ -496,7 +496,8 @@ class SolvedCurriculum:
                     subid, subflow = visit(child)
                     flow += subflow
                     sublabel = f"{subflow}/{child.cap}"
-                    out += f'{subid} -> {vid} [label="{sublabel}"]\n'
+                    style = "" if subflow > 0 else " style=dotted"
+                    out += f'{subid} -> {vid} [label="{sublabel}"{style}]\n'
             label = block.debug_name
             out += f'{vid} [label="{label}"]\n'
 
@@ -654,7 +655,7 @@ class SolvedCurriculum:
             out += f"  v{edge.src} -> v{edge.dst} [{attrs}];\n"
         out += '  ssink [label=""];\n'
         sink_flow = self.nodes[self.sink].flow(self)
-        sink_cap = '?' if curriculum is None else curriculum.root.cap
+        sink_cap = "?" if curriculum is None else curriculum.root.cap
         out += f'  v{self.sink} -> ssink [label="{sink_flow}/{sink_cap}"];\n'
         out += "}"
         return out

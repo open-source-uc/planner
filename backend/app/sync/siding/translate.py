@@ -76,6 +76,9 @@ async def _fetch_raw_blocks(
     # Later, remove this information
     major = "M" if spec.major is None else spec.major
     minor = "N" if spec.minor is None else spec.minor
+    if spec.major is None and spec.minor is None and spec.title is None:
+        # Use M245 as a dummy major to get Plan Comun
+        major = "M245"
 
     # Fetch raw curriculum blocks for the given cyear-major-minor-title combination
     raw_blocks = await client.get_curriculum_for_spec(
@@ -153,7 +156,7 @@ async def _fetch_raw_blocks(
                 courses=codes,
             )
         if equiv is not None:
-            equiv = await siding_rules.apply_equivalence_rules(courseinfo, spec, equiv)
+            equiv = await siding_rules.apply_equivalence_rules(courseinfo, equiv)
             await add_equivalence(equiv)
 
     return raw_blocks

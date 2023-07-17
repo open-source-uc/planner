@@ -33,5 +33,26 @@
             "mail": "user4@email.com",
             "carlicense": "044444444-4"
         }
+    },
+    {
+        "name": "empty2019",
+        "attributes": {
+            "mail": "empty2019@email.com",
+            "carlicense": "2019-9"
+        }
+    },
+    {
+        "name": "empty2021",
+        "attributes": {
+            "mail": "empty2021@email.com",
+            "carlicense": "2021-1"
+        }
+    },
+    {
+        "name": "empty2022",
+        "attributes": {
+            "mail": "empty2022@email.com",
+            "carlicense": "2022-2"
+        }
     }
 ]
