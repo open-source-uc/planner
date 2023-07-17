@@ -115,7 +115,7 @@ class Settings(BaseSettings):
     autosync_courseinfo: bool = True
 
     # URL for the Redis server.
-    redis_uri: RedisDsn = RedisDsn("redis://localhost:6379/1", scheme="redis")
+    redis_uri: RedisDsn = Field("redis://localhost:6379")
 
 
 # Load settings and allow global app access to them
