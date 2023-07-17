@@ -35,9 +35,6 @@ from .validation.curriculum.tree import (
     LATEST_CYEAR,
     CurriculumSpec,
     Cyear,
-    MajorCode,
-    MinorCode,
-    TitleCode,
 )
 
 RECOMMENDED_CREDITS_PER_SEMESTER = 50
@@ -426,9 +423,9 @@ async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
         classes = student.passed_courses
         curriculum = CurriculumSpec(
             cyear=cyear,
-            major=MajorCode(student.info.reported_major),
-            minor=MinorCode(student.info.reported_minor),
-            title=TitleCode(student.info.reported_title),
+            major=student.info.reported_major,
+            minor=student.info.reported_minor,
+            title=student.info.reported_title,
         )
     return ValidatablePlan(
         version="0.0.1",

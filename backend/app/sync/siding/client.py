@@ -1,13 +1,17 @@
+from __future__ import annotations
+
 import json
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 import httpx
 import zeep
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel, ConstrainedStr, Field, parse_obj_as
 from zeep import AsyncClient
 from zeep.transports import AsyncTransport
+
+from app.plan.validation.curriculum.tree import MajorCode, MinorCode, TitleCode
 
 from ...settings import settings
 
@@ -21,7 +25,7 @@ class StringArray(BaseModel):
 
 
 class Major(BaseModel):
-    CodMajor: str
+    CodMajor: MajorCode
     Nombre: str
     VersionMajor: str
     # For some reason after a SIDING update majors stopped having associated
@@ -30,8 +34,11 @@ class Major(BaseModel):
     Curriculum: StringArray | None
 
 
+Major.update_forward_refs()
+
+
 class Minor(BaseModel):
-    CodMinor: str
+    CodMinor: MinorCode
     Nombre: str
     TipoMinor: Literal["Amplitud"] | Literal["Profundidad"]
     VersionMinor: str | None
@@ -42,7 +49,7 @@ class Minor(BaseModel):
 
 
 class Titulo(BaseModel):
-    CodTitulo: str
+    CodTitulo: TitleCode
     Nombre: str
     TipoTitulo: Literal["CIVIL"] | Literal["INDUSTRIAL"]
     VersionTitulo: str | None
@@ -54,17 +61,16 @@ class Titulo(BaseModel):
 
 class PlanEstudios(BaseModel):
     CodCurriculum: str
-    CodMajor: str
-    CodMinor: str
-    CodTitulo: str | None
+    CodMajor: MajorCode | Literal["M"]
+    CodMinor: MinorCode
+    CodTitulo: TitleCode | Literal[""]
 
 
 class Curso(BaseModel):
     Sigla: str
     Nombre: str | None
-    # Strings like `I`, `II`, `I y II`, o `None`
-    Semestralidad: str | None
-    Creditos: int | None
+    Semestralidad: Literal["I", "II", "I y II"] | None
+    Creditos: Annotated[int, Field(ge=0, le=65)] | None
 
 
 class ListaCursos(BaseModel):
@@ -111,22 +117,22 @@ class InfoEstudiante(BaseModel):
     # Full name, all uppercase and with Unicode accents.
     Nombre: str
     # Either 'M' or 'F'.
-    Sexo: str
+    Sexo: Literal["M", "F"]
     # The cyear string associated with the student (e.g. "C2020", "C2013", etc...).
     # Usually coupled with `PeriodoAdmision`
     Curriculo: str
     # Major code of the self-reported intended major.
-    MajorInscrito: str | None
+    MajorInscrito: MajorCode | None
     # Minor code of the self-reported intended minor.
-    MinorInscrito: str | None
+    MinorInscrito: MinorCode | None
     # Title code of the self-reported intended title.
-    TituloInscrito: str | None
+    TituloInscrito: TitleCode | None
     # Not really sure what this is.
     # Seems to be `None`.
     Codigo: str | None
     # Career
     # Should be 'INGENIERÍA CIVIL' (mind the Unicode accent)
-    Carrera: str
+    Carrera: Literal["INGENIERÍA CIVIL"]
     # Semester in which the student joined the university.
     # For example, '2012-2' for the second semester of 2012.
     PeriodoAdmision: str
@@ -137,6 +143,10 @@ class InfoEstudiante(BaseModel):
     # Student status
     # Regular students have 'REGULAR' status.
     # Not useful for us, and it may even be sensitive data, so it's best to ignore it
+
+
+class AcademicPeriod(ConstrainedStr):
+    regex = r"\d{4}-[1-3]"
 
 
 class CursoHecho(BaseModel):
@@ -150,7 +160,7 @@ class CursoHecho(BaseModel):
     Estado: str
     # When was the course taken.
     # E.g. "2020-2" for the second semester of the year 2020
-    Periodo: str
+    Periodo: AcademicPeriod
     # Not sure, but probably whether the course is catedra or lab.
     # Seems to be `None`
     TipoCurso: str | None
@@ -173,8 +183,7 @@ class SoapClient:
         # Load mockup data
         if settings.siding_mock_path != "":
             try:
-                with settings.siding_mock_path.open() as file:
-                    self.mock_db = json.load(file)
+                self.mock_db = json.loads(settings.siding_mock_path.read_text())
                 cnt = sum(len(r) for r in self.mock_db.values())
                 print(
                     f"loaded {cnt} SIDING mock responses from"
@@ -310,12 +319,7 @@ async def get_courses_for_spec(study_spec: PlanEstudios) -> list[Curso]:
         list[Curso],
         await client.call_endpoint(
             "getConcentracionCursos",
-            {
-                "CodCurriculum": study_spec.CodCurriculum,
-                "CodMajor": study_spec.CodMajor,
-                "CodMinor": study_spec.CodMinor,
-                "CodTitulo": study_spec.CodTitulo,
-            },
+            study_spec.dict(),
         ),
     )
 
@@ -324,16 +328,12 @@ async def get_curriculum_for_spec(study_spec: PlanEstudios) -> list[BloqueMalla]
     """
     Get a list of curriculum blocks for the given spec.
     """
+    print(study_spec.dict())
     return parse_obj_as(
         list[BloqueMalla],
         await client.call_endpoint(
             "getMallaSugerida",
-            {
-                "CodCurriculum": study_spec.CodCurriculum,
-                "CodMajor": study_spec.CodMajor,
-                "CodMinor": study_spec.CodMinor,
-                "CodTitulo": study_spec.CodTitulo,
-            },
+            study_spec.dict(),
         ),
     )
 
@@ -355,11 +355,8 @@ async def get_equivalencies(course_code: str, study_spec: PlanEstudios) -> list[
             "getCursoEquivalente",
             {
                 "Sigla": course_code,
-                "CodCurriculum": study_spec.CodCurriculum,
-                "CodMajor": study_spec.CodMajor,
-                "CodMinor": study_spec.CodMinor,
-                "CodTitulo": study_spec.CodTitulo,
-            },
+            }
+            | study_spec.dict(),
         ),
     )
 
@@ -377,11 +374,8 @@ async def get_requirements(course_code: str, study_spec: PlanEstudios) -> list[C
             "getRequisito",
             {
                 "Sigla": course_code,
-                "CodCurriculum": study_spec.CodCurriculum,
-                "CodMajor": study_spec.CodMajor,
-                "CodMinor": study_spec.CodMinor,
-                "CodTitulo": study_spec.CodTitulo,
-            },
+            }
+            | study_spec.dict(),
         ),
     )
 
@@ -401,11 +395,8 @@ async def get_restrictions(
             "getRestriccion",
             {
                 "Sigla": course_code,
-                "CodCurriculum": study_spec.CodCurriculum,
-                "CodMajor": study_spec.CodMajor,
-                "CodMinor": study_spec.CodMinor,
-                "CodTitulo": study_spec.CodTitulo,
-            },
+            }
+            | study_spec.dict(),
         ),
     )
 

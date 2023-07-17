@@ -55,3 +55,24 @@ def test_codes():
     assert str(CurriculumCodeTest(major_code=MajorCode("M123")).major_code) == "M123"
     assert str(CurriculumCodeTest(minor_code=MinorCode("N123")).minor_code) == "N123"
     assert str(CurriculumCodeTest(title_code=TitleCode("40001")).title_code) == "40001"
+
+    # Test deserialization from string
+    d = {
+        "major_code": "M123",
+        "minor_code": "N123",
+        "title_code": "40001",
+    }
+    parsed_curriculum = CurriculumCodeTest.parse_obj(d)
+    assert parsed_curriculum.major_code == MajorCode("M123")
+    assert parsed_curriculum.minor_code == MinorCode("N123")
+    assert parsed_curriculum.title_code == TitleCode("40001")
+    # Test serialization to string
+    parsed_curriculum_dict = parsed_curriculum.dict()
+    assert parsed_curriculum_dict["major_code"] == "M123"
+    assert parsed_curriculum_dict["minor_code"] == "N123"
+    assert parsed_curriculum_dict["title_code"] == "40001"
+    # Check wrong deserialization
+    with pytest.raises(ValidationError):
+        CurriculumCodeTest.parse_obj({"major_code": "M1234"})
+        CurriculumCodeTest.parse_obj({"minor_code": "N1234"})
+        CurriculumCodeTest.parse_obj({"title_code": "400011"})
