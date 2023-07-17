@@ -5,8 +5,8 @@ Definitions of basic student information.
 
 from pydantic import BaseModel
 
-from ..plan.course import PseudoCourse
-from ..plan.validation.curriculum.tree import MajorCode, MinorCode, TitleCode
+from app.plan.course import PseudoCourse
+from app.plan.validation.curriculum.tree import MajorCode, MinorCode, TitleCode
 
 
 class StudentInfo(BaseModel):

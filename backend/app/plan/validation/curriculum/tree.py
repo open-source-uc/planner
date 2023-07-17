@@ -9,8 +9,8 @@ from typing import Annotated, Any, Literal, Optional, Self
 from pydantic import BaseModel, Field
 from pydantic.fields import ModelField
 
-from ...course import PseudoCourse
-from ...courseinfo import CourseInfo
+from app.plan.course import PseudoCourse
+from app.plan.courseinfo import CourseInfo
 
 SUPERBLOCK_PREFIX = "superblock:"
 

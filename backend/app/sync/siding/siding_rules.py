@@ -13,9 +13,9 @@ el que habra que tocar.
 
 from unidecode import unidecode
 
-from ...plan.course import EquivalenceId, pseudocourse_with_credits
-from ...plan.courseinfo import CourseDetails, CourseInfo, EquivDetails, add_equivalence
-from ...plan.validation.curriculum.tree import (
+from app.plan.course import EquivalenceId, pseudocourse_with_credits
+from app.plan.courseinfo import CourseDetails, CourseInfo, EquivDetails, add_equivalence
+from app.plan.validation.curriculum.tree import (
     SUPERBLOCK_PREFIX,
     Block,
     Combination,

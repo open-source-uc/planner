@@ -2,10 +2,10 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
-from ..course import PseudoCourse
-from ..plan import ClassId, ValidatablePlan
-from .courses.logic import Expr
-from .curriculum.tree import CurriculumSpec, Cyear
+from app.plan.course import PseudoCourse
+from app.plan.plan import ClassId, ValidatablePlan
+from app.plan.validation.courses.logic import Expr
+from app.plan.validation.curriculum.tree import CurriculumSpec, Cyear
 
 
 class BaseDiagnostic(BaseModel):

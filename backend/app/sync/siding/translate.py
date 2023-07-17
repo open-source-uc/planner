@@ -16,9 +16,9 @@ from prisma.models import (
     Title as DbTitle,
 )
 
-from ...plan.course import ConcreteId, EquivalenceId, PseudoCourse
-from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
-from ...plan.validation.curriculum.tree import (
+from app.plan.course import ConcreteId, EquivalenceId, PseudoCourse
+from app.plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
+from app.plan.validation.curriculum.tree import (
     SUPERBLOCK_PREFIX,
     Block,
     Combination,
@@ -31,9 +31,9 @@ from ...plan.validation.curriculum.tree import (
     MinorCode,
     TitleCode,
 )
-from ...user.info import StudentInfo
-from . import client, siding_rules
-from .client import (
+from app.user.info import StudentInfo
+from app.sync.siding import client, siding_rules
+from app.sync.siding.client import (
     BloqueMalla,
     PlanEstudios,
     StringArray,

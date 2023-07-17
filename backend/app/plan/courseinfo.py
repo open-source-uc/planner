@@ -16,8 +16,8 @@ from prisma.models import (
 from pydantic import BaseModel
 from unidecode import unidecode
 
-from .course import EquivalenceId, PseudoCourse
-from .validation.courses.logic import Expr
+from app.plan.course import EquivalenceId, PseudoCourse
+from app.plan.validation.courses.logic import Expr
 
 _CACHED_COURSES_ID: str = "cached-course-info"
 

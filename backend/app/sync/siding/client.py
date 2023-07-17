@@ -13,7 +13,7 @@ from zeep.transports import AsyncTransport
 
 from app.plan.validation.curriculum.tree import MajorCode, MinorCode, TitleCode
 
-from ...settings import settings
+from app.settings import settings
 
 
 class StringArrayInner(BaseModel):
