@@ -19,6 +19,7 @@ interface SelectorProps {
   canDeselect: boolean
   data: Record<string, { name: string }>
   value: string | null | undefined
+  showCode: boolean
   onChange: (value: string) => void
 }
 
@@ -27,6 +28,7 @@ const Selector = memo(function _Selector ({
   data,
   value,
   canDeselect,
+  showCode,
   onChange
 }: SelectorProps): JSX.Element {
   const selectedOption = value != null ? (data[value] ?? { name: `${name} Desconocido` }) : { name: 'Por Seleccionar' }
@@ -43,7 +45,7 @@ const Selector = memo(function _Selector ({
     <Listbox value={value} onChange={onChange}>
       <Listbox.Button className="selectorButton">
         <span className="inline truncate">
-          {selectedOption.name} {value != null && `(${value})`}
+          {selectedOption.name} {showCode && value != null && `(${value})`}
         </span>
         <svg
           className="inline"
@@ -93,7 +95,7 @@ const Selector = memo(function _Selector ({
                 <span
                   className={`block truncate ${selected ? 'font-medium text-black' : 'font-normal'}`}
                 >
-                  {data[key].name} ({key})
+                  {data[key].name} {showCode && `(${key})`}
                 </span>
                 {selected
                   ? (
@@ -133,6 +135,7 @@ const CurriculumSelector = memo(function CurriculumSelector ({
               canDeselect={false}
               data={curriculumData.majors}
               value={curriculumSpec.major}
+              showCode={true}
               onChange={(t) => selectMajor({ cyear: curriculumData.majors[t].cyear, code: t })}
             />
             : <svg
@@ -154,6 +157,7 @@ const CurriculumSelector = memo(function CurriculumSelector ({
               canDeselect={true}
               data={curriculumData.minors}
               value={curriculumSpec.minor}
+              showCode={true}
               onChange={(t) => selectMinor(t)}
             />
             : <svg
@@ -175,6 +179,7 @@ const CurriculumSelector = memo(function CurriculumSelector ({
               canDeselect={true}
               data={curriculumData.titles}
               value={curriculumSpec.title}
+              showCode={true}
               onChange={(t) => selectTitle(t)}
             />
           }
@@ -192,6 +197,7 @@ const CurriculumSelector = memo(function CurriculumSelector ({
                 C2022: { name: 'Admisión 2022 y posteriores' }
               }}
               value={curriculumSpec.cyear?.raw}
+              showCode={true}
               onChange={(c) => selectYear(c)}
             />
           }
