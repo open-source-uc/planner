@@ -4,21 +4,22 @@
 </h1>
 
 <p align="center">
-     <!-- Badges Here -->
-</p>
-
-<p align="center">
   <a href="#descripción">Descripción</a> •
   <a href="#instalación-y-desarrollo">Instalación</a> •
   <a href="#mocks">Mocks</a> •
-  <a href="#staging-server-y-producción">Staging y Producción</a> •
+  <a href="#staging-y-producción">Staging y Producción</a> •
   <a href="#equipo">Equipo</a> •
+  <a href="contributors.md">Contribuidores</a> •
   <a href="#licencia">Licencia</a>
 </p>
 
 <h4 align="center">
   <a href=# name="readme-top"><img src="./docs/img/demo_gif.gif" width="700px" alt="banner"></a>
 </Es>
+
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 ---
 
@@ -135,6 +136,8 @@ Cabe mencionar que sería ideal a futuro implementar un **despliegue automático
 - [@negamartin](https://github.com/negamartin) - Backend
 - [@fagiannoni](https://github.com/fagiannoni) - Backend
 - [@agucova](https://github.com/agucova) - Apoyo Backend/Frontend
+
+Además del equipo núcleo, nos apoyan los contribuidores al proyecto. Puedes ver [la lista completa de contribuidores aquí.](contributors.md)
 
 ## Licencia
 

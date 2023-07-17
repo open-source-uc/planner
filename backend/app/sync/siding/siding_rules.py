@@ -407,6 +407,7 @@ def _minor_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     # Agregamos suficientes creditos para poder completarlo a punta de optativos
     # complementarios
     exclusive.children.append(filler.copy())
+    exclusive.children[-1].cost_offset = 20
     exclusive.children[-1].cap = minor_credits
     exclusive.cap = minor_credits
     exclusive.name = f"{exclusive.name} ({minor_credits} créditos exclusivos)"
@@ -416,12 +417,17 @@ def _minor_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     # complementario
     assert filler.block_code.startswith(COURSE_PREFIX)
     filler_code = filler.block_code[len(COURSE_PREFIX) :]
-    filler_course = curriculum.fillers[filler_code][-1]  # Asumimos que es el ultimo
+    filler_course = curriculum.fillers[filler_code].pop()  # Asumimos que es el ultimo
     assert isinstance(filler_course.course, EquivalenceId)
-    filler_course.course = pseudocourse_with_credits(
-        filler_course.course,
-        minor_credits,
-    )
+    filler_credits = minor_credits
+    while filler_credits > 0:
+        creds = min(filler_credits, 10)
+        filler_course.course = pseudocourse_with_credits(
+            filler_course.course,
+            creds,
+        )
+        curriculum.fillers[filler_code].append(filler_course.copy())
+        filler_credits -= creds
 
 
 TITLE_EXCLUSIVE_CREDITS = 130
@@ -529,7 +535,7 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     curriculum.fillers.setdefault(OPI_CODE, []).extend(
         FillerCourse(
             course=EquivalenceId(code=OPI_CODE, credits=10),
-            order=1000,  # Colocarlos al final
+            order=3000,  # Colocarlos al final
         )
         # Rellenar con ceil(creditos_de_titulo/10) cursos
         for _i in range(_ceil_div(TITLE_EXCLUSIVE_CREDITS, 10))

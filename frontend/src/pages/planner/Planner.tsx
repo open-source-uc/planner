@@ -4,6 +4,7 @@ import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
 import CourseSelectorDialog from './CourseSelectorDialog'
 import LegendModal from './LegendModal'
+import SavePlanModal from './SavePlanModal'
 import CurriculumSelector from './CurriculumSelector'
 import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
@@ -42,6 +43,7 @@ const Planner = (): JSX.Element => {
   const [modalData, setModalData] = useState<ModalData>()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isLegendModalOpen, setIsLegendModalOpen] = useState(false)
+  const [isSavePlanModalOpen, setIsSavePlanModalOpen] = useState(false)
   const [plannerStatus, setPlannerStatus] = useState<PlannerStatus>(PlannerStatus.LOADING)
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -248,6 +250,10 @@ const Planner = (): JSX.Element => {
     try {
       const courseDetails = await DefaultService.getPseudocourseDetails(Array.from(pseudocourseCodes))
       const dict = courseDetails.reduce((acc: Record<string, PseudoCourseDetail>, curr: PseudoCourseDetail) => {
+        if (curr == null) {
+          // If there is an unknown code, ignore it instead of crashing
+          return acc
+        }
         acc[curr.code] = curr
         return acc
       }, {})
@@ -298,7 +304,7 @@ const Planner = (): JSX.Element => {
     }
   }
 
-  async function savePlan (): Promise<void> {
+  async function savePlan (planName: string): Promise<void> {
     if (validatablePlan == null) {
       toast.error('No se ha generado un plan aun')
       return
@@ -313,7 +319,6 @@ const Planner = (): JSX.Element => {
       }
       setPlannerStatus(PlannerStatus.READY)
     } else {
-      const planName = prompt('¿Cómo quieres llamarle a esta planificación?')
       if (planName == null || planName === '') return
       setPlannerStatus(PlannerStatus.VALIDATING)
       try {
@@ -533,13 +538,25 @@ const Planner = (): JSX.Element => {
     }
   }, [setValidatablePlan, setIsModalOpen, modalData])
 
-  const openInfoModal = useCallback((): void => {
+  const openLegendModal = useCallback((): void => {
     setIsLegendModalOpen(true)
   }, [setIsLegendModalOpen])
 
-  const closeInfoModal = useCallback((): void => {
+  const closeLegendModal = useCallback((): void => {
     setIsLegendModalOpen(false)
   }, [setIsLegendModalOpen])
+
+  const openSavePlanModal = useCallback(async (): Promise<void> => {
+    if (planName == null || planName === '') {
+      setIsSavePlanModalOpen(true)
+    } else {
+      await savePlan(planName)
+    }
+  }, [setIsSavePlanModalOpen, planName])
+
+  const closeSavePlanModal = useCallback((): void => {
+    setIsSavePlanModalOpen(false)
+  }, [setIsSavePlanModalOpen])
 
   const reset = useCallback((): void => {
     setPlannerStatus(PlannerStatus.LOADING)
@@ -636,7 +653,8 @@ const Planner = (): JSX.Element => {
     <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
       <DebugGraph validatablePlan={validatablePlan} />
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
-      <LegendModal open={isLegendModalOpen} onClose={closeInfoModal}/>
+      <LegendModal open={isLegendModalOpen} onClose={closeLegendModal}/>
+      <SavePlanModal isOpen={isSavePlanModalOpen} onClose={closeSavePlanModal} savePlan={savePlan}/>
       <AlertModal title={popUpAlert.title} desc={popUpAlert.desc} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}/>
       {plannerStatus === 'LOADING' &&
         <div className="absolute w-screen h-full z-50 bg-white flex flex-col justify-center items-center">
@@ -662,8 +680,8 @@ const Planner = (): JSX.Element => {
               />
               <ControlTopBar
                 reset={reset}
-                save={savePlan}
-                openModal={openInfoModal}
+                openSavePlanModal={openSavePlanModal}
+                openLegendModal={openLegendModal}
               />
               <DndProvider backend={HTML5Backend}>
                 <PlanBoard

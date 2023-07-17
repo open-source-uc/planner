@@ -50,20 +50,26 @@ export class DefaultService {
      * Sync Database
      * Initiate a synchronization of the internal database from external sources.
      * @param courses
+     * @param curriculums
      * @param offer
+     * @param courseinfo
      * @returns any Successful Response
      * @throws ApiError
      */
     public static syncDatabase(
-        courses: boolean = false,
-        offer: boolean = false,
+        courses: boolean,
+        curriculums: boolean,
+        offer: boolean,
+        courseinfo: boolean,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/admin/sync',
             query: {
                 'courses': courses,
+                'curriculums': curriculums,
                 'offer': offer,
+                'courseinfo': courseinfo,
             },
             errors: {
                 422: `Validation Error`,

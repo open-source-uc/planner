@@ -38,7 +38,11 @@ deps-back:
     cd backend && poetry config virtualenvs.in-project true
     cd backend && poetry install
 
-deps: deps-front deps-back
+deps-infra:
+    @echo "{{ info_prefix }} \e[1mInstalling infrastructure dependencies...\e[0m"
+    cd infra && ansible-galaxy install -r requirements.yml
+
+deps: deps-front deps-back deps-infra
 
 lint-front:
     @echo "{{ info_prefix }} \e[1mLinting front-end...\e[0m"
@@ -61,6 +65,20 @@ format-back:
     cd backend && poetry run black .
 
 format: format-front format-back
+
+lint-fix-front:
+    @echo "{{ info_prefix }} \e[1mChecking & fixing front-end...\e[0m"
+    cd frontend && npm run lint:fix
+    cd frontend && npm run type-check
+
+lint-fix-back:
+    @echo "{{ info_prefix }} \e[1mChecking & fixing back-end...\e[0m"
+    cd backend && poetry run black .
+    cd backend && poetry run ruff check . --fix
+    cd backend && poetry run pyright
+    cd backend && poetry run pytest
+
+lint-fix: lint-fix-back lint-fix-front
 
 init: deps
     @echo "{{ info_prefix }} \e[1mInitializing developer environment...\e[0m"
