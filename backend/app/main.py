@@ -4,6 +4,7 @@ from fastapi.routing import APIRoute
 
 from app import routes
 from app.database import prisma
+from app.limiting import storage as limiting_storage
 from app.sync.siding.client import client as siding_soap_client
 
 
@@ -30,6 +31,10 @@ app.add_middleware(
 async def startup():
     # Connect to database
     await prisma.connect()
+
+    if not limiting_storage.check():
+        raise RuntimeError("Failed to connect to Redis")
+
     # Setup SIDING webservice
     siding_soap_client.on_startup()
 
