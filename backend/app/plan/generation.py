@@ -2,8 +2,6 @@ from collections import OrderedDict, defaultdict
 from collections.abc import Iterable
 
 from app import sync
-from app.sync import get_curriculum
-from app.user.auth import UserKey
 from app.plan.course import ConcreteId, EquivalenceId
 from app.plan.courseinfo import CourseDetails, CourseInfo, course_info
 from app.plan.plan import (
@@ -36,6 +34,8 @@ from app.plan.validation.curriculum.tree import (
     CurriculumSpec,
     Cyear,
 )
+from app.sync import get_curriculum
+from app.user.auth import UserKey
 
 RECOMMENDED_CREDITS_PER_SEMESTER = 50
 

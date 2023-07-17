@@ -31,13 +31,13 @@ from app.plan.validation.curriculum.tree import (
     MinorCode,
     TitleCode,
 )
-from app.user.info import StudentInfo
 from app.sync.siding import client, siding_rules
 from app.sync.siding.client import (
     BloqueMalla,
     PlanEstudios,
     StringArray,
 )
+from app.user.info import StudentInfo
 
 
 def _decode_curriculum_versions(input: StringArray | None) -> list[str]:

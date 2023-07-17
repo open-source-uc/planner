@@ -1,11 +1,11 @@
-from app.sync import get_curriculum
-from app.user.info import StudentContext
 from app.plan.courseinfo import course_info
 from app.plan.plan import ValidatablePlan
 from app.plan.validation.courses.validate import ValidationContext
 from app.plan.validation.curriculum.diagnose import diagnose_curriculum
 from app.plan.validation.diagnostic import ValidationResult
 from app.plan.validation.user import validate_against_owner
+from app.sync import get_curriculum
+from app.user.info import StudentContext
 
 
 async def diagnose_plan(
