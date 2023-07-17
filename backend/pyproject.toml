@@ -67,6 +67,7 @@ select = [
     "TCH",
     "PTH",
     "RUF",
+    "NPY"
 ]
 unfixable = [
     "F841",  # Do not auto-remove unused variables

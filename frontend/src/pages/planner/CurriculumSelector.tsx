@@ -1,7 +1,8 @@
-import { Fragment, memo } from 'react'
+import { Fragment, memo, useEffect } from 'react'
 import { Listbox, Transition } from '@headlessui/react'
 import { type Major, type Minor, type Title, type CurriculumSpec } from '../../client'
 import { type CurriculumData } from './utils/Types'
+import { toast } from 'react-toastify'
 
 interface CurriculumSelectorProps {
   planName: string
@@ -25,7 +26,16 @@ const Selector = memo(function _Selector ({
   value,
   onChange
 }: SelectorProps): JSX.Element {
-  const selectedOption = value !== undefined && value !== null ? (data[value] ?? { name: '?', code: value }) : { name: 'Por Seleccionar', code: null }
+  const selectedOption = value !== undefined && value !== null ? (data[value] ?? { name: 'Minor desconocido', code: value }) : { name: 'Por Seleccionar', code: null }
+  if (value !== undefined && value !== null && data[value] === undefined) {
+    useEffect(() => {
+      toast.warn('Tu minor todavía no está soportado oficialmente. Los cursos pueden estar incorrectos, revisa dos veces.', {
+        toastId: 'MINOR_NOT_SUPPORTED',
+        autoClose: false,
+        position: 'bottom-left'
+      })
+    }, [value])
+  }
   return (
     <Listbox value={selectedOption.code} onChange={onChange}>
       <Listbox.Button className="selectorButton">
