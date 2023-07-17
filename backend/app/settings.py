@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Literal
 from urllib.parse import urlencode, urljoin
 
-from pydantic import AnyHttpUrl, BaseSettings, Field, SecretStr
+from pydantic import AnyHttpUrl, BaseSettings, Field, RedisDsn, SecretStr
 
 
 def generate_random_jwt_secret():
@@ -113,6 +113,9 @@ class Settings(BaseSettings):
 
     # Whether to resynchronize the courseinfo cache on server startup.
     autosync_courseinfo: bool = True
+
+    # URL for the Redis server.
+    redis_uri: RedisDsn = Field("redis://localhost:6379")
 
 
 # Load settings and allow global app access to them
