@@ -1,4 +1,4 @@
-import { type CourseRequirementErr, type Cyear, type ClassId } from '../../../client'
+import { type CourseRequirementErr, type ClassId } from '../../../client'
 
 import { type PseudoCourseDetail } from './Types'
 type RequirementExpr = CourseRequirementErr['missing']
