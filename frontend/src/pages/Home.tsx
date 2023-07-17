@@ -4,8 +4,9 @@ import demoGif from '../assets/demo_gif.gif'
 import AlertModal from '../components/AlertModal'
 import { useState } from 'react'
 
-const alphaDisclaimer = `Esta aplicación se encuentra en una fase de desarrollo alpha, por lo tanto, es fundamental tener en cuenta que la información mostrada puede no ser completamente precisa.
-Esto incluye posibles discrepancias en la verificacion de los requisitos de algunos ramos, junto a errores en la generacion y verificacion de distintas mallas curriculares de cada plan de estudio. 
+const alphaDisclaimer = `Esta aplicación se encuentra en una fase de desarrollo alfa, por lo tanto, es fundamental tener en cuenta que la información mostrada puede no ser completamente precisa.
+Esto incluye posibles errores en la verificacion de los requisitos de algunos ramos, junto a errores en la generacion y verificacion de distintas mallas curriculares de cada plan de estudio. 
+Ademas aun faltan algunas opciones de mallas en el catalogo.
 Por favor, verifique cualquier planificación con la información oficial proporcionada por la universidad para garantizar su exactitud.`
 
 const Home = (): JSX.Element => {
