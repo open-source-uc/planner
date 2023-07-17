@@ -673,7 +673,18 @@ def _fix_nonhomogeneous_equivs(courseinfo: CourseInfo, equiv: EquivDetails):
             equiv.name = info.name
 
 
-UNESSENTIAL_EQUIVS = {"!L1", "!L2"}
+UNESSENTIAL_EQUIVS = {
+    "!L1",
+    "!L2",
+    "!C10344",
+    "!C10345",
+    "!C10348",
+    "!C10349",
+    "!C10350",
+    "!C10347",
+    "!C10346",
+    "!C10351",
+}
 
 
 def _mark_unessential_equivs(equiv: EquivDetails):
