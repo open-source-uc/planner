@@ -8,7 +8,7 @@ services:
   planner:
     build: ./frontend
     container_name: planner-web
-    restart: unless-stopped
+    restart: always
     ports:
       - "80:80"
       # - "443:443" # TODO: Re-enable once SSL is configured
@@ -21,7 +21,7 @@ services:
   api:
     build: ./backend
     container_name: planner-api
-    restart: unless-stopped
+    restart: always
     ports:
       - "8000:8000"
     networks:
@@ -37,7 +37,7 @@ services:
   db:
     image: postgres:15
     container_name: planner-db
-    restart: unless-stopped
+    restart: always
     networks:
       - api
     volumes:
@@ -48,7 +48,7 @@ services:
   redis:
     image: redis:7
     container_name: planner-redis
-    restart: unless-stopped
+    restart: always
     networks:
       - api
     command: redis-server --save 60 1
@@ -59,7 +59,7 @@ services:
     # Run a local cas mock server container for developing purposes.
     # Don't run this service in production.
     image: node:16-alpine
-    restart: unless-stopped
+    restart: always
     working_dir: /app
     ports:
       - "3004:3004"

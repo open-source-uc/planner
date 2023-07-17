@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException
-
 from prisma.models import (
     AccessLevel as DbAccessLevel,
 )

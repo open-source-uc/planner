@@ -1,4 +1,4 @@
-name: Lint
+name: Lint and test
 
 on:
   push:
@@ -13,8 +13,8 @@ permissions:
   contents: write
 
 jobs:
-  lint-backend:
-    name: Run linters for the back-end
+  check-backend:
+    name: Run test and linters for the back-end
     runs-on: ubuntu-latest
 
     defaults:
@@ -30,8 +30,7 @@ jobs:
         run: pipx install poetry
 
       - name: Set up Python 3.11
-        # TODO: Restore once https://github.com/actions/setup-python/pull/447 is merged
-        uses: oranav/setup-python@relative-poetry-config
+        uses: actions/setup-python@v4
         with:
           python-version: "3.11"
           cache: "poetry"
@@ -58,6 +57,9 @@ jobs:
 
       - name: Run type checker
         run: poetry run pyright .
+
+      - name: Run pytest
+        run: poetry run pytest
 
   lint-frontend:
     name: Run linters for the front-end

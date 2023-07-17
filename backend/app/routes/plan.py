@@ -57,7 +57,7 @@ async def empty_plan_for_any_user(
 
 
 @router.get("/empty_guest", response_model=ValidatablePlan)
-async def empty_guest_plan():
+async def empty_guest_plan() -> ValidatablePlan:
     """
     Generates a generic empty plan with no user context, using the latest curriculum
     version.
@@ -69,7 +69,7 @@ async def empty_guest_plan():
 async def validate_guest_plan(
     plan: ValidatablePlan,
     _limited: None = Depends(ratelimit_guest("5/5second")),
-):
+) -> ValidationResult:
     """
     Validate a plan, generating diagnostics.
     """
@@ -80,7 +80,7 @@ async def validate_guest_plan(
 async def validate_plan_for_user(
     plan: ValidatablePlan,
     user: UserKey = Depends(ratelimit_user("7/5second")),
-):
+) -> ValidationResult:
     """
     Validate a plan, generating diagnostics.
     Includes diagnostics tailored for the given user and skips diagnostics that do not
@@ -95,7 +95,7 @@ async def validate_plan_for_any_user(
     plan: ValidatablePlan,
     user_rut: str,
     mod: ModKey = Depends(require_mod_auth),
-):
+) -> ValidationResult:
     """
     Same functionality as `validate_plan_for_user`, but works for any user identified by
     their RUT with `user_rut`.

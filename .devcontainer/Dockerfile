@@ -16,7 +16,7 @@ RUN chmod +x /usr/local/bin/just
 
 # [Optional] Uncomment this section to install additional OS packages.
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install --no-install-recommends postgresql-client watchman
+    && apt-get -y install --no-install-recommends postgresql-client watchman libonig-dev
 
 # Install HTTPie via pip
 RUN python -m pip install --upgrade pip wheel
