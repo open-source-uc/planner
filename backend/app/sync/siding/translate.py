@@ -47,9 +47,11 @@ def _decode_curriculum_versions(input: StringArray | None) -> list[str]:
     Transform this type into a more manageable `list[str]`.
     """
     if input is None:
-        # Why are curriculum versions empty??
-        # TODO: Figure out why and remove this code
-        return ["C2020"]
+        # Curriculum lists are currently empty for some SIDING reason
+        # We are currently patching through the mock
+        # TODO: Once this is fixed remove patching code
+        print("WARNING: null curriculum version list")
+        return []
     return input.strings.string
 
 
