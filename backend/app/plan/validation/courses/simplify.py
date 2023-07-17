@@ -16,7 +16,17 @@ In the context of an engineering student: None
 from collections.abc import Callable
 from typing import TypeVar
 
-from .logic import And, AndClause, Atom, BaseOp, Const, DnfExpr, Expr, Operator, Or
+from app.plan.validation.courses.logic import (
+    And,
+    AndClause,
+    Atom,
+    BaseOp,
+    Const,
+    DnfExpr,
+    Expr,
+    Operator,
+    Or,
+)
 
 T = TypeVar("T")
 

@@ -1,15 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
-from prisma.models import Major as DbMajor
 
-from . import routes, sync
-from .database import prisma
-from .plan.courseinfo import (
-    course_info,
-)
-from .settings import settings
-from .sync.siding.client import client as siding_soap_client
+from app import routes
+from app.database import prisma
+from app.sync.siding.client import client as siding_soap_client
 
 
 # Set-up operation IDs for OpenAPI
@@ -33,26 +28,10 @@ app.add_middleware(
 
 @app.on_event("startup")  # type: ignore
 async def startup():
+    # Connect to database
     await prisma.connect()
     # Setup SIDING webservice
     siding_soap_client.on_startup()
-    # Autosync courses if enabled
-    await sync.run_upstream_sync(
-        courses=settings.autosync_courses,
-        curriculums=settings.autosync_curriculums,
-        offer=settings.autosync_offer,
-        courseinfo=settings.autosync_courseinfo,
-    )
-    # Reload database if empty
-    courseinfo = await course_info()
-    offer_sample = await DbMajor.prisma().find_first()
-    # Auto-sync database if there are no courses
-    await sync.run_upstream_sync(
-        courses=len(courseinfo.courses) == 0,
-        curriculums=False,
-        offer=offer_sample is None,
-        courseinfo=False,
-    )
 
 
 @app.on_event("shutdown")  # type: ignore

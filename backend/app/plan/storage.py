@@ -6,8 +6,8 @@ from prisma.models import Plan as DbPlan
 from prisma.types import PlanCreateInput
 from pydantic import BaseModel
 
-from ..plan.plan import ValidatablePlan
-from ..user.key import ModKey, UserKey
+from app.plan.plan import ValidatablePlan
+from app.user.key import ModKey, UserKey
 
 _plan_model_fields = list(DbPlan.__fields__.keys())
 # automatic definition of low detail to avoid hardcoding attributes

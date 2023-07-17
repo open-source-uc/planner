@@ -2,8 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from .course import PseudoCourse
-from .validation.curriculum.tree import CurriculumSpec
+from app.plan.course import PseudoCourse
+from app.plan.validation.curriculum.tree import CurriculumSpec
 
 
 class ValidatablePlan(BaseModel):

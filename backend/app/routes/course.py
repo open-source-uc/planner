@@ -6,7 +6,7 @@ from prisma.types import CourseWhereInput, CourseWhereInputRecursive2
 from pydantic import BaseModel
 from unidecode import unidecode
 
-from ..plan.courseinfo import (
+from app.plan.courseinfo import (
     CourseDetails,
     EquivDetails,
     course_info,

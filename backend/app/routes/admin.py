@@ -3,9 +3,9 @@ from prisma.models import (
     AccessLevel as DbAccessLevel,
 )
 
-from .. import sync
-from ..sync.siding import translate as siding_translate
-from ..user.auth import (
+from app import sync
+from app.sync.siding import translate as siding_translate
+from app.user.auth import (
     AccessLevelOverview,
     AdminKey,
     require_admin_auth,
