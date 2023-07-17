@@ -1,7 +1,15 @@
-import { Fragment, useState, useEffect, useRef, memo } from 'react'
+import { Fragment, useState, useEffect, useRef, memo, type ReactNode } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 
-const AlertModal = ({ title, desc, isOpen, close, disclaimer }: { title: string, desc: string, isOpen: boolean, close: Function, disclaimer?: boolean }): JSX.Element => {
+interface AlertModalProps {
+  title: string | ReactNode
+  isOpen: boolean
+  close: Function
+  disclaimer?: boolean
+  children?: ReactNode
+}
+
+const AlertModal: React.FC<AlertModalProps> = ({ title, isOpen, close, disclaimer, children }: AlertModalProps) => {
   const cancelButtonRef = useRef(null)
   const [canClose, setCanClose] = useState(false)
 
@@ -26,6 +34,7 @@ const AlertModal = ({ title, desc, isOpen, close, disclaimer }: { title: string,
       close(aceptIt)
     }
   }
+
   return (
     <Transition.Root show={isOpen} as={Fragment}>
       <Dialog as="div" className="modal relative" initialFocus={cancelButtonRef} onClose={() => { console.log('alert closed') }}>
@@ -53,15 +62,15 @@ const AlertModal = ({ title, desc, isOpen, close, disclaimer }: { title: string,
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
               <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-xl">
-                <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                <div className="bg-white px-4 pb-4 pt-6 sm:p-6 sm:pb-4">
                   <div className="sm:flex sm:items-start">
                     <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                      <Dialog.Title as="h3" className="text-lg font-semibold leading-6 text-gray-900">
+                      <Dialog.Title as="h3" className="text-2xl font-semibold leading-6 text-gray-900">
                         {title}
                       </Dialog.Title>
-                      <div className="mt-2">
+                      <div className="mt-4">
                         <p className="text-sm text-gray-700">
-                            {desc}
+                        {children}
                         </p>
                       </div>
                     </div>
