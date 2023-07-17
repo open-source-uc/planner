@@ -533,7 +533,7 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     curriculum.fillers.setdefault(OPI_CODE, []).extend(
         FillerCourse(
             course=EquivalenceId(code=OPI_CODE, credits=10),
-            order=1000,  # Colocarlos al final
+            order=3000,  # Colocarlos al final
         )
         # Rellenar con ceil(creditos_de_titulo/10) cursos
         for _i in range(_ceil_div(TITLE_EXCLUSIVE_CREDITS, 10))
