@@ -69,6 +69,9 @@ RUN prisma generate
 COPY --from=builder /tmp/.env /code/.env
 COPY --from=builder /tmp/app /code/app
 
+# Copy the gunicorn config file from the builder
+COPY --from=builder /tmp/gunicorn.conf.py /code/gunicorn.conf.py
+
 # Setup entrypoint
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
 
