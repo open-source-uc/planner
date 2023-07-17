@@ -9,8 +9,8 @@ interface AlertModalProps {
   children?: ReactNode
 }
 
-const AlertModal: React.FC<AlertModalProps> = ({ title, isOpen, close, disclaimer, children }: AlertModalProps) => {
-  const cancelButtonRef = useRef(null)
+function useCanClose ({ disclaimer, close }: { close: Function, disclaimer?: boolean }): [boolean, (aceptIt: boolean) => void, React.RefObject<HTMLButtonElement>] {
+  const cancelButtonRef = useRef<HTMLButtonElement>(null)
   const [canClose, setCanClose] = useState(false)
 
   useEffect(() => {
@@ -34,6 +34,12 @@ const AlertModal: React.FC<AlertModalProps> = ({ title, isOpen, close, disclaime
       close(aceptIt)
     }
   }
+
+  return [canClose, handleClose, cancelButtonRef]
+}
+
+const AlertModal: React.FC<AlertModalProps> = ({ title, isOpen, close, disclaimer, children }: AlertModalProps) => {
+  const [canClose, handleClose, cancelButtonRef] = useCanClose({ disclaimer, close })
 
   return (
     <Transition.Root show={isOpen} as={Fragment}>
