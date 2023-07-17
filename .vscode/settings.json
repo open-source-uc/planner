@@ -39,10 +39,6 @@
     "python.analysis.inlayHints.functionReturnTypes": true,
     "python.analysis.inlayHints.variableTypes": false,
     "python.terminal.activateEnvInCurrentTerminal": true,
-    "python.linting.pylintEnabled": false,
-    "ruff.args": [
-        "--config=/workspaces/planner/backend/pyproject.toml"
-    ],
     // Black + Ruff
     "python.formatting.provider": "none",
     "[python]": {
@@ -55,4 +51,21 @@
         // Prevents ruff-vscode#128
         "source.organizeImports.isort": true,
     },
+    "ruff.args": [
+        "--config=/workspaces/planner/backend/pyproject.toml"
+    ],
+    "python.analysis.extraPaths": [
+        "backend/"
+    ],
+    // Make Pylance work well with the monorepo
+    "python.linting.cwd": "backend/",
+    "python.testing.cwd": "backend/",
+    "python.testing.pytestEnabled": true,
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.stubPath": "backend/typings",
+    "python.analysis.exclude": [
+        "backend/typings/"
+    ],
+    "python.analysis.autoImportCompletions": true,
+    "debug.onTaskErrors": "debugAnyway",
 }

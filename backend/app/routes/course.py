@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Query
-from pydantic import BaseModel
-from unidecode import unidecode
-
 from prisma.models import (
     Course as DbCourse,
 )
 from prisma.types import CourseWhereInput, CourseWhereInputRecursive2
+from pydantic import BaseModel
+from unidecode import unidecode
 
 from ..plan.courseinfo import (
     CourseDetails,

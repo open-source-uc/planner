@@ -1,0 +1,35 @@
+{
+  "files": [
+    "contributors.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "commitType": "docs",
+  "commitConvention": "angular",
+  "contributors": [
+    {
+      "login": "nicoabarca",
+      "name": "Nicolás Abarca",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29152538?v=4",
+      "profile": "https://github.com/nicoabarca",
+      "contributions": [
+        "design"
+      ]
+    },
+    {
+      "login": "benjavicente",
+      "name": "Benjamín Vicente",
+      "avatar_url": "https://avatars.githubusercontent.com/u/62021328?v=4",
+      "profile": "http://benjavicente.github.io",
+      "contributions": [
+        "doc"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "skipCi": true,
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "projectName": "planner",
+  "projectOwner": "open-source-uc"
+}

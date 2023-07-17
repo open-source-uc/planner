@@ -2,9 +2,12 @@
 Models a flow network in the context of curriculums.
 """
 
-from typing import Literal, Optional
+import re
+from collections.abc import Callable, Generator
+from typing import Annotated, Any, Literal, Optional, Self
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from pydantic.fields import ModelField
 
 from ...course import PseudoCourse
 from ...courseinfo import CourseInfo
@@ -184,7 +187,76 @@ class Cyear(BaseModel, frozen=True):
         return self.raw
 
 
+# TODO: Document this?
 LATEST_CYEAR = Cyear(raw="C2020")
+
+
+class CurriculumCode(str):
+    """
+    A code for a major or a minor.
+    """
+
+    _pattern: re.Pattern[str]
+
+    def __new__(cls: type[Self], value: str) -> Self:
+        return super().__new__(cls, value)
+
+    @classmethod
+    def __get_validators__(
+        cls: type[Self],
+    ) -> Generator[Callable[..., Self], None, None]:
+        yield cls.validate
+
+    @classmethod
+    def validate(cls: type[Self], value: str, field: ModelField) -> Self:
+        assert cls._pattern is not None
+        if not isinstance(value, str):  # type: ignore
+            raise TypeError("string required")
+        value = value.strip().upper()
+        m = cls._pattern.fullmatch(value)
+        if m is None:
+            raise ValueError(f"Invalid {cls.__name__} code {value}")
+        return cls(value)
+
+    @classmethod
+    def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
+        raise NotImplementedError
+
+
+class MajorCode(CurriculumCode):
+    _pattern = re.compile(r"^M[0-9]{3}$")
+
+    @classmethod
+    def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
+        field_schema.update(
+            description="A major code, eg. `M072` for hydraulic engineering.",
+            pattern=cls._pattern.pattern,
+            examples=["M072", "M262", "M232"],
+        )
+
+
+class MinorCode(CurriculumCode):
+    _pattern = re.compile(r"^N[0-9]{3}$")
+
+    @classmethod
+    def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
+        field_schema.update(
+            description="A minor code, eg. `N204` for numerical analysis.",
+            pattern=cls._pattern.pattern,
+            examples=["N204", "N199", "N776"],
+        )
+
+
+class TitleCode(CurriculumCode):
+    _pattern = re.compile(r"^4[0-9]{4}(?:-[0-9])?$")
+
+    @classmethod
+    def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
+        field_schema.update(
+            description="A title code, eg. `40007` for a computer engineering.",
+            pattern=cls._pattern.pattern,
+            examples=["40008", "40023", "40096"],
+        )
 
 
 class CurriculumSpec(BaseModel, frozen=True):
@@ -197,11 +269,7 @@ class CurriculumSpec(BaseModel, frozen=True):
     or through migrations.
     """
 
-    # Curriculum year.
-    cyear: Cyear
-    # Major code.
-    major: str | None
-    # Minor code.
-    minor: str | None
-    # Title code.
-    title: str | None
+    cyear: Annotated[Cyear, Field(description="The curriculum version.")]
+    major: MajorCode | None
+    minor: MinorCode | None
+    title: TitleCode | None
