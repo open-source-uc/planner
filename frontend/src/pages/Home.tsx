@@ -16,7 +16,7 @@ const Home = (): JSX.Element => {
     <div className='bg-gradient-to-b from-blue-500 h-full'>
       <AlertModal title={'IMPORTANTE: POR FAVOR, LEA ATENTAMENTE'} desc={alphaDisclaimer} isOpen={disclaimerIsOpen} close={() => { setDisclaimerIsOpen(false) }} disclaimer={true}/>
       <div className="max-w-3xl mx-auto mt-8 prose center">
-          <h1 className='text-white text-center font-medium'>Bienvenido a PanguiPath, el lugar donde puedes planificar tu carrera universitaria</h1>
+          <h1 className='text-white text-center font-medium'>Bienvenido al Nuevo Planner, el lugar donde puedes planificar tu carrera universitaria</h1>
           <div className='flex justify-evenly'><Link to="/planner/new"><button className='rounded-lg py-2 px-4 bg-blue-800 text-white'>Planificar Malla</button></Link></div>
                 {
                 /* authState?.user != null
