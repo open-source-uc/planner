@@ -36,9 +36,14 @@ def ratelimit_guest(limit: str) -> Callable[..., None]:
     limiter = Limiter(limit)
 
     def check_limit(request: Request):
-        # TODO: If there is any proxy in production between the machine and the
-        # internet, requests may all come from the same IP. Check if this is the case.
-        limiter.check("" if request.client is None else request.client.host)
+        # Check for the X-Forwarded-For header, if it exists, use it as the key.
+        # Otherwise, use the client IP address.
+        # This assumes that the proxy will always set the X-Forwarded-For header
+        # and that in development there is no proxy.
+        key = request.headers.get("X-Forwarded-For", "")
+        if key == "" and request.client:
+            key = request.client.host
+        limiter.check(key)
 
     return check_limit
 
