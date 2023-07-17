@@ -27,6 +27,9 @@ from ...plan.validation.curriculum.tree import (
     Cyear,
     FillerCourse,
     Leaf,
+    MajorCode,
+    MinorCode,
+    TitleCode,
 )
 from ...user.info import StudentInfo
 from . import client, siding_rules
@@ -83,7 +86,7 @@ async def _fetch_raw_blocks(
             CodCurriculum=str(spec.cyear),
             CodMajor=major,
             CodMinor=minor,
-            CodTitulo=spec.title or "",
+            CodTitulo=spec.title or None,
         ),
     )
 
@@ -344,9 +347,9 @@ async def fetch_student_info(rut: str) -> StudentInfo:
         cyear=raw.Curriculo,
         is_cyear_supported=Cyear.from_str(raw.Curriculo) is not None,
         admission=_decode_period(raw.PeriodoAdmision),
-        reported_major=raw.MajorInscrito,
-        reported_minor=raw.MinorInscrito,
-        reported_title=raw.TituloInscrito,
+        reported_major=MajorCode(raw.MajorInscrito) if raw.MajorInscrito else None,
+        reported_minor=MinorCode(raw.MinorInscrito) if raw.MinorInscrito else None,
+        reported_title=TitleCode(raw.TituloInscrito) if raw.TituloInscrito else None,
     )
 
 
