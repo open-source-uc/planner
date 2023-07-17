@@ -89,6 +89,18 @@ class Settings(BaseSettings):
     # Time to expire cached student information in seconds.
     student_info_expire: float = 1800
 
+    # Whether to resynchronize courses on server startup.
+    autosync_courses: bool = True
+
+    # Whether to resynchronize curriculums on server startup.
+    autosync_curriculums: bool = True
+
+    # Whether to resynchronize offer on server startup.
+    autosync_offer: bool = True
+
+    # Whether to resynchronize the courseinfo cache on server startup.
+    autosync_courseinfo: bool = True
+
 
 # Make sure the `.env` file is loaded before settings are loaded
 load_dotenv()

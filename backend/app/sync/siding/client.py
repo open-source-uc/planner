@@ -62,7 +62,7 @@ class Titulo(BaseModel):
 class PlanEstudios(BaseModel):
     CodCurriculum: str
     CodMajor: MajorCode | Literal["M"]
-    CodMinor: MinorCode
+    CodMinor: MinorCode | Literal["N"]
     CodTitulo: TitleCode | Literal[""]
 
 
@@ -70,7 +70,7 @@ class Curso(BaseModel):
     Sigla: str
     Nombre: str | None
     Semestralidad: Literal["I", "II", "I y II"] | None
-    Creditos: Annotated[int, Field(ge=0, le=65)] | None
+    Creditos: Annotated[int, Field(ge=0)] | None
 
 
 class ListaCursos(BaseModel):
@@ -113,11 +113,16 @@ class BloqueMalla(BaseModel):
     Restricciones: ListaRestricciones | None
 
 
+class AcademicPeriod(ConstrainedStr):
+    regex = r"\d{4}-[1-3]"
+
+
 class InfoEstudiante(BaseModel):
     # Full name, all uppercase and with Unicode accents.
     Nombre: str
-    # Either 'M' or 'F'.
-    Sexo: Literal["M", "F"]
+    # Seems to be either 'M' or 'F'.
+    # Not used.
+    Sexo: str
     # The cyear string associated with the student (e.g. "C2020", "C2013", etc...).
     # Usually coupled with `PeriodoAdmision`
     Curriculo: str
@@ -131,11 +136,12 @@ class InfoEstudiante(BaseModel):
     # Seems to be `None`.
     Codigo: str | None
     # Career
-    # Should be 'INGENIERÍA CIVIL' (mind the Unicode accent)
-    Carrera: Literal["INGENIERÍA CIVIL"]
+    # Seems to be 'INGENIERÍA CIVIL' (mind the Unicode accent)
+    # Not used
+    Carrera: str
     # Semester in which the student joined the university.
     # For example, '2012-2' for the second semester of 2012.
-    PeriodoAdmision: str
+    PeriodoAdmision: AcademicPeriod
 
     # Average student grades
     # Since this is somewhat sensitive data and we don't use it, it's best to ignore it
@@ -143,10 +149,6 @@ class InfoEstudiante(BaseModel):
     # Student status
     # Regular students have 'REGULAR' status.
     # Not useful for us, and it may even be sensitive data, so it's best to ignore it
-
-
-class AcademicPeriod(ConstrainedStr):
-    regex = r"\d{4}-[1-3]"
 
 
 class CursoHecho(BaseModel):
@@ -180,7 +182,7 @@ class SoapClient:
         self.record_path = None
 
     def on_startup(self):
-        # Load mockup data
+        # Load mock data
         if settings.siding_mock_path != "":
             try:
                 self.mock_db = json.loads(settings.siding_mock_path.read_text())

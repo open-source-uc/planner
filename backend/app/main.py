@@ -7,6 +7,7 @@ from .database import prisma
 from .plan.courseinfo import (
     course_info,
 )
+from .settings import settings
 from .sync.siding.client import client as siding_soap_client
 
 
@@ -34,12 +35,23 @@ async def startup():
     await prisma.connect()
     # Setup SIDING webservice
     siding_soap_client.on_startup()
+    # Sync courses if database is empty
+    await sync.run_upstream_sync(
+        courses=settings.autosync_courses,
+        curriculums=settings.autosync_curriculums,
+        offer=settings.autosync_offer,
+        courseinfo=settings.autosync_courseinfo,
+    )
     # Prime course info cache
     courseinfo = await course_info()
-    # Sync courses if database is empty
-    if len(courseinfo.courses) == 0:
-        await sync.run_upstream_sync()
-        await course_info()
+    if not courseinfo.courses:
+        # Auto-sync database if there are no courses
+        await sync.run_upstream_sync(
+            courses=True,
+            curriculums=False,
+            offer=False,
+            courseinfo=False,
+        )
 
 
 @app.on_event("shutdown")  # type: ignore

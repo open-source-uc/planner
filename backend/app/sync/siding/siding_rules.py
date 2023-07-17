@@ -13,8 +13,8 @@ el que habra que tocar.
 
 from unidecode import unidecode
 
-from ...plan.course import EquivalenceId
-from ...plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
+from ...plan.course import EquivalenceId, pseudocourse_with_credits
+from ...plan.courseinfo import CourseDetails, CourseInfo, EquivDetails, add_equivalence
 from ...plan.validation.curriculum.tree import (
     SUPERBLOCK_PREFIX,
     Block,
@@ -100,6 +100,48 @@ def _identify_superblocks(curriculum: Curriculum):
 
 # Identifica a los bloques de OFG.
 OFG_BLOCK_CODE = "courses:!L1"
+# Los cursos de optativo en ciencias.
+OFG_SCIENCE_OPTS = {
+    "BIO014",
+    "EYP2355",
+    "ELM2431",
+    "EYP290I",
+    "FIZ0314",
+    "FIS1542",
+    "FIZ0311",
+    "FIZ0222",
+    "FIZ0223",
+    "FIZ0313",
+    "FIZ1428",
+    "MAT2205",
+    "MAT255I",
+    "MLM2221",
+    "MLM2301",
+    "MAT2305",
+    "MLM2401",
+    "MLM2411",
+    "MLM251I",
+    "MAT251I",
+    "MLM2541",
+    "MLM260I",
+    "MAT2605",
+    "QIM121",
+    "QIM122",
+    "QIM124",
+    "QIM109A",
+    "QIM130",
+    "QIM200",
+    "QUN1003",
+    "MAT2565",
+    "FIZ0315",
+    "FIZ0312",
+    "MAT380I",
+    "FIS0104",
+    "MAT270I",
+    "QIM202",
+    "FIZ0614",
+    "FIZ2110",
+}
 
 
 def _merge_ofgs(curriculum: Curriculum):
@@ -156,6 +198,41 @@ def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum)
                         curriculum.multiplicity[code] = 2 * info.credits
 
 
+def _ofg_check_limited(info: CourseDetails):
+    if info.credits != 5:
+        return False
+    return info.code.startswith(("DPT", "RII", "CAR")) or info.code in (
+        "MEB158",
+        "MEB166",
+        "MEB174",
+    )
+
+
+def _ofg_is_limited(courseinfo: CourseInfo, code: str):
+    info = courseinfo.try_course(code)
+    if info is None:
+        return True
+    if info.code in OFG_SCIENCE_OPTS:
+        return False
+    return _ofg_check_limited(info)
+
+
+def _ofg_is_unlimited(courseinfo: CourseInfo, code: str):
+    info = courseinfo.try_course(code)
+    if info is None:
+        return True
+    if info.code in OFG_SCIENCE_OPTS:
+        return False
+    return not _ofg_check_limited(info)
+
+
+def _ofg_is_science(courseinfo: CourseInfo, code: str):
+    info = courseinfo.try_course(code)
+    if info is None:
+        return True
+    return info.code in OFG_SCIENCE_OPTS
+
+
 def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
     # https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/formacion_gral/alumno_2020/index.phtml
     # En el bloque de OFG hay algunos cursos de 5 creditos que en conjunto pueden
@@ -165,18 +242,23 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
     # - CAR (CARA)
     # - OFG plan antiguo (MEB158, MEB166 y MEB174)
 
-    def is_limited(courseinfo: CourseInfo, code: str):
-        info = courseinfo.try_course(code)
-        if info is None:
-            return "both"
-        if info.credits != 5:
-            return False
-        return (
-            code.startswith(("DPT", "RII", "CAR"))
-            or code == "MEB158"
-            or code == "MEB166"
-            or code == "MEB174"
-        )
+    # Ademas, agrega hasta 10 creditos de optativo en ciencias.
+    #
+    # Se pueden tomar hasta 10 creditos de optativo de ciencias, que es una
+    # lista separada que al parecer solo esta disponible en forma textual.
+    # Los ramos de esta lista no son parte de la lista `!L1` que brinda
+    # SIDING, y tampoco sabemos si esta disponible en otra lista.
+    # La lista L3 se ve prometedora, incluso incluye un curso "ING0001
+    # Optativo En Ciencias" generico, pero no es exactamente igual al listado
+    # textual en SIDING.
+    #
+    # Referencias:
+    # "Además, es válido para avance curricular de OFG máximo 1 curso
+    # optativo en ciencias (10 cr.) de una lista de cursos Optativos de
+    # Ciencia, o su equivalente, definida por el Comité Curricular de la
+    # Escuela de Ingeniería."
+    # https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/optativos/op_ciencias/alumno_2020/index.phtml
+    # https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/formacion_gral/alumno_2020/index.phtml
 
     for superblock in curriculum.root.children:
         if not isinstance(superblock, Combination):
@@ -186,13 +268,15 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                 # Segregar los cursos de 5 creditos que cumplan los requisitos
                 limited: set[str] = set()
                 unlimited: set[str] = set()
+                science: set[str] = set()
                 for code in block.codes:
-                    limit = is_limited(courseinfo, code)
-                    if limit == "both" or limit:
+                    if _ofg_is_limited(courseinfo, code):
                         limited.add(code)
-                    if limit == "both" or not limit:
+                    if _ofg_is_unlimited(courseinfo, code):
                         unlimited.add(code)
-                # Separar el bloque en 2
+                    if _ofg_is_science(courseinfo, code):
+                        science.add(code)
+                # Separar el bloque en 3
                 limited_block = Leaf(
                     debug_name=f"{block.debug_name} (máx. 10 creds. DPT y otros)",
                     block_code=f"{OFG_BLOCK_CODE}:limited",
@@ -206,6 +290,13 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                     name=None,
                     cap=block.cap,
                     codes=unlimited,
+                )
+                science_block = Leaf(
+                    debug_name=f"{block.debug_name} (optativo de ciencias)",
+                    block_code=f"{OFG_BLOCK_CODE}:science",
+                    name=None,
+                    cap=10,
+                    codes=science,
                 )
                 block = Combination(
                     debug_name=block.debug_name,
@@ -231,6 +322,7 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                         # Por ahora lo podemos arreglar invirtiendo las prioridades.
                         unlimited_block,
                         limited_block,
+                        science_block,
                     ],
                 )
                 superblock.children[block_i] = block
@@ -238,20 +330,22 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
 
 COURSE_PREFIX = "courses:"
 MINOR_BLOCK_CODE = f"{SUPERBLOCK_PREFIX}Minor"
-MINOR_CREDITS = 50
 
 
 def _minor_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     """
     Aplicar la "transformacion de minor".
-    Todos los minors tienen 50 creditos, y los creditos que puedan chocar con major o
-    titulo se rellenan con optativos complementarios.
-    La idea es duplicar el bloque:
-    - Uno de ellos tiene los optativos complementarios, pero tiene una capacidad de 50
-        creditos. Es decir, tiene mas ramos que capacidad, por lo que no se espera que
-        se tomen todos los optativos complementarios.
-    - El otro tiene los cursos obligatorios de minor. Tiene exactamente 5 ramos de 10
-        creditos (o al menos 50 creditos en ramos) y una capacidad de exactamente 50.
+    Los minors tienen una cierta cantidad de cursos minimos, pero si los cursos ya estan
+    usados en otra parte del plan academico, se rellenan con optativos complementarios.
+    Los optativos complementarios estan marcados como cursos de 0 creditos.
+
+    Para modelar esto, duplicamos el arbol de este minor en dos copias:
+    - Una de ellas tiene los optativos complementarios, pero tiene una capacidad de 50
+        (o la cantidad original que sea) creditos. Es decir, tiene mas ramos que
+        capacidad, por lo que no se espera que se tomen todos los optativos
+        complementarios.
+    - La otra tiene los cursos obligatorios de minor. No tiene los optativos
+        complementarios, por lo que es necesario tomar todos los ramos del bloque.
         Este bloque esta en otra capa, de manera de no tener que "pelear" por los ramos
         con major y titulo.
     """
@@ -271,32 +365,27 @@ def _minor_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     if not isinstance(minor_block, Combination):
         raise Exception("minor block is a leaf?")
 
-    # Asumimos el optativo complementario como el ultimo ramo del minor
-    filler = minor_block.children[-1]
+    # El optativo complementario es el unico ramo con cero creditos
+    # Sin embargo, al cargar los datos desde SIDING los ramos con cero creditos reciben
+    # 1 credito "fantasma", por lo que tenemos que buscar ramos con 1 credito
+    # Encontrarlo
+    filler_candidates = [block for block in minor_block.children if block.cap <= 1]
+    if not filler_candidates:
+        # Este minor no tiene optativos complementarios
+        return
+    if len(filler_candidates) > 1:
+        raise Exception("more than one optativo complementario?")
+    filler = filler_candidates[0]
     if not isinstance(filler, Leaf):
         raise Exception("optativo complementario is not a leaf?")
 
-    # Eliminamos todas las instancias de optativo complementario del minor
+    # Eliminamos el optativo complementario del minor
     minor_block.children = [
         block for block in minor_block.children if block.block_code != filler.block_code
     ]
 
-    # Ajustamos a 50 creditos usando el optativo complementario
-    # Calculamos cuantos creditos de optativo complementario se tienen que usar de forma
-    # "normal"
-    normally_used_creds = MINOR_CREDITS - sum(
-        block.cap for block in minor_block.children
-    )
-    if normally_used_creds < 0:
-        raise Exception(f"minor has over {MINOR_CREDITS} credits?")
-    if normally_used_creds > 0:
-        minor_block.children.append(
-            filler.copy(
-                update={"cap": normally_used_creds},
-                deep=True,
-            ),
-        )
-    minor_block.cap = MINOR_CREDITS
+    # Calculamos el creditaje total de este minor
+    minor_credits = sum(block.cap for block in minor_block.children)
 
     # Duplicar el bloque
     # Llamaremos "exhaustivo" al bloque que tiene exactamente tantos ramos como
@@ -312,24 +401,31 @@ def _minor_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     # con otros bloques
     _set_block_layer(exhaustive, "minor")
 
-    # Agregamos optativos complementarios al bloque exclusivo, hasta completar 50
-    if not exclusive.children or exclusive.children[-1].block_code != filler.block_code:
-        exclusive.children.append(filler.copy())
-    exclusive.children[-1].cap = MINOR_CREDITS
-    # exclusive.children[-1].cost = 1  # Preferir los ramos normales por un poquito
-    exclusive.name = f"{exclusive.name} ({MINOR_CREDITS} créditos exclusivos)"
-    exclusive.debug_name += f" ({MINOR_CREDITS} créditos exclusivos)"
+    # Agregamos el optativo complementario al bloque exclusivo
+    # Agregamos suficientes creditos para poder completarlo a punta de optativos
+    # complementarios
+    exclusive.children.append(filler.copy())
+    exclusive.children[-1].cost_offset = 20
+    exclusive.children[-1].cap = minor_credits
+    exclusive.cap = minor_credits
+    exclusive.name = f"{exclusive.name} ({minor_credits} créditos exclusivos)"
+    exclusive.debug_name += f" ({minor_credits} créditos exclusivos)"
 
-    # Nos aseguramos que hayan 50 creditos de cursos recomendados de optativo
+    # Nos aseguramos que hayan suficientes creditos de cursos recomendados de optativo
     # complementario
     assert filler.block_code.startswith(COURSE_PREFIX)
     filler_code = filler.block_code[len(COURSE_PREFIX) :]
-    filler_course = curriculum.fillers[filler_code][-1]
-    filler_course_creds = courseinfo.get_credits(filler_course.course)
-    assert filler_course_creds is not None
-    curriculum.fillers[filler_code] = [
-        filler_course for _ in range(_ceil_div(MINOR_CREDITS, filler_course_creds))
-    ]
+    filler_course = curriculum.fillers[filler_code].pop()  # Asumimos que es el ultimo
+    assert isinstance(filler_course.course, EquivalenceId)
+    filler_credits = minor_credits
+    while filler_credits > 0:
+        creds = min(filler_credits, 10)
+        filler_course.course = pseudocourse_with_credits(
+            filler_course.course,
+            creds,
+        )
+        curriculum.fillers[filler_code].append(filler_course.copy())
+        filler_credits -= creds
 
 
 TITLE_EXCLUSIVE_CREDITS = 130
@@ -337,6 +433,17 @@ TITLE_BLOCK_CODE = f"{SUPERBLOCK_PREFIX}Titulo"
 OPI_CODE = "#OPI"
 OPI_NAME = "Optativos de Ingeniería (OPI)"
 OPI_BLOCK_CODE = f"courses:{OPI_CODE}"
+OPI_EXTRAS = [
+    "GOB3001",
+    "GOB3004",
+    "GOB3006",
+    "GOB3007",
+    "GOB3008",
+    "GOB3009",
+    "GOB3010",
+    "GOB3011",
+    "GOB3012",
+]
 
 
 async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
@@ -396,6 +503,7 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
                 or course.name == "Investigación o Proyecto"
             ):
                 opis.append(code)
+        opis.extend(OPI_EXTRAS)
         opi_equiv = EquivDetails(
             code=OPI_CODE,
             name=OPI_NAME,
@@ -425,7 +533,7 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     curriculum.fillers.setdefault(OPI_CODE, []).extend(
         FillerCourse(
             course=EquivalenceId(code=OPI_CODE, credits=10),
-            order=1000,  # Colocarlos al final
+            order=3000,  # Colocarlos al final
         )
         # Rellenar con ceil(creditos_de_titulo/10) cursos
         for _i in range(_ceil_div(TITLE_EXCLUSIVE_CREDITS, 10))
@@ -480,26 +588,43 @@ async def apply_curriculum_rules(
             _limit_ofg10(courseinfo, curriculum)
             _minor_transformation(courseinfo, curriculum)
             await _title_transformation(courseinfo, curriculum)
-            # TODO: Agregar optativo de ciencias
-            #   Se pueden tomar hasta 10 creditos de optativo de ciencias, que es una
-            #   lista separada que al parecer solo esta disponible en forma textual.
-            #   Los ramos de esta lista no son parte de la lista `!L1` que brinda
-            #   SIDING, y tampoco sabemos si esta disponible en otra lista.
-            #   La lista L3 se ve prometedora, incluso incluye un curso "ING0001
-            #   Optativo En Ciencias" generico, pero no es exactamente igual al listado
-            #   textual en SIDING.
-            #   Referencias:
-            #   "Además, es válido para avance curricular de OFG máximo 1 curso
-            #   optativo en ciencias (10 cr.) de una lista de cursos Optativos de
-            #   Ciencia, o su equivalente, definida por el Comité Curricular de la
-            #   Escuela de Ingeniería."
-            #   https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/optativos/op_ciencias/alumno_2020/index.phtml
-            #   https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/formacion_gral/alumno_2020/index.phtml
+            # TODO: Algunos minors y titulos tienen requerimientos especiales que no son
+            #   representables en el formato que provee SIDING, y por ende faltan del
+            #   mock (y estan incompletos en el webservice real).
+            #   Una posibilidad es por ahora hardcodear estos programas en nuestro
+            #   formato (ie. hardcodearlo como `Curriculum` y no como
+            #   `list[BloqueMalla]`).
+            #   Tambien hay majors faltantes simplemente porque la Dipre no los ha
+            #   ingresado al parecer.
+            #
+            #   Programas faltantes:
+            #   - (M235) Major en Ingeniería, Diseño e Innovación - Track en Ingeniería
+            #       Vs.02
+            #   - (M143) Major en Ingeniería Física - Track Ingeniería Vs.01
+            #   - (M149) Major en Ingeniería Física - Track Física Vs.01
+            #   - (N242) Innovación Tecnológica Vs.01
+            #   - (N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02
+            #   - (N707) Minor de Profundidad de Articulación Proyectos de Diseño
+            #   - (N234) Minor de Articulación Premedicina Vs.02
+            #   - (N227) Minor de Profundidad Articulación Arquitectura Vs.02
+            #   - (N180) Track 1: Fundamentos de Optimización Vs.02
+            #   - (N181) Track 2: Fundamentos de Análisis Numérico Vs.02
+            #   - (N182) Track 3: Cuantificación de Incertidumbre Vs.02
+            #   - (N183) Track 4: Teoría de la Computación Vs.02
+            #   - (N184) Track 5: Data Science Vs.02
+            #   - (40023) Ingeniero Civil Matemático y Computacional
             pass
+        # TODO: C2022
     return curriculum
 
 
-FORCE_HOMOGENEOUS = ("FIS1523", "FIS1533", "ICS1113")
+FORCE_HOMOGENEOUS = (
+    {"FIS1523", "ICM1003", "IIQ1003", "IIQ103H"},
+    {"FIS1533", "IEE1533"},
+    {"ICS1113", "ICS113H"},
+)
+FORCE_HOMOGENEOUS_MIN = min(len(homogeneous) for homogeneous in FORCE_HOMOGENEOUS)
+FORCE_HOMOGENEOUS_MAX = max(len(homogeneous) for homogeneous in FORCE_HOMOGENEOUS)
 
 
 def _fix_nonhomogeneous_equivs(courseinfo: CourseInfo, equiv: EquivDetails):
@@ -511,13 +636,16 @@ def _fix_nonhomogeneous_equivs(courseinfo: CourseInfo, equiv: EquivDetails):
     # "Termodinamica".
     # Lo parcharemos para que estas sean listas homogeneas y con el nombre correcto.
     # Tambien, parcharemos "Optimizacion" como una equivalencia homogenea
-    if len(equiv.courses) >= 1 and equiv.courses[0] in FORCE_HOMOGENEOUS:
+    # Colocamos un limite maximo de cursos para evitar parchar listas grandes que tengan
+    # estos cursos de primero.
+    if FORCE_HOMOGENEOUS_MIN <= len(equiv.courses) <= FORCE_HOMOGENEOUS_MAX and any(
+        set(equiv.courses) == homogeneous for homogeneous in FORCE_HOMOGENEOUS
+    ):
         equiv.is_homogeneous = True
         equiv.is_unessential = True
-        if len(equiv.courses) >= 1:
-            info = courseinfo.try_course(equiv.courses[0])
-            if info is not None:
-                equiv.name = info.name
+        info = courseinfo.try_course(equiv.courses[0])
+        if info is not None:
+            equiv.name = info.name
 
 
 def _mark_unessential_equivs(equiv: EquivDetails):
@@ -525,6 +653,13 @@ def _mark_unessential_equivs(equiv: EquivDetails):
     # error cuando no se selecciona un OFG o un teologico)
     if equiv.code == "!L1" or equiv.code == "!L2":
         equiv.is_unessential = True
+
+
+def _add_science_optative_courses(equiv: EquivDetails):
+    # La lista `!L1` (OFGs del curriculum C2020) no contiene los optativos de ciencias.
+    # Agreguemoslos a la fuerza
+    if equiv.code == "!L1":
+        equiv.courses.extend(OFG_SCIENCE_OPTS)
 
 
 async def apply_equivalence_rules(
@@ -536,5 +671,19 @@ async def apply_equivalence_rules(
     _fix_nonhomogeneous_equivs(courseinfo, equiv)
     # Hacer que los OFGs no emitan un diagnostico de "falta desambiguar"
     _mark_unessential_equivs(equiv)
+    # Agregar Optativos de Ciencias a los OFGs de C2020
+    _add_science_optative_courses(equiv)
 
     return equiv
+
+
+async def map_equivalence_code(
+    courseinfo: CourseInfo,
+    spec: CurriculumSpec,
+    equiv_code: str,
+) -> str:
+    """
+    Esta funcion permite cambiar los codigos de equivalencias para cada version del
+    curriculum (o incluso programa) por separado, si es necesario.
+    """
+    return equiv_code

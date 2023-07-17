@@ -77,8 +77,8 @@ async def _fetch_raw_blocks(
 ) -> list[BloqueMalla]:
     # Use a dummy major and minor if they are not specified
     # Later, remove this information
-    major = MajorCode("M245") if spec.major is None else spec.major
-    minor = MinorCode("N344") if spec.minor is None else spec.minor
+    major = "M" if spec.major is None else spec.major
+    minor = "N" if spec.minor is None else spec.minor
 
     # Fetch raw curriculum blocks for the given cyear-major-minor-title combination
     raw_blocks = await client.get_curriculum_for_spec(
@@ -113,7 +113,11 @@ async def _fetch_raw_blocks(
     for raw_block in raw_blocks:
         equiv = None
         if raw_block.CodLista is not None:
-            code = f"!{raw_block.CodLista}"
+            code = await siding_rules.map_equivalence_code(
+                courseinfo,
+                spec,
+                f"!{raw_block.CodLista}",
+            )
             if courseinfo.try_equiv(code) is not None:
                 continue
             raw_courses = await client.get_predefined_list(raw_block.CodLista)
@@ -134,7 +138,11 @@ async def _fetch_raw_blocks(
                 courses=codes,
             )
         elif raw_block.CodSigla is not None and raw_block.Equivalencias is not None:
-            code = f"?{raw_block.CodSigla}"
+            code = await siding_rules.map_equivalence_code(
+                courseinfo,
+                spec,
+                f"?{raw_block.CodSigla}",
+            )
             if courseinfo.try_equiv(code) is not None:
                 continue
             codes = [raw_block.CodSigla]
@@ -206,6 +214,7 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
                 code = f"?{raw_block.CodSigla}"
             else:
                 raise Exception("siding api returned invalid curriculum block")
+            code = await siding_rules.map_equivalence_code(courseinfo, spec, code)
             # Fetch equivalence data
             info = courseinfo.try_equiv(code)
             assert info is not None
@@ -216,6 +225,11 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
             # Special treatment if the equivalence is homogeneous
             if info.is_homogeneous and len(info.courses) >= 1:
                 recommended = ConcreteId(code=info.courses[0], equivalence=recommended)
+                # TODO: Make equivalences actually global
+                # For example, ICS1113 and ICS113H should be equivalent.
+                # However, if there is no ICS1113-ICS113H homogeneous equivalence in the
+                # current plan, they will not be considered equivalent!
+                # Equivalencies should "spread" across curriculums.
                 for equivalent in info.courses:
                     curriculum.equivalencies[equivalent] = info.courses[0]
                 curriculum.equivalencies[code] = info.courses[0]
