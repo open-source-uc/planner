@@ -38,7 +38,8 @@
 				"dbaeumer.vscode-eslint",
 				"ms-python.python",
 				"charliermarsh.ruff",
-				"kokakiwi.vscode-just"
+				"kokakiwi.vscode-just",
+				"redhat.ansible"
 			],
 			"settings": {
 				"terminal.integrated.env.linux": {
