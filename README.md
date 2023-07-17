@@ -88,9 +88,33 @@ El proyecto se integra con dos servicios externos: SIDING (para acceder a mallas
 - Para SIDING se provee un mock que se activa automáticamente en ausencia de credenciales. El mock es limitado, y solo permite probar algunas combinaciones de malla.
 - Para CAS, se provee el servicio `cas-server-mock` que corre automáticamente junto a la app. Las cuentas de usuario disponibles son configurables en el archivo `cas-mock/data/cas-mock-users.json`.
 
-## Staging y Producción
+## Deployment
 
-### Staging Server
+### Deployment automático
+Para deployments a producción, se provee un playbook de [Ansible](https://docs.ansible.com/ansible/latest/index.html)
+que permite levantar la app completa de principio a fin, pensado para su uso en un entorno de producción, en particular
+en un servidor corriendo [Rocky Linux 9](https://rockylinux.org/).
+
+Teniendo acceso SSH a un servidor, solo se necesita correr (desde un entorno de desarrollo ya configurado):
+
+```shell
+$ ansible-playbook infra/playbook.yml -i <IP>, -u <USUARIO>
+```
+
+Asumiendo que ya se tenga una llave SSH al servidor. El playbook es completamente idempotente, por lo que
+también puede ser utilizado para corregir configuration drift en un servidor de producción.
+
+El playbook opcionalmente provee prompts para entregar credenciales de Tailscale, Netdata y SIDING. Por defecto 
+el playbook no levanta un mock de CAS, que es necesario para instalaciones sin acceso al SSO UC.
+
+También se provee un script más ligero en [just](./justfile), que principalmente está pensado para su uso en
+junto al sistema de [Continuous Deployment](./.github/workflows/deploy.yml) del repositorio. Sin embargo,
+dado un entorno ya configurado de Docker Compose, este puede ser utilizado para levantar un servidor independiente, 
+incluyendo uno que utilice un SSO mock.
+
+Abajo se entregan instrucciones manuales de deploy.
+
+### Deployment manual: Staging
 
 El ambiente de staging está diseñado para testear las nuevas versiones del planner en un ambiente real antes de pasar a producción.
 
@@ -110,7 +134,7 @@ Alternativamente, para correr la aplicación utilizando un servidor mock de **CA
 
 Finalmente, se puede detener la app con `docker compose down` desde la raíz del repositorio.
 
-### Producción
+### Deployment manual: Producción
 
 El ambiente de producción es manejado por la universidad de forma interna, por lo que aquí se detallan las **instrucciones para desplegar el planner** de forma manual:
 1. Se deben crear tres archivos `.env`, uno por cada servicio y dentro de su respectiva carpeta:
@@ -126,8 +150,6 @@ El ambiente de producción es manejado por la universidad de forma interna, por 
 Nota: los comandos podrían variar ligeramente dependiendo del sistema operativo y versión de *Docker Compose*. En particular, podría ser necesario utilizar `docker-compose` en vez de `docker compose` y `sudo docker compose` en vez de `docker compose`.
 
 ---
-
-Cabe mencionar que sería ideal a futuro implementar un **despliegue automático del planner** utilizando técnicas de *CI/CD*, pero de momento esta opción se pospone debido a las restricciones de seguridad y requerimientos de la universidad para hacer un despliegue interno.
 
 ## Equipo
 
