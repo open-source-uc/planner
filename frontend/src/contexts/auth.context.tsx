@@ -24,6 +24,10 @@ export function AuthProvider ({ children, userData }: Props): JSX.Element {
   const [student, setStudent] = useState<StudentContext | null>(null)
 
   useEffect(() => {
+    if (user == null) {
+      console.log('not fetching student info: no token')
+      return
+    }
     void DefaultService.getStudentInfo().catch(err => {
       if (err.status === 401) {
         console.log('Token invalid or expired, loading re-login page...')
