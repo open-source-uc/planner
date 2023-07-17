@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Callable
 
 import limits
@@ -10,6 +11,15 @@ from .user.key import UserKey
 LIMIT_REACHED_ERROR = HTTPException(429, detail="Too many requests")
 
 storage = limits.storage.RedisStorage(settings.redis_uri)
+
+# Ping the Redis server to check if it is alive
+if not storage.check():
+    warnings.warn(
+        "Could not connect to Redis, falling back to in-memory storage.",
+        stacklevel=1,
+    )
+    storage = limits.storage.MemoryStorage()
+    assert storage.check()
 
 
 class Limiter:

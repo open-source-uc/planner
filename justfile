@@ -40,7 +40,7 @@ deps-back:
 
 deps-infra:
     @echo "{{ info_prefix }} \e[1mInstalling infrastructure dependencies...\e[0m"
-    cd backend && ansible-galaxy install -r ../infra/requirements.yml
+    cd backend && poetry run ansible-galaxy install -r ../infra/requirements.yml
 
 deps: deps-front deps-back deps-infra
 
