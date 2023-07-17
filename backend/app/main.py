@@ -1,3 +1,5 @@
+from multiprocessing import Lock, Manager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
@@ -17,6 +19,11 @@ def custom_generate_unique_id(route: APIRoute):
         return f"{route.name}"
     return f"{route.tags[0]}-{route.name}"
 
+# TODO: use redis instead
+manager = Manager()
+store = manager.dict()
+store["startup_tasks_executed"] = False
+startup_lock = Lock()
 
 app = FastAPI(generate_unique_id_function=custom_generate_unique_id)
 
@@ -29,12 +36,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.on_event("startup")  # type: ignore
-async def startup():
-    await prisma.connect()
-    # Setup SIDING webservice
-    siding_soap_client.on_startup()
+async def _startup_tasks():
     # Sync courses if database is empty
     await sync.run_upstream_sync(
         courses=settings.autosync_courses,
@@ -52,6 +54,23 @@ async def startup():
             offer=False,
             courseinfo=False,
         )
+
+
+@app.on_event("startup")  # type: ignore
+async def startup():
+    await prisma.connect()
+    # Setup SIDING webservice
+    siding_soap_client.on_startup()
+
+    with startup_lock:
+        if store["startup_tasks_executed"] is False:
+            # Only this worker runs startup tasks
+            await _startup_tasks()
+            store["startup_tasks_executed"] = True
+        else:
+            # This worker waits until the startup task has been completed
+            pass
+    print("worker released")
 
 
 @app.on_event("shutdown")  # type: ignore
