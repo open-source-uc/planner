@@ -8,6 +8,7 @@
         "prisma.prisma",
         "bradlc.vscode-tailwindcss",
         "austenc.tailwind-docs",
-        "dbaeumer.vscode-eslint"
+        "dbaeumer.vscode-eslint",
+        "redhat.ansible"
     ]
 }
