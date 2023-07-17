@@ -96,14 +96,9 @@ INFINITY: int = 10**18
 # are virtual courses that are not actually taken by the user. Instead, filler courses
 # serve as a "fallback" when a curriculum can't be filled with taken courses only.
 FILLER_COST = 10**6
-# Offset the cost of course-block edges by the order in which blocks are defined.
-BLOCK_ORDER_COST = 10**3
-# Offset the cost of course-block edges by the order in which courses appear in the
-# plan.
-COURSE_ORDER_COST = 10**0
-
-# Up to what cost is still considered "small" when considering filler equivalents.
-EQUIVALENT_FILLER_THRESHOLD = 10**5
+# Base cost of taking a course. This number should be large enough so that cost offsets
+# dont make it more profitable to take an extra course.
+TAKEN_COST = 10**3
 
 
 IntExpr = int | cpsat.LinearExpr
@@ -514,7 +509,11 @@ def _build_problem(
     for usable in g.usable.values():
         for inst in usable.instances:
             vars.append(inst.used_var)
-            coeffs.append(1 if inst.filler is None else 10000 + inst.filler.cost_offset)
+            coeffs.append(
+                TAKEN_COST
+                if inst.filler is None
+                else FILLER_COST + inst.filler.cost_offset,
+            )
     g.model.Minimize(cpsat.LinearExpr.WeightedSum(vars, coeffs))
 
     return g
