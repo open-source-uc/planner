@@ -321,8 +321,20 @@
       ansible.builtin.git:
         repo: "https://github.com/open-source-uc/planner.git"
         dest: /home/planner/planner/
+        update: false
       become: true
       become_user: planner
+
+    - name: Update the planner repo # noqa: command-instead-of-module
+      ansible.builtin.shell:
+        cmd: |
+          git config advice.detachedHead false
+          git fetch --all
+          git checkout --force origin/main
+        chdir: /home/planner/planner/
+      become: true
+      become_user: planner
+      changed_when: true
 
     - name: Create backend .env
       ansible.builtin.copy:
