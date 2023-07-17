@@ -751,7 +751,7 @@ def _build_problem(
     for usable in g.usable.values():
         for inst in usable.instances:
             vars.append(inst.used_var)
-            coeffs.append(1 if inst.filler is None else 1000)
+            coeffs.append(1 if inst.filler is None else 10000 + inst.filler.cost_offset)
     g.model.Minimize(cpsat.LinearExpr.WeightedSum(vars, coeffs))
 
     t7 = t()

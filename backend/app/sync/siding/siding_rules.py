@@ -342,6 +342,11 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                 )
                 superblock.children[block_i] = block
 
+    # Hacer que los OFGs sean livianos para que se coloquen OFGs antes que teologicos
+    if "!L1" in curriculum.fillers:
+        for filler in curriculum.fillers["!L1"]:
+            filler.cost_offset -= 1
+
 
 COURSE_PREFIX = "courses:"
 MINOR_BLOCK_CODE = f"{SUPERBLOCK_PREFIX}Minor"
@@ -420,7 +425,6 @@ def _minor_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     # Agregamos suficientes creditos para poder completarlo a punta de optativos
     # complementarios
     exclusive.children.append(filler.copy())
-    exclusive.children[-1].cost_offset = 20
     exclusive.children[-1].cap = minor_credits
     exclusive.cap = minor_credits
     exclusive.name = f"{exclusive.name} ({minor_credits} créditos exclusivos)"
@@ -431,6 +435,7 @@ def _minor_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     assert filler.block_code.startswith(COURSE_PREFIX)
     filler_code = filler.block_code[len(COURSE_PREFIX) :]
     filler_course = curriculum.fillers[filler_code].pop()  # Asumimos que es el ultimo
+    filler_course.cost_offset += 2
     assert isinstance(filler_course.course, EquivalenceId)
     filler_credits = minor_credits
     while filler_credits > 0:
@@ -556,6 +561,7 @@ async def _title_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
         FillerCourse(
             course=EquivalenceId(code=OPI_CODE, credits=10),
             order=3000,  # Colocarlos al final
+            cost_offset=1,  # Preferir otros ramos antes
         )
         # Rellenar con ceil(creditos_de_titulo/10) cursos
         for _i in range(_ceil_div(TITLE_EXCLUSIVE_CREDITS, 10))

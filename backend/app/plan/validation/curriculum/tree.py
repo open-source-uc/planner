@@ -30,6 +30,8 @@ class FillerCourse(BaseModel):
     # The order indicates if the course should be taken early or late in the
     # student's career plan.
     order: int
+    # Additive cost of using this filler course.
+    cost_offset: int = 0
 
 
 class BaseBlock(BaseModel):
@@ -82,9 +84,6 @@ class Leaf(BaseBlock):
     # Useful to model the minor and title exclusive-credit requirements.
     # The default layer is just an empty string.
     layer: str = ""
-    # Additive offset on the cost of this block.
-    # Can be used to tweak the blocks that the generator chooses.
-    cost_offset: int = 0
 
 
 Block = Combination | Leaf
