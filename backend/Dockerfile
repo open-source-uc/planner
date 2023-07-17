@@ -43,8 +43,11 @@ COPY --from=requirements-stage /tmp/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
 
 # Copy the application code
-COPY /app /app
+COPY / /app
 WORKDIR /app
+
+# Copy the .env file
+COPY .env /app/.env
 
 # Generate the Prisma client
 RUN prisma generate
