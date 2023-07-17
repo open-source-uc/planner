@@ -13,8 +13,6 @@ from zeep.transports import AsyncTransport
 
 from app.plan.validation.curriculum.tree import MajorCode, MinorCode, TitleCode
 
-from ...settings import settings
-
 
 class StringArrayInner(BaseModel):
     string: list[str]
@@ -182,6 +180,8 @@ class SoapClient:
         self.record_path = None
 
     def on_startup(self):
+        from ...settings import settings
+
         # Load mockup data
         if settings.siding_mock_path != "":
             try:
