@@ -34,7 +34,7 @@ const Selector = memo(function _Selector ({
   const selectedOption = value != null ? (data[value] ?? { name: `${name} Desconocido` }) : { name: 'Por Seleccionar' }
   if (value !== undefined && value !== null && data[value] === undefined) {
     useEffect(() => {
-      toast.warn(`Tu ${name} todavía no está soportado oficialmente. Los cursos pueden estar incorrectos, revisa dos veces.`, {
+      toast.warn(`Tu ${name.toLowerCase()} todavía no está soportado oficialmente. Los cursos pueden estar incorrectos, revisa dos veces.`, {
         toastId: `UNSUPPORTED_${name}`,
         autoClose: false,
         position: 'bottom-left'
