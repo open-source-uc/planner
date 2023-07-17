@@ -49,7 +49,7 @@ const Planner = (): JSX.Element => {
   const [error, setError] = useState<string | null>(null)
   const [popUpAlert, setPopUpAlert] = useState<{ title: string, major?: string, year?: 'C2020' | 'C2022', deleteMajor: boolean, desc: string, isOpen: boolean }>({ title: '', major: '', deleteMajor: false, desc: '', isOpen: false })
 
-  const previousCurriculum = useRef<{ major: string | undefined, minor: string | undefined, title: string | undefined, cyear: 'C2020' | 'C2022' }>({ major: '', minor: '', title: '', cyear: '' })
+  const previousCurriculum = useRef<{ major: string | undefined, minor: string | undefined, title: string | undefined, cyear?: 'C2020' | 'C2022' }>({ major: '', minor: '', title: '' })
   const previousClasses = useRef<PseudoCourseId[][]>([[]])
 
   const [validationPromise, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
@@ -579,7 +579,7 @@ const Planner = (): JSX.Element => {
         newCurriculum.minor = undefined
       }
       if (!isMajorValid) {
-        newCurriculum.minor = undefined
+        newCurriculum.major = undefined
       }
       return { ...prev, classes: newClasses, curriculum: newCurriculum }
     })
@@ -670,7 +670,13 @@ const Planner = (): JSX.Element => {
     setPopUpAlert(prev => {
       if (!isCanceled) {
         if ('major' in prev) selectMajor(prev.major, false)
-        if ('year' in prev && prev.year !== undefined) selectYear(prev.year, false, false)
+        if ('year' in prev && prev.year !== undefined) {
+          if (prev.deleteMajor) {
+            selectYear(prev.year, false, false)
+          } else {
+            selectYear(prev.year, true, false)
+          }
+        }
       }
       return { ...prev, isOpen: false }
     })

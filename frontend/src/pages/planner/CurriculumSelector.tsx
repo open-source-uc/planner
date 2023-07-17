@@ -25,7 +25,7 @@ const Selector = memo(function _Selector ({
   value,
   onChange
 }: SelectorProps): JSX.Element {
-  const selectedOption = value !== undefined && value !== null ? data[value] : { name: 'Por Seleccionar', code: null }
+  const selectedOption = value !== undefined && value !== null && value in data ? data[value] : { name: 'Por Seleccionar', code: null }
   return (
     <Listbox value={selectedOption.code} onChange={onChange}>
       <Listbox.Button className="selectorButton">
