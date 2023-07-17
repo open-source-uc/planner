@@ -1,16 +1,28 @@
+import secrets
+import warnings
 from pathlib import Path
 from typing import Literal
 from urllib.parse import urlencode, urljoin
 
-from dotenv import load_dotenv
 from pydantic import AnyHttpUrl, BaseSettings, Field, SecretStr
+
+
+def generate_random_jwt_secret():
+    warnings.warn(
+        (
+            "Using a runtime-generated JWT secret."
+            " This won't persist accross starts, please change!"
+        ),
+        stacklevel=2,
+    )
+    return secrets.token_hex(64)
 
 
 class Settings(BaseSettings):
     # URL to the CAS verification server.
     # When a user arrives with a CAS token the backend verifies the token directly with
     # this server.
-    cas_server_url: AnyHttpUrl = Field(...)
+    cas_server_url: AnyHttpUrl = Field("http://localhost:3004/")
 
     # URL to the CAS login server.
     # The client's browser is redirected to this URL when they want to log in.
@@ -47,11 +59,12 @@ class Settings(BaseSettings):
     # TODO: Maybe use the username instead of the RUT, because RUTs can have zeros in
     # front of them and this can be confusing.
     # Alternatively, remove leading zeros before matching admin RUTs.
-    admin_rut: SecretStr = Field(...)
+    admin_rut: SecretStr = Field("")
 
     # JWT secret hex string. If this secret is leaked, anyone can forge JWT tokens for
     # any user.
-    jwt_secret: SecretStr = Field(...)
+    # Generate random string by default.
+    jwt_secret: SecretStr = Field(default_factory=generate_random_jwt_secret)
 
     # Algorithm used for JWT secrecy.
     jwt_algorithm: str = "HS256"
@@ -102,12 +115,9 @@ class Settings(BaseSettings):
     autosync_courseinfo: bool = True
 
 
-# Make sure the `.env` file is loaded before settings are loaded
-load_dotenv()
-
 # Load settings and allow global app access to them
 # NOTE: Pyright reports this line (rightfully) as an error because there are missing
 # arguments.
 # However, we actually want this to fail if there are missing environment variables, so
 # it's ok to ignore.
-settings = Settings()  # pyright: ignore[reportGeneralTypeIssues]
+settings = Settings(_env_file=".env", _env_file_encoding="utf-8")  # type: ignore
