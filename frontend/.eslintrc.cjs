@@ -21,7 +21,8 @@ module.exports = {
     project: './tsconfig.json'
   },
   plugins: [
-    'react'
+    'react',
+    'react-refresh'
   ],
   rules: {
     '@typescript-eslint/ban-types': [
@@ -33,7 +34,9 @@ module.exports = {
         extendDefaults: true
       }
     ],
-    '@typescript-eslint/ban-tslint-comment': 'off'
+    '@typescript-eslint/ban-tslint-comment': 'off',
+    'react-refresh/only-export-components': 'warn',
+    'react/prop-types': 'off'
   },
   settings: {
     react: {
