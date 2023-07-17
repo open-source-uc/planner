@@ -5,9 +5,9 @@
     "version": "0.2.0",
     "compounds": [
         {
-            "name": "Launch all 🚀",
+            "name": "Launch all + watcher 🚀",
             "configurations": [
-                "Backend (FastAPI)",
+                "Backend (FastAPI + watcher)",
                 "CAS Server",
                 "Frontend (Vite)",
             ],
@@ -15,9 +15,33 @@
                 "order": 1
             },
             "stopAll": true
+        },
+        {
+            "name": "Launch all 🚀",
+            "configurations": [
+                "Backend (FastAPI)",
+                "CAS Server",
+                "Frontend (Vite)",
+            ],
+            "presentation": {
+                "order": 2
+            },
+            "stopAll": true
         }
     ],
     "configurations": [
+        {
+            "name": "Backend (FastAPI + watcher)",
+            "type": "python",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "app.main:app",
+                "--reload",
+            ],
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/backend"
+        },
         {
             "name": "Backend (FastAPI)",
             "type": "python",
@@ -25,7 +49,6 @@
             "module": "uvicorn",
             "args": [
                 "app.main:app",
-                "--reload",
             ],
             "justMyCode": true,
             "cwd": "${workspaceFolder}/backend"
