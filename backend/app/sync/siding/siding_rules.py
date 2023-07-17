@@ -71,7 +71,7 @@ def _skip_extras(curriculum: Curriculum):
 
 # Tabla que mapea la primera palabra del nombre textual de un bloque academico a un
 # nombre mas machine-readable
-SUPERBLOCK_TABLE = {
+C2020_SUPERBLOCK_TABLE = {
     "ciencias": "PlanComun",
     "base": "PlanComun",
     "formacion": "FormacionGeneral",
@@ -79,9 +79,17 @@ SUPERBLOCK_TABLE = {
     "minor": "Minor",
     "ingeniero": "Titulo",
 }
+C2022_SUPERBLOCK_TABLE = {
+    "matematicas": "PlanComun",
+    "fundamentos": "PlanComun",
+    "formacion": "FormacionGeneral",
+    "major": "Major",
+    "minor": "Minor",
+    "ingeniero": "Titulo",
+}
 
 
-def _identify_superblocks(curriculum: Curriculum):
+def _identify_superblocks(spec: CurriculumSpec, curriculum: Curriculum):
     # Cambia los codigos de los bloques academicos a nombres "machine readable".
     # Por ejemplo, cambia "Ingeniero Civil en Computación" a 'title'
     for superblock in curriculum.root.children:
@@ -94,7 +102,12 @@ def _identify_superblocks(curriculum: Curriculum):
         )
         if len(id_words) < 1:
             continue
-        superblock_id = SUPERBLOCK_TABLE.get(id_words[0], "")
+        match spec.cyear.raw:
+            case "C2020":
+                superblock_table = C2020_SUPERBLOCK_TABLE
+            case "C2022":
+                superblock_table = C2022_SUPERBLOCK_TABLE
+        superblock_id = superblock_table.get(id_words[0], "")
         superblock.block_code = f"{SUPERBLOCK_PREFIX}{superblock_id}"
 
 
@@ -580,7 +593,7 @@ async def apply_curriculum_rules(
     curriculum: Curriculum,
 ) -> Curriculum:
     _skip_extras(curriculum)
-    _identify_superblocks(curriculum)
+    _identify_superblocks(spec, curriculum)
 
     match spec.cyear.raw:
         case "C2020":
