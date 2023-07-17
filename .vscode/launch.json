@@ -51,7 +51,8 @@
                 "app.main:app",
             ],
             "justMyCode": true,
-            "cwd": "${workspaceFolder}/backend"
+            "cwd": "${workspaceFolder}/backend",
+            "preLaunchTask": "Run startup tasks"
         },
         {
             "name": "Frontend (Vite)",

@@ -23,13 +23,15 @@ services:
     container_name: planner-api
     restart: always
     ports:
-      - "8000:8000"
+      - "8000:80"
     networks:
       - caddy
       - api
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./siding-mock-data:/code/siding-mock-data
     env_file:
@@ -44,6 +46,8 @@ services:
       - postgres-data:/var/lib/postgresql/data
     env_file:
       - ./database/.env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
 
   redis:
     image: redis:7

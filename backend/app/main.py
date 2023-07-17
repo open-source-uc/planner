@@ -1,15 +1,9 @@
-from multiprocessing import Lock, Manager
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 
-from . import routes, sync
+from . import routes
 from .database import prisma
-from .plan.courseinfo import (
-    course_info,
-)
-from .settings import settings
 from .sync.siding.client import client as siding_soap_client
 
 
@@ -19,11 +13,6 @@ def custom_generate_unique_id(route: APIRoute):
         return f"{route.name}"
     return f"{route.tags[0]}-{route.name}"
 
-# TODO: use redis instead
-manager = Manager()
-store = manager.dict()
-store["startup_tasks_executed"] = False
-startup_lock = Lock()
 
 app = FastAPI(generate_unique_id_function=custom_generate_unique_id)
 
@@ -36,41 +25,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-async def _startup_tasks():
-    # Sync courses if database is empty
-    await sync.run_upstream_sync(
-        courses=settings.autosync_courses,
-        curriculums=settings.autosync_curriculums,
-        offer=settings.autosync_offer,
-        courseinfo=settings.autosync_courseinfo,
-    )
-    # Prime course info cache
-    courseinfo = await course_info()
-    if not courseinfo.courses:
-        # Auto-sync database if there are no courses
-        await sync.run_upstream_sync(
-            courses=True,
-            curriculums=False,
-            offer=False,
-            courseinfo=False,
-        )
-
 
 @app.on_event("startup")  # type: ignore
 async def startup():
+    # Connect to database
     await prisma.connect()
     # Setup SIDING webservice
     siding_soap_client.on_startup()
-
-    with startup_lock:
-        if store["startup_tasks_executed"] is False:
-            # Only this worker runs startup tasks
-            await _startup_tasks()
-            store["startup_tasks_executed"] = True
-        else:
-            # This worker waits until the startup task has been completed
-            pass
-    print("worker released")
 
 
 @app.on_event("shutdown")  # type: ignore
