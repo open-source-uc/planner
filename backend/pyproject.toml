@@ -98,3 +98,9 @@ exclude = [
     "typings",
 ]
 reportMissingTypeStubs = false
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    # Ignore zeep DeprecationWarnings
+    "ignore::DeprecationWarning:zeep.*",
+]
