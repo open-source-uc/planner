@@ -13,6 +13,6 @@
  * or through migrations.
  */
 export type Cyear = {
-    raw: 'C2020';
+    raw: ('C2020' | 'C2022');
 };
 

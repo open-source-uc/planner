@@ -1,27 +1,9 @@
-import { type CurriculumErr, type Cyear, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../../client'
+import { type CurriculumErr, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../../client'
 import { type AuthState, useAuth } from '../../../contexts/auth.context'
 import { type PseudoCourseId } from './Types'
+import { validateCyear } from './planBoardFunctions'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
-
-const validateCyear = (raw: string): Cyear | null => {
-    // Ensure that an array stays in sync with a union of string literals
-    // https://stackoverflow.com/a/70694878/5884836
-    type ValueOf<T> = T[keyof T]
-    type NonEmptyArray<T> = [T, ...T[]]
-    type MustInclude<T, U extends T[]> = [T] extends [ValueOf<U>] ? U : never
-    function stringUnionToArray<T> () {
-      return <U extends NonEmptyArray<T>>(...elements: MustInclude<T, U>) => elements
-    }
-
-    const validCyears = stringUnionToArray<Cyear['raw']>()('C2020')
-    for (const cyear of validCyears) {
-      if (raw === cyear) {
-        return { raw: cyear }
-      }
-    }
-    return null
-}
 
 const findSemesterWithLeastCourses = (newClasses: ValidatablePlan['classes'], auth: AuthState | null, until: number | null): number => {
   const nextSemester = auth?.student?.next_semester ?? 0
