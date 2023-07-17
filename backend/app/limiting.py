@@ -3,6 +3,7 @@ from collections.abc import Callable
 import limits
 from fastapi import Depends, HTTPException, Request
 
+from app.settings import settings
 from app.user.auth import require_authentication
 from app.user.key import UserKey
 
