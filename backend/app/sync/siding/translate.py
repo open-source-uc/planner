@@ -77,8 +77,8 @@ async def _fetch_raw_blocks(
 ) -> list[BloqueMalla]:
     # Use a dummy major and minor if they are not specified
     # Later, remove this information
-    major = "M245" if spec.major is None else spec.major
-    minor = "N344" if spec.minor is None else spec.minor
+    major = MajorCode("M245") if spec.major is None else spec.major
+    minor = MinorCode("N344") if spec.minor is None else spec.minor
 
     # Fetch raw curriculum blocks for the given cyear-major-minor-title combination
     raw_blocks = await client.get_curriculum_for_spec(
@@ -86,7 +86,7 @@ async def _fetch_raw_blocks(
             CodCurriculum=str(spec.cyear),
             CodMajor=major,
             CodMinor=minor,
-            CodTitulo=spec.title or None,
+            CodTitulo=spec.title or "",
         ),
     )
 

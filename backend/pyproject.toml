@@ -73,6 +73,7 @@ ignore = [
     "ANN201",
     "ANN202", # "Missing return type annotation" (sometimes return types are too complex)
     "S101",   # "Use of `assert` detected" (debug assertions are useful)
+    "TCH001" # Pydantic relies heavily on runtime type reflection
 ]
 
 extend-exclude = ["typings/"]
@@ -97,3 +98,9 @@ exclude = [
     "typings",
 ]
 reportMissingTypeStubs = false
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    # Ignore zeep DeprecationWarnings
+    "ignore::DeprecationWarning:zeep.*",
+]

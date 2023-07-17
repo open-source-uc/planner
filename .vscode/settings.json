@@ -67,4 +67,5 @@
         "backend/typings/"
     ],
     "python.analysis.autoImportCompletions": true,
+    "debug.onTaskErrors": "debugAnyway",
 }

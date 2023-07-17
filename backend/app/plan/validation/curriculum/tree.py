@@ -169,7 +169,10 @@ class CurriculumCode(str):
     A code for a major or a minor.
     """
 
-    pattern: re.Pattern[str] | None = None
+    _pattern: re.Pattern[str]
+
+    def __new__(cls: type[Self], value: str) -> Self:
+        return super().__new__(cls, value)
 
     @classmethod
     def __get_validators__(
@@ -179,11 +182,11 @@ class CurriculumCode(str):
 
     @classmethod
     def validate(cls: type[Self], value: str, field: ModelField) -> Self:
-        assert cls.pattern is not None
+        assert cls._pattern is not None
         if not isinstance(value, str):  # type: ignore
             raise TypeError("string required")
         value = value.strip().upper()
-        m = cls.pattern.fullmatch(value)
+        m = cls._pattern.fullmatch(value)
         if m is None:
             raise ValueError(f"Invalid {cls.__name__} code {value}")
         return cls(value)
@@ -194,37 +197,37 @@ class CurriculumCode(str):
 
 
 class MajorCode(CurriculumCode):
-    pattern = re.compile(r"^M[0-9]{3}$")
+    _pattern = re.compile(r"^M[0-9]{3}$")
 
     @classmethod
     def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
         field_schema.update(
             description="A major code, eg. `M072` for hydraulic engineering.",
-            pattern=cls.pattern,
+            pattern=cls._pattern.pattern,
             examples=["M072", "M262", "M232"],
         )
 
 
 class MinorCode(CurriculumCode):
-    pattern = re.compile(r"^N[0-9]{3}$")
+    _pattern = re.compile(r"^N[0-9]{3}$")
 
     @classmethod
     def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
         field_schema.update(
             description="A minor code, eg. `N204` for numerical analysis.",
-            pattern=cls.pattern,
+            pattern=cls._pattern.pattern,
             examples=["N204", "N199", "N776"],
         )
 
 
 class TitleCode(CurriculumCode):
-    pattern = re.compile(r"^4[0-9]{4}(?:-[0-9])?$")
+    _pattern = re.compile(r"^4[0-9]{4}(?:-[0-9])?$")
 
     @classmethod
     def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
         field_schema.update(
             description="A title code, eg. `40007` for a computer engineering.",
-            pattern=cls.pattern,
+            pattern=cls._pattern.pattern,
             examples=["40008", "40023", "40096"],
         )
 
