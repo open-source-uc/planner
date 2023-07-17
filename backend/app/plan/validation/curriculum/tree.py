@@ -73,7 +73,7 @@ class Leaf(BaseBlock):
     # Course nodes are deduplicated by their codes.
     # However, this behavior can be controlled by the `layer` property.
     # Course nodes with different `layer` values will not be deduplicated.
-    # Useful to model the title exclusive-credit requirements.
+    # Useful to model the minor and title exclusive-credit requirements.
     # The default layer is just an empty string.
     layer: str = ""
     # Additive offset on the cost of this block.
