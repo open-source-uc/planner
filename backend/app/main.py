@@ -2,9 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 
-from . import routes
-from .database import prisma
-from .sync.siding.client import client as siding_soap_client
+from app import routes
+from app.database import prisma
+from app.sync.siding.client import client as siding_soap_client
 
 
 # Set-up operation IDs for OpenAPI

@@ -3,8 +3,8 @@ from collections.abc import Callable
 import limits
 from fastapi import Depends, HTTPException, Request
 
-from .user.auth import require_authentication
-from .user.key import UserKey
+from app.user.auth import require_authentication
+from app.user.key import UserKey
 
 LIMIT_REACHED_ERROR = HTTPException(429, detail="Too many requests")
 

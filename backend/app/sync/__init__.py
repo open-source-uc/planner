@@ -33,16 +33,16 @@ from prisma.models import (
 )
 from pydantic import ValidationError
 
-from ..plan.courseinfo import clear_course_info_cache, course_info
-from ..plan.validation.curriculum.tree import (
+from app.plan.courseinfo import clear_course_info_cache, course_info
+from app.plan.validation.curriculum.tree import (
     Curriculum,
     CurriculumSpec,
 )
-from ..settings import settings
-from ..user.auth import UserKey
-from ..user.info import StudentContext
-from . import buscacursos_dl
-from .siding import translate as siding_translate
+from app.settings import settings
+from app.user.auth import UserKey
+from app.user.info import StudentContext
+from app.sync import buscacursos_dl
+from app.sync.siding import translate as siding_translate
 
 
 async def run_upstream_sync(

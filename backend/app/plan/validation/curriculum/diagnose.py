@@ -1,20 +1,20 @@
 from collections import defaultdict
 
-from ....user.info import StudentContext
-from ...course import PseudoCourse
-from ...courseinfo import CourseInfo
-from ...plan import ValidatablePlan
-from ..diagnostic import (
+from app.user.info import StudentContext
+from app.plan.course import PseudoCourse
+from app.plan.courseinfo import CourseInfo
+from app.plan.plan import ValidatablePlan
+from app.plan.validation.diagnostic import (
     CurriculumErr,
     NoMajorMinorWarn,
     UnassignedWarn,
     ValidationResult,
 )
-from .solve import (
+from app.plan.validation.curriculum.solve import (
     SolvedCurriculum,
     solve_curriculum,
 )
-from .tree import Curriculum
+from app.plan.validation.curriculum.tree import Curriculum
 
 
 def _diagnose_blocks(
