@@ -38,8 +38,9 @@ COPY --from=app-builder /tmp/dist /srv
 # Copy Caddyfile for configuration
 COPY conf/Caddyfile /etc/caddy/Caddyfile
 
+# Healthcheck
+HEALTHCHECK CMD curl --fail http://localhost:80/ || exit 1
+
 # Run caddy using config file
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
 
-# Healthcheck
-HEALTHCHECK CMD curl --fail http://localhost:80/ || exit 1
