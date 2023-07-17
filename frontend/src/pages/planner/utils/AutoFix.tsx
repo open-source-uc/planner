@@ -73,10 +73,13 @@ const moveCourseByCode = (plan: ValidatablePlan, code: string, repIdx: number, t
           course = sem[j]
           i = plan.classes.length
           break
+        } else {
+          repIdx--
         }
       }
     }
   }
+  console.log(code, repIdx, semIdx, courseIdx, course)
   if (semIdx == null || courseIdx == null || course == null) return plan
   if (semIdx === toSem) return plan
 
@@ -94,12 +97,13 @@ interface AutoFixProps {
   diag: Diagnostic
   setValidatablePlan: Function
   getCourseDetails: Function
+  reqCourses: any
 }
 
 /**
  * Get the quick fixed for some diagnostic, if any.
  */
-const AutoFix = ({ diag, setValidatablePlan, getCourseDetails }: AutoFixProps): JSX.Element => {
+const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: AutoFixProps): JSX.Element => {
   // FIXME: TODO: Los cursos añadidos a traves del autofix les faltan los CourseDetails.
   // No me manejo bien con la implementación del frontend, lo dejo en mejores manos.
   const auth = useAuth()
@@ -151,10 +155,11 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails }: AutoFixProps): 
         buttons.push(<button key={buttons.length} className="autofix" onClick={() => {
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
+            console.log(diag.associated_to[0])
             return moveCourseByCode(plan, diag.associated_to[0].code, diag.associated_to[0].instance, pushBackTo)
           })
         }}>
-          Atrasar curso {diag.associated_to[0].code}
+          Atrasar <CourseName course={diag.associated_to[0]}/>
         </button>)
       }
       // Pull requirements forward
@@ -166,7 +171,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails }: AutoFixProps): 
             return moveCourseByCode(plan, code, 0, toSem)
           })
         }}>
-          Adelantar requisito {code}
+          Adelantar <CourseName course={reqCourses[code] ?? { code }}/>
         </button>)
       }
       // Add any absent requirements
@@ -180,7 +185,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails }: AutoFixProps): 
             return planArreglado
           })
         }}>
-          Agregar requisito {code}
+          Agregar requisito <CourseName course={reqCourses[code] ?? { code }}/>
         </button>)
       }
       return (<>{buttons}</>)
@@ -221,4 +226,3 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails }: AutoFixProps): 
 }
 
 export default AutoFix
-export { validateCyear }

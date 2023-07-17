@@ -10,7 +10,7 @@ import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react'
 import { type CourseDetails, type Major, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise } from '../../client'
-import { type CourseId, type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type PlanDigest, type ValidationDigest, isApiError, isCancelError } from './utils/Types'
+import { type CourseId, type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type PlanDigest, type ValidationDigest, isApiError, isCancelError, isCourseRequirementErr } from './utils/Types'
 import { validateCourseMovement, updateClassesState, getCoursePos } from './utils/planBoardFunctions'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
@@ -18,6 +18,7 @@ import DebugGraph from '../../components/DebugGraph'
 import deepEqual from 'fast-deep-equal'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
+import { collectRequirements } from './utils/utils'
 
 enum PlannerStatus {
   LOADING = 'LOADING',
@@ -289,6 +290,15 @@ const Planner = (): JSX.Element => {
           return 1
         }
       })
+      const reqCourses = new Set<string>()
+      for (const diag of response.diagnostics) {
+        if (isCourseRequirementErr(diag)) {
+          collectRequirements(diag.modernized_missing, reqCourses)
+        }
+      }
+      if (reqCourses.size > 0) {
+        await getCourseDetails(Array.from(reqCourses).map((code: string) => { return { code, isConcrete: true } }))
+      }
       setValidationResult(prev => {
         // Validation often gives the same results after small changes
         // Avoid triggering changes if this happens
@@ -701,6 +711,7 @@ const Planner = (): JSX.Element => {
             getCourseDetails={getCourseDetails}
             diagnostics={validationResult?.diagnostics ?? []}
             validating={plannerStatus === 'VALIDATING'}
+            courseDetails={courseDetails}
           />
         </div>
       }
