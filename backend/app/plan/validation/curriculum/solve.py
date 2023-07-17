@@ -102,7 +102,7 @@ BLOCK_ORDER_COST = 10**3
 COURSE_ORDER_COST = 10**0
 
 # Up to what cost is still considered "small" when considering filler equivalents.
-EQUIVALENT_FILLER_THRESHOLD = 10**3
+EQUIVALENT_FILLER_THRESHOLD = 10**5
 
 
 @dataclass
@@ -654,7 +654,7 @@ class SolvedCurriculum:
             out += f"  v{edge.src} -> v{edge.dst} [{attrs}];\n"
         out += '  ssink [label=""];\n'
         sink_flow = self.nodes[self.sink].flow(self)
-        sink_cap = '?' if curriculum is None else curriculum.root.cap
+        sink_cap = "?" if curriculum is None else curriculum.root.cap
         out += f'  v{self.sink} -> ssink [label="{sink_flow}/{sink_cap}"];\n'
         out += "}"
         return out
@@ -675,6 +675,8 @@ def _connect_course_instance(
     """
 
     # Figure out cost
+    if isinstance(block_path[-1], Leaf):
+        block_order += block_path[-1].cost_offset
     cost = 0
     cost += inst.flat_order * COURSE_ORDER_COST
     cost += block_order * BLOCK_ORDER_COST

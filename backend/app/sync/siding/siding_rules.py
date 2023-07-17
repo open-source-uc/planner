@@ -405,6 +405,7 @@ def _minor_transformation(courseinfo: CourseInfo, curriculum: Curriculum):
     # Agregamos suficientes creditos para poder completarlo a punta de optativos
     # complementarios
     exclusive.children.append(filler.copy())
+    exclusive.children[-1].cost_offset = 20
     exclusive.children[-1].cap = minor_credits
     exclusive.cap = minor_credits
     exclusive.name = f"{exclusive.name} ({minor_credits} créditos exclusivos)"
