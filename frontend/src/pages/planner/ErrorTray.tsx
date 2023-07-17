@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { type ClassId, type CourseRequirementErr, type CurriculumSpec, type ValidationResult } from '../../client'
 import { type PseudoCourseDetail, isCourseRequirementErr, isDiagWithAssociatedCourses } from './utils/Types'
 import { Spinner } from '../../components/Spinner'
-import AutoFix, { validateCyear, collectRequirements } from './utils/AutoFix'
+import AutoFix from './utils/AutoFix'
+import { collectRequirements, validateCyear, getCourseName, getCourseNameWithCode } from './utils/utils'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
 type RequirementExpr = CourseRequirementErr['missing']
@@ -21,54 +22,72 @@ const NoMessages = ({ open }: { open: boolean }): JSX.Element => {
   )
 }
 
-/**
- * Format a course requirement expression.
- */
-const formatReqExpr = (expr: RequirementExpr, reqCourses: any): string => {
-  // Este switch gigante esta chequeado por typescript
-  // Si no se chequean exactamente todas las opciones tira error
+interface FormattedRequirementProps {
+  expr: RequirementExpr
+  reqCourses: any
+}
+
+export const FormattedRequirement: React.FC<FormattedRequirementProps> = ({ expr, reqCourses }) => {
   switch (expr.expr) {
     case 'and': case 'or':
-      return expr.children.map(subexpr => {
-        if (subexpr.expr === 'and' || subexpr.expr === 'or') return `(${formatReqExpr(subexpr, reqCourses)})`
-        else return formatReqExpr(subexpr, reqCourses)
-      }).join(expr.expr === 'and' ? ' y ' : ' o ')
+      return (
+        <span>
+          {expr.children.map((subexpr, index) => {
+            const subexprComponent = subexpr.expr === 'and' || subexpr.expr === 'or'
+              ? <span>({<FormattedRequirement expr={subexpr} reqCourses={reqCourses} />})</span>
+              : <FormattedRequirement expr={subexpr} reqCourses={reqCourses} />
+
+            return index !== expr.children.length - 1
+              ? <span>{subexprComponent} {expr.expr === 'and' ? 'y' : 'o'} </span>
+              : subexprComponent
+          })}
+        </span>
+      )
     case 'const':
-      return expr.value ? 'true' : 'false'
+      return <span>{expr.value ? 'true' : 'false'}</span>
     case 'cred':
-      return `Créditos >= ${expr.min_credits}`
+      return <span>Créditos &gt;= {expr.min_credits}</span>
     case 'lvl':
-      return `Nivel ${expr.equal ? '=' : '!='} ${expr.level}`
+      return <span>Nivel {expr.equal ? '=' : '!='} {expr.level}</span>
     case 'school':
-      return `Facultad ${expr.equal ? '=' : '!='} ${expr.school}`
+      return <span>Facultad {expr.equal ? '=' : '!='} {expr.school}</span>
     case 'program':
-      return `Programa ${expr.equal ? '=' : '!='} ${expr.program}`
+      return <span>Programa {expr.equal ? '=' : '!='} {expr.program}</span>
     case 'career':
-      return `Carrera ${expr.equal ? '=' : '!='} ${expr.career}`
+      return <span>Carrera {expr.equal ? '=' : '!='} {expr.career}</span>
     case 'req':
-      return `${getCourseName(reqCourses[expr.code] ?? { code: expr.code })}${expr.coreq ? '(c)' : ''}`
+      return <span><CourseName course={reqCourses[expr.code] ?? { code: expr.code }} />{expr.coreq ? ' (c)' : ''}</span>
     case undefined:
-      return '?'
+      return <span>?</span>
   }
 }
 
-/**
- * Show the name of a course with the code if it is loaded, if not show the code only.
- */
-export const getCourseName = (course: ClassId | PseudoCourseDetail): string => {
-  if ('name' in course) {
-    return `"${course.name}" [${course.code}]`
+export const CourseName = ({ course }: { course: ClassId | PseudoCourseDetail }): JSX.Element => {
+  // This component version uses a ruby to show the course code
+  // This is useful to disambiguate courses with the same name
+  // (e.g. "Proyecto de Título")
+  const name = getCourseName(course)
+  if (name != null) {
+    return (
+      <abbr title={course.code}>
+        {name}
+      </abbr>
+    )
   } else {
-  // If the course details are not available, fallback to just the code
-    return course.code
+    return (
+      <span>
+        {course.code}
+      </span>
+    )
   }
 }
+
 /**
  * Format a list of courses as a human readable list of codes.
  */
 const listCourses = (courses: Array<ClassId | PseudoCourseDetail>): string => {
   const courseNames: string[] = courses.map(c => (
-    getCourseName(c)
+    getCourseNameWithCode(c)
   ))
   if (courseNames.length > 1) return `${courseNames.slice(0, -1).join(', ')} y ${courseNames[courseNames.length - 1]}`
   else if (courseNames.length === 1) return courseNames[0]
@@ -86,32 +105,32 @@ const formatCurriculum = (curr: CurriculumSpec): string => {
   return pieces.length === 0 ? '-' : pieces.join('-')
 }
 
-/**
- * Get the error message for a given diagnostic.
- */
-const formatMessage = (diag: Diagnostic, reqCourses: any): string => {
-  // Este switch gigante esta chequeado por typescript
-  // Si no se chequean exactamente todas las opciones tira error
+interface FormatMessageProps {
+  diag: Diagnostic
+  reqCourses: any
+}
+
+export const ValidationMessage: React.FC<FormatMessageProps> = ({ diag, reqCourses }) => {
   switch (diag.kind) {
     case 'creditserr':
-      return `Tienes ${diag.actual} créditos en el semestre ${diag.associated_to[0] + 1}, más de los ${diag.max_allowed} que se permiten tomar en un semestre.`
+      return <span>Tienes {diag.actual} créditos en el semestre {diag.associated_to[0] + 1}, más de los {diag.max_allowed} que se permiten tomar en un semestre.</span>
     case 'creditswarn':
-      return `Tienes ${diag.actual} créditos en el semestre ${diag.associated_to[0] + 1}, revisa que cumplas los requisitos para tomar más de ${diag.max_recommended} créditos.`
+      return <span>Tienes {diag.actual} créditos en el semestre {diag.associated_to[0] + 1}, revisa que cumplas los requisitos para tomar más de {diag.max_recommended} créditos.</span>
     case 'curr': {
       const n = diag.blocks.length
-      return `Faltan ${diag.credits} créditos ${n === 1 ? 'para el bloque' : 'entre los bloques'} ${diag.blocks.map(path => path.join(' -> ')).join(', ')}.`
+      return <span>Faltan {diag.credits} créditos {n === 1 ? 'para el bloque' : 'entre los bloques'} {diag.blocks.map(path => path.join(' -> ')).join(', ')}.</span>
     }
     case 'currdecl':
-      return `El curriculum elegido (${formatCurriculum(diag.plan)}) es distinto al que tienes declarado oficialmente (${formatCurriculum(diag.user)}).`
+      return <span>El curriculum elegido ({formatCurriculum(diag.plan)}) es distinto al que tienes declarado oficialmente ({formatCurriculum(diag.user)}).</span>
     case 'cyear':
       if (validateCyear(diag.user) != null) {
-        return `Tu versión de curriculum es ${diag.user}, pero el plan esta siendo validado para ${diag.plan.raw}.`
+        return <span>Tu versión de curriculum es {diag.user}, pero el plan esta siendo validado para {diag.plan.raw}.</span>
       } else {
-        return `Tu versión del curriculum es ${diag.user} pero no es soportada. El plan esta siendo validado para la versión de curriculum ${diag.plan.raw}.`
+        return <span>Tu versión del curriculum es {diag.user} pero no es soportada. El plan esta siendo validado para la versión de curriculum {diag.plan.raw}.</span>
       }
     case 'equiv': {
       const n = diag.associated_to.length
-      return `Falta especificar ${n} equivalencia${n === 1 ? '' : 's'} para validar correctamente tu plan.`
+      return <span>Falta especificar {n} equivalencia{n === 1 ? '' : 's'} para validar correctamente tu plan.</span>
     }
     case 'nomajor': {
       let missing = ''
@@ -120,33 +139,33 @@ const formatMessage = (diag: Diagnostic, reqCourses: any): string => {
         if (missing !== '') missing += ' y '
         missing += 'un minor'
       }
-      return `Debes seleccionar ${missing} para validar correctamente tu plan.`
+      return <span>Debes seleccionar {missing} para validar correctamente tu plan.</span>
     }
     case 'outdated':
-      return 'Esta malla no está actualizada con los cursos que has tomado.'
+      return <span>Esta malla no está actualizada con los cursos que has tomado.</span>
     case 'outdatedcurrent':
-      return 'Esta malla no está actualizada con los cursos que estás tomando.'
+      return <span>Esta malla no está actualizada con los cursos que estás tomando.</span>
     case 'req':
-      return `Faltan requisitos para el curso ${getCourseName(diag.associated_to[0])}: ${formatReqExpr(diag.modernized_missing, reqCourses)}`
+      return <span>Faltan requisitos para el curso <CourseName course={diag.associated_to[0]} />: <FormattedRequirement expr={diag.modernized_missing} reqCourses={reqCourses}/></span>
     case 'sem': {
       const sem = diag.only_available_on === 0 ? 'impares' : diag.only_available_on === 1 ? 'pares' : '?'
       const s = diag.associated_to.length !== 1
-      return `${s ? 'Los' : 'El'} curso${s ? 's' : ''} ${listCourses(diag.associated_to)} solo se dicta${s ? 'n' : ''} los semestres ${sem}.`
+      return <span>{s ? 'Los' : 'El'} curso{s ? 's' : ''} {listCourses(diag.associated_to)} solo se dicta{s ? 'n' : ''} los semestres {sem}.</span>
     }
     case 'unavail': {
       const s = diag.associated_to.length !== 1
-      return `${s ? 'Los' : 'El'} curso${s ? 's' : ''} ${listCourses(diag.associated_to)} no se ha${s ? 'n' : ''} dictado en mucho tiempo y probablemente no se siga${s ? 'n' : ''} dictando.`
+      return <span>{s ? 'Los' : 'El'} curso{s ? 's' : ''} {listCourses(diag.associated_to)} no se ha{s ? 'n' : ''} dictado en mucho tiempo y probablemente no se siga{s ? 'n' : ''} dictando.</span>
     }
     case 'unknown': {
       const s = diag.associated_to.length !== 1 ? 's' : ''
-      return `Código${s} de curso desconocido${s}: ${listCourses(diag.associated_to)}`
+      return <span>Código{s} de curso desconocido{s}: {listCourses(diag.associated_to)}</span>
     }
     case 'useless': {
       const creds: number = diag.unassigned_credits
-      return `Tienes ${creds} cŕeditos que no cuentan para tu curriculum.`
+      return <span>Tienes {creds} cŕeditos que no cuentan para tu curriculum.</span>
     }
     case undefined:
-      return '?'
+      return <span>?</span>
   }
 }
 
@@ -166,12 +185,14 @@ const Message = ({ setValidatablePlan, getCourseDetails, reqCourses, diag, key, 
   const w = !(diag.is_err ?? true)
 
   return (
-  <div key={key} className={`w-fit flex p-3 text-sm rounded-lg border ${w ? 'text-yellow-700 border-yellow-300 bg-yellow-50' : 'text-red-800 border-red-300 bg-red-50'}`} role="alert">
+  <div key={key} className={`w-fit flex py-3 px-2 text-sm rounded-lg border ${w ? 'text-yellow-700 border-yellow-300 bg-yellow-50' : 'text-red-800 border-red-300 bg-red-50'}`} role="alert">
     <svg aria-hidden="true" className="flex-shrink-0 inline-flex w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path></svg>
     <span className="sr-only">Info</span>
-    <div className={`min-w-[14rem] ml-2 ${open ? '' : 'hidden'} `}>
-      <span className={'font-semibold '}>{`${w ? 'Advertencia' : 'Error'}: `}</span>
-      {formatMessage(diag, reqCourses)}
+    <div className={open ? '' : 'hidden'}>
+      <div className={'min-w-[14rem] ml-2 mb-3'}>
+        <span className={'font-semibold '}>{`${w ? 'Advertencia' : 'Error'}: `}</span>
+        <ValidationMessage diag={diag} reqCourses={reqCourses}/>
+      </div>
       <AutoFix setValidatablePlan={setValidatablePlan} getCourseDetails={getCourseDetails} reqCourses={reqCourses} diag={diag}/>
     </div>
   </div>

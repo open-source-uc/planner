@@ -1,41 +1,9 @@
-import { type CourseRequirementErr, type CurriculumErr, type Cyear, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../../client'
+import { type CurriculumErr, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../../client'
 import { type AuthState, useAuth } from '../../../contexts/auth.context'
 import { type PseudoCourseId } from './Types'
-import { getCourseName } from '../ErrorTray'
+import { CourseName } from '../ErrorTray'
+import { validateCyear } from './utils'
 type Diagnostic = ValidationResult['diagnostics'][number]
-type RequirementExpr = CourseRequirementErr['missing']
-
-export const collectRequirements = (expr: RequirementExpr, into: Set<string>): void => {
-  switch (expr.expr) {
-    case 'and': case 'or':
-      for (const child of expr.children) {
-        collectRequirements(child, into)
-      }
-      break
-    case 'req':
-      into.add(expr.code)
-      break
-  }
-}
-
-const validateCyear = (raw: string): Cyear | null => {
-    // Ensure that an array stays in sync with a union of string literals
-    // https://stackoverflow.com/a/70694878/5884836
-    type ValueOf<T> = T[keyof T]
-    type NonEmptyArray<T> = [T, ...T[]]
-    type MustInclude<T, U extends T[]> = [T] extends [ValueOf<U>] ? U : never
-    function stringUnionToArray<T> () {
-      return <U extends NonEmptyArray<T>>(...elements: MustInclude<T, U>) => elements
-    }
-
-    const validCyears = stringUnionToArray<Cyear['raw']>()('C2020')
-    for (const cyear of validCyears) {
-      if (raw === cyear) {
-        return { raw: cyear }
-      }
-    }
-    return null
-}
 
 const findSemesterWithLeastCourses = (newClasses: ValidatablePlan['classes'], auth: AuthState | null, until: number | null): number => {
   const nextSemester = auth?.student?.next_semester ?? 0
@@ -191,7 +159,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: Aut
             return moveCourseByCode(plan, diag.associated_to[0].code, diag.associated_to[0].instance, pushBackTo)
           })
         }}>
-          Atrasar curso  {getCourseName(diag.associated_to[0])}
+          Atrasar <CourseName course={diag.associated_to[0]}/>
         </button>)
       }
       // Pull requirements forward
@@ -203,7 +171,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: Aut
             return moveCourseByCode(plan, code, 0, toSem)
           })
         }}>
-          Adelantar requisito  {getCourseName(reqCourses[code] ?? { code })}
+          Adelantar <CourseName course={reqCourses[code] ?? { code }}/>
         </button>)
       }
       // Add any absent requirements
@@ -217,7 +185,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: Aut
             return planArreglado
           })
         }}>
-          Agregar requisito {getCourseName(reqCourses[code] ?? { code })}
+          Agregar requisito <CourseName course={reqCourses[code] ?? { code }}/>
         </button>)
       }
       return (<>{buttons}</>)
@@ -258,4 +226,3 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: Aut
 }
 
 export default AutoFix
-export { validateCyear }

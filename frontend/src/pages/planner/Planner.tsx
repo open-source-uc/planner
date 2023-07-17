@@ -18,7 +18,7 @@ import DebugGraph from '../../components/DebugGraph'
 import deepEqual from 'fast-deep-equal'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { collectRequirements } from './utils/AutoFix'
+import { collectRequirements } from './utils/utils'
 
 enum PlannerStatus {
   LOADING = 'LOADING',

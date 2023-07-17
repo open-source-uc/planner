@@ -157,17 +157,5 @@
 }
 
 .autofix {
-  display: block;
-  background-color: #0002;
-  border-radius: 4px;
-  margin-top: 0.25em;
-  padding: 0.25em;
-}
-
-.autofix:hover {
-  background-color: #0003;
-}
-
-.autofix:active {
-  background-color: #0005;
+  @apply block bg-white text-gray-800 p-3 my-[0.45rem] rounded-md shadow-sm hover:shadow-md active:shadow-none w-full;
 }
