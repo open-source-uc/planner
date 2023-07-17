@@ -58,6 +58,8 @@ services:
     command: redis-server --save 60 1
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
 
   cas_mock_server:
     # Run a local cas mock server container for developing purposes.
