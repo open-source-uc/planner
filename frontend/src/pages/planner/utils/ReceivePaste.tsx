@@ -1,8 +1,8 @@
 
 import { useEffect } from 'react'
-import { DefaultService, type ConcreteId } from '../../../client'
+import { type ConcreteId, type ValidatablePlan } from '../../../client'
 
-const DebugGraph = ({ getDefaultPlan }: { getDefaultPlan: Function }): JSX.Element => {
+const ReceivePaste = ({ validatablePlan, getDefaultPlan }: { validatablePlan: ValidatablePlan | null, getDefaultPlan: Function }): JSX.Element => {
   // https://stackoverflow.com/questions/61740073/how-to-detect-keydown-anywhere-on-page-in-a-react-app
   useEffect(() => {
     const handlePaste = async (e: ClipboardEvent): Promise<void> => {
@@ -14,8 +14,7 @@ const DebugGraph = ({ getDefaultPlan }: { getDefaultPlan: Function }): JSX.Eleme
       if (semesters.length === 0 || semesters.some(sem => sem.length === 0)) return
       console.log('pasting', semesters)
       const newClasses = semesters.map(sem => sem.map((courseCode): ConcreteId => ({ is_concrete: true, code: courseCode })))
-      const basePlan = await DefaultService.emptyGuestPlan()
-      basePlan.classes = newClasses
+      const basePlan = { ...validatablePlan, classes: newClasses }
       await getDefaultPlan(basePlan)
     }
 
@@ -25,11 +24,11 @@ const DebugGraph = ({ getDefaultPlan }: { getDefaultPlan: Function }): JSX.Eleme
     return () => {
       window.removeEventListener('paste', e => { void handlePaste(e) })
     }
-  }, [])
+  }, [validatablePlan])
 
   return (
     <></>
   )
 }
 
-export default DebugGraph
+export default ReceivePaste

@@ -726,7 +726,7 @@ const Planner = (): JSX.Element => {
   return (
     <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
       <DebugGraph validatablePlan={validatablePlan} />
-      <ReceivePaste getDefaultPlan={getDefaultPlan} />
+      <ReceivePaste validatablePlan={validatablePlan} getDefaultPlan={getDefaultPlan} />
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
       <LegendModal open={isLegendModalOpen} onClose={closeLegendModal}/>
       <SavePlanModal isOpen={isSavePlanModalOpen} onClose={closeSavePlanModal} savePlan={savePlan}/>
