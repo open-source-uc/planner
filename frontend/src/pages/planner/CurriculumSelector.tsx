@@ -187,7 +187,7 @@ const CurriculumSelector = memo(function CurriculumSelector ({
         {
         (authState?.user == null) &&
         <li className={'selectorElement'}>
-          <div className={'selectorName'}>Versión Curriculum:</div>
+          <div className={'selectorName'}>Curriculum:</div>
           {curriculumSpec != null &&
             <Selector
               name="Curriculum"
