@@ -32,7 +32,7 @@
                     }],
                     "background": {
                         "activeOnStart": true,
-                        "beginsPattern": "Back-end started",
+                        "beginsPattern": "Waiting for back-end",
                         "endsPattern": "."
                     }
                 },
