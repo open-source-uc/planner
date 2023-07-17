@@ -30,6 +30,8 @@ class FillerCourse(BaseModel):
     # The order indicates if the course should be taken early or late in the
     # student's career plan.
     order: int
+    # Additive cost of using this filler course.
+    cost_offset: int = 0
 
 
 class BaseBlock(BaseModel):
@@ -49,6 +51,12 @@ class BaseBlock(BaseModel):
     name: str | None
     # What is the maximum amount of credits that this node can support.
     cap: int
+
+    def __hash__(self) -> int:
+        return id(self) // 16
+
+    def __eq__(self, rhs: "BaseBlock") -> bool:
+        return id(self) == id(rhs)
 
 
 class Combination(BaseBlock):
@@ -73,12 +81,9 @@ class Leaf(BaseBlock):
     # Course nodes are deduplicated by their codes.
     # However, this behavior can be controlled by the `layer` property.
     # Course nodes with different `layer` values will not be deduplicated.
-    # Useful to model the title exclusive-credit requirements.
+    # Useful to model the minor and title exclusive-credit requirements.
     # The default layer is just an empty string.
     layer: str = ""
-    # Additive offset on the cost of this block.
-    # Can be used to tweak the blocks that the generator chooses.
-    cost_offset: int = 0
 
 
 Block = Combination | Leaf
@@ -170,11 +175,11 @@ class Cyear(BaseModel, frozen=True):
     or through migrations.
     """
 
-    raw: Literal["C2020"]
+    raw: Literal["C2020"] | Literal["C2022"]
 
     @staticmethod
     def from_str(cyear: str) -> Optional["Cyear"]:
-        if cyear == "C2020":
+        if cyear == "C2020" or cyear == "C2022":
             return Cyear(raw=cyear)
         return None
 
@@ -187,8 +192,7 @@ class Cyear(BaseModel, frozen=True):
         return self.raw
 
 
-# TODO: Document this?
-LATEST_CYEAR = Cyear(raw="C2020")
+LATEST_CYEAR = Cyear(raw="C2022")
 
 
 class CurriculumCode(str):

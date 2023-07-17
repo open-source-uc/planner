@@ -72,11 +72,11 @@ COPY --from=builder /tmp/app /code/app
 # Copy the gunicorn config file from the builder
 COPY --from=builder /tmp/gunicorn.conf.py /code/gunicorn.conf.py
 
+# Monitor the app
+HEALTHCHECK --start-period=5m CMD curl -f http://localhost:8000/health || exit 1
+
 # Setup entrypoint
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
 
 # Expose the necessary port
 EXPOSE 8000
-
-# Setup healthcheck
-HEALTHCHECK CMD curl -f http://localhost:8000/health || exit 1

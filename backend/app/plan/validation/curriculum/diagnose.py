@@ -12,7 +12,6 @@ from ..diagnostic import (
 )
 from .solve import (
     SolvedCurriculum,
-    extract_filler_groups,
     solve_curriculum,
 )
 from .tree import Curriculum
@@ -27,25 +26,35 @@ def _diagnose_blocks(
         info = courseinfo.try_any(filler)
         return (filler, "?" if info is None else info.name)
 
-    # Check which curriculum blocks are incomplete, report that they are missing and
-    # suggest fillers for it
-    for filler_group in extract_filler_groups(g):
-        # Deduplicate filler courses with the same code
-        by_code: dict[str, PseudoCourse] = {
-            filler.course.code: filler.course
-            for filler in filler_group.fillers.values()
-        }
+    # TODO: If there are several alternatives to fill a gap in the curriculum, show all
+    # of them
 
-        out.add(
-            CurriculumErr(
-                blocks=[
-                    [block.name for block in block_path if block.name]
-                    for block_path in filler_group.blocks.values()
-                ],
-                credits=filler_group.credits,
-                fill_options=[fetch_name(filler) for filler in by_code.values()],
-            ),
-        )
+    # Get any fillers in use
+    for usable in g.usable.values():
+        for inst in usable.instances:
+            if inst.filler is None or not inst.used:
+                continue
+
+            # This filler is active, therefore something is missing
+            out.add(
+                CurriculumErr(
+                    blocks=[
+                        [
+                            block.name
+                            for block in layer.active_edge.block_path
+                            if block.name is not None
+                        ]
+                        for layer in inst.layers.values()
+                        if layer.active_edge is not None
+                    ],
+                    credits=courseinfo.get_credits(inst.filler.course) or 0,
+                    fill_options=[
+                        fetch_name(
+                            inst.filler.course,
+                        ),
+                    ],
+                ),
+            )
 
 
 def diagnose_curriculum(

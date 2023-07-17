@@ -1,7 +1,8 @@
-import { Fragment, memo } from 'react'
+import { Fragment, memo, useEffect } from 'react'
 import { Listbox, Transition } from '@headlessui/react'
 import { type Major, type Minor, type Title, type CurriculumSpec } from '../../client'
 import { type CurriculumData } from './utils/Types'
+import { toast } from 'react-toastify'
 
 interface CurriculumSelectorProps {
   planName: string
@@ -10,8 +11,10 @@ interface CurriculumSelectorProps {
   selectMajor: Function
   selectMinor: Function
   selectTitle: Function
+  selectYear: Function
 }
 interface SelectorProps {
+  name: string
   canDeselect: boolean
   data: Record<string, Major | Minor | Title>
   value: string | null | undefined
@@ -19,12 +22,22 @@ interface SelectorProps {
 }
 
 const Selector = memo(function _Selector ({
-  canDeselect,
+  name,
   data,
   value,
+  canDeselect,
   onChange
 }: SelectorProps): JSX.Element {
-  const selectedOption = value !== undefined && value !== null ? data[value] : { name: 'Por Seleccionar', code: null }
+  const selectedOption = value !== undefined && value !== null ? (data[value] ?? { name: 'Minor desconocido', code: value }) : { name: 'Por Seleccionar', code: null }
+  if (value !== undefined && value !== null && data[value] === undefined) {
+    useEffect(() => {
+      toast.warn(`Tu ${name} todavía no está soportado oficialmente. Los cursos pueden estar incorrectos, revisa dos veces.`, {
+        toastId: `UNSUPPORTED_${name}`,
+        autoClose: false,
+        position: 'bottom-left'
+      })
+    }, [value])
+  }
   return (
     <Listbox value={selectedOption.code} onChange={onChange}>
       <Listbox.Button className="selectorButton">
@@ -105,7 +118,8 @@ const CurriculumSelector = memo(function CurriculumSelector ({
   curriculumSpec,
   selectMajor,
   selectMinor,
-  selectTitle
+  selectTitle,
+  selectYear
 }: CurriculumSelectorProps): JSX.Element {
   return (
       <ul className={'curriculumSelector'}>
@@ -113,6 +127,7 @@ const CurriculumSelector = memo(function CurriculumSelector ({
           <div className={'selectorName'}>Major:</div>
           {curriculumData != null
             ? <Selector
+              name="major"
               canDeselect={false}
               data={curriculumData.majors}
               value={curriculumSpec.major}
@@ -133,6 +148,7 @@ const CurriculumSelector = memo(function CurriculumSelector ({
           <div className={'selectorName'}>Minor:</div>
           {curriculumData != null
             ? <Selector
+              name="minor"
               canDeselect={true}
               data={curriculumData.minors}
               value={curriculumSpec.minor}
@@ -153,11 +169,74 @@ const CurriculumSelector = memo(function CurriculumSelector ({
           <div className={'selectorName'}>Titulo:</div>
           {curriculumData != null &&
             <Selector
-            canDeselect={true}
+              name="título"
+              canDeselect={true}
               data={curriculumData.titles}
               value={curriculumSpec.title}
               onChange={(t) => selectTitle(t)}
             />
+          }
+        </li>
+        <li className={'selectorElement'}>
+          <div className={'selectorName'}>Año Curriculum:</div>
+          {curriculumData != null &&
+            <Listbox value={curriculumSpec.cyear?.raw} onChange={(t) => selectYear(t)}>
+            <Listbox.Button className="selectorButton">
+              <span className="inline truncate">
+                {curriculumSpec.cyear?.raw}
+              </span>
+              <svg
+                className="inline"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                width="24"
+                height="24"
+              >
+                <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M7 10l5 5 5-5"/>
+              </svg>
+            </Listbox.Button>
+            <Transition
+              as={Fragment}
+              leave="transition ease-in duration-100"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <Listbox.Options className="curriculumOptions z-40 w-40">
+                  <Listbox.Option
+                    className={({ active }) =>
+                      `curriculumOption ${active ? 'bg-place-holder text-amber-800' : 'text-gray-900'}`
+                    }
+                    value={'C2022'}
+                  >
+                  {({ selected }) => (
+                    <>
+                      <span className={'block truncate font-medium  '}>
+                        C2022
+                      </span>
+                      {selected ? <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-800">*</span> : null}
+                    </>
+                  )}
+                </Listbox.Option>
+                <Listbox.Option
+                  className={({ active }) =>
+                    `curriculumOption ${active ? 'bg-place-holder text-amber-800' : 'text-gray-900'}`
+                  }
+                  value={'C2020'}
+                >
+                  {({ selected }) => (
+                    <>
+                      <span
+                        className={`block truncate ${selected ? 'font-medium text-black' : 'font-normal'}`}
+                      >
+                        C2020
+                      </span>
+                      {selected ? <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-800">*</span> : null}
+                    </>
+                  )}
+                </Listbox.Option>
+              </Listbox.Options>
+            </Transition>
+          </Listbox>
           }
         </li>
         {planName !== '' && <li className={'inline text-md ml-3 font-semibold'}><div className={'text-sm inline mr-1 font-normal'}>Plan:</div> {planName}</li>}

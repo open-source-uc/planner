@@ -1,27 +1,10 @@
-import { type CurriculumErr, type Cyear, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../../client'
+import { type CurriculumErr, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../../client'
 import { type AuthState, useAuth } from '../../../contexts/auth.context'
 import { type PseudoCourseId } from './Types'
+import { validateCyear } from './planBoardFunctions'
+import { CourseName } from '../ErrorTray'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
-
-const validateCyear = (raw: string): Cyear | null => {
-    // Ensure that an array stays in sync with a union of string literals
-    // https://stackoverflow.com/a/70694878/5884836
-    type ValueOf<T> = T[keyof T]
-    type NonEmptyArray<T> = [T, ...T[]]
-    type MustInclude<T, U extends T[]> = [T] extends [ValueOf<U>] ? U : never
-    function stringUnionToArray<T> () {
-      return <U extends NonEmptyArray<T>>(...elements: MustInclude<T, U>) => elements
-    }
-
-    const validCyears = stringUnionToArray<Cyear['raw']>()('C2020')
-    for (const cyear of validCyears) {
-      if (raw === cyear) {
-        return { raw: cyear }
-      }
-    }
-    return null
-}
 
 const findSemesterWithLeastCourses = (newClasses: ValidatablePlan['classes'], auth: AuthState | null, until: number | null): number => {
   const nextSemester = auth?.student?.next_semester ?? 0
@@ -91,10 +74,13 @@ const moveCourseByCode = (plan: ValidatablePlan, code: string, repIdx: number, t
           course = sem[j]
           i = plan.classes.length
           break
+        } else {
+          repIdx--
         }
       }
     }
   }
+  console.log(code, repIdx, semIdx, courseIdx, course)
   if (semIdx == null || courseIdx == null || course == null) return plan
   if (semIdx === toSem) return plan
 
@@ -112,12 +98,13 @@ interface AutoFixProps {
   diag: Diagnostic
   setValidatablePlan: Function
   getCourseDetails: Function
+  reqCourses: any
 }
 
 /**
  * Get the quick fixed for some diagnostic, if any.
  */
-const AutoFix = ({ diag, setValidatablePlan, getCourseDetails }: AutoFixProps): JSX.Element => {
+const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: AutoFixProps): JSX.Element => {
   // FIXME: TODO: Los cursos añadidos a traves del autofix les faltan los CourseDetails.
   // No me manejo bien con la implementación del frontend, lo dejo en mejores manos.
   const auth = useAuth()
@@ -169,10 +156,11 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails }: AutoFixProps): 
         buttons.push(<button key={buttons.length} className="autofix" onClick={() => {
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
+            console.log(diag.associated_to[0])
             return moveCourseByCode(plan, diag.associated_to[0].code, diag.associated_to[0].instance, pushBackTo)
           })
         }}>
-          Atrasar curso {diag.associated_to[0].code}
+          Atrasar <CourseName course={diag.associated_to[0]}/>
         </button>)
       }
       // Pull requirements forward
@@ -184,7 +172,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails }: AutoFixProps): 
             return moveCourseByCode(plan, code, 0, toSem)
           })
         }}>
-          Adelantar requisito {code}
+          Adelantar <CourseName course={reqCourses[code] ?? { code }}/>
         </button>)
       }
       // Add any absent requirements
@@ -198,7 +186,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails }: AutoFixProps): 
             return planArreglado
           })
         }}>
-          Agregar requisito {code}
+          Agregar requisito <CourseName course={reqCourses[code] ?? { code }}/>
         </button>)
       }
       return (<>{buttons}</>)
@@ -239,4 +227,3 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails }: AutoFixProps): 
 }
 
 export default AutoFix
-export { validateCyear }

@@ -33,7 +33,8 @@ module.exports = {
         extendDefaults: true
       }
     ],
-    '@typescript-eslint/ban-tslint-comment': 'off'
+    '@typescript-eslint/ban-tslint-comment': 'off',
+    'react/prop-types': 'off'
   },
   settings: {
     react: {
