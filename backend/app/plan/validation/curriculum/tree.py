@@ -50,6 +50,12 @@ class BaseBlock(BaseModel):
     # What is the maximum amount of credits that this node can support.
     cap: int
 
+    def __hash__(self) -> int:
+        return id(self) // 16
+
+    def __eq__(self, rhs: "BaseBlock") -> bool:
+        return id(self) == id(rhs)
+
 
 class Combination(BaseBlock):
     """

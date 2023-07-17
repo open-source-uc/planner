@@ -83,34 +83,27 @@ def _extract_active_fillers(
     courses from the `fill_with` fields.
     """
     to_pass: list[tuple[int, PseudoCourse]] = []
-    for code, usable in g.usable.items():
-        for inst_idx, usable_inst in enumerate(usable.instances):
-            if usable_inst.filler is None:
+    for usable in g.usable.values():
+        for inst in usable.instances:
+            if inst.filler is None or not inst.used:
                 continue
-            need_flow = 0
-            for layer in g.layers.values():
-                if code not in layer.courses:
-                    continue
-                layercourse = layer.courses[code]
-                layer_inst = layercourse.instances[inst_idx]
-                if layer_inst is None or layer_inst.active_edge is None:
-                    continue
 
-                # We need a certain amount of credits in this layer
-                # Get the maximum amount of credits we need across all layers, and
-                # generate that
-                need_flow = max(need_flow, layer_inst.active_edge.active_flow)
-            if need_flow > 0:
-                # Add this course
-                to_pass.append(
-                    (
-                        usable_inst.filler.order,
-                        pseudocourse_with_credits(
-                            usable_inst.filler.course,
-                            need_flow,
-                        ),
-                    ),
-                )
+            # Find out how many credits are missing
+            missing_creds = 0
+            for layer in inst.layers.values():
+                if (
+                    layer.active_edge is not None
+                    and layer.active_edge.flow > missing_creds
+                ):
+                    missing_creds = layer.active_edge.flow
+
+            # Add this course
+            to_pass.append(
+                (
+                    inst.filler.order,
+                    pseudocourse_with_credits(inst.filler.course, missing_creds),
+                ),
+            )
 
     # Sort courses by order
     to_pass.sort()
