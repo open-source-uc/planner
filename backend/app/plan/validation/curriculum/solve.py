@@ -240,10 +240,12 @@ class SolvedCurriculum:
 
     def dump_graphviz_pretty(self, curriculum: Curriculum) -> str:
         from app.plan.validation.curriculum.dump import GraphDumper
+
         return GraphDumper(self, curriculum, "pretty").dump()
 
     def dump_graphviz_debug(self, curriculum: Curriculum) -> str:
         from app.plan.validation.curriculum.dump import GraphDumper
+
         return GraphDumper(self, curriculum, "debug").dump()
 
 
@@ -442,11 +444,9 @@ def _build_problem(
     solvable graph that represents this curriculum.
     """
 
-    t0 = t()
     g = SolvedCurriculum()
 
     # Fill in credit pool from approved courses and filler credits
-    t1 = t()
     flat_order = 0
     filler_cap: dict[str, int] = {
         code: sum(courseinfo.get_credits(filler.course) or 0 for filler in fillers)
@@ -478,11 +478,9 @@ def _build_problem(
             flat_order += 1
 
     # Build curriculum graph from the curriculum tree
-    t2 = t()
     root_flow = _build_visit(courseinfo, g, VisitState(), curriculum.root)
 
     # Ensure the maximum amount of flow reaches the root
-    t3 = t()
     g.model.AddLinearConstraint(
         cpsat.LinearExpr.Sum(root_flow),
         curriculum.root.cap,
@@ -491,7 +489,6 @@ def _build_problem(
 
     # Apply multiplicity limits
     # Each course can only be taken once (or, a certain number of times)
-    t4 = t()
     for usable in g.usable.values():
         if not usable.multiplicity or usable.total <= usable.multiplicity:
             continue
@@ -504,7 +501,6 @@ def _build_problem(
         )
 
     # Each course instance can only feed one block per layer
-    t5 = t()
     for usable in g.usable.values():
         for inst in usable.instances:
             for layer in inst.layers.values():
@@ -513,7 +509,6 @@ def _build_problem(
                 g.model.AddAtMostOne(edge.active_var for edge in layer.block_edges)
 
     # Minimize the amount of used courses
-    t6 = t()
     vars: list[cpsat.IntVar] = []
     coeffs: list[int] = []
     for usable in g.usable.values():
@@ -521,17 +516,6 @@ def _build_problem(
             vars.append(inst.used_var)
             coeffs.append(1 if inst.filler is None else 10000 + inst.filler.cost_offset)
     g.model.Minimize(cpsat.LinearExpr.WeightedSum(vars, coeffs))
-
-    t7 = t()
-
-    print(f"      {flat_order} instances")
-    print(f"      init: {p(t1 - t0)}")
-    print(f"      collect: {p(t2 - t1)}")
-    print(f"      visit: {p(t3 - t2)}")
-    print(f"      root-flow: {p(t4 - t3)}")
-    print(f"      multiplicity: {p(t5 - t4)}")
-    print(f"      no-split: {p(t6 - t5)}")
-    print(f"      cost: {p(t7 - t6)}")
 
     return g
 
@@ -584,10 +568,8 @@ def solve_curriculum(
     taken: list[list[PseudoCourse]],
 ) -> SolvedCurriculum:
     # Take the curriculum blueprint, and produce a graph for this student
-    t0 = t()
     g = _build_problem(courseinfo, curriculum, taken)
     # Solve the integer optimization problem
-    t1 = t()
     solve_status = solver.Solve(g.model)
     if not (solve_status == cpsat.OPTIMAL or solve_status == cpsat.FEASIBLE):
         dbg = f"\n{g.dump_graphviz_debug(curriculum)}"
@@ -595,23 +577,8 @@ def solve_curriculum(
             f"failed to solve curriculum: {solver.StatusName()}{dbg}",
         )
     # Extract solution from solver
-    t2 = t()
     _tag_edge_flow(solver, g)
     # Determine course superblocks
-    t3 = t()
     _tag_superblocks(g)
-    t4 = t()
-
-    print(f"    build: {p(t1 - t0)}")
-    print(f"    solve: {p(t2 - t1)}")
-    print(f"    fetch: {p(t3 - t2)}")
-    print(f"    superblock: {p(t4 - t3)}")
 
     return g
-
-
-from time import monotonic as t
-
-
-def p(t: float):
-    return f"{round(t*1000, 2)}ms"
