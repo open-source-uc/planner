@@ -19,6 +19,7 @@ import deepEqual from 'fast-deep-equal'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { collectRequirements } from './utils/utils'
+import ReceivePaste from './utils/ReceivePaste'
 
 enum PlannerStatus {
   LOADING = 'LOADING',
@@ -725,6 +726,7 @@ const Planner = (): JSX.Element => {
   return (
     <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
       <DebugGraph validatablePlan={validatablePlan} />
+      <ReceivePaste getDefaultPlan={getDefaultPlan} />
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
       <LegendModal open={isLegendModalOpen} onClose={closeLegendModal}/>
       <SavePlanModal isOpen={isSavePlanModalOpen} onClose={closeSavePlanModal} savePlan={savePlan}/>
