@@ -19,6 +19,9 @@ class FillerCourse(BaseModel):
     """
     Fill a block with a certain course or equivalency.
     If a filler course has to be used, the plan is considered incomplete.
+
+    NOTE: Remember to reset the cache in the database after any changes, either manually
+    or through migrations.
     """
 
     # The code of the filler course or equivalency.
@@ -30,6 +33,11 @@ class FillerCourse(BaseModel):
 
 
 class BaseBlock(BaseModel):
+    """
+    NOTE: Remember to reset the cache in the database after any changes, either manually
+    or through migrations.
+    """
+
     # The name of this block.
     # Used for debug purposes.
     debug_name: str
@@ -44,11 +52,21 @@ class BaseBlock(BaseModel):
 
 
 class Combination(BaseBlock):
+    """
+    NOTE: Remember to reset the cache in the database after any changes, either manually
+    or through migrations.
+    """
+
     # Children nodes that supply flow to this block.
     children: list["Block"]
 
 
 class Leaf(BaseBlock):
+    """
+    NOTE: Remember to reset the cache in the database after any changes, either manually
+    or through migrations.
+    """
+
     # A set of course codes that comprise this leaf.
     # This should include the equivalence code!
     codes: set[str]
@@ -58,6 +76,9 @@ class Leaf(BaseBlock):
     # Useful to model the title exclusive-credit requirements.
     # The default layer is just an empty string.
     layer: str = ""
+    # Additive offset on the cost of this block.
+    # Can be used to tweak the blocks that the generator chooses.
+    cost_offset: int = 0
 
 
 Block = Combination | Leaf
@@ -90,6 +111,9 @@ class Curriculum(BaseModel):
         (eg. FIS1523 -> FIS1523, IEE1523 -> FIS1523).
         If not present for a particular course, it defaults to being equivalent with
         itself.
+
+    NOTE: Remember to reset the cache in the database after any changes, either manually
+    or through migrations.
     """
 
     root: Combination
@@ -141,6 +165,9 @@ class Cyear(BaseModel, frozen=True):
     exhaustively on the `raw` field (using Python's `match` statement).
     This allows the linter to pinpoint all places that need to be updated whenever a
     new curriculum version is added.
+
+    NOTE: Remember to reset the cache in the database after any changes, either manually
+    or through migrations.
     """
 
     raw: Literal["C2020"]
@@ -169,7 +196,10 @@ class CurriculumCode(str):
     A code for a major or a minor.
     """
 
-    pattern: re.Pattern[str] | None = None
+    _pattern: re.Pattern[str]
+
+    def __new__(cls: type[Self], value: str) -> Self:
+        return super().__new__(cls, value)
 
     @classmethod
     def __get_validators__(
@@ -179,11 +209,11 @@ class CurriculumCode(str):
 
     @classmethod
     def validate(cls: type[Self], value: str, field: ModelField) -> Self:
-        assert cls.pattern is not None
+        assert cls._pattern is not None
         if not isinstance(value, str):  # type: ignore
             raise TypeError("string required")
         value = value.strip().upper()
-        m = cls.pattern.fullmatch(value)
+        m = cls._pattern.fullmatch(value)
         if m is None:
             raise ValueError(f"Invalid {cls.__name__} code {value}")
         return cls(value)
@@ -194,37 +224,37 @@ class CurriculumCode(str):
 
 
 class MajorCode(CurriculumCode):
-    pattern = re.compile(r"^M[0-9]{3}$")
+    _pattern = re.compile(r"^M[0-9]{3}$")
 
     @classmethod
     def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
         field_schema.update(
             description="A major code, eg. `M072` for hydraulic engineering.",
-            pattern=cls.pattern,
+            pattern=cls._pattern.pattern,
             examples=["M072", "M262", "M232"],
         )
 
 
 class MinorCode(CurriculumCode):
-    pattern = re.compile(r"^N[0-9]{3}$")
+    _pattern = re.compile(r"^N[0-9]{3}$")
 
     @classmethod
     def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
         field_schema.update(
             description="A minor code, eg. `N204` for numerical analysis.",
-            pattern=cls.pattern,
+            pattern=cls._pattern.pattern,
             examples=["N204", "N199", "N776"],
         )
 
 
 class TitleCode(CurriculumCode):
-    pattern = re.compile(r"^4[0-9]{4}(?:-[0-9])?$")
+    _pattern = re.compile(r"^4[0-9]{4}(?:-[0-9])?$")
 
     @classmethod
     def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
         field_schema.update(
             description="A title code, eg. `40007` for a computer engineering.",
-            pattern=cls.pattern,
+            pattern=cls._pattern.pattern,
             examples=["40008", "40023", "40096"],
         )
 
@@ -234,6 +264,9 @@ class CurriculumSpec(BaseModel, frozen=True):
     Represents a curriculum specification.
     This specification should uniquely identify a curriculum, although it contains no
     information about the curriculum itself.
+
+    NOTE: Remember to reset the cache in the database after any changes, either manually
+    or through migrations.
     """
 
     cyear: Annotated[Cyear, Field(description="The curriculum version.")]

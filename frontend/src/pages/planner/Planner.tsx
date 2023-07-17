@@ -251,6 +251,10 @@ const Planner = (): JSX.Element => {
     try {
       const courseDetails = await DefaultService.getPseudocourseDetails(Array.from(pseudocourseCodes))
       const dict = courseDetails.reduce((acc: Record<string, PseudoCourseDetail>, curr: PseudoCourseDetail) => {
+        if (curr == null) {
+          // If there is an unknown code, ignore it instead of crashing
+          return acc
+        }
         acc[curr.code] = curr
         return acc
       }, {})

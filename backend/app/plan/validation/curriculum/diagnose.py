@@ -81,7 +81,7 @@ def diagnose_curriculum(
                     unassigned += courseinfo.get_credits(course) or 0
                     if sem_i >= first_unvalidated_sem:
                         unassigned_notpassed = True
-    if unassigned_notpassed:
+    if unassigned_notpassed and unassigned > 0:
         out.add(UnassignedWarn(unassigned_credits=unassigned))
 
     # Tag each course with its associated superblock
