@@ -69,9 +69,11 @@ const AlertModal: React.FC<AlertModalProps> = ({ title, isOpen, close, disclaime
                         {title}
                       </Dialog.Title>
                       <div className="mt-4">
-                        <p className="text-sm text-gray-700">
+                        { (typeof children === 'string')
+                          ? <p className="text-sm text-gray-700">
                         {children}
                         </p>
+                          : children }
                       </div>
                     </div>
                   </div>
