@@ -102,7 +102,7 @@ BLOCK_ORDER_COST = 10**3
 COURSE_ORDER_COST = 10**0
 
 # Up to what cost is still considered "small" when considering filler equivalents.
-EQUIVALENT_FILLER_THRESHOLD = 10**3
+EQUIVALENT_FILLER_THRESHOLD = 10**5
 
 
 @dataclass
@@ -652,6 +652,10 @@ class SolvedCurriculum:
             if edge.flow == 0:
                 attrs += " style=dotted"
             out += f"  v{edge.src} -> v{edge.dst} [{attrs}];\n"
+        out += '  ssink [label=""];\n'
+        sink_flow = self.nodes[self.sink].flow(self)
+        sink_cap = "?" if curriculum is None else curriculum.root.cap
+        out += f'  v{self.sink} -> ssink [label="{sink_flow}/{sink_cap}"];\n'
         out += "}"
         return out
 
@@ -671,6 +675,8 @@ def _connect_course_instance(
     """
 
     # Figure out cost
+    if isinstance(block_path[-1], Leaf):
+        block_order += block_path[-1].cost_offset
     cost = 0
     cost += inst.flat_order * COURSE_ORDER_COST
     cost += block_order * BLOCK_ORDER_COST
@@ -759,7 +765,8 @@ def _taken_block_courses_iter(
         for inst in usable.instances
         if not (
             # Skips instances with mismatching tagged equivalence
-            isinstance(inst.original_pseudocourse, ConcreteId)
+            block.layer == ""
+            and isinstance(inst.original_pseudocourse, ConcreteId)
             and inst.original_pseudocourse.equivalence is not None
             and inst.original_pseudocourse.equivalence.code not in block.codes
         )
