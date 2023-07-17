@@ -12,7 +12,6 @@ from zeep import AsyncClient
 from zeep.transports import AsyncTransport
 
 from app.plan.validation.curriculum.tree import MajorCode, MinorCode, TitleCode
-
 from app.settings import settings
 
 

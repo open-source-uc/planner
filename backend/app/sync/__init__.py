@@ -39,10 +39,10 @@ from app.plan.validation.curriculum.tree import (
     CurriculumSpec,
 )
 from app.settings import settings
-from app.user.auth import UserKey
-from app.user.info import StudentContext
 from app.sync import buscacursos_dl
 from app.sync.siding import translate as siding_translate
+from app.user.auth import UserKey
+from app.user.info import StudentContext
 
 
 async def run_upstream_sync(

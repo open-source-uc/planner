@@ -87,7 +87,13 @@ from ortools.sat.python import cp_model as cpsat
 
 from app.plan.course import ConcreteId, EquivalenceId, PseudoCourse
 from app.plan.courseinfo import CourseInfo
-from app.plan.validation.curriculum.tree import SUPERBLOCK_PREFIX, Block, Curriculum, FillerCourse, Leaf
+from app.plan.validation.curriculum.tree import (
+    SUPERBLOCK_PREFIX,
+    Block,
+    Curriculum,
+    FillerCourse,
+    Leaf,
+)
 
 # Infinite placeholder.
 # A huge value that still fits in a 64-bit integer.
