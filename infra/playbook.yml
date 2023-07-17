@@ -8,6 +8,20 @@
     - name: "machine_name"
       prompt: "Desired machine name (e.g. staging, optional)"
       private: false
+    - name: "planner_domain"
+      prompt: "Planner domain (e.g. planner.example.com, optional)"
+      private: false
+    - name: "cas_server_url"
+      prompt: "CAS URL (e.g. https://sso.uc.cl/cas, optional)"
+      private: false
+    - name: "admin_rut"
+      prompt: "Admin RUT (e.g. 12345678-9, optional)"
+      private: false
+    - name: "siding_username"
+      prompt: "SIDING username (e.g. admin, optional)"
+      private: false
+    - name: "siding_password"
+      prompt: "SIDING password (optional)"
     - name: "netdata_token"
       prompt: "Netdata Claim Token (optional)"
     - name: "netdata_room_id"
@@ -79,19 +93,38 @@
           - chrony
           # For the tailscale selinux policy
           - selinux-policy-devel
+          # For installing the just command runner
+          - snapd
 
           # Misc
           - fish
           - fortune-mod
           - neofetch
+          - cowsay
 
         state: present
 
-    - name: Install and configure micro editor # noqa: risky-shell-pipe command-instead-of-module
+    - name: Install and configure the micro editor # noqa: risky-shell-pipe command-instead-of-module
       ansible.builtin.shell:
         cmd: curl https://getmic.ro/r | bash
         creates: /usr/bin/micro
         chdir: /usr/bin
+
+    - name: Enable snapd
+      ansible.builtin.service:
+        name: snapd.socket
+        enabled: true
+        state: started
+
+    - name: Enable classic snap support
+      ansible.builtin.command:
+        cmd: ln -s /var/lib/snapd/snap /snap
+        creates: /snap
+
+    - name: Install the just command runner
+      ansible.builtin.command:
+        cmd: snap install just --classic --edge
+        creates: /snap/bin/just
 
     - name: Enable selinux
       ansible.posix.selinux:
@@ -287,20 +320,130 @@
     - name: Clone the planner repo # noqa: latest
       ansible.builtin.git:
         repo: "https://github.com/open-source-uc/planner.git"
-        dest: /opt/planner/
+        dest: /home/planner/planner/
+      become: true
+      become_user: planner
 
-    - name: Give planner user ownership of /opt/planner
-      ansible.builtin.file:
-        path: /opt/planner
+    - name: Create backend .env
+      ansible.builtin.copy:
+        src: /home/planner/planner/backend/.env.production
+        dest: /home/planner/planner/backend/.env
         owner: planner
         group: planner
-        recurse: true
+        mode: "0644"
+        force: false
+        remote_src: true
 
-    - name: Create symlink to planner repo
-      ansible.builtin.file:
-        src: /opt/planner
-        dest: /home/planner/planner
-        state: link
+    - name: Create frontend .env
+      ansible.builtin.copy:
+        src: /home/planner/planner/frontend/.env.production
+        dest: /home/planner/planner/frontend/.env
+        owner: planner
+        group: planner
+        mode: "0644"
+        force: false
+        remote_src: true
+
+    - name: Create database .env
+      ansible.builtin.copy:
+        src: /home/planner/planner/database/.env.production
+        dest: /home/planner/planner/database/.env
+        owner: planner
+        group: planner
+        mode: "0644"
+        force: false
+        remote_src: true
+
+    - name: Set planner_url
+      ansible.builtin.set_fact:
+        planner_url: "https://{{ planner_domain }}"
+      when: planner_domain | length > 0
+
+    - name: Configure back-end URL
+      ansible.builtin.lineinfile:
+        path: /home/planner/planner/backend/.env
+        regexp: '^PLANNER_URL'
+        line: 'PLANNER_URL={{ planner_url }}'
+        state: present
+        insertafter: '^# PLANNER_URL'
+        firstmatch: true
+      when: planner_domain | length > 0
+
+    - name: Configure CAS URL
+      ansible.builtin.lineinfile:
+        path: /home/planner/planner/backend/.env
+        regexp: '^CAS_SERVER_URL'
+        line: 'CAS_SERVER_URL={{ cas_server_url }}'
+        state: present
+        insertafter: '^# CAS_SERVER_URL'
+        firstmatch: true
+      when: cas_server_url | length > 0
+
+    - name: Configure admin RUT
+      ansible.builtin.lineinfile:
+        path: /home/planner/planner/backend/.env
+        regexp: '^ADMIN_RUT'
+        line: 'ADMIN_RUT={{ admin_rut }}'
+        state: present
+        insertafter: '^# ADMIN_RUT'
+        firstmatch: true
+      when: admin_rut | length > 0
+
+    - name: Configure SIDING username
+      ansible.builtin.lineinfile:
+        path: /home/planner/planner/backend/.env
+        regexp: '^SIDING_USERNAME'
+        line: 'SIDING_USERNAME={{ siding_username }}'
+        state: present
+        insertafter: '^# SIDING_USERNAME'
+        firstmatch: true
+      when: siding_username | length > 0
+
+    - name: Configure SIDING password
+      ansible.builtin.lineinfile:
+        path: /home/planner/planner/backend/.env
+        regexp: '^SIDING_PASSWORD'
+        line: 'SIDING_PASSWORD={{ siding_password }}'
+        state: present
+        insertafter: '^# SIDING_PASSWORD'
+        firstmatch: true
+      when: siding_password | length > 0
+
+    - name: Check if JWT secret is already configured
+      ansible.builtin.command:
+        cmd: grep -q '^JWT_SECRET' /home/planner/planner/backend/.env
+      register: jwt_secret_check
+      check_mode: false
+      changed_when: false
+      failed_when: false
+
+    - name: Configure JWT secret
+      ansible.builtin.lineinfile:
+        path: /home/planner/planner/backend/.env
+        regexp: '^JWT_SECRET'
+        line: "JWT_SECRET={{ lookup('community.general.random_string', length=64, base64=True) }}"
+        state: present
+        insertafter: '^# JWT_SECRET'
+        firstmatch: true
+      when: jwt_secret_check.rc != 0
+
+    - name: Configure front-end URL
+      ansible.builtin.lineinfile:
+        path: /home/planner/planner/frontend/.env
+        regexp: '^PLANNER_URL'
+        line: 'PLANNER_URL={{ planner_url }}'
+        state: present
+      when: planner_domain | length > 0
+
+    - name: Build and start containers
+      ansible.builtin.command:
+        cmd: docker compose up --build --remove-orphans --force-recreate --detach --wait-timeout 300 --wait planner
+        chdir: /home/planner/planner/
+      environment:
+        DOCKER_BUILDKIT: 1
+      changed_when: true
+      become: true
+      become_user: planner
 
   handlers:
     - name: Restart (and enable) chronyd

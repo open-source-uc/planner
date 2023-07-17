@@ -67,4 +67,6 @@
         "backend/typings/"
     ],
     "python.analysis.autoImportCompletions": true,
+    // Ansible
+    "ansible.python.interpreterPath": "/workspaces/planner/backend/.venv/bin/python",
 }
