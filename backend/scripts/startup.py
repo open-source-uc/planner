@@ -5,6 +5,7 @@ from app.plan.courseinfo import (
 )
 from app.settings import settings
 from app.sync.siding.client import client
+from prisma.models import Major as DbMajor
 
 
 # Run upstream sync on startup
@@ -12,23 +13,22 @@ async def sync_and_cache_curricular_data():
     async with prisma:
         client.on_startup()
         try:
-            # Sync courses if database is empty
+            # Autosync courses if enabled
             await sync.run_upstream_sync(
                 courses=settings.autosync_courses,
                 curriculums=settings.autosync_curriculums,
                 offer=settings.autosync_offer,
                 courseinfo=settings.autosync_courseinfo,
             )
-            # Prime course info cache
+            # Auto-sync database if empty
             courseinfo = await course_info()
-            if not courseinfo.courses:
-                # Auto-sync database if there are no courses
-                await sync.run_upstream_sync(
-                    courses=True,
-                    curriculums=False,
-                    offer=False,
-                    courseinfo=False,
-                )
+            offer_sample = await DbMajor.prisma().find_first()
+            await sync.run_upstream_sync(
+                courses=len(courseinfo.courses) == 0,
+                curriculums=False,
+                offer=offer_sample is None,
+                courseinfo=False,
+            )
         finally:
             if client.soap_client:
                 client.on_shutdown()
