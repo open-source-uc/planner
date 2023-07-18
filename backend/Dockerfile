@@ -52,7 +52,7 @@ COPY .env /app/.env
 # Generate the Prisma client
 RUN prisma generate
 
-ARG PRE_START_PATH=/app/scripts/prestart.sh
+ENV PRE_START_PATH /app/scripts/prestart.sh
 
 # Monitor the app
 HEALTHCHECK --start-period=5m CMD curl -f http://localhost:80/health || exit 1

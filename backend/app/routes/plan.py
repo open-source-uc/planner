@@ -68,7 +68,7 @@ async def empty_guest_plan() -> ValidatablePlan:
 @router.post("/validate", response_model=ValidationResult)
 async def validate_guest_plan(
     plan: ValidatablePlan,
-    _limited: None = Depends(ratelimit_guest("5/5second")),
+    _limited: None = Depends(ratelimit_guest("8/5second")),
 ) -> ValidationResult:
     """
     Validate a plan, generating diagnostics.
@@ -109,7 +109,7 @@ async def validate_plan_for_any_user(
 async def get_curriculum_validation_graph(
     plan: ValidatablePlan,
     mode: str,
-    _limited: None = Depends(ratelimit_guest("7/5second")),
+    _limited: None = Depends(ratelimit_guest("8/5second")),
 ) -> str:
     """
     Get the curriculum validation graph for a certain plan, in Graphviz DOT format.
