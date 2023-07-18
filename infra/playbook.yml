@@ -447,6 +447,13 @@
         state: present
       when: planner_domain | length > 0
 
+    - name: Create caddy_data volume
+      ansible.builtin.command:
+        cmd: docker volume create caddy_data
+        creates: /var/lib/docker/volumes/caddy_data/
+      become: true
+      become_user: planner
+
     - name: Build and start containers
       ansible.builtin.command:
         cmd: docker compose up --build --remove-orphans --force-recreate --detach --wait-timeout 300 --wait planner
