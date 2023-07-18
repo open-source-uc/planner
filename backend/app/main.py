@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.params import Depends
 from fastapi.routing import APIRoute
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from app import routes
@@ -106,11 +106,13 @@ async def root():
 
 
 class HealthResponse(BaseModel):
-    detail: dict[str, Literal["unhealthy", "healthy"]] = {
-        "database": "unhealthy",
-        "redis": "unhealthy",
-        "sidingOrMock": "unhealthy",
-    }
+    detail: dict[str, Literal["unhealthy", "healthy"]] = Field(
+        default_factory=lambda: {
+            "database": "unhealthy",
+            "redis": "unhealthy",
+            "sidingOrMock": "unhealthy",
+        },
+    )
 
 
 @app.get("/health")
