@@ -178,18 +178,18 @@ const Planner = (): JSX.Element => {
     }
   }
 
-  async function getDefaultPlan (referenceValidatablePlan?: ValidatablePlan): Promise<void> {
+  async function getDefaultPlan (referenceValidatablePlan?: ValidatablePlan, truncateAt?: number): Promise<void> {
     try {
       console.log('Getting Basic Plan...')
       let baseValidatablePlan
       if (referenceValidatablePlan === undefined) {
         baseValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
       } else {
-        baseValidatablePlan = { ...referenceValidatablePlan }
-        baseValidatablePlan.classes = [...referenceValidatablePlan.classes]
+        baseValidatablePlan = { ...referenceValidatablePlan, classes: [...referenceValidatablePlan.classes] }
       }
       // truncate the validatablePlan to the passed courses
-      baseValidatablePlan.classes.splice(authState?.student?.next_semester ?? 0)
+      truncateAt = truncateAt ?? (authState?.student?.next_semester ?? 0)
+      baseValidatablePlan.classes.splice(truncateAt)
       // truncate the validatablePlan to the last not empty semester
       while (baseValidatablePlan.classes.length > 0 && baseValidatablePlan.classes[baseValidatablePlan.classes.length - 1].length === 0) {
         baseValidatablePlan.classes.pop()

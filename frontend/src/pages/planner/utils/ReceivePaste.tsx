@@ -15,16 +15,18 @@ const ReceivePaste = ({ validatablePlan, getDefaultPlan }: { validatablePlan: Va
       console.log('pasting', semesters)
       const newClasses = semesters.map(sem => sem.map((courseCode): ConcreteId => ({ is_concrete: true, code: courseCode })))
       const basePlan = { ...validatablePlan, classes: newClasses }
-      await getDefaultPlan(basePlan)
+      await getDefaultPlan(basePlan, newClasses.length)
     }
 
-    window.addEventListener('paste', e => { void handlePaste(e) })
+    const wrapper = (e: ClipboardEvent): void => { void handlePaste(e) }
+
+    window.addEventListener('paste', wrapper)
 
     // Don't forget to clean up
     return () => {
-      window.removeEventListener('paste', e => { void handlePaste(e) })
+      window.removeEventListener('paste', wrapper)
     }
-  }, [validatablePlan])
+  }, [validatablePlan, getDefaultPlan])
 
   return (
     <></>
