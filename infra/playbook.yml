@@ -122,6 +122,14 @@
         enabled: true
         state: started
 
+    - name: Wait for snapd to finish seeding (snap wait system seed.loaded)
+      ansible.builtin.command:
+        cmd: snap wait system seed.loaded
+      check_mode: false
+      changed_when: false
+      failed_when: false
+
+
     - name: Enable classic snap support
       ansible.builtin.command:
         cmd: ln -s /var/lib/snapd/snap /snap
