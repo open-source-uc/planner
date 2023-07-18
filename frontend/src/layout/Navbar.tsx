@@ -1,6 +1,5 @@
 import { Link, useRouter } from '@tanstack/react-router'
 import { useAuth } from '../contexts/auth.context'
-import { ReactComponent as Logo } from '../assets/PanguiPath.svg'
 import { memo } from 'react'
 import { hideLogin } from '../utils/featureFlags'
 
@@ -12,7 +11,7 @@ function Navbar (): JSX.Element {
     <nav className="bg-gray border-slate-200 px-2 sm:px-4 py-2.5 rounded border">
       <div className="container flex flex-wrap items-center justify-between mx-auto">
         <Link to="/" className="self-center">
-          <Logo className="h-20" title="Logo" />
+          <img src="/logo.png" className="h-20" alt="Logo" />
         </Link>
 
         <div className="hidden w-full md:block md:w-auto" id="navbar-default">
