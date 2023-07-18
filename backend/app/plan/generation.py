@@ -203,16 +203,21 @@ def _find_hidden_requirements(
     return options
 
 
-def _reselect_equivs(courseinfo: CourseInfo, plan: ValidatablePlan, reference: ValidatablePlan):
+def _reselect_equivs(
+    courseinfo: CourseInfo, plan: ValidatablePlan, reference: ValidatablePlan,
+):
     # Collect equivalence choices by equivalence name
     by_name: defaultdict[str, list[ConcreteId]] = defaultdict(list)
     for ref_sem in reference.classes:
         for ref_course in ref_sem:
-            if isinstance(ref_course, ConcreteId) and ref_course.equivalence is not None:
+            if (
+                isinstance(ref_course, ConcreteId)
+                and ref_course.equivalence is not None
+            ):
                 ref_equiv = ref_course.equivalence
-                info = courseinfo.try_equiv(ref_equiv.code)
-                if info is not None:
-                    by_name[info.name].append(ref_course)
+                equiv_info = courseinfo.try_equiv(ref_equiv.code)
+                if equiv_info is not None:
+                    by_name[equiv_info.name].append(ref_course)
 
     # Re-select equivalences in courses_to_pass if they match reference choices
     for sem in plan.classes:
@@ -223,13 +228,17 @@ def _reselect_equivs(courseinfo: CourseInfo, plan: ValidatablePlan, reference: V
             if not isinstance(equiv, EquivalenceId):
                 continue
 
-            info = courseinfo.try_equiv(equiv.code)
-            if info is None or info.name not in by_name:
+            equiv_info = courseinfo.try_equiv(equiv.code)
+            if equiv_info is None or equiv_info.name not in by_name:
                 continue
-            for ref_choice in by_name[info.name]:
-                sem[idx] = ref_choice.copy(update={
-                    "equivalence": equiv,
-                })
+            for ref_choice in by_name[equiv_info.name]:
+                if ref_choice.code in equiv_info.courses:
+                    sem[idx] = ref_choice.copy(
+                        update={
+                            "equivalence": equiv,
+                        },
+                    )
+                    break
 
 
 def _compute_courses_to_pass(
@@ -451,7 +460,9 @@ async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
     )
 
 
-async def generate_recommended_plan(passed: ValidatablePlan, reference: ValidatablePlan | None = None):
+async def generate_recommended_plan(
+    passed: ValidatablePlan, reference: ValidatablePlan | None = None,
+):
     """
     Take a base plan that the user has already passed, and recommend a plan that should
     lead to the user getting the title in whatever major-minor-career they chose.
