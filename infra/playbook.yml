@@ -177,6 +177,72 @@
         - Load Tailscale selinux policy
         - Start tailscale
 
+    - name: Use higher default receive buffer
+      ansible.posix.sysctl:
+        name: net.core.rmem_default
+        value: 31457280
+        state: present
+
+    - name: Increase maximum receive buffer
+      ansible.posix.sysctl:
+        name: net.core.rmem_max
+        value: 12582912
+        state: present
+
+    - name: Use higher default send buffer
+      ansible.posix.sysctl:
+        name: net.core.wmem_default
+        value: 31457280
+        state: present
+
+    - name: Increase maximum send buffer size
+      ansible.posix.sysctl:
+        name: net.core.wmem_max
+        value: 12582912
+        state: present
+
+    - name: Increase TCP buffer space
+      ansible.posix.sysctl:
+        name: net.ipv4.tcp_mem
+        value: 65536 131072 262144
+        state: present
+
+    - name: Increase UDP buffer space
+      ansible.posix.sysctl:
+        name: net.ipv4.udp_mem
+        value: 65536 131072 262144
+        state: present
+
+    - name: Increase TCP read buffer
+      ansible.posix.sysctl:
+        name: net.ipv4.tcp_rmem
+        value: 8192 87380 16777216
+        state: present
+
+    - name: Increase TCP write buffer
+      ansible.posix.sysctl:
+        name: net.ipv4.tcp_wmem
+        value: 8192 65536 16777216
+        state: present
+
+    - name: Increase UDP read buffer
+      ansible.posix.sysctl:
+        name: net.ipv4.udp_rmem_min
+        value: 16384
+        state: present
+
+    - name: Increase UDP write buffer
+      ansible.posix.sysctl:
+        name: net.ipv4.udp_wmem_min
+        value: 16384
+        state: present
+
+    - name: Increase somaxconn
+      ansible.posix.sysctl:
+        name: net.core.somaxconn
+        value: 4096
+        state: present
+
     - name: Enable memory overcommit (for Redis)
       ansible.posix.sysctl:
         name: vm.overcommit_memory
