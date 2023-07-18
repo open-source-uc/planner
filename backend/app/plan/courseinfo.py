@@ -188,7 +188,8 @@ async def add_equivalence(equiv: EquivDetails):
             f"({i}, $1, ${2+i})",
         )  # NOTE: No user-input is injected here
         query_args.append(code)
-    assert value_tuples
+    if len(value_tuples) == 0:
+        raise Exception(f"equivalence {equiv.code} has no courses?")
     await EquivalenceCourse.prisma().query_raw(
         f"""
         INSERT INTO "EquivalenceCourse" (index, equiv_code, course_code)

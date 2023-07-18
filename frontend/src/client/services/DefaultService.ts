@@ -2,6 +2,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { AccessLevelOverview } from '../models/AccessLevelOverview';
+import type { Body_generate_plan } from '../models/Body_generate_plan';
 import type { CourseDetails } from '../models/CourseDetails';
 import type { CourseFilter } from '../models/CourseFilter';
 import type { CourseOverview } from '../models/CourseOverview';
@@ -460,7 +461,7 @@ export class DefaultService {
      * @throws ApiError
      */
     public static generatePlan(
-        requestBody: ValidatablePlan,
+        requestBody: Body_generate_plan,
     ): CancelablePromise<ValidatablePlan> {
         return __request(OpenAPI, {
             method: 'POST',

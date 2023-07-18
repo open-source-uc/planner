@@ -126,13 +126,14 @@ async def get_curriculum_validation_graph(
 @router.post("/generate", response_model=ValidatablePlan)
 async def generate_plan(
     passed: ValidatablePlan,
+    reference: ValidatablePlan | None = None,
     _limited: UserKey = Depends(ratelimit_guest("15/minute")),
 ):
     """
     From a base plan, generate a new plan that should lead the user to earn their title
     of choice.
     """
-    return await generate_recommended_plan(passed)
+    return await generate_recommended_plan(passed, reference)
 
 
 @router.post("/storage", response_model=PlanView)

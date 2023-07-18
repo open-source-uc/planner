@@ -31,6 +31,7 @@ from app.plan.validation.curriculum.solve import (
 )
 from app.plan.validation.curriculum.tree import (
     LATEST_CYEAR,
+    Curriculum,
     CurriculumSpec,
     Cyear,
 )
@@ -201,6 +202,50 @@ def _find_hidden_requirements(
         option_courses.sort()
     options.sort(key=len)
     return options
+
+
+def _reselect_equivs(
+    courseinfo: CourseInfo,
+    curriculum: Curriculum,
+    reference: ValidatablePlan,
+):
+    """
+    Update the filler equivalences in `curriculum` to match choices in `reference`.
+    """
+
+    # Collect equivalence choices by equivalence name
+    by_name: defaultdict[str, list[ConcreteId]] = defaultdict(list)
+    for ref_sem in reference.classes:
+        for ref_course in ref_sem:
+            if (
+                isinstance(ref_course, ConcreteId)
+                and ref_course.equivalence is not None
+            ):
+                ref_equiv = ref_course.equivalence
+                equiv_info = courseinfo.try_equiv(ref_equiv.code)
+                if equiv_info is not None:
+                    by_name[equiv_info.name].append(ref_course)
+
+    # Re-select filler equivalences in courses_to_pass if they match reference choices
+    for fillers in curriculum.fillers.values():
+        for filler in fillers:
+            equiv = filler.course
+            if isinstance(equiv, ConcreteId) and equiv.equivalence is not None:
+                equiv = equiv
+            if not isinstance(equiv, EquivalenceId):
+                continue
+
+            equiv_info = courseinfo.try_equiv(equiv.code)
+            if equiv_info is None or equiv_info.name not in by_name:
+                continue
+            for ref_choice in by_name[equiv_info.name]:
+                if ref_choice.code in equiv_info.courses:
+                    filler.course = ref_choice.copy(
+                        update={
+                            "equivalence": equiv,
+                        },
+                    )
+                    break
 
 
 def _compute_courses_to_pass(
@@ -422,7 +467,10 @@ async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
     )
 
 
-async def generate_recommended_plan(passed: ValidatablePlan):
+async def generate_recommended_plan(
+    passed: ValidatablePlan,
+    reference: ValidatablePlan | None = None,
+):
     """
     Take a base plan that the user has already passed, and recommend a plan that should
     lead to the user getting the title in whatever major-minor-career they chose.
@@ -433,6 +481,10 @@ async def generate_recommended_plan(passed: ValidatablePlan):
     courseinfo = await course_info()
     curriculum = await get_curriculum(passed.curriculum)
     t1 = t()
+
+    # Re-select courses from equivalences using reference plan
+    if reference is not None:
+        _reselect_equivs(courseinfo, curriculum, reference)
 
     # Solve the curriculum to determine which courses have not been passed yet (and need
     # to be passed)

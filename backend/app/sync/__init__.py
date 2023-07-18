@@ -143,6 +143,13 @@ async def _get_curriculum_piece(spec: CurriculumSpec) -> Curriculum:
 
 
 async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
+    """
+    Get the full curriculum definition for a particular curriculum spec.
+
+    NOTE: Some users of this function, in particular `app.plan.generation`, modify the
+    returned `Curriculum`.
+    Therefore, each call to `get_curriculum` should result in a fresh curriculum.
+    """
     out = Curriculum.empty()
 
     # Fetch major (or common plan)

@@ -188,8 +188,6 @@ class GraphDumper:
 
         self.out += "digraph {\n"
 
-        self.visit(self.curriculum.root)
-
         vid, flow = self.visit(self.curriculum.root)
         sink = self.mknode("")
         self.mkflowedge(vid, sink, flow, self.curriculum.root.cap)
