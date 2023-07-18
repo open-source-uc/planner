@@ -10,8 +10,9 @@ from pathlib import Path
 from app.settings import settings
 
 DATE_FORMAT = "%y-%b-%d %H:%M:%S"
-LOGGER_FORMAT = "%(levelname)s[%(name)s]: \t%(message)s"
 LOGGER_FILE = Path(settings.log_path)  # where log is stored
+
+SIMPLE_FORMAT = "%(levelname)s[%(name)s]: \t%(message)s"
 
 
 def production_handlers() -> list[logging.Handler]:
@@ -20,7 +21,7 @@ def production_handlers() -> list[logging.Handler]:
     For production.
     """
 
-    handler_format = logging.Formatter(LOGGER_FORMAT, datefmt=DATE_FORMAT)
+    handler_format = logging.Formatter(SIMPLE_FORMAT, datefmt=DATE_FORMAT)
 
     # Stdout
     stdout_handler = logging.StreamHandler(sys.stdout)
@@ -37,15 +38,21 @@ def debug_handlers() -> list[logging.Handler]:
     from rich.logging import RichHandler
 
     output_file_handler = logging.FileHandler(LOGGER_FILE)
-    handler_format = logging.Formatter(LOGGER_FORMAT, datefmt=DATE_FORMAT)
-    output_file_handler.setFormatter(handler_format)
+    output_file_handler.setFormatter(
+        logging.Formatter(SIMPLE_FORMAT, datefmt=DATE_FORMAT),
+    )
+
+    rich_stdout_handler = RichHandler(
+        rich_tracebacks=True,
+        tracebacks_show_locals=False,
+        show_time=False,
+    )
+    rich_stdout_handler.setFormatter(
+        logging.Formatter("%(name)s: \t%(message)s", datefmt=DATE_FORMAT),
+    )
 
     return [
-        RichHandler(
-            rich_tracebacks=True,
-            tracebacks_show_locals=True,
-            show_time=False,
-        ),
+        rich_stdout_handler,
         output_file_handler,
     ]
 
