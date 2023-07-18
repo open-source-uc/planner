@@ -41,6 +41,9 @@ class BcSection(BaseModel):
 
 class BcCourseInstance(BaseModel):
     name: str
+    credits: int
+    area: str
+    category: str
     school: str
     sections: dict[str, BcSection]
 
@@ -55,8 +58,6 @@ class BcCourse(BaseModel):
     program: str
     school: str
     relevance: str
-    area: str | None
-    category: str | None
     instances: dict[str, BcCourseInstance]
 
 
@@ -310,8 +311,12 @@ def _translate_courses(data: BcData) -> list[CourseCreateWithoutRelationsInput]:
                     "canonical_equiv": code,
                     "program": c.program,
                     "school": c.school,
-                    "area": None if c.area == "" else c.area,
-                    "category": None if c.category == "" else c.category,
+                    "area": c.instances[max(c.instances)].area or None
+                    if c.instances
+                    else None,
+                    "category": c.instances[max(c.instances)].category or None
+                    if c.instances
+                    else None,
                     "is_relevant": c.relevance == "Vigente",
                     "is_available": any(available_in_semester),
                     "semestrality_first": available_in_semester[0],
