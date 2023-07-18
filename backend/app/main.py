@@ -14,6 +14,7 @@ def custom_generate_unique_id(route: APIRoute):
         return f"{route.name}"
     return f"{route.tags[0]}-{route.name}"
 
+
 sentry_sdk.init(
     dsn="https://618e647e028148928aab01575b19d160@o4505547874172928.ingest.sentry.io/4505547903336448",
     # Set traces_sample_rate to 1.0 to capture 100%
