@@ -1,4 +1,5 @@
 import { defineConfig, loadEnv } from 'vite'
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 import react from '@vitejs/plugin-react'
 import eslintPlugin from '@nabla/vite-plugin-eslint'
 import svgr from 'vite-plugin-svgr'
@@ -11,6 +12,9 @@ export default defineConfig(({ command, mode }) => {
     throw new Error('BACKEND_API_URL environment variable not set during build')
   }
   return {
+    build: {
+      sourcemap: true,
+    },
     server: {
       port: 3000,
       proxy: {
@@ -24,6 +28,10 @@ export default defineConfig(({ command, mode }) => {
         usePolling: true
       }
     },
-    plugins: [react(), eslintPlugin(), svgr()]
+    plugins: [react(), eslintPlugin(), svgr(), sentryVitePlugin({
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      org: "planner-ing-uc",
+      project: "planner-frontend",
+    })],
   }
 })
