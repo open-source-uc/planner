@@ -40,7 +40,8 @@
 				"ms-python.python",
 				"charliermarsh.ruff",
 				"kokakiwi.vscode-just",
-				"redhat.ansible"
+				"redhat.ansible",
+				"github.vscode-github-actions"
 			],
 			"settings": {
 				"terminal.integrated.env.linux": {

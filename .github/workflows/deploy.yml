@@ -26,7 +26,7 @@ jobs:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
           mkdir -p ~/.ssh
-          MACHINE_IP="$(tailscale ip -6 $MACHINE)"
+          MACHINE_IP="$(tailscale ip -4 $MACHINE)"
           ssh-keyscan $MACHINE_IP >> ~/.ssh/known_hosts
           echo "$SSH_KEY" | tr -d '\r' > ~/.ssh/key
           chmod 600 ~/.ssh/key

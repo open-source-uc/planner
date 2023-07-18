@@ -9,6 +9,7 @@
         "bradlc.vscode-tailwindcss",
         "austenc.tailwind-docs",
         "dbaeumer.vscode-eslint",
-        "redhat.ansible"
+        "redhat.ansible",
+        "github.vscode-github-actions"
     ]
 }
