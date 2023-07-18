@@ -15,7 +15,7 @@
 	# The handle_path performs path rewriting 
 	# to strip the /api prefix
 	handle_path /api/* {
-		reverse_proxy api:8000
+		reverse_proxy api:80
 	}
 
 	# Security headers
