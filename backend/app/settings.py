@@ -97,7 +97,7 @@ class Settings(BaseSettings):
     #   write the recorded responses.
     # 4. A JSON file will be saved with previous mock data (if any) + the recorded data.
     #   Note that the file may contain sensitive data!
-    siding_record_path: Path = Path("")
+    siding_record_path: Path | Literal[""] = ""
 
     # Time to expire cached student information in seconds.
     student_info_expire: float = 1800
