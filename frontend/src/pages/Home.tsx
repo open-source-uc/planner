@@ -8,8 +8,8 @@ import { hideLogin } from '../utils/featureFlags'
 
 const AlertMobileUssage = (): JSX.Element => {
   return (
-    <div className='lg:hidden mx-auto my-4 text-lg text-center bg-red-100 border-red-600 text-red-950 p-2 border-2 rounded max-w-lg'>
-      Importante: La plataforma aún no está optimizada para pantallas pequeñas. Te recomendamos usar un computador.
+    <div className='lg:hidden mx-auto w-[90%] my-4 mb-8 text-lg text-center bg-red-100 border-red-600 text-red-950 p-2 border-2 rounded max-w-lg'>
+      <span className='font-bold'>Importante:</span> La plataforma aún no está optimizada para pantallas pequeñas. Te recomendamos usar un computador.
     </div>
   )
 }
