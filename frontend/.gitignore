@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 .eslintcache
+
+# Sentry Auth Token
+.env.sentry-build-plugin

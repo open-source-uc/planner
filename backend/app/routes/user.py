@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends
 
-from .. import sync
-from ..user.auth import (
+from app import sync
+from app.user.auth import (
     login_cas,
     require_admin_auth,
     require_authentication,
     require_mod_auth,
 )
-from ..user.info import StudentContext
-from ..user.key import AdminKey, ModKey, UserKey
+from app.user.info import StudentContext
+from app.user.key import AdminKey, ModKey, UserKey
 
 router = APIRouter(prefix="/user")
 

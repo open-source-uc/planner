@@ -11,8 +11,8 @@ from jose import ExpiredSignatureError, JWTError, jwt
 from prisma.models import AccessLevel as DbAccessLevel
 from pydantic import BaseModel
 
-from ..settings import settings
-from .key import AdminKey, ModKey, UserKey
+from app.settings import settings
+from app.user.key import AdminKey, ModKey, UserKey
 
 # CASClient abuses class constructors (__new__),
 # so we are using the versioned class directly

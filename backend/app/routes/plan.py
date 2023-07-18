@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends
 
-from .. import sync
-from ..limiting import ratelimit_guest, ratelimit_user
-from ..plan.courseinfo import (
+from app import sync
+from app.limiting import ratelimit_guest, ratelimit_user
+from app.plan.courseinfo import (
     course_info,
 )
-from ..plan.generation import generate_empty_plan, generate_recommended_plan
-from ..plan.plan import ValidatablePlan
-from ..plan.storage import (
+from app.plan.generation import generate_empty_plan, generate_recommended_plan
+from app.plan.plan import ValidatablePlan
+from app.plan.storage import (
     LowDetailPlanView,
     PlanView,
     get_plan_details,
@@ -17,10 +17,10 @@ from ..plan.storage import (
     remove_plan,
     store_plan,
 )
-from ..plan.validation.curriculum.solve import solve_curriculum
-from ..plan.validation.diagnostic import ValidationResult
-from ..plan.validation.validate import diagnose_plan
-from ..user.auth import (
+from app.plan.validation.curriculum.solve import solve_curriculum
+from app.plan.validation.diagnostic import ValidationResult
+from app.plan.validation.validate import diagnose_plan
+from app.user.auth import (
     ModKey,
     UserKey,
     require_authentication,
@@ -68,7 +68,7 @@ async def empty_guest_plan() -> ValidatablePlan:
 @router.post("/validate", response_model=ValidationResult)
 async def validate_guest_plan(
     plan: ValidatablePlan,
-    _limited: None = Depends(ratelimit_guest("5/5second")),
+    _limited: None = Depends(ratelimit_guest("8/5second")),
 ) -> ValidationResult:
     """
     Validate a plan, generating diagnostics.
@@ -109,7 +109,7 @@ async def validate_plan_for_any_user(
 async def get_curriculum_validation_graph(
     plan: ValidatablePlan,
     mode: str,
-    _limited: None = Depends(ratelimit_guest("7/5second")),
+    _limited: None = Depends(ratelimit_guest("8/5second")),
 ) -> str:
     """
     Get the curriculum validation graph for a certain plan, in Graphviz DOT format.

@@ -1,14 +1,11 @@
+import sentry_sdk
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 
-from . import routes, sync
-from .database import prisma
-from .plan.courseinfo import (
-    course_info,
-)
-from .settings import settings
-from .sync.siding.client import client as siding_soap_client
+from app import routes
+from app.database import prisma
+from app.sync.siding.client import client as siding_soap_client
 
 
 # Set-up operation IDs for OpenAPI
@@ -17,6 +14,15 @@ def custom_generate_unique_id(route: APIRoute):
         return f"{route.name}"
     return f"{route.tags[0]}-{route.name}"
 
+
+sentry_sdk.init(
+    dsn="https://618e647e028148928aab01575b19d160@o4505547874172928.ingest.sentry.io/4505547903336448",
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    # We recommend adjusting this value in production,
+    traces_sample_rate=1.0,
+    profiles_sample_rate=1.0,
+)
 
 app = FastAPI(generate_unique_id_function=custom_generate_unique_id)
 
@@ -32,26 +38,10 @@ app.add_middleware(
 
 @app.on_event("startup")  # type: ignore
 async def startup():
+    # Connect to database
     await prisma.connect()
     # Setup SIDING webservice
     siding_soap_client.on_startup()
-    # Sync courses if database is empty
-    await sync.run_upstream_sync(
-        courses=settings.autosync_courses,
-        curriculums=settings.autosync_curriculums,
-        offer=settings.autosync_offer,
-        courseinfo=settings.autosync_courseinfo,
-    )
-    # Prime course info cache
-    courseinfo = await course_info()
-    if not courseinfo.courses:
-        # Auto-sync database if there are no courses
-        await sync.run_upstream_sync(
-            courses=True,
-            curriculums=False,
-            offer=False,
-            courseinfo=False,
-        )
 
 
 @app.on_event("shutdown")  # type: ignore

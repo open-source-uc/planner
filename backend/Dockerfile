@@ -1,78 +1,58 @@
 # First, build the dependencies
-FROM python:3.11-slim as builder
+FROM python:3.11 as requirements-stage
+
+# Set working directory
+WORKDIR /tmp
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
-# Why use venv? https://pmac.io/2019/02/multi-stage-dockerfile-and-python-virtualenv/
-ENV VIRTUAL_ENV=/venv
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-
-# Install system packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git curl build-essential \
-    && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry
 RUN pip install --no-cache-dir --upgrade poetry
-
-# Create and activate a virtual environment
-RUN python -m venv $VIRTUAL_ENV
-
-# Set working directory
-WORKDIR /tmp
 
 # Copy necessary files for installing dependencies
 COPY ./pyproject.toml ./poetry.lock* /tmp/
 
 # Install dependencies
-RUN poetry export -f requirements.txt --without-hashes | pip install --no-cache-dir -r /dev/stdin
-
-# Copy the `.env` file
-COPY ./.env /tmp/.env
-
-# Copy the rest of the application code
-COPY . .
-
-# Build code and install package
-RUN poetry build && pip install --no-cache-dir dist/*.whl
+RUN poetry export -f requirements.txt --without-hashes --output requirements.txt
 
 # Second, build the final image
-FROM python:3.11-slim
+FROM tiangolo/uvicorn-gunicorn:python3.11
+
+# Install system packages
+# We use curl for the healthcheck
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    build-essential curl
+
+# Install Node 18 (for Prisma)
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs \
+    build-essential && \
+    node --version && \ 
+    npm --version
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
-ENV VIRTUAL_ENV=/venv
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Install system packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential curl \
-    && rm -rf /var/lib/apt/lists/*
+COPY --from=requirements-stage /tmp/requirements.txt /app/requirements.txt
 
-# Install Prisma CLI
-RUN curl -L https://install.prisma.io/cli/ -sSL | bash
+# Install deps from the requirements-stage
+RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
 
-# Set working directory
-WORKDIR /code
+# Copy the application code
+COPY ./ /app
+WORKDIR /app
 
-# Copy the virtual environment and entrypoint script from the builder
-COPY --from=builder /venv /venv
-COPY --from=builder /tmp/entrypoint.sh /entrypoint.sh
+# Copy the .env file
+COPY .env /app/.env
 
-# Copy Prisma files and generate client
-COPY --from=builder /tmp/prisma /code/prisma
+# Generate the Prisma client
 RUN prisma generate
 
-# Copy the .env file and app code from the builder
-COPY --from=builder /tmp/.env /code/.env
-COPY --from=builder /tmp/app /code/app
+ENV PRE_START_PATH /app/scripts/prestart.sh
 
-HEALTHCHECK --start-period=5m CMD curl -f http://localhost:8000/health || exit 1
-
-# Setup entrypoint
-ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
-
-# Expose the necessary port
-EXPOSE 8000
+# Monitor the app
+HEALTHCHECK --start-period=5m CMD curl -f http://localhost:80/health || exit 1

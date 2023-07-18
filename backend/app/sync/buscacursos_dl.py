@@ -9,8 +9,8 @@ from prisma.models import Course as DbCourse
 from prisma.types import CourseCreateWithoutRelationsInput
 from pydantic import BaseModel
 
-from ..plan.courseinfo import make_searchable_name
-from ..plan.validation.courses.logic import (
+from app.plan.courseinfo import make_searchable_name
+from app.plan.validation.courses.logic import (
     And,
     Const,
     Expr,
@@ -22,7 +22,7 @@ from ..plan.validation.courses.logic import (
     ReqProgram,
     ReqSchool,
 )
-from ..plan.validation.courses.simplify import simplify
+from app.plan.validation.courses.simplify import simplify
 
 
 class BcSection(BaseModel):
