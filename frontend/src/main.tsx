@@ -11,7 +11,7 @@ import { toastConfig } from './utils/toastConfig'
 import App from './app'
 
 Sentry.init({
-  dsn: 'https://618e647e028148928aab01575b19d160@o4505547874172928.ingest.sentry.io/4505547903336448',
+  dsn: 'https://deb7a1791e004fd6887189c03b568e8c@o4505547874172928.ingest.sentry.io/4505547928109056',
   integrations: [
     new Sentry.BrowserTracing(),
     new Sentry.Replay()
