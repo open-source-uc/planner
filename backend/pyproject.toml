@@ -21,6 +21,7 @@ uvicorn = { extras = ["standard"], version = "^0.22.0" }
 gunicorn = "^20.1.0"
 ortools = "^9.6.2534"
 redis = {extras = ["hiredis"], version = "^4.6.0"}
+sentry-sdk = {extras = ["fastapi"], version = "^1.28.1"}
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.0.275"
