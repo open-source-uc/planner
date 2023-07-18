@@ -24,6 +24,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "tomastrivino",
+      "name": "Tomás Triviño",
+      "avatar_url": "https://avatars.githubusercontent.com/u/98418205?v=4",
+      "profile": "https://github.com/tomastrivino",
+      "contributions": [
+        "content"
+      ]
     }
   ],
   "contributorsPerLine": 7,
