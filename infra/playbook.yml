@@ -8,12 +8,18 @@
     - name: "machine_name"
       prompt: "Desired machine name (e.g. staging, optional)"
       private: false
+    - name: "env_mode"
+      prompt: "Environment mode (production or staging)"
+      private: false
+      default: "production"
     - name: "planner_domain"
       prompt: "Planner domain (e.g. planner.example.com, optional)"
       private: false
+      default: "mallastest.ing.uc.cl"
     - name: "cas_server_url"
-      prompt: "CAS URL (e.g. https://sso.uc.cl/cas, optional)"
+      prompt: "CAS URL (optional)"
       private: false
+      default: "https://sso.uc.cl/cas"
     - name: "admin_rut"
       prompt: "Admin RUT (e.g. 12345678-9, optional)"
       private: false
@@ -404,7 +410,7 @@
 
     - name: Create backend .env
       ansible.builtin.copy:
-        src: /home/planner/planner/backend/.env.production
+        src: /home/planner/planner/backend/.env.{{ env_mode }}}
         dest: /home/planner/planner/backend/.env
         owner: planner
         group: planner
@@ -414,7 +420,7 @@
 
     - name: Create frontend .env
       ansible.builtin.copy:
-        src: /home/planner/planner/frontend/.env.production
+        src: /home/planner/planner/frontend/.env.{{ env_mode }}}
         dest: /home/planner/planner/frontend/.env
         owner: planner
         group: planner
@@ -424,7 +430,7 @@
 
     - name: Create database .env
       ansible.builtin.copy:
-        src: /home/planner/planner/database/.env.production
+        src: /home/planner/planner/database/.env.{{ env_mode }}}
         dest: /home/planner/planner/database/.env
         owner: planner
         group: planner
@@ -436,6 +442,26 @@
       ansible.builtin.set_fact:
         planner_url: "https://{{ planner_domain }}"
       when: planner_domain | length > 0
+
+    - name: Configure back-end mode
+      ansible.builtin.lineinfile:
+        path: /home/planner/planner/backend/.env
+        regexp: '^PYTHON_ENV'
+        line: 'PYTHON_ENV={{ env_mode }}'
+        state: present
+        insertafter: '^# PYTHON_ENV'
+        firstmatch: true
+      when: env_mode | length > 0
+
+    - name: Configure front-end mode
+      ansible.builtin.lineinfile:
+        path: /home/planner/planner/frontend/.env
+        regexp: '^NODE_ENV'
+        line: 'NODE_ENV={{ env_mode }}'
+        state: present
+        insertafter: '^# NODE_ENV'
+        firstmatch: true
+      when: env_mode | length > 0
 
     - name: Configure back-end URL
       ansible.builtin.lineinfile:

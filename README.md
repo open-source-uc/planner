@@ -121,7 +121,9 @@ En primer lugar, es necesario generar manualmente los archivos `.env` y reemplaz
 - _servidor web_ → `frontend/.env.staging`
 - _base de datos_ → `database/.env.staging`
 
-Luego, para correr la aplicación utilizando un servidor mock de **CAS externo** se debe:
+Luego, se debe crear el volumen de Caddy con `docker volume create caddy_data`.
+
+Ahora, para correr la aplicación utilizando un servidor mock de **CAS externo** se debe:
 1. Definir las variables `CAS_SERVER_URL` y `CAS_LOGIN_REDIRECTION_URL` en `backend/.env` con la URL del servidor externo.
 2. Levantar los contenedores con `docker compose up planner -d --build` desde la raíz del repositorio.
 
@@ -141,9 +143,10 @@ El ambiente de producción es manejado por la universidad de forma interna, por 
 - `database/.env` a partir del ejemplo `database/.env.production` (_base de datos_).
 2. Reemplazar los valores de las variables de entorno según corresponda en todos los archivos `.env` creados. **IMPORTANTE:** no olvidar modificar la variable `JWT_SECRET` en `backend/.env` y otras variables que puedan contener secretos para evitar vulnerabilidades de seguridad.
 - Para generar una clave `JWT_SECRET` segura y aleatoria se puede utilizar el comando `openssl rand -base64 32`.
-3. Levantar los contenedores con `docker compose up planner -d --build` desde la raíz del repositorio. Requiere _Docker_ y _Docker Compose_ instalados en la máquina.
-4. Revisar el estado de los contenedores con `docker ps` o `docker container ls`.
-5. Finalmente, se puede detener la app con `docker compose down` desde la misma ubicación.
+3. Se debe crear el volumen donde Caddy guardará los certificados SSL con `docker volume create caddy_data`.
+4. Levantar los contenedores con `docker compose up planner -d --build` desde la raíz del repositorio. Requiere _Docker_ y _Docker Compose_ instalados en la máquina.
+5. Revisar el estado de los contenedores con `docker ps` o `docker container ls`.
+6. Finalmente, se puede detener la app con `docker compose down` desde la misma ubicación.
 
 Nota: los comandos podrían variar ligeramente dependiendo del sistema operativo y versión de *Docker Compose*. En particular, podría ser necesario utilizar `docker-compose` en vez de `docker compose` y `sudo docker compose` en vez de `docker compose`.
 

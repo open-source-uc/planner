@@ -38,6 +38,7 @@
             "args": [
                 "app.main:app",
                 "--reload",
+                "--log-config=none"
             ],
             "justMyCode": true,
             "cwd": "${workspaceFolder}/backend"

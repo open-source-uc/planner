@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from decimal import Decimal
 from pathlib import Path
 from typing import Annotated, Any, Literal
@@ -186,13 +187,13 @@ class SoapClient:
             try:
                 self.mock_db = json.loads(settings.siding_mock_path.read_text())
                 cnt = sum(len(r) for r in self.mock_db.values())
-                print(
-                    f"loaded {cnt} SIDING mock responses from"
+                logging.info(
+                    f"Loaded {cnt} SIDING mock responses from"
                     f" '{settings.siding_mock_path}'",
                 )
             except (OSError, ValueError) as err:
-                print(
-                    "failed to read SIDING mock data from"
+                logging.error(
+                    "Failed to read SIDING mock data from"
                     f" '{settings.siding_mock_path}': {err}",
                 )
                 self.mock_db = {}
@@ -210,12 +211,12 @@ class SoapClient:
                 wsdl_url,
                 transport=AsyncTransport(http_client),
             )
-            print("connected to live SIDING webservice")
+            logging.info("Connected to live SIDING webservice")
 
         # Setup response recording
         if settings.siding_record_path != "":
             self.record_path = settings.siding_record_path
-            print("recording SIDING responses")
+            logging.info("Recording SIDING responses")
 
     async def call_endpoint(
         self,
