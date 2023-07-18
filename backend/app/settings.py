@@ -19,6 +19,13 @@ def generate_random_jwt_secret():
 
 
 class Settings(BaseSettings):
+    # Environment name. Used to select the correct environment variables.
+    # Possible values: "development", "production".
+    env: Literal["development", "staging", "production"] = Field(
+        "development",
+        env="PYTHON_ENV",
+    )
+
     # URL to the CAS verification server.
     # When a user arrives with a CAS token the backend verifies the token directly with
     # this server.
@@ -39,6 +46,10 @@ class Settings(BaseSettings):
     # In particular, the user browser is redirected to this `next` URL with the JWT
     # token as a query parameter.
     planner_url: AnyHttpUrl = Field("http://localhost:3000")
+
+    # This is the path used in case of prefix stripping (i.e. hosting in /api)
+    # This is ignored in development mode for convenience
+    root_path: str = "/api"
 
     @property
     def cas_callback_url(self):
@@ -116,6 +127,19 @@ class Settings(BaseSettings):
 
     # URL for the Redis server.
     redis_uri: RedisDsn = Field("redis://localhost:6379")
+
+    # Logging level
+    log_level: Literal[
+        "CRITICAL",
+        "ERROR",
+        "WARNING",
+        "INFO",
+        "DEBUG",
+        "NOSET",
+    ] = "INFO"
+
+    # Where to store logs (only used in development)
+    log_path: Path = Path("logs")
 
 
 # Load settings and allow global app access to them

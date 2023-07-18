@@ -10,30 +10,32 @@ import { toastConfig } from './utils/toastConfig'
 
 import App from './app'
 
-Sentry.init({
-  dsn: 'https://deb7a1791e004fd6887189c03b568e8c@o4505547874172928.ingest.sentry.io/4505547928109056',
-  integrations: [
-    new Sentry.BrowserTracing(),
-    new Sentry.Replay()
-  ],
+if (import.meta.env.MODE !== 'development') {
+  // Runs in staging and production
+  Sentry.init({
+    dsn: 'https://deb7a1791e004fd6887189c03b568e8c@o4505547874172928.ingest.sentry.io/4505547928109056',
+    integrations: [
+      new Sentry.BrowserTracing(),
+      new Sentry.Replay()
+    ],
 
-  // Set tracesSampleRate to 1.0 to capture 100%
-  // of transactions for performance monitoring.
-  tracesSampleRate: 1.0,
+    // Set tracesSampleRate to 1.0 to capture 100%
+    // of transactions for performance monitoring.
+    tracesSampleRate: 1.0,
 
-  // Set `tracePropagationTargets` to control for which URLs distributed tracing should be enabled
-  tracePropagationTargets: [
-    'localhost',
-    /^https:\/\/mallastest\.ing\.uc\.cl\/api/,
-    /^https:\/\/plan\.ing\.uc\.cl\/api/,
-    /^https:\/\/mallastest\.tail6ca5c\.ts\.net\/api/
-  ],
+    // Set `tracePropagationTargets` to control for which URLs distributed tracing should be enabled
+    tracePropagationTargets: [
+      /^https:\/\/mallastest\.ing\.uc\.cl\/api/,
+      /^https:\/\/plan\.ing\.uc\.cl\/api/,
+      /^https:\/\/mallastest\.tail6ca5c\.ts\.net\/api/
+    ],
 
-  // Capture Replay for 10% of all sessions,
-  // plus for 100% of sessions with an error
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1.0
-})
+    // Capture Replay for 10% of all sessions,
+    // plus for 100% of sessions with an error
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0
+  })
+}
 
 toastConfig()
 

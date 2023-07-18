@@ -41,11 +41,13 @@
 				"charliermarsh.ruff",
 				"kokakiwi.vscode-just",
 				"redhat.ansible",
-				"github.vscode-github-actions"
+				"github.vscode-github-actions",
+				"ms-python.black-formatter"
 			],
 			"settings": {
 				"terminal.integrated.env.linux": {
-					"NODE_ENV": "development"
+					"NODE_ENV": "development",
+					"PYTHON_ENV": "development"
 				}
 			}
 		}

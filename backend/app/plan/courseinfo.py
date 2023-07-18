@@ -2,6 +2,7 @@
 Cache course info from the database in memory, for easy access.
 """
 
+import logging
 from dataclasses import dataclass
 
 import pydantic
@@ -164,7 +165,7 @@ async def clear_course_info_cache():
 
 
 async def add_equivalence(equiv: EquivDetails):
-    print(f"adding equivalence {equiv.code}")
+    logging.info(f"adding equivalence {equiv.code}")
     # Add equivalence to database
     await Equivalence.prisma().query_raw(
         """
@@ -213,7 +214,7 @@ async def course_info() -> CourseInfo:
     global _course_info_cache
     if _course_info_cache is None:
         # Derive course rules from courses in database
-        print("caching courseinfo from database...")
+        logging.info("Caching courseinfo from database...")
         courses: dict[str, CourseDetails]
 
         # Attempt to fetch pre-parsed courses
@@ -221,33 +222,33 @@ async def course_info() -> CourseInfo:
             {"id": _CACHED_COURSES_ID},
         )
         if preparsed is not None:
-            print("  loading pre-parsed course cache...")
+            logging.info("  Loading pre-parsed course cache...")
             courses = pydantic.parse_raw_as(dict[str, CourseDetails], preparsed.info)
         else:
             # Parse courses from database
-            print("  fetching courses from database...")
+            logging.info("  fetching courses from database...")
             all_courses = await Course.prisma().find_many()
-            print("  loading courses to memory...")
+            logging.info("  loading courses to memory...")
             courses = {}
             for course in all_courses:
                 # Create course object
                 courses[course.code] = CourseDetails.from_db(course)
-            print("  storing cached courses to database")
+            logging.info("  storing cached courses to database")
             await DbCachedCourseInfo.prisma().create(
                 {
                     "id": _CACHED_COURSES_ID,
                     "info": CachedCourseDetailsJson(__root__=courses).json(),
                 },
             )
-        print(f"  processed {len(courses)} courses")
+        logging.info(f"  processed {len(courses)} courses")
 
         # Load equivalences
-        print("  loading equivalences from database...")
+        logging.info("  loading equivalences from database...")
         all_equivs = await Equivalence.prisma().find_many()
         equivs: dict[str, EquivDetails] = {}
         for equiv in all_equivs:
             equivs[equiv.code] = await EquivDetails.from_db(equiv)
-        print(f"  processed {len(equivs)} equivalences")
+        logging.info(f"  processed {len(equivs)} equivalences")
 
         _course_info_cache = CourseInfo(courses=courses, equivs=equivs)
 
