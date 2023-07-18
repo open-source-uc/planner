@@ -21,7 +21,7 @@ sentry_sdk.init(
     # of transactions for performance monitoring.
     # We recommend adjusting this value in production,
     traces_sample_rate=1.0,
-    profiles_sample_rate = 1.0,
+    profiles_sample_rate=1.0,
 )
 
 app = FastAPI(generate_unique_id_function=custom_generate_unique_id)
