@@ -81,7 +81,6 @@ function Navbar (): JSX.Element {
           </ul>
         </div>
       </div>
-      <button onClick={() => methodDoesNotExist()}>Break the world</button>;
     </nav>
 
   )
