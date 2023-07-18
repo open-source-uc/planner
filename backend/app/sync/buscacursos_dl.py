@@ -23,6 +23,7 @@ from app.plan.validation.courses.logic import (
     ReqSchool,
 )
 from app.plan.validation.courses.simplify import simplify
+from app.settings import settings
 
 
 class BcSection(BaseModel):
@@ -339,10 +340,7 @@ def _translate_courses(data: BcData) -> list[CourseCreateWithoutRelationsInput]:
 
 async def fetch_to_database():
     # Fetch json blob from an unofficial source
-    dl_url = (
-        "https://github.com/negamartin/buscacursos-dl/releases/download"
-        "/universal-3/universal-noprogram.json.xz"
-    )
+    dl_url = settings.buscacursos_dl_url
     print(f"  downloading course data from {dl_url}...")
     # TODO: Use an async HTTP client
     resp = requests.request("GET", dl_url)
