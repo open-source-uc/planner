@@ -33,7 +33,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./siding-mock-data:/code/siding-mock-data
+      - ./siding-mock-data:/siding-mock-data
     env_file:
       - ./backend/.env
   db:
