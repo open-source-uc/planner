@@ -83,8 +83,8 @@ lint-fix: lint-fix-back lint-fix-front
 init: deps
     @echo "{{ info_prefix }} \e[1mInitializing developer environment...\e[0m"
     @echo "{{ info_prefix }} \e[1mCreating default files...\e[0m"
-    cd backend && cp -n .env.development .env
-    cd frontend && cp -n .env.development .env
+    cd backend && cp -n .env.development.template .env
+    cd frontend && cp -n .env.development.template .env
     cd cas-mock/data && cp -n cas-mock-users.json.example cas-mock-users.json
     @echo "{{ info_prefix }} \e[1mSetting up database...\e[0m"
     @just db-reset
