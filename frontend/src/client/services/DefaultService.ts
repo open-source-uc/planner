@@ -50,10 +50,13 @@ export class DefaultService {
     /**
      * Sync Database
      * Initiate a synchronization of the internal database from external sources.
+     *
+     * NOTE: This endpoint is currently broken: a server restart is necessary after syncing
+     * the database in order for the changes to reach all workers.
      * @param courses
      * @param curriculums
      * @param offer
-     * @param courseinfo
+     * @param packedcourses
      * @returns any Successful Response
      * @throws ApiError
      */
@@ -61,7 +64,7 @@ export class DefaultService {
         courses: boolean,
         curriculums: boolean,
         offer: boolean,
-        courseinfo: boolean,
+        packedcourses: boolean,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -70,7 +73,7 @@ export class DefaultService {
                 'courses': courses,
                 'curriculums': curriculums,
                 'offer': offer,
-                'courseinfo': courseinfo,
+                'packedcourses': packedcourses,
             },
             errors: {
                 422: `Validation Error`,
