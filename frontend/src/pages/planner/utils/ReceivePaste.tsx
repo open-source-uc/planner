@@ -3,7 +3,6 @@ import { useEffect } from 'react'
 import { type ConcreteId, type ValidatablePlan } from '../../../client'
 
 const ReceivePaste = ({ validatablePlan, getDefaultPlan }: { validatablePlan: ValidatablePlan | null, getDefaultPlan: Function }): JSX.Element => {
-  // https://stackoverflow.com/questions/61740073/how-to-detect-keydown-anywhere-on-page-in-a-react-app
   useEffect(() => {
     const handlePaste = async (e: ClipboardEvent): Promise<void> => {
       const text = e.clipboardData?.getData('text/plain')
