@@ -203,6 +203,35 @@ def _find_hidden_requirements(
     return options
 
 
+def _reselect_equivs(courseinfo: CourseInfo, plan: ValidatablePlan, reference: ValidatablePlan):
+    # Collect equivalence choices by equivalence name
+    by_name: defaultdict[str, list[ConcreteId]] = defaultdict(list)
+    for ref_sem in reference.classes:
+        for ref_course in ref_sem:
+            if isinstance(ref_course, ConcreteId) and ref_course.equivalence is not None:
+                ref_equiv = ref_course.equivalence
+                info = courseinfo.try_equiv(ref_equiv.code)
+                if info is not None:
+                    by_name[info.name].append(ref_course)
+
+    # Re-select equivalences in courses_to_pass if they match reference choices
+    for sem in plan.classes:
+        for idx, course in enumerate(sem):
+            equiv = course
+            if isinstance(equiv, ConcreteId) and equiv.equivalence is not None:
+                equiv = equiv
+            if not isinstance(equiv, EquivalenceId):
+                continue
+
+            info = courseinfo.try_equiv(equiv.code)
+            if info is None or info.name not in by_name:
+                continue
+            for ref_choice in by_name[info.name]:
+                sem[idx] = ref_choice.copy(update={
+                    "equivalence": equiv,
+                })
+
+
 def _compute_courses_to_pass(
     courseinfo: CourseInfo,
     g: SolvedCurriculum,
@@ -422,7 +451,7 @@ async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
     )
 
 
-async def generate_recommended_plan(passed: ValidatablePlan):
+async def generate_recommended_plan(passed: ValidatablePlan, reference: ValidatablePlan | None = None):
     """
     Take a base plan that the user has already passed, and recommend a plan that should
     lead to the user getting the title in whatever major-minor-career they chose.
@@ -534,5 +563,9 @@ async def generate_recommended_plan(passed: ValidatablePlan):
         ]
         for sem in plan.classes
     ]
+
+    # Re-select courses from equivalences using reference plan
+    if reference is not None:
+        _reselect_equivs(courseinfo, plan, reference)
 
     return plan

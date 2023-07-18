@@ -177,21 +177,27 @@ const Planner = (): JSX.Element => {
     }
   }
 
-  async function getDefaultPlan (baseValidatablePlan?: ValidatablePlan): Promise<void> {
+  async function getDefaultPlan (referenceValidatablePlan?: ValidatablePlan): Promise<void> {
     try {
       console.log('Getting Basic Plan...')
-      if (baseValidatablePlan === undefined) {
+      let baseValidatablePlan
+      if (referenceValidatablePlan === undefined) {
         baseValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
       } else {
-        baseValidatablePlan = { ...baseValidatablePlan }
-        baseValidatablePlan.classes = [...baseValidatablePlan.classes]
+        baseValidatablePlan = { ...referenceValidatablePlan }
+        baseValidatablePlan.classes = [...referenceValidatablePlan.classes]
       }
+      // truncate the validatablePlan to the passed courses
+      baseValidatablePlan.classes.splice(authState?.student?.next_semester ?? 0)
       // truncate the validatablePlan to the last not empty semester
       while (baseValidatablePlan.classes.length > 0 && baseValidatablePlan.classes[baseValidatablePlan.classes.length - 1].length === 0) {
         baseValidatablePlan.classes.pop()
       }
       console.log(baseValidatablePlan)
-      const response: ValidatablePlan = await DefaultService.generatePlan(baseValidatablePlan)
+      const response: ValidatablePlan = await DefaultService.generatePlan({
+        passed: baseValidatablePlan,
+        reference: referenceValidatablePlan ?? undefined
+      })
       await Promise.all([
         getCourseDetails(response.classes.flat()),
         loadCurriculumsData(response.curriculum.cyear.raw, response.curriculum.major),
@@ -600,12 +606,10 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null || prev.curriculum.major === majorCode) return prev
       const newCurriculum = { ...prev.curriculum, major: majorCode }
-      const newClasses = [...prev.classes]
-      newClasses.splice(authState?.student?.next_semester ?? 0)
       if (!isMinorValid) {
         newCurriculum.minor = undefined
       }
-      return { ...prev, classes: newClasses, curriculum: newCurriculum }
+      return { ...prev, curriculum: newCurriculum }
     })
   }, [setValidatablePlan, authState]) // this sensitivity list shouldn't contain frequently-changing attributes
 
@@ -613,9 +617,7 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null || prev.curriculum.minor === minorCode) return prev
       const newCurriculum = { ...prev.curriculum, minor: minorCode }
-      const newClasses = [...prev.classes]
-      newClasses.splice(authState?.student?.next_semester ?? 0)
-      return { ...prev, classes: newClasses, curriculum: newCurriculum }
+      return { ...prev, curriculum: newCurriculum }
     })
   }, [setValidatablePlan, authState]) // this sensitivity list shouldn't contain frequently-changing attributes
 
@@ -623,9 +625,7 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null || prev.curriculum.title === titleCode) return prev
       const newCurriculum = { ...prev.curriculum, title: titleCode }
-      const newClasses = [...prev.classes]
-      newClasses.splice(authState?.student?.next_semester ?? 0)
-      return { ...prev, classes: newClasses, curriculum: newCurriculum }
+      return { ...prev, curriculum: newCurriculum }
     })
   }, [setValidatablePlan, authState]) // this sensitivity list shouldn't contain frequently-changing attributes
 
