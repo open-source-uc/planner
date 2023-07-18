@@ -418,7 +418,7 @@
 
     - name: Create backend .env
       ansible.builtin.copy:
-        src: /home/planner/planner/backend/.env.{{ env_mode }}}
+        src: /home/planner/planner/backend/.env.{{ env_mode }}
         dest: /home/planner/planner/backend/.env
         owner: planner
         group: planner
@@ -428,7 +428,7 @@
 
     - name: Create frontend .env
       ansible.builtin.copy:
-        src: /home/planner/planner/frontend/.env.{{ env_mode }}}
+        src: /home/planner/planner/frontend/.env.{{ env_mode }}
         dest: /home/planner/planner/frontend/.env
         owner: planner
         group: planner
@@ -438,7 +438,7 @@
 
     - name: Create database .env
       ansible.builtin.copy:
-        src: /home/planner/planner/database/.env.{{ env_mode }}}
+        src: /home/planner/planner/database/.env.{{ env_mode }}
         dest: /home/planner/planner/database/.env
         owner: planner
         group: planner
