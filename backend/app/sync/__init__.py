@@ -33,7 +33,7 @@ from prisma.models import (
 )
 from pydantic import ValidationError
 
-from app.plan.courseinfo import clear_course_info_cache, course_info
+from app.plan.courseinfo import course_info, pack_course_details
 from app.plan.validation.curriculum.tree import (
     Curriculum,
     CurriculumSpec,
@@ -50,10 +50,13 @@ async def run_upstream_sync(
     courses: bool,
     curriculums: bool,
     offer: bool,
-    courseinfo: bool,
+    packedcourses: bool,
 ):
     """
     Populate database with "official" data.
+
+    NOTE: This function should only be called from a startup script, before any workers
+    load.
     """
 
     if curriculums or courses:
@@ -87,13 +90,12 @@ async def run_upstream_sync(
         # Refetch available programs
         await siding_translate.load_siding_offer_to_database()
 
-    if courseinfo or courses:
-        # If we updated the courses, we must update the cache too
+    if packedcourses or courses:
+        # If we updated the courses, we must update the packed courses too
 
-        print("caching courseinfo...")
-        # Recache courseinfo
-        await clear_course_info_cache()
-        await course_info()
+        print("updating packed course details...")
+        # Pack course details from main course database
+        await pack_course_details()
 
 
 async def _get_curriculum_piece(spec: CurriculumSpec) -> Curriculum:

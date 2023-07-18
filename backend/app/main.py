@@ -5,6 +5,7 @@ from fastapi.routing import APIRoute
 
 from app import routes
 from app.database import prisma
+from app.plan.courseinfo import course_info
 from app.sync.siding.client import client as siding_soap_client
 
 
@@ -42,6 +43,8 @@ async def startup():
     await prisma.connect()
     # Setup SIDING webservice
     siding_soap_client.on_startup()
+    # Prime local in-memory course info cache
+    await course_info()
 
 
 @app.on_event("shutdown")  # type: ignore

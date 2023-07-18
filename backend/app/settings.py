@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     # If left empty, the same URL as `cas_server_url` is used.
     # If the backend server is in a different network than the client's browser, it may
     # need to use a different address to reach the CAS server.
-    cas_login_redirection_url: AnyHttpUrl | Literal[""] = ""
+    cas_login_redirection_url: Literal[""] | AnyHttpUrl = ""
 
     # URL to the backend endpoint that performs authentication.
     # This URL needs to be whitelisted in the CAS server.
@@ -97,7 +97,7 @@ class Settings(BaseSettings):
     #   write the recorded responses.
     # 4. A JSON file will be saved with previous mock data (if any) + the recorded data.
     #   Note that the file may contain sensitive data!
-    siding_record_path: Path | Literal[""] = ""
+    siding_record_path: Literal[""] | Path = ""
 
     # Time to expire cached student information in seconds.
     student_info_expire: float = 1800
@@ -112,7 +112,7 @@ class Settings(BaseSettings):
     autosync_offer: bool = True
 
     # Whether to resynchronize the courseinfo cache on server startup.
-    autosync_courseinfo: bool = True
+    autosync_packedcourses: bool = True
 
     # URL for the Redis server.
     redis_uri: RedisDsn = Field("redis://localhost:6379")
