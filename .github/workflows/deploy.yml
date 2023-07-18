@@ -37,6 +37,6 @@ jobs:
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          MACHINE_IP="$(tailscale ip -6 $MACHINE)"
+          MACHINE_IP="$(tailscale ip -4 $MACHINE)"
           USERHOST="planner@$MACHINE_IP"
           ssh $USERHOST "cd /opt/planner && just deploy staging"
