@@ -275,22 +275,22 @@ class ValidationContext:
             sem_credits = 0
             for course in self.plan.classes[sem_i]:
                 sem_credits += self.courseinfo.get_credits(course) or 0
-                if sem_credits > CREDIT_HARD_MAX:
-                    out.add(
-                        SemesterCreditsErr(
-                            associated_to=[sem_i],
-                            max_allowed=CREDIT_HARD_MAX,
-                            actual=sem_credits,
-                        ),
-                    )
-                elif sem_credits > CREDIT_SOFT_MAX:
-                    out.add(
-                        SemesterCreditsWarn(
-                            associated_to=[sem_i],
-                            max_recommended=CREDIT_SOFT_MAX,
-                            actual=sem_credits,
-                        ),
-                    )
+            if sem_credits > CREDIT_HARD_MAX:
+                out.add(
+                    SemesterCreditsErr(
+                        associated_to=[sem_i],
+                        max_allowed=CREDIT_HARD_MAX,
+                        actual=sem_credits,
+                    ),
+                )
+            elif sem_credits > CREDIT_SOFT_MAX:
+                out.add(
+                    SemesterCreditsWarn(
+                        associated_to=[sem_i],
+                        max_recommended=CREDIT_SOFT_MAX,
+                        actual=sem_credits,
+                    ),
+                )
 
     def validate_all_dependencies(self, out: ValidationResult):
         """

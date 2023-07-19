@@ -96,7 +96,7 @@ def _extract_active_fillers(
             )
 
     # Sort courses by order
-    to_pass.sort()
+    to_pass.sort(key=lambda pair: pair[0])
 
     # Remove order information
     return OrderedDict({i: course for i, (_order, course) in enumerate(to_pass)})
