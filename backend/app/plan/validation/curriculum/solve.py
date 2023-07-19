@@ -597,8 +597,9 @@ def solve_curriculum(
     # Take the curriculum blueprint, and produce a graph for this student
     g = _build_problem(courseinfo, curriculum, taken)
     # Solve the integer optimization problem
-    solve_status = solver.Solve(g.model)
-    if not (solve_status == cpsat.OPTIMAL or solve_status == cpsat.FEASIBLE):
+    solver.Solve(g.model)
+    status = solver.StatusName()
+    if not (status == "OPTIMAL" or status == "FEASIBLE"):
         if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
             logging.debug(f"solving failed for {spec}: {solver.StatusName()}")
             logging.debug(f"original graph:\n{g.dump_graphviz_debug(curriculum)}")
@@ -606,8 +607,8 @@ def solve_curriculum(
             tol = "infinite"
             for i in range(1, curriculum.root.cap + 1):
                 g = _build_problem(courseinfo, curriculum, taken, tolerance=i)
-                solve_status_2 = solver.Solve(g.model)
-                if solve_status_2 == cpsat.OPTIMAL or solve_status_2 == cpsat.FEASIBLE:
+                status_2 = solver.Solve(g.model)
+                if status_2 == cpsat.OPTIMAL or status_2 == cpsat.FEASIBLE:
                     tol = i
                     _tag_edge_flow(solver, g)
                     break
@@ -615,7 +616,7 @@ def solve_curriculum(
                 f"solvable with tolerance {tol}:\n{g.dump_graphviz_debug(curriculum)}",
             )
         raise Exception(
-            f"failed to solve curriculum {spec}: {solver.StatusName()}",
+            f"failed to solve curriculum {spec}: {status}",
         )
     # Extract solution from solver
     _tag_edge_flow(solver, g)

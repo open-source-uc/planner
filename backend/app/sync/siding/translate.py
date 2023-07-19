@@ -3,6 +3,8 @@ Transform the Siding format into something usable.
 """
 
 
+import asyncio
+
 from prisma.models import (
     Major as DbMajor,
 )
@@ -296,12 +298,12 @@ async def load_siding_offer_to_database():
 
     print("  loading majors")
     p_majors, p_minors, p_titles = (
-        client.get_majors(),
-        client.get_minors(),
-        client.get_titles(),
+        asyncio.create_task(client.get_majors()),
+        asyncio.create_task(client.get_minors()),
+        asyncio.create_task(client.get_titles()),
     )
-    majors = await p_majors
-    for major in majors:
+    majors = {major.CodMajor: major for major in await p_majors}
+    for major in majors.values():
         for cyear in _decode_curriculum_versions(major.Curriculum):
             await DbMajor.prisma().create(
                 data={
@@ -313,7 +315,8 @@ async def load_siding_offer_to_database():
             )
 
     print("  loading minors")
-    for minor in await p_minors:
+    minors = {minor.CodMinor: minor for minor in await p_minors}
+    for minor in minors.values():
         for cyear in _decode_curriculum_versions(minor.Curriculum):
             await DbMinor.prisma().create(
                 data={
@@ -339,11 +342,17 @@ async def load_siding_offer_to_database():
             )
 
     print("  loading major-minor associations")
-    p_major_minor = [(maj, client.get_minors_for_major(maj.CodMajor)) for maj in majors]
+    p_major_minor = [
+        (maj, asyncio.create_task(client.get_minors_for_major(maj.CodMajor)))
+        for maj in majors.values()
+    ]
     for major, p_assoc_minors in p_major_minor:
         assoc_minors = await p_assoc_minors
-        for cyear in _decode_curriculum_versions(major.Curriculum):
-            for minor in assoc_minors:
+        for minor_assoc in assoc_minors:
+            if minor_assoc.CodMinor not in minors:
+                continue
+            minor = minors[minor_assoc.CodMinor]
+            for cyear in _decode_curriculum_versions(major.Curriculum):
                 if cyear not in _decode_curriculum_versions(minor.Curriculum):
                     continue
                 await DbMajorMinor.prisma().create(

@@ -49,7 +49,7 @@ import threading
 import time
 import warnings
 from collections.abc import Iterable
-from typing import Self
+from typing import Literal, Self
 
 from ortools.sat import cp_model_pb2, sat_parameters_pb2
 from ortools.sat.python import cp_model_helper as cmh
@@ -179,7 +179,9 @@ class LinearExpr:
         return _SumArray(expressions)
     @classmethod
     def WeightedSum(
-        cls: type[Self], expressions: Iterable[IntOrLinearExpr], coefficients: Iterable[int],
+        cls: type[Self],
+        expressions: Iterable[IntOrLinearExpr],
+        coefficients: Iterable[int],
     ) -> LinearExpr:
         """Creates the expression sum(expressions[i] * coefficients[i])."""
         if LinearExpr.IsEmptyOrAllNull(coefficients):
@@ -2209,7 +2211,15 @@ class CpSolver:
     def BestObjectiveBound(self):
         """Returns the best lower (upper) bound found when min(max)imizing."""
         return self.__solution.best_objective_bound
-    def StatusName(self, status: int | None = None) -> str:
+    def StatusName(
+        self, status: int | None = None,
+    ) -> (
+        Literal["OPTIMAL"]
+        | Literal["FEASIBLE"]
+        | Literal["INFEASIBLE"]
+        | Literal["MODEL_INVALID"]
+        | Literal["UNKNOWN"]
+    ):
         """Returns the name of the status returned by Solve()."""
         if status is None:
             status = self.__solution.status

@@ -1,3 +1,4 @@
+import logging
 from collections import OrderedDict, defaultdict
 from collections.abc import Iterable
 
@@ -191,7 +192,7 @@ def _find_hidden_requirements(
     # (IIC1000 y IIC1001) o (IIC1000 y IIC1002) o (IIC2000 y IIC1002)
     # (ie. an OR of ANDs)
     dnf = as_dnf(And(children=tuple(missing)))
-    print(f"dnfized missing expression: {dnf}")
+    logging.debug("dnfized missing expression: %s", dnf)
     options = [
         [atom.code for atom in clause.children if isinstance(atom, ReqCourse)]
         for clause in dnf.children
