@@ -399,6 +399,8 @@ async def fetch_student_previous_courses(
     raw = await client.get_student_done_courses(rut)
     semesters: list[list[PseudoCourse]] = []
     # Make sure semester 1 is always odd, adding an empty semester if necessary
+    if len(raw) == 0:
+        raise ValueError("no courses")
     start_year = int(raw[0].Periodo.split("-")[0])
     start_period = (start_year, 1)
     in_course: list[list[bool]] = []
