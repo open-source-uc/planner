@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.settings import settings
 from redis.asyncio import BlockingConnectionPool, Redis
+
+from app.settings import settings
 
 
 def init_redis_pool() -> BlockingConnectionPool:
