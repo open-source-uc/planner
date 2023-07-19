@@ -49,8 +49,8 @@ app = FastAPI(
     title="Planner API",
     description="API for the Planner application",
     license_info={
-        "name": "GNU General Public License v3.0",
-        "identifier": "GPL-3.0-only",
+        "name": "GNU Affero General Public License v3.0",
+        "identifier": "AGPL-3.0-only",
     },
     generate_unique_id_function=custom_generate_unique_id,
     # Note: In development, always use the proxied root path
