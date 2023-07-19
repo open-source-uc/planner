@@ -363,8 +363,8 @@ async def fetch_student_info(rut: str) -> StudentInfo:
     """
     try:
         raw = await client.get_student_info(rut)
-        CAREER = "INGENIERÍA CIVIL"
-        assert raw.Curriculo is not None and raw.Carrera == CAREER
+        career = "INGENIERÍA CIVIL"
+        assert raw.Curriculo is not None and raw.Carrera == career
 
         return StudentInfo(
             full_name=raw.Nombre,
@@ -383,8 +383,7 @@ async def fetch_student_info(rut: str) -> StudentInfo:
             AssertionError,
         ):
             raise ValueError("Not a valid engineering student") from err
-        else:
-            raise err
+        raise err
 
 
 async def fetch_student_previous_courses(
