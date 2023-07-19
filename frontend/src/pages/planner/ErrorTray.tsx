@@ -112,7 +112,7 @@ interface FormatMessageProps {
   reqCourses: any
 }
 
-export const ValidationMessage: React.FC<FormatMessageProps> = ({ diag, reqCourses }) => {
+export const MessageText: React.FC<FormatMessageProps> = ({ diag, reqCourses }) => {
   switch (diag.kind) {
     case 'creditserr':
       return <span>Tienes {diag.actual} créditos en el semestre {diag.associated_to[0] + 1}, más de los {diag.max_allowed} que se permiten tomar en un semestre.</span>
@@ -183,7 +183,7 @@ interface MessageProps {
 /**
  * A single error/warning message.
  */
-const Message = ({ setValidatablePlan, getCourseDetails, reqCourses, diag, key, open }: MessageProps): JSX.Element => {
+const MessageBox = ({ setValidatablePlan, getCourseDetails, reqCourses, diag, key, open }: MessageProps): JSX.Element => {
   const w = !(diag.is_err ?? true)
 
   return (
@@ -193,7 +193,7 @@ const Message = ({ setValidatablePlan, getCourseDetails, reqCourses, diag, key, 
     <div className={open ? '' : 'hidden'}>
       <div className={'min-w-[14rem] ml-2 mb-3'}>
         <span className={'font-semibold '}>{`${w ? 'Advertencia' : 'Error'}: `}</span>
-        <ValidationMessage diag={diag} reqCourses={reqCourses}/>
+        <MessageText diag={diag} reqCourses={reqCourses}/>
       </div>
       <AutoFix setValidatablePlan={setValidatablePlan} getCourseDetails={getCourseDetails} reqCourses={reqCourses} diag={diag}/>
     </div>
@@ -227,7 +227,7 @@ const ErrorTray = ({ setValidatablePlan, diagnostics, validating, courseDetails,
         reqCourses[code] = courseDetails[code] ?? code
       }
     }
-    return Message({ setValidatablePlan, diag: diagWithAssociated, key: index, open: open || hasError, getCourseDetails, reqCourses })
+    return MessageBox({ setValidatablePlan, diag: diagWithAssociated, key: index, open: open || hasError, getCourseDetails, reqCourses })
   })
 
   // Determine when we get 0 messages to launch the confetti
@@ -247,23 +247,21 @@ const ErrorTray = ({ setValidatablePlan, diagnostics, validating, courseDetails,
   }, [hasErrors, confetti])
 
   return (
-    <div className={`h-[95%] z-20 flex flex-col relative border-slate-300 border-2 rounded-lg bg-slate-100 shadow-lg mb-2 py-4  motion-reduce:transition-none transition-all ${hasError || open ? 'w-80 min-w-[20rem]' : 'min-w-[4.5rem]'}`}>
+    <div className={`h-fit max-h-[80%] z-20 flex flex-col absolute top-4 right-4 border-slate-300 border-2 rounded-lg bg-slate-100 shadow-lg mb-2 py-4  motion-reduce:transition-none transition-all ${hasError || open ? 'w-80 min-w-[20rem]' : 'min-w-[4.5rem]'}`}>
+      {/* Open/close + (optional) Title */}
       <div className='flex mb-4 mx-6'>
+        {/* Open/close tray button */}
         <div className='group relative flex'>
-          <span className={`fixed z-10 transition-all motion-reduce:transition-none scale-0 ${hasError ? 'group-hover:scale-100' : ''}`}>
-            <div className="absolute right-2.5 top-1 w-4 h-4 bg-gray-800 rotate-45 rounded" />
-            <span className={'absolute right-4 -top-1 w-48 z-10 rounded bg-gray-800 p-2 text-xs text-white'}>
-              Es necesario resolver todos los errores existentes para minimizar la bandeja de Errores y Advertencias.
-            </span>
-          </span>
-          <button className={`${hasError ? 'cursor-not-allowed stroke-slate-400' : 'stroke-current'}`} disabled={hasError} onClick={() => { setOpen(prev => !prev) }}>
-            <svg className="w-5 h-5 flex " xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <button className="stroke-current" onClick={() => { setOpen(prev => !prev) }}>
+            <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M2 12h20M2 6h20M2 18h20"></path>
             </svg>
           </button>
         </div>
-        {(hasError || open) && <p className="whitespace-nowrap ml-2 text-xl font-semibold text-center h-7 overflow-hidden">Errores y Advertencias </p>}
+        {/* Title */}
+        {(hasError || open) && <p className="whitespace-nowrap ml-2 text-lg font-semibold text-center h-7 overflow-hidden">Errores y Advertencias </p>}
       </div>
+      {/* The tray itself */}
       <div className="h-full flex flex-col gap-2 px-3 overflow-y-auto overflow-x-hidden ">
           {validating ? <div> <Spinner message={`${hasError || open ? 'Validando...' : ''}`}/></div> : <>{messageList.length > 0 ? messageList : <NoMessages open={open}/>}</>}
       </div>
