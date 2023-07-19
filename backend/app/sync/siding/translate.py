@@ -29,7 +29,6 @@ from app.plan.validation.curriculum.tree import (
     Leaf,
     MajorCode,
     MinorCode,
-    Multiplicity,
     TitleCode,
 )
 from app.sync.siding import client, siding_rules
@@ -227,10 +226,10 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
                     # However, if there is no ICS1113-ICS113H homogeneous equivalence in
                     # the current plan, they will not be considered equivalent!
                     # Equivalencies should "spread" across curriculums.
-                    multiplicity = Multiplicity(
-                        group=list(codes),
-                        credits=concrete_info.credits,
-                    )
+                    multiplicity = curriculum.multiplicity_of(
+                        courseinfo,
+                        info.courses[0],
+                    ).copy(update={"group": list(codes)})
                     for equivalent in info.courses:
                         if equivalent in curriculum.multiplicity:
                             assert (

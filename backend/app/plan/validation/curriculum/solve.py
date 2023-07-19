@@ -604,8 +604,8 @@ def solve_curriculum(
             logging.debug(f"original graph:\n{g.dump_graphviz_debug(curriculum)}")
             logging.debug("searching for minimum relaxation to make it feasible...")
             tol = "infinite"
-            for i in range(curriculum.root.cap):
-                g = _build_problem(courseinfo, curriculum, taken, tolerance=i + 1)
+            for i in range(1, curriculum.root.cap+1):
+                g = _build_problem(courseinfo, curriculum, taken, tolerance=i)
                 solve_status_2 = solver.Solve(g.model)
                 if solve_status_2 == cpsat.OPTIMAL or solve_status_2 == cpsat.FEASIBLE:
                     tol = i
