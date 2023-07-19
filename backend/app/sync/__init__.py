@@ -37,6 +37,10 @@ from app.plan.courseinfo import course_info, pack_course_details
 from app.plan.validation.curriculum.tree import (
     Curriculum,
     CurriculumSpec,
+    Cyear,
+    MajorCode,
+    MinorCode,
+    TitleCode,
 )
 from app.settings import settings
 from app.sync import buscacursos_dl
@@ -59,6 +63,16 @@ async def run_upstream_sync(
     load.
     """
 
+    if offer:
+        print("syncing curriculum offer...")
+        # Clear available programs
+        await DbMajor.prisma().delete_many()
+        await DbMinor.prisma().delete_many()
+        await DbTitle.prisma().delete_many()
+        await DbMajorMinor.prisma().delete_many()
+        # Refetch available programs
+        await siding_translate.load_siding_offer_to_database()
+
     if curriculums or courses:
         # If we delete courses, we must also delete equivalences (because equivalences
         # reference courses)
@@ -71,6 +85,50 @@ async def run_upstream_sync(
         await DbEquivalenceCourse.prisma().delete_many()
         await DbEquivalence.prisma().delete_many()
         await DbCurriculum.prisma().delete_many()
+        print("syncing all curriculums...")
+        cyears: set[Cyear] = set()
+        for major in await DbMajor.prisma().find_many():
+            cyear = Cyear.parse_obj({"raw": major.cyear})
+            cyears.add(cyear)
+            await _get_curriculum_piece(
+                CurriculumSpec(
+                    cyear=cyear,
+                    major=MajorCode(major.code),
+                    minor=None,
+                    title=None,
+                ),
+            )
+        for minor in await DbMinor.prisma().find_many():
+            cyear = Cyear.parse_obj({"raw": minor.cyear})
+            cyears.add(cyear)
+            await _get_curriculum_piece(
+                CurriculumSpec(
+                    cyear=cyear,
+                    major=None,
+                    minor=MinorCode(minor.code),
+                    title=None,
+                ),
+            )
+        for title in await DbTitle.prisma().find_many():
+            cyear = Cyear.parse_obj({"raw": title.cyear})
+            cyears.add(cyear)
+            await _get_curriculum_piece(
+                CurriculumSpec(
+                    cyear=cyear,
+                    major=None,
+                    minor=None,
+                    title=TitleCode(title.code),
+                ),
+            )
+        for cyear in cyears:
+            await _get_curriculum_piece(
+                CurriculumSpec(
+                    cyear=cyear,
+                    major=None,
+                    minor=None,
+                    title=None,
+                ),
+            )
 
     if courses:
         print("syncing course database...")
@@ -79,16 +137,6 @@ async def run_upstream_sync(
         # Get course data from "official" source
         # Currently we have no official source
         await buscacursos_dl.fetch_to_database()
-
-    if offer:
-        print("syncing curriculum offer...")
-        # Clear available programs
-        await DbMajor.prisma().delete_many()
-        await DbMinor.prisma().delete_many()
-        await DbTitle.prisma().delete_many()
-        await DbMajorMinor.prisma().delete_many()
-        # Refetch available programs
-        await siding_translate.load_siding_offer_to_database()
 
     if packedcourses or courses:
         # If we updated the courses, we must update the packed courses too
