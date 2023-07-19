@@ -281,6 +281,13 @@ const Planner = (): JSX.Element => {
       if (validatablePlan.classes.flat().length === 0) {
         setValidationResult(null)
         setPlannerStatus(PlannerStatus.READY)
+        previousClasses.current = validatablePlan.classes
+        previousCurriculum.current = {
+          major: validatablePlan.curriculum.major,
+          minor: validatablePlan.curriculum.minor,
+          title: validatablePlan.curriculum.title,
+          cyear: validatablePlan.curriculum.cyear.raw
+        }
         return
       }
       const promise = authState?.user == null ? DefaultService.validateGuestPlan(validatablePlan) : DefaultService.validatePlanForUser(validatablePlan)
@@ -698,7 +705,7 @@ const Planner = (): JSX.Element => {
   }, [])
 
   useEffect(() => {
-    console.log(plannerStatus)
+    console.log(`planner status set to ${plannerStatus}`)
     if (plannerStatus === 'LOADING') {
       void fetchData()
     }
