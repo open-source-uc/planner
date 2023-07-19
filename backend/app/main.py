@@ -1,4 +1,6 @@
+import asyncio
 import logging
+import random
 from typing import TYPE_CHECKING, Annotated, Literal
 
 import sentry_sdk
@@ -12,6 +14,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from app import routes
 from app.database import prisma
 from app.logger import setup_logger
+from app.plan.courseinfo import course_info
 from app.redis import get_redis
 from app.settings import settings
 from app.sync.siding.client import client as siding_soap_client
@@ -92,6 +95,10 @@ async def startup():
     await prisma.connect()
     # Setup SIDING webservice
     siding_soap_client.on_startup()
+    # HACK: Random sleep to avoid DDoSing the DB
+    await asyncio.sleep(random.SystemRandom().random() * 15)
+    # Prime local in-memory course info cache
+    await course_info()
 
 
 @app.on_event("shutdown")  # type: ignore

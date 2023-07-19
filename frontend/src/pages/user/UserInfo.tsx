@@ -15,7 +15,8 @@ const UserInfo = (): JSX.Element => {
               <h3 className="text-4xl font-normal leading-normal mt-0 mb-2 text-gray-800">Información Personal</h3>
               <ul className="m-3 space-y-2">
                   <li>Nombre: {authState?.student?.info?.full_name}</li>
-                  <li>Ingreso: {String(authState?.student?.info?.admission.slice(0, -1)) + '-' + String(authState?.student?.info?.admission.slice(-1))}</li>
+                  {/* TODO: Fix this when we have time */}
+                  {/* <li>Ingreso: {String(authState?.student?.admission.slice(0, -1)) + '-' + String(authState?.student?.info?.admission.slice(-1))}</li> */}
                   <li>Rut: 20426136-2 </li>
               </ul>
           </div>

@@ -80,6 +80,7 @@ Similarly, any node with one input that has at least as much input capacity as i
 has output capacity is useless.
 """
 
+import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 
@@ -91,8 +92,10 @@ from app.plan.validation.curriculum.tree import (
     SUPERBLOCK_PREFIX,
     Block,
     Curriculum,
+    CurriculumSpec,
     FillerCourse,
     Leaf,
+    Multiplicity,
 )
 
 # Infinite placeholder.
@@ -196,7 +199,7 @@ class UsableCourse:
     # The multiplicity of this course.
     # This is the maximum amount of credits that can flow through all instances.
     # If `None`, there is no limit on the amount of credits that can count.
-    multiplicity: int | None
+    multiplicity: Multiplicity
     # The total amount of credits in usable courses (taken + filler credits).
     total: int
     # Each course instance belonging to this course code.
@@ -218,8 +221,6 @@ class SolvedCurriculum:
     usable_keys: set[str]
     # Indicates the main superblock that each course counts towards.
     superblocks: dict[str, list[str]]
-    # Maps from original (code, repeat index) to curriculum (code, repeat index).
-    mapping: dict[str, list[tuple[str, int]]]
 
     def __init__(self) -> None:
         self.model = cpsat.CpModel()
@@ -227,17 +228,6 @@ class SolvedCurriculum:
         self.usable_keys = set()
         self.superblocks = {}
         self.mapping = {}
-
-    def map_class_id(self, code: str, rep_idx: int) -> tuple[str, int] | None:
-        """
-        Given a class id in the original plan, get a class id in the internal plan.
-        This does things like mapping courses to their equivalents.
-        """
-        if code not in self.mapping:
-            return None
-        if rep_idx >= len(self.mapping[code]) or rep_idx < 0:
-            return None
-        return self.mapping[code][rep_idx]
 
     def dump_graphviz_pretty(self, curriculum: Curriculum) -> str:
         from app.plan.validation.curriculum.dump import GraphDumper
@@ -372,10 +362,6 @@ def _add_usable_course(
     og_course = to_add.course if isinstance(to_add, FillerCourse) else to_add
     code = og_course.code
 
-    # Map curriculum equivalencies
-    if code in curriculum.equivalencies:
-        code = curriculum.equivalencies[code]
-
     if code in g.usable:
         usable = g.usable[code]
     else:
@@ -387,13 +373,17 @@ def _add_usable_course(
         g.usable[code] = usable
         g.usable_keys.add(code)
 
-    if usable.multiplicity is not None and usable.multiplicity < credit_cap:
-        credit_cap = usable.multiplicity
+    if (
+        usable.multiplicity.credits is not None
+        and usable.multiplicity.credits < credit_cap
+    ):
+        credit_cap = usable.multiplicity.credits
     if usable.total >= credit_cap:  # noqa: SIM102 (for clarity)
         # This course is already full
         # If the course we are adding is equivalent to some previous course, just skip
         # it
         # For this to work correctly, fillers must be added after taken courses!
+        # (This is an optimization)
         if any(
             previous.original_pseudocourse == og_course
             or (
@@ -432,28 +422,24 @@ def _add_usable_course(
     )
     usable.total += credits
 
-    g.mapping.setdefault(og_course.code, []).append((code, inst_idx))
 
-
-def _build_problem(
+def _fill_usable(
     courseinfo: CourseInfo,
+    taken: list[list[PseudoCourse]],
     curriculum: Curriculum,
-    taken_semesters: list[list[PseudoCourse]],
-) -> SolvedCurriculum:
+    g: SolvedCurriculum,
+):
     """
-    Take a curriculum prototype and a specific set of taken courses, and build a
-    solvable graph that represents this curriculum.
+    Iterate through all taken courses and filler courses, and populate `g.usable`.
+    Basically, recognize which courses can be used to fill the curriculum slots.
     """
 
-    g = SolvedCurriculum()
-
-    # Fill in credit pool from approved courses and filler credits
     flat_order = 0
     filler_cap: dict[str, int] = {
         code: sum(courseinfo.get_credits(filler.course) or 0 for filler in fillers)
         for code, fillers in curriculum.fillers.items()
     }
-    for sem in taken_semesters:
+    for sem in taken:
         for c in sorted(sem, key=lambda c: c.code):
             if courseinfo.try_any(c) is None:
                 continue
@@ -478,27 +464,62 @@ def _build_problem(
             )
             flat_order += 1
 
+
+def _build_problem(
+    courseinfo: CourseInfo,
+    curriculum: Curriculum,
+    taken_semesters: list[list[PseudoCourse]],
+    *,
+    tolerance: int = 0,
+) -> SolvedCurriculum:
+    """
+    Take a curriculum prototype and a specific set of taken courses, and build a
+    solvable graph that represents this curriculum.
+    """
+
+    g = SolvedCurriculum()
+
+    # Fill in credit pool from approved courses and filler credits
+    _fill_usable(courseinfo, taken_semesters, curriculum, g)
+
     # Build curriculum graph from the curriculum tree
     root_flow = _build_visit(courseinfo, g, VisitState(), curriculum.root)
 
     # Ensure the maximum amount of flow reaches the root
     g.model.AddLinearConstraint(
         cpsat.LinearExpr.Sum(root_flow),
-        curriculum.root.cap,
+        curriculum.root.cap - tolerance,
         curriculum.root.cap,
     )
 
     # Apply multiplicity limits
     # Each course can only be taken once (or, a certain number of times)
-    for usable in g.usable.values():
-        if not usable.multiplicity or usable.total <= usable.multiplicity:
+    seen: set[str] = set()
+    for code, usable in g.usable.items():
+        if code in seen:
             continue
-        vars = [inst.used_var for inst in usable.instances]
-        coeffs = [inst.credits for inst in usable.instances]
+        seen.add(code)
+        max_creds = usable.multiplicity.credits
+        group = usable.multiplicity.group
+
+        total_credits = 0
+        for ecode in group:
+            if ecode in g.usable:
+                total_credits += g.usable[ecode].total
+        if max_creds is None or total_credits <= max_creds:
+            continue
+        vars = []
+        coeffs = []
+        for ecode in group:
+            if ecode not in g.usable:
+                continue
+            for inst in g.usable[ecode].instances:
+                vars.append(inst.used_var)
+                coeffs.append(inst.credits)
         g.model.AddLinearConstraint(
             cpsat.LinearExpr.WeightedSum(vars, coeffs),
             0,
-            usable.multiplicity,
+            max_creds,
         )
 
     # Each course instance can only feed one block per layer
@@ -569,6 +590,7 @@ solver.parameters.num_workers = 1  # type: ignore
 
 def solve_curriculum(
     courseinfo: CourseInfo,
+    spec: CurriculumSpec,
     curriculum: Curriculum,
     taken: list[list[PseudoCourse]],
 ) -> SolvedCurriculum:
@@ -577,9 +599,23 @@ def solve_curriculum(
     # Solve the integer optimization problem
     solve_status = solver.Solve(g.model)
     if not (solve_status == cpsat.OPTIMAL or solve_status == cpsat.FEASIBLE):
-        dbg = f"\n{g.dump_graphviz_debug(curriculum)}"
+        if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
+            logging.debug(f"solving failed for {spec}: {solver.StatusName()}")
+            logging.debug(f"original graph:\n{g.dump_graphviz_debug(curriculum)}")
+            logging.debug("searching for minimum relaxation to make it feasible...")
+            tol = "infinite"
+            for i in range(1, curriculum.root.cap + 1):
+                g = _build_problem(courseinfo, curriculum, taken, tolerance=i)
+                solve_status_2 = solver.Solve(g.model)
+                if solve_status_2 == cpsat.OPTIMAL or solve_status_2 == cpsat.FEASIBLE:
+                    tol = i
+                    _tag_edge_flow(solver, g)
+                    break
+            logging.debug(
+                f"solvable with tolerance {tol}:\n{g.dump_graphviz_debug(curriculum)}",
+            )
         raise Exception(
-            f"failed to solve curriculum: {solver.StatusName()}{dbg}",
+            f"failed to solve curriculum {spec}: {solver.StatusName()}",
         )
     # Extract solution from solver
     _tag_edge_flow(solver, g)

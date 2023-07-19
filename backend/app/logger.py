@@ -12,7 +12,12 @@ from app.settings import settings
 DATE_FORMAT = "%y-%b-%d %H:%M:%S"
 LOGGER_FILE = Path(settings.log_path)  # where log is stored
 
-SIMPLE_FORMAT = "%(levelname)s[%(name)s]: \t%(message)s"
+SIMPLE_FORMAT = logging.Formatter(
+    "%(levelname)s[%(name)s]: \t%(message)s",
+    datefmt=DATE_FORMAT,
+)
+
+log_level = logging.getLevelNamesMapping()[settings.log_level]
 
 
 def production_handlers() -> list[logging.Handler]:
@@ -21,11 +26,9 @@ def production_handlers() -> list[logging.Handler]:
     For production.
     """
 
-    handler_format = logging.Formatter(SIMPLE_FORMAT, datefmt=DATE_FORMAT)
-
     # Stdout
     stdout_handler = logging.StreamHandler(sys.stdout)
-    stdout_handler.setFormatter(handler_format)
+    stdout_handler.setFormatter(SIMPLE_FORMAT)
 
     return [stdout_handler]
 
@@ -38,9 +41,7 @@ def debug_handlers() -> list[logging.Handler]:
     from rich.logging import RichHandler
 
     output_file_handler = logging.FileHandler(LOGGER_FILE)
-    output_file_handler.setFormatter(
-        logging.Formatter(SIMPLE_FORMAT, datefmt=DATE_FORMAT),
-    )
+    output_file_handler.setFormatter(SIMPLE_FORMAT)
 
     rich_stdout_handler = RichHandler(
         rich_tracebacks=True,
@@ -58,23 +59,30 @@ def debug_handlers() -> list[logging.Handler]:
 
 
 def setup_logger():
-    """Cycles through uvicorn root loggers to
-    remove handler, then runs `get_logger_config()`
-    to populate the `LoggerConfig` class with Rich
-    logger parameters.
+    """
+    Setup logging depending on the environment type (production, staging, development).
     """
 
-    # Remove all handlers from root logger
-    # and proprogate to root logger.
+    # For all loggers in external libraries,
     for name in logging.root.manager.loggerDict:
-        logging.getLogger(name).handlers = []
-        logging.getLogger(name).propagate = True
+        external_logger = logging.getLogger(name)
+        # Remove all handlers
+        external_logger.handlers = []
+        # Enable propagation to the main logger
+        external_logger.propagate = True
+        # Force a minimum level of `INFO`
+        # If we want to debug, we want to debug our code
+        min_level = logging.INFO
+        if name == "httpx":
+            # Special fix for httpx since it spams INFO
+            min_level = logging.WARNING
+        external_logger.setLevel(max(min_level, log_level))
 
     handlers = (
         production_handlers() if settings.env == "production" else debug_handlers()
     )
 
     logging.basicConfig(
-        level=logging.getLevelNamesMapping()[settings.log_level],
+        level=log_level,
         handlers=handlers,
     )
