@@ -568,7 +568,7 @@ const Planner = (): JSX.Element => {
     } else {
       await savePlan(planName)
     }
-  }, [setIsSavePlanModalOpen, planName])
+  }, [setIsSavePlanModalOpen, validatablePlan, planName])
 
   const closeSavePlanModal = useCallback((): void => {
     setIsSavePlanModalOpen(false)
