@@ -19,17 +19,20 @@ async def sync_database(
     courses: bool,
     curriculums: bool,
     offer: bool,
-    courseinfo: bool,
+    packedcourses: bool,
     admin: AdminKey = Depends(require_admin_auth),
 ):
     """
     Initiate a synchronization of the internal database from external sources.
+
+    NOTE: This endpoint is currently broken: a server restart is necessary after syncing
+    the database in order for the changes to reach all workers.
     """
     await sync.run_upstream_sync(
         courses=courses,
         curriculums=curriculums,
         offer=offer,
-        courseinfo=courseinfo,
+        packedcourses=packedcourses,
     )
     return {
         "message": "Synchronized",

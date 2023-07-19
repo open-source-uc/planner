@@ -149,8 +149,8 @@ class GraphDumper:
                             lname = f"[{layer_id}]" if layer_id else ""
                             mult = (
                                 "inf"
-                                if usable.multiplicity is None
-                                else usable.multiplicity
+                                if usable.multiplicity.credits is None
+                                else usable.multiplicity.credits
                             )
                             courseids[code] = self.mknode(
                                 f"{code}{lname} {usable.total}/{mult}",
@@ -179,6 +179,9 @@ class GraphDumper:
                     child.cap,
                 )
 
+        if flow > block.cap:
+            flow = block.cap
+
         return vid, flow
 
     def dump(self) -> str:
@@ -187,8 +190,6 @@ class GraphDumper:
         """
 
         self.out += "digraph {\n"
-
-        self.visit(self.curriculum.root)
 
         vid, flow = self.visit(self.curriculum.root)
         sink = self.mknode("")

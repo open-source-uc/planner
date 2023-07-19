@@ -19,6 +19,7 @@ import deepEqual from 'fast-deep-equal'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { collectRequirements } from './utils/utils'
+import ReceivePaste from './utils/ReceivePaste'
 
 enum PlannerStatus {
   LOADING = 'LOADING',
@@ -177,21 +178,27 @@ const Planner = (): JSX.Element => {
     }
   }
 
-  async function getDefaultPlan (baseValidatablePlan?: ValidatablePlan): Promise<void> {
+  async function getDefaultPlan (referenceValidatablePlan?: ValidatablePlan, truncateAt?: number): Promise<void> {
     try {
       console.log('Getting Basic Plan...')
-      if (baseValidatablePlan === undefined) {
+      let baseValidatablePlan
+      if (referenceValidatablePlan === undefined) {
         baseValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
       } else {
-        baseValidatablePlan = { ...baseValidatablePlan }
-        baseValidatablePlan.classes = [...baseValidatablePlan.classes]
+        baseValidatablePlan = { ...referenceValidatablePlan, classes: [...referenceValidatablePlan.classes] }
       }
+      // truncate the validatablePlan to the passed courses
+      truncateAt = truncateAt ?? (authState?.student?.next_semester ?? 0)
+      baseValidatablePlan.classes.splice(truncateAt)
       // truncate the validatablePlan to the last not empty semester
       while (baseValidatablePlan.classes.length > 0 && baseValidatablePlan.classes[baseValidatablePlan.classes.length - 1].length === 0) {
         baseValidatablePlan.classes.pop()
       }
       console.log(baseValidatablePlan)
-      const response: ValidatablePlan = await DefaultService.generatePlan(baseValidatablePlan)
+      const response: ValidatablePlan = await DefaultService.generatePlan({
+        passed: baseValidatablePlan,
+        reference: referenceValidatablePlan ?? undefined
+      })
       await Promise.all([
         getCourseDetails(response.classes.flat()),
         loadCurriculumsData(response.curriculum.cyear.raw, response.curriculum.major),
@@ -274,6 +281,13 @@ const Planner = (): JSX.Element => {
       if (validatablePlan.classes.flat().length === 0) {
         setValidationResult(null)
         setPlannerStatus(PlannerStatus.READY)
+        previousClasses.current = validatablePlan.classes
+        previousCurriculum.current = {
+          major: validatablePlan.curriculum.major,
+          minor: validatablePlan.curriculum.minor,
+          title: validatablePlan.curriculum.title,
+          cyear: validatablePlan.curriculum.cyear.raw
+        }
         return
       }
       const promise = authState?.user == null ? DefaultService.validateGuestPlan(validatablePlan) : DefaultService.validatePlanForUser(validatablePlan)
@@ -600,12 +614,10 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null || prev.curriculum.major === majorCode) return prev
       const newCurriculum = { ...prev.curriculum, major: majorCode }
-      const newClasses = [...prev.classes]
-      newClasses.splice(authState?.student?.next_semester ?? 0)
       if (!isMinorValid) {
         newCurriculum.minor = undefined
       }
-      return { ...prev, classes: newClasses, curriculum: newCurriculum }
+      return { ...prev, curriculum: newCurriculum }
     })
   }, [setValidatablePlan, authState]) // this sensitivity list shouldn't contain frequently-changing attributes
 
@@ -613,9 +625,7 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null || prev.curriculum.minor === minorCode) return prev
       const newCurriculum = { ...prev.curriculum, minor: minorCode }
-      const newClasses = [...prev.classes]
-      newClasses.splice(authState?.student?.next_semester ?? 0)
-      return { ...prev, classes: newClasses, curriculum: newCurriculum }
+      return { ...prev, curriculum: newCurriculum }
     })
   }, [setValidatablePlan, authState]) // this sensitivity list shouldn't contain frequently-changing attributes
 
@@ -623,9 +633,7 @@ const Planner = (): JSX.Element => {
     setValidatablePlan((prev) => {
       if (prev == null || prev.curriculum.title === titleCode) return prev
       const newCurriculum = { ...prev.curriculum, title: titleCode }
-      const newClasses = [...prev.classes]
-      newClasses.splice(authState?.student?.next_semester ?? 0)
-      return { ...prev, classes: newClasses, curriculum: newCurriculum }
+      return { ...prev, curriculum: newCurriculum }
     })
   }, [setValidatablePlan, authState]) // this sensitivity list shouldn't contain frequently-changing attributes
 
@@ -697,7 +705,7 @@ const Planner = (): JSX.Element => {
   }, [])
 
   useEffect(() => {
-    console.log(plannerStatus)
+    console.log(`planner status set to ${plannerStatus}`)
     if (plannerStatus === 'LOADING') {
       void fetchData()
     }
@@ -725,6 +733,7 @@ const Planner = (): JSX.Element => {
   return (
     <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
       <DebugGraph validatablePlan={validatablePlan} />
+      <ReceivePaste validatablePlan={validatablePlan} getDefaultPlan={getDefaultPlan} />
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
       <LegendModal open={isLegendModalOpen} onClose={closeLegendModal}/>
       <SavePlanModal isOpen={isSavePlanModalOpen} onClose={closeSavePlanModal} savePlan={savePlan}/>

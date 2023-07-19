@@ -9,6 +9,7 @@ export type { OpenAPIConfig } from './core/OpenAPI';
 export type { AccessLevelOverview } from './models/AccessLevelOverview';
 export type { AmbiguousCourseErr } from './models/AmbiguousCourseErr';
 export type { And } from './models/And';
+export type { Body_generate_plan } from './models/Body_generate_plan';
 export type { ClassId } from './models/ClassId';
 export type { ConcreteId } from './models/ConcreteId';
 export type { Const } from './models/Const';

@@ -69,7 +69,7 @@ def diagnose_curriculum(
         out.add(NoMajorMinorWarn(plan=plan.curriculum))
 
     # Solve plan
-    g = solve_curriculum(courseinfo, curriculum, plan.classes)
+    g = solve_curriculum(courseinfo, plan.curriculum, curriculum, plan.classes)
 
     # Generate diagnostics
     _diagnose_blocks(courseinfo, out, g)
@@ -83,9 +83,10 @@ def diagnose_curriculum(
         for course in sem:
             rep_idx = rep_counter[course.code]
             rep_counter[course.code] += 1
-            mapped = g.map_class_id(course.code, rep_idx)
-            if mapped is not None:
-                superblock = g.superblocks[mapped[0]][mapped[1]]
+            if course.code in g.superblocks and rep_idx < len(
+                g.superblocks[course.code],
+            ):
+                superblock = g.superblocks[course.code][rep_idx]
                 if superblock == "":
                     unassigned += courseinfo.get_credits(course) or 0
                     if sem_i >= first_unvalidated_sem:
@@ -98,7 +99,6 @@ def diagnose_curriculum(
     for code, count in rep_counter.items():
         superblocks[code] = ["" for _ in range(count)]
         for rep_idx in range(count):
-            mapped = g.map_class_id(code, rep_idx)
-            if mapped is not None:
-                superblocks[code][rep_idx] = g.superblocks[mapped[0]][mapped[1]]
+            if code in g.superblocks and rep_idx < len(g.superblocks[code]):
+                superblocks[code][rep_idx] = g.superblocks[code][rep_idx]
     out.course_superblocks = superblocks

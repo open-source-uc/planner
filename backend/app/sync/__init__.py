@@ -34,10 +34,14 @@ from prisma.models import (
 )
 from pydantic import ValidationError
 
-from app.plan.courseinfo import clear_course_info_cache, course_info
+from app.plan.courseinfo import course_info, pack_course_details
 from app.plan.validation.curriculum.tree import (
     Curriculum,
     CurriculumSpec,
+    Cyear,
+    MajorCode,
+    MinorCode,
+    TitleCode,
 )
 from app.settings import settings
 from app.sync import buscacursos_dl
@@ -51,32 +55,14 @@ async def run_upstream_sync(
     courses: bool,
     curriculums: bool,
     offer: bool,
-    courseinfo: bool,
+    packedcourses: bool,
 ):
     """
     Populate database with "official" data.
+
+    NOTE: This function should only be called from a startup script, before any workers
+    load.
     """
-
-    if curriculums or courses:
-        # If we delete courses, we must also delete equivalences (because equivalences
-        # reference courses)
-        # If we delete equivalences, we must also delete curriculums (because
-        # curriculums reference equivalences)
-
-        print("deleting curriculum cache...")
-        # Equivalences and curriculums are cached lazily
-        # Therefore, we can delete them without refetching them
-        await DbEquivalenceCourse.prisma().delete_many()
-        await DbEquivalence.prisma().delete_many()
-        await DbCurriculum.prisma().delete_many()
-
-    if courses:
-        print("syncing course database...")
-        # Clear previous courses
-        await DbCourse.prisma().delete_many()
-        # Get course data from "official" source
-        # Currently we have no official source
-        await buscacursos_dl.fetch_to_database()
 
     if offer:
         print("syncing curriculum offer...")
@@ -88,13 +74,78 @@ async def run_upstream_sync(
         # Refetch available programs
         await siding_translate.load_siding_offer_to_database()
 
-    if courseinfo or courses:
-        # If we updated the courses, we must update the cache too
+    if curriculums or courses:
+        # If we delete courses, we must also delete equivalences (because equivalences
+        # reference courses)
+        # If we delete equivalences, we must also delete curriculums (because
+        # curriculums reference equivalences)
+        print("deleting stored equivalences...")
+        await DbEquivalenceCourse.prisma().delete_many()
+        await DbEquivalence.prisma().delete_many()
 
-        print("caching courseinfo...")
-        # Recache courseinfo
-        await clear_course_info_cache()
-        await course_info()
+    if courses:
+        print("syncing course database...")
+        # Clear previous courses
+        await DbCourse.prisma().delete_many()
+        # Get course data from "official" source
+        # Currently we have no official source
+        await buscacursos_dl.fetch_to_database()
+
+    if curriculums or packedcourses or courses:
+        # If we updated the courses, we must update the packed courses too
+
+        print("updating packed course details...")
+        # Pack course details from main course database
+        await pack_course_details()
+
+    if curriculums or courses:
+        # Equivalences and curriculums are cached lazily
+        print("deleting curriculum cache...")
+        await DbCurriculum.prisma().delete_many()
+        print("syncing all curriculums...")
+        cyears: set[Cyear] = set()
+        for major in await DbMajor.prisma().find_many():
+            cyear = Cyear.parse_obj({"raw": major.cyear})
+            cyears.add(cyear)
+            await _get_curriculum_piece(
+                CurriculumSpec(
+                    cyear=cyear,
+                    major=MajorCode(major.code),
+                    minor=None,
+                    title=None,
+                ),
+            )
+        for minor in await DbMinor.prisma().find_many():
+            cyear = Cyear.parse_obj({"raw": minor.cyear})
+            cyears.add(cyear)
+            await _get_curriculum_piece(
+                CurriculumSpec(
+                    cyear=cyear,
+                    major=None,
+                    minor=MinorCode(minor.code),
+                    title=None,
+                ),
+            )
+        for title in await DbTitle.prisma().find_many():
+            cyear = Cyear.parse_obj({"raw": title.cyear})
+            cyears.add(cyear)
+            await _get_curriculum_piece(
+                CurriculumSpec(
+                    cyear=cyear,
+                    major=None,
+                    minor=None,
+                    title=TitleCode(title.code),
+                ),
+            )
+        for cyear in cyears:
+            await _get_curriculum_piece(
+                CurriculumSpec(
+                    cyear=cyear,
+                    major=None,
+                    minor=None,
+                    title=None,
+                ),
+            )
 
 
 async def _get_curriculum_piece(spec: CurriculumSpec) -> Curriculum:
@@ -144,6 +195,13 @@ async def _get_curriculum_piece(spec: CurriculumSpec) -> Curriculum:
 
 
 async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
+    """
+    Get the full curriculum definition for a particular curriculum spec.
+
+    NOTE: Some users of this function, in particular `app.plan.generation`, modify the
+    returned `Curriculum`.
+    Therefore, each call to `get_curriculum` should result in a fresh curriculum.
+    """
     out = Curriculum.empty()
 
     # Fetch major (or common plan)
