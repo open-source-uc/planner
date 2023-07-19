@@ -579,9 +579,23 @@ def solve_curriculum(
     # Solve the integer optimization problem
     solve_status = solver.Solve(g.model)
     if not (solve_status == cpsat.OPTIMAL or solve_status == cpsat.FEASIBLE):
-        dbg = f"\n{g.dump_graphviz_debug(curriculum)}"
+        if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
+            logging.debug(f"solving failed for {spec}: {solver.StatusName()}")
+            logging.debug(f"original graph:\n{g.dump_graphviz_debug(curriculum)}")
+            logging.debug("searching for minimum relaxation to make it feasible...")
+            tol = "infinite"
+            for i in range(curriculum.root.cap):
+                g = _build_problem(courseinfo, curriculum, taken, tolerance=i + 1)
+                solve_status_2 = solver.Solve(g.model)
+                if solve_status_2 == cpsat.OPTIMAL or solve_status_2 == cpsat.FEASIBLE:
+                    tol = i
+                    _tag_edge_flow(solver, g)
+                    break
+            logging.debug(
+                f"solvable with tolerance {tol}:\n{g.dump_graphviz_debug(curriculum)}",
+            )
         raise Exception(
-            f"failed to solve curriculum {spec}: {solver.StatusName()}{dbg}",
+            f"failed to solve curriculum {spec}: {solver.StatusName()}",
         )
     # Extract solution from solver
     _tag_edge_flow(solver, g)
