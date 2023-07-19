@@ -275,8 +275,8 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                   <label className="mr-3 my-auto" htmlFor="semesterFilter">Semestralidad: </label>
                   <select className="grow rounded py-1" id="semesterFilter" value={filter.on_semester} onChange={e => { setFilter({ ...filter, on_semester: parseInt(e.target.value) }) }}>
                     <option value={0}>Cualquiera</option>
-                    <option value={1}>Pares</option>
-                    <option value={2}>Impares</option>
+                    <option value={1}>Impares</option>
+                    <option value={2}>Pares</option>
                   </select>
                 </div>
 
