@@ -262,6 +262,10 @@ async def get_student_data(user: UserKey) -> StudentContext:
     print(f"fetching user data for student {user.rut} from SIDING...")
     try:
         info = await siding_translate.fetch_student_info(user.rut)
+        passed, in_course = await siding_translate.fetch_student_previous_courses(
+            user.rut,
+            info,
+        )
     except ValueError as err:
         # TODO: Refactor ValueError to use a custom exception
         if "Not a valid" in str(err):
@@ -271,10 +275,6 @@ async def get_student_data(user: UserKey) -> StudentContext:
             ) from err
         raise ValueError from err
 
-    passed, in_course = await siding_translate.fetch_student_previous_courses(
-        user.rut,
-        info,
-    )
     ctx = StudentContext(
         info=info,
         passed_courses=passed,
