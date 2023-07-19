@@ -1,4 +1,6 @@
+import asyncio
 import logging
+import random
 from typing import TYPE_CHECKING, Annotated, Literal
 
 import sentry_sdk
@@ -93,6 +95,8 @@ async def startup():
     await prisma.connect()
     # Setup SIDING webservice
     siding_soap_client.on_startup()
+    # HACK: Random sleep to avoid DDoSing the DB
+    await asyncio.sleep(random.SystemRandom().random() * 15)
     # Prime local in-memory course info cache
     await course_info()
 
