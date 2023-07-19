@@ -30,7 +30,7 @@ if (import.meta.env.MODE !== 'development') {
 
     // Set tracesSampleRate to 1.0 to capture 100%
     // of transactions for performance monitoring.
-    tracesSampleRate: 1.0,
+    tracesSampleRate: 0.7,
 
     // Set `tracePropagationTargets` to control for which URLs distributed tracing should be enabled
     tracePropagationTargets: [
