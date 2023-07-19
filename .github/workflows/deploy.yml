@@ -1,6 +1,7 @@
 name: Deploy
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -29,6 +30,7 @@ jobs:
   deploy-staging:
     runs-on: ubuntu-latest
     name: Deploy to staging
+    timeout-minutes: 15
     env:
       MACHINE: mallastest # This is the staging server
     steps:
