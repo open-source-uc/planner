@@ -164,6 +164,6 @@ Además del equipo núcleo, nos apoyan los contribuidores al proyecto. Puedes ve
 
 ## Licencia
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./license.md)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](./license.md)
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>
