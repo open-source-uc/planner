@@ -9,6 +9,8 @@ from pydantic import BaseModel
 from app.plan.plan import ValidatablePlan
 from app.user.key import ModKey, UserKey
 
+MAX_PLANS_PER_USER = 2
+
 _plan_model_fields = list(DbPlan.__fields__.keys())
 # automatic definition of low detail to avoid hardcoding attributes
 # something like: ['id', 'created_at', 'updated_at', 'name', 'is_favorite', 'user_rut']
@@ -85,7 +87,10 @@ async def authorize_plan_access(
 
 
 async def store_plan(plan_name: str, user: UserKey, plan: ValidatablePlan) -> PlanView:
-    # TODO: set max 50 plans per user
+    # TODO: Limit nicely in the frontend too.
+    current_count = await DbPlan.prisma().count(where={"user_rut": user.rut})
+    if current_count >= MAX_PLANS_PER_USER:
+        raise HTTPException(status_code=403, detail="Maximum amount of plans reached")
 
     data = {
         "name": plan_name,
