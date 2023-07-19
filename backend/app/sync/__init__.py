@@ -79,12 +79,28 @@ async def run_upstream_sync(
         # reference courses)
         # If we delete equivalences, we must also delete curriculums (because
         # curriculums reference equivalences)
-
-        print("deleting curriculum cache...")
-        # Equivalences and curriculums are cached lazily
-        # Therefore, we can delete them without refetching them
+        print("deleting stored equivalences...")
         await DbEquivalenceCourse.prisma().delete_many()
         await DbEquivalence.prisma().delete_many()
+
+    if courses:
+        print("syncing course database...")
+        # Clear previous courses
+        await DbCourse.prisma().delete_many()
+        # Get course data from "official" source
+        # Currently we have no official source
+        await buscacursos_dl.fetch_to_database()
+
+    if curriculums or packedcourses or courses:
+        # If we updated the courses, we must update the packed courses too
+
+        print("updating packed course details...")
+        # Pack course details from main course database
+        await pack_course_details()
+
+    if curriculums or courses:
+        # Equivalences and curriculums are cached lazily
+        print("deleting curriculum cache...")
         await DbCurriculum.prisma().delete_many()
         print("syncing all curriculums...")
         cyears: set[Cyear] = set()
@@ -130,21 +146,6 @@ async def run_upstream_sync(
                     title=None,
                 ),
             )
-
-    if courses:
-        print("syncing course database...")
-        # Clear previous courses
-        await DbCourse.prisma().delete_many()
-        # Get course data from "official" source
-        # Currently we have no official source
-        await buscacursos_dl.fetch_to_database()
-
-    if packedcourses or courses:
-        # If we updated the courses, we must update the packed courses too
-
-        print("updating packed course details...")
-        # Pack course details from main course database
-        await pack_course_details()
 
 
 async def _get_curriculum_piece(spec: CurriculumSpec) -> Curriculum:
