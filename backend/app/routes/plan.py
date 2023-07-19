@@ -117,7 +117,7 @@ async def get_curriculum_validation_graph(
     """
     courseinfo = await course_info()
     curriculum = await sync.get_curriculum(plan.curriculum)
-    g = solve_curriculum(courseinfo, curriculum, plan.classes)
+    g = solve_curriculum(courseinfo, plan.curriculum, curriculum, plan.classes)
     if mode == "debug":
         return g.dump_graphviz_debug(curriculum)
     return g.dump_graphviz_pretty(curriculum)

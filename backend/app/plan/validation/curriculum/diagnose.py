@@ -69,7 +69,7 @@ def diagnose_curriculum(
         out.add(NoMajorMinorWarn(plan=plan.curriculum))
 
     # Solve plan
-    g = solve_curriculum(courseinfo, curriculum, plan.classes)
+    g = solve_curriculum(courseinfo, plan.curriculum, curriculum, plan.classes)
 
     # Generate diagnostics
     _diagnose_blocks(courseinfo, out, g)

@@ -498,7 +498,7 @@ async def generate_recommended_plan(
 
     # Solve the curriculum to determine which courses have not been passed yet (and need
     # to be passed)
-    g = solve_curriculum(courseinfo, curriculum, passed.classes)
+    g = solve_curriculum(courseinfo, passed.curriculum, curriculum, passed.classes)
 
     # Flat list of all curriculum courses left to pass
     courses_to_pass, ignore_reqs = _compute_courses_to_pass(

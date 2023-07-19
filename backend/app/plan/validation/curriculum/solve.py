@@ -91,6 +91,7 @@ from app.plan.validation.curriculum.tree import (
     SUPERBLOCK_PREFIX,
     Block,
     Curriculum,
+    CurriculumSpec,
     FillerCourse,
     Leaf,
 )
@@ -569,6 +570,7 @@ solver.parameters.num_workers = 1  # type: ignore
 
 def solve_curriculum(
     courseinfo: CourseInfo,
+    spec: CurriculumSpec,
     curriculum: Curriculum,
     taken: list[list[PseudoCourse]],
 ) -> SolvedCurriculum:
@@ -579,7 +581,7 @@ def solve_curriculum(
     if not (solve_status == cpsat.OPTIMAL or solve_status == cpsat.FEASIBLE):
         dbg = f"\n{g.dump_graphviz_debug(curriculum)}"
         raise Exception(
-            f"failed to solve curriculum: {solver.StatusName()}{dbg}",
+            f"failed to solve curriculum {spec}: {solver.StatusName()}{dbg}",
         )
     # Extract solution from solver
     _tag_edge_flow(solver, g)
