@@ -11,7 +11,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from app import routes
 from app.database import prisma
-from app.logger import setup_rich_logger
+from app.logger import setup_logger
 from app.redis import get_redis
 from app.settings import settings
 from app.sync.siding.client import client as siding_soap_client
@@ -87,7 +87,7 @@ app.add_middleware(
 @app.on_event("startup")  # type: ignore
 async def startup():
     # Initialize logging
-    setup_rich_logger()
+    setup_logger()
     logging.info(f"Starting up worker. Environment: {settings.env}")
     # Connect to database
     await prisma.connect()

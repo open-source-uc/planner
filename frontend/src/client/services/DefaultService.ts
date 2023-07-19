@@ -7,6 +7,7 @@ import type { CourseFilter } from '../models/CourseFilter';
 import type { CourseOverview } from '../models/CourseOverview';
 import type { EquivDetails } from '../models/EquivDetails';
 import type { FullOffer } from '../models/FullOffer';
+import type { HealthResponse } from '../models/HealthResponse';
 import type { LowDetailPlanView } from '../models/LowDetailPlanView';
 import type { Major } from '../models/Major';
 import type { Minor } from '../models/Minor';
@@ -36,10 +37,10 @@ export class DefaultService {
 
     /**
      * Health
-     * @returns any Successful Response
+     * @returns HealthResponse Successful Response
      * @throws ApiError
      */
-    public static health(): CancelablePromise<any> {
+    public static health(): CancelablePromise<HealthResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/health',

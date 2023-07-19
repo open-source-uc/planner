@@ -141,7 +141,7 @@ class Settings(BaseSettings):
         "WARNING",
         "INFO",
         "DEBUG",
-        "NOSET",
+        "NOTSET",
     ] = "INFO"
 
     # Where to store logs (only used in development)
