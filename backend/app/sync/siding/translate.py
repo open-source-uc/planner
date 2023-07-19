@@ -365,7 +365,6 @@ async def fetch_student_info(rut: str) -> StudentInfo:
         full_name=raw.Nombre,
         cyear=raw.Curriculo,
         is_cyear_supported=Cyear.from_str(raw.Curriculo) is not None,
-        admission=_decode_period(raw.PeriodoAdmision),
         reported_major=MajorCode(raw.MajorInscrito) if raw.MajorInscrito else None,
         reported_minor=MinorCode(raw.MinorInscrito) if raw.MinorInscrito else None,
         reported_title=TitleCode(raw.TituloInscrito) if raw.TituloInscrito else None,
@@ -385,7 +384,8 @@ async def fetch_student_previous_courses(
     raw = await client.get_student_done_courses(rut)
     semesters: list[list[PseudoCourse]] = []
     # Make sure semester 1 is always odd, adding an empty semester if necessary
-    start_period = (info.admission[0], 1)
+    start_year = int(raw[0].Periodo.split("-")[0])
+    start_period = (start_year, 1)
     in_course: list[list[bool]] = []
     for c in raw:
         sem = _semesters_elapsed(start_period, _decode_period(c.Periodo))
