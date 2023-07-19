@@ -398,27 +398,26 @@ async def fetch_student_previous_courses(
 
     raw = await client.get_student_done_courses(rut)
     semesters: list[list[PseudoCourse]] = []
-    # Make sure semester 1 is always odd, adding an empty semester if necessary
-    if len(raw) == 0:
-        raise ValueError("Not a valid student: no courses")
-    start_year = int(raw[0].Periodo.split("-")[0])
-    start_period = (start_year, 1)
     in_course: list[list[bool]] = []
-    for c in raw:
-        sem = _semesters_elapsed(start_period, _decode_period(c.Periodo))
-        while len(semesters) <= sem:
-            semesters.append([])
-        while len(in_course) <= sem:
-            in_course.append([])
-        if c.Estado.startswith("2"):
-            # Failed course
-            course = ConcreteId(code="#FAILED", failed=c.Sigla)
-        else:
-            # Approved course
-            course = ConcreteId(code=c.Sigla)
-        semesters[sem].append(course)
-        currently_coursing = c.Estado.startswith("3")
-        in_course[sem].append(currently_coursing)
+    # Make sure semester 1 is always odd, adding an empty semester if necessary
+    if raw:
+        start_year = int(raw[0].Periodo.split("-")[0])
+        start_period = (start_year, 1)
+        for c in raw:
+            sem = _semesters_elapsed(start_period, _decode_period(c.Periodo))
+            while len(semesters) <= sem:
+                semesters.append([])
+            while len(in_course) <= sem:
+                in_course.append([])
+            if c.Estado.startswith("2"):
+                # Failed course
+                course = ConcreteId(code="#FAILED", failed=c.Sigla)
+            else:
+                # Approved course
+                course = ConcreteId(code=c.Sigla)
+            semesters[sem].append(course)
+            currently_coursing = c.Estado.startswith("3")
+            in_course[sem].append(currently_coursing)
 
     # Check if the last semester is currently being coursed
     last_semester_in_course = bool(in_course and in_course[-1] and all(in_course[-1]))
