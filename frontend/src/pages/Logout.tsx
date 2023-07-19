@@ -2,8 +2,8 @@ const Logout = (): JSX.Element => {
   // Clear token from local storage
   localStorage.removeItem('access-token')
 
-  const casURL: string = import.meta.env.VITE_CAS_URL
-  console.assert(casURL, 'VITE_CAS_URL environment variable not set during build')
+  const casURL: string = import.meta.env.VITE_CAS_SERVER_URL
+  console.assert(casURL, 'VITE_CAS_SERVER_URL environment variable not set during build')
 
   // Redirect to SSO logout URL
   const ssoLogoutURL = new URL('logout', casURL).toString()
