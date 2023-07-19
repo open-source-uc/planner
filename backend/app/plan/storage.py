@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from app.plan.plan import ValidatablePlan
 from app.user.key import ModKey, UserKey
 
-MAX_PLANS_PER_USER = 2
+MAX_PLANS_PER_USER = 50
 
 _plan_model_fields = list(DbPlan.__fields__.keys())
 # automatic definition of low detail to avoid hardcoding attributes
