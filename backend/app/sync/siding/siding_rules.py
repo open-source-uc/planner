@@ -23,6 +23,7 @@ from app.plan.validation.curriculum.tree import (
     CurriculumSpec,
     FillerCourse,
     Leaf,
+    Multiplicity,
 )
 
 
@@ -208,7 +209,10 @@ def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum)
                         "Selección ",
                     ):
                         # Permitir que cuenten por el doble de creditos de lo normal
-                        curriculum.multiplicity[code] = 2 * info.credits
+                        curriculum.multiplicity[code] = Multiplicity(
+                            group=[code],
+                            credits=2 * info.credits,
+                        )
                 # Only do it once
                 return
 

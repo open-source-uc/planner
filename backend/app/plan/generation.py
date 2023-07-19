@@ -68,11 +68,8 @@ def _get_course_color_order(
     rep_idx = rep_counter[course_code]
     rep_counter[course_code] += 1
     superblock = ""
-    mapped = g.map_class_id(course_code, rep_idx)
-    if mapped is not None:
-        course_code, rep_idx = mapped
-        if course_code in g.superblocks and rep_idx < len(g.superblocks[course_code]):
-            superblock = g.superblocks[course_code][rep_idx]
+    if course_code in g.superblocks and rep_idx < len(g.superblocks[course_code]):
+        superblock = g.superblocks[course_code][rep_idx]
     return SUPERBLOCK_COLOR_ORDER_TABLE.get(superblock, 1000)
 
 

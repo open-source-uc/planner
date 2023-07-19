@@ -29,6 +29,7 @@ from app.plan.validation.curriculum.tree import (
     Leaf,
     MajorCode,
     MinorCode,
+    Multiplicity,
     TitleCode,
 )
 from app.sync.siding import client, siding_rules
@@ -178,20 +179,6 @@ def _patch_capacities(block: Block):
             block.cap = c
 
 
-def _patch_equivalencies(curriculum: Curriculum, block: Block):
-    if isinstance(block, Combination):
-        for child in block.children:
-            _patch_equivalencies(curriculum, child)
-    else:
-        to_add: set[str] = set()
-        for code in block.codes:
-            if code in curriculum.equivalencies:
-                equiv = curriculum.equivalencies[code]
-                if equiv != code and equiv not in block.codes:
-                    to_add.add(code)
-        block.codes.update(to_add)
-
-
 async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curriculum:
     """
     Call into the SIDING webservice and get the curriculum definition for a given spec.
@@ -229,15 +216,32 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
             recommended = EquivalenceId(code=code, credits=raw_block.Creditos)
             # Special treatment if the equivalence is homogeneous
             if info.is_homogeneous and len(info.courses) >= 1:
-                recommended = ConcreteId(code=info.courses[0], equivalence=recommended)
-                # TODO: Make equivalences actually global
-                # For example, ICS1113 and ICS113H should be equivalent.
-                # However, if there is no ICS1113-ICS113H homogeneous equivalence in the
-                # current plan, they will not be considered equivalent!
-                # Equivalencies should "spread" across curriculums.
-                for equivalent in info.courses:
-                    curriculum.equivalencies[equivalent] = info.courses[0]
-                curriculum.equivalencies[code] = info.courses[0]
+                concrete_info = courseinfo.try_course(info.courses[0])
+                if concrete_info is not None:
+                    recommended = ConcreteId(
+                        code=info.courses[0],
+                        equivalence=recommended,
+                    )
+                    # TODO: Make equivalences actually global
+                    # For example, ICS1113 and ICS113H should be equivalent.
+                    # However, if there is no ICS1113-ICS113H homogeneous equivalence in
+                    # the current plan, they will not be considered equivalent!
+                    # Equivalencies should "spread" across curriculums.
+                    multiplicity = Multiplicity(
+                        group=list(codes),
+                        credits=concrete_info.credits,
+                    )
+                    for equivalent in info.courses:
+                        if equivalent in curriculum.multiplicity:
+                            assert (
+                                set(curriculum.multiplicity[equivalent].group) == codes
+                            )
+                            assert (
+                                curriculum.multiplicity[equivalent].credits
+                                == multiplicity.credits
+                            )
+                        curriculum.multiplicity[equivalent] = multiplicity
+                    curriculum.multiplicity[code] = multiplicity
         # 0-credit courses get a single ghost credit
         creds = 1 if raw_block.Creditos == 0 else raw_block.Creditos
         recommended_order = raw_block.SemestreBloque * 10 + raw_block.OrdenSemestre
@@ -279,9 +283,6 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
 
     # Patch any `-1` capacities to be the sum of child capacities
     _patch_capacities(curriculum.root)
-
-    # Make sure equivalents of a course are always considered
-    _patch_equivalencies(curriculum, curriculum.root)
 
     return curriculum
 
