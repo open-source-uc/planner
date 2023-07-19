@@ -423,26 +423,23 @@ def _add_usable_course(
     usable.total += credits
 
 
-def _build_problem(
+def _fill_usable(
     courseinfo: CourseInfo,
+    taken: list[list[PseudoCourse]],
     curriculum: Curriculum,
-    taken_semesters: list[list[PseudoCourse]],
-    tolerance: int = 0,
-) -> SolvedCurriculum:
+    g: SolvedCurriculum,
+):
     """
-    Take a curriculum prototype and a specific set of taken courses, and build a
-    solvable graph that represents this curriculum.
+    Iterate through all taken courses and filler courses, and populate `g.usable`.
+    Basically, recognize which courses can be used to fill the curriculum slots.
     """
 
-    g = SolvedCurriculum()
-
-    # Fill in credit pool from approved courses and filler credits
     flat_order = 0
     filler_cap: dict[str, int] = {
         code: sum(courseinfo.get_credits(filler.course) or 0 for filler in fillers)
         for code, fillers in curriculum.fillers.items()
     }
-    for sem in taken_semesters:
+    for sem in taken:
         for c in sorted(sem, key=lambda c: c.code):
             if courseinfo.try_any(c) is None:
                 continue
@@ -467,6 +464,24 @@ def _build_problem(
             )
             flat_order += 1
 
+
+def _build_problem(
+    courseinfo: CourseInfo,
+    curriculum: Curriculum,
+    taken_semesters: list[list[PseudoCourse]],
+    *,
+    tolerance: int = 0,
+) -> SolvedCurriculum:
+    """
+    Take a curriculum prototype and a specific set of taken courses, and build a
+    solvable graph that represents this curriculum.
+    """
+
+    g = SolvedCurriculum()
+
+    # Fill in credit pool from approved courses and filler credits
+    _fill_usable(courseinfo, taken_semesters, curriculum, g)
+
     # Build curriculum graph from the curriculum tree
     root_flow = _build_visit(courseinfo, g, VisitState(), curriculum.root)
 
@@ -487,11 +502,20 @@ def _build_problem(
         max_creds = usable.multiplicity.credits
         group = usable.multiplicity.group
 
-        total_credits = sum(g.usable[ecode].total for ecode in group)
+        total_credits = 0
+        for ecode in group:
+            if ecode in g.usable:
+                total_credits += g.usable[ecode].total
         if max_creds is None or total_credits <= max_creds:
             continue
-        vars = [inst.used_var for ecode in group for inst in g.usable[ecode].instances]
-        coeffs = [inst.credits for ecode in group for inst in g.usable[ecode].instances]
+        vars = []
+        coeffs = []
+        for ecode in group:
+            if ecode not in g.usable:
+                continue
+            for inst in g.usable[ecode].instances:
+                vars.append(inst.used_var)
+                coeffs.append(inst.credits)
         g.model.AddLinearConstraint(
             cpsat.LinearExpr.WeightedSum(vars, coeffs),
             0,
