@@ -35,7 +35,10 @@ export function AuthProvider ({ children, userData }: Props): JSX.Element {
           toastId: 'ERROR401'
         })
       } else if (err.status === 403) {
-        // Ignore
+        console.log('El usuario no es un estudiante de ingeniería vigente, cerrando sesión...')
+        toast.error('No eres un estudiante de ingeniería vigente. Cerrando la sesión..', {
+          toastId: 'ERROR403'
+        })
       } else {
         toast.error('Error al cargar información del usuario', {
           toastId: 'ERROR401'
