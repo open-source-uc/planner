@@ -5,86 +5,84 @@ Heavily inspired by https://www.pythonbynight.com/blog/sharpen-your-code
 
 import logging
 import sys
-from functools import lru_cache
 from pathlib import Path
-from typing import Any
-
-from pydantic import BaseModel
 
 from app.settings import settings
 
-LOGGER_FORMAT = "%(message)s"
+DATE_FORMAT = "%y-%b-%d %H:%M:%S"
 LOGGER_FILE = Path(settings.log_path)  # where log is stored
-DATE_FORMAT = "%d %b %Y | %H:%M:%S"
+
+SIMPLE_FORMAT = logging.Formatter(
+    "%(levelname)s[%(name)s]: \t%(message)s",
+    datefmt=DATE_FORMAT,
+)
+
+log_level = logging.getLevelNamesMapping()[settings.log_level]
 
 
-class LoggerConfig(BaseModel):
-    handlers: list[Any]
-    format: str = ""
-    date_format: str | None = None
-    logger_file: Path | None = None
-    level: str = settings.log_level
-
-
-@lru_cache
-def get_logger_config():
-    """Installs RichHandler (Rich library) if not in production
-    environment, or use the production log configuration.
+def production_handlers() -> list[logging.Handler]:
     """
-
-    if settings.env != "production":
-        from rich.logging import RichHandler
-
-        output_file_handler = logging.FileHandler(LOGGER_FILE)
-        handler_format = logging.Formatter(LOGGER_FORMAT, datefmt=DATE_FORMAT)
-        output_file_handler.setFormatter(handler_format)
-
-        return LoggerConfig(
-            handlers=[
-                RichHandler(
-                    rich_tracebacks=True,
-                    tracebacks_show_locals=True,
-                    show_time=False,
-                ),
-                output_file_handler,
-            ],
-            format="",
-            date_format=DATE_FORMAT,
-            logger_file=LOGGER_FILE,
-        )
-
-    handler_format = logging.Formatter(LOGGER_FORMAT, datefmt=DATE_FORMAT)
+    Get a list of log handlers, which redirect log messages to stdout, files, etc...
+    For production.
+    """
 
     # Stdout
     stdout_handler = logging.StreamHandler(sys.stdout)
-    stdout_handler.setFormatter(handler_format)
+    stdout_handler.setFormatter(SIMPLE_FORMAT)
 
-    return LoggerConfig(
-        handlers=[stdout_handler],
-        format="%(levelname)s: \t%(message)s",
-        date_format="%d-%b-%y %H:%M:%S",
-        logger_file=LOGGER_FILE,
+    return [stdout_handler]
+
+
+def debug_handlers() -> list[logging.Handler]:
+    """
+    Get a list of log handlers, which redirect log messages to stdout, files, etc...
+    For staging and development.
+    """
+    from rich.logging import RichHandler
+
+    output_file_handler = logging.FileHandler(LOGGER_FILE)
+    output_file_handler.setFormatter(SIMPLE_FORMAT)
+
+    rich_stdout_handler = RichHandler(
+        rich_tracebacks=True,
+        tracebacks_show_locals=False,
+        show_time=False,
+    )
+    rich_stdout_handler.setFormatter(
+        logging.Formatter("%(name)s: \t%(message)s", datefmt=DATE_FORMAT),
     )
 
+    return [
+        rich_stdout_handler,
+        output_file_handler,
+    ]
 
-def setup_rich_logger():
-    """Cycles through uvicorn root loggers to
-    remove handler, then runs `get_logger_config()`
-    to populate the `LoggerConfig` class with Rich
-    logger parameters.
+
+def setup_logger():
+    """
+    Setup logging depending on the environment type (production, staging, development).
     """
 
-    # Remove all handlers from root logger
-    # and proprogate to root logger.
+    # For all loggers in external libraries,
     for name in logging.root.manager.loggerDict:
-        logging.getLogger(name).handlers = []
-        logging.getLogger(name).propagate = True
+        external_logger = logging.getLogger(name)
+        # Remove all handlers
+        external_logger.handlers = []
+        # Enable propagation to the main logger
+        external_logger.propagate = True
+        # Force a minimum level of `INFO`
+        # If we want to debug, we want to debug our code
+        min_level = logging.INFO
+        if name == "httpx":
+            # Special fix for httpx since it spams INFO
+            min_level = logging.WARNING
+        external_logger.setLevel(max(min_level, log_level))
 
-    logger_config = get_logger_config()  # get Rich logging config
+    handlers = (
+        production_handlers() if settings.env == "production" else debug_handlers()
+    )
 
     logging.basicConfig(
-        level=logger_config.level,
-        format=logger_config.format,
-        datefmt=logger_config.date_format,
-        handlers=logger_config.handlers,
+        level=log_level,
+        handlers=handlers,
     )

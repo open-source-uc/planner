@@ -6,7 +6,6 @@ export type StudentInfo = {
     full_name: string;
     cyear: string;
     is_cyear_supported: boolean;
-    admission: Array<any>;
     /**
      * A major code, eg. `M072` for hydraulic engineering.
      */

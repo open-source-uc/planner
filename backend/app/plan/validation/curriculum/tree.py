@@ -92,6 +92,11 @@ Block = Combination | Leaf
 Combination.update_forward_refs()
 
 
+class Multiplicity(BaseModel):
+    group: list[str]
+    credits: int | None
+
+
 class Curriculum(BaseModel):
     """
     A specific curriculum definition, not associated to any particular student.
@@ -123,8 +128,7 @@ class Curriculum(BaseModel):
 
     root: Combination
     fillers: dict[str, list[FillerCourse]]
-    multiplicity: dict[str, int | None]
-    equivalencies: dict[str, str]
+    multiplicity: dict[str, Multiplicity]
 
     @staticmethod
     def empty() -> "Curriculum":
@@ -138,7 +142,6 @@ class Curriculum(BaseModel):
             ),
             fillers={},
             multiplicity={},
-            equivalencies={},
         )
 
     def extend(self, other: "Curriculum"):
@@ -147,20 +150,19 @@ class Curriculum(BaseModel):
         for code, fillers in other.fillers.items():
             self.fillers.setdefault(code, []).extend(fillers)
         self.multiplicity.update(other.multiplicity)
-        self.equivalencies.update(other.equivalencies)
 
-    def multiplicity_of(self, courseinfo: CourseInfo, course_code: str) -> int | None:
+    def multiplicity_of(self, courseinfo: CourseInfo, course_code: str) -> Multiplicity:
         if course_code in self.multiplicity:
             return self.multiplicity[course_code]
         info = courseinfo.try_course(course_code)
         if info is not None:
-            return info.credits or 1
+            return Multiplicity(group=[course_code], credits=info.credits or 1)
         # TODO: Limit equivalence multiplicity to the total amount of credits in the
         # equivalence.
         # Ideally, we would want to store the total amount of credits in a field in the
         # equivalence, otherwise it is probably too costly to visit the 2000+ course
         # OFG equivalence.
-        return None
+        return Multiplicity(group=[course_code], credits=None)
 
 
 class Cyear(BaseModel, frozen=True):

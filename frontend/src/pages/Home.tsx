@@ -47,16 +47,12 @@ const Home = (): JSX.Element => {
               Algunas mallas curriculares todavía no han sido cargadas. Esto
               está en curso.
             </li>
-            {
-              hideLogin
-                ? (
                 <li>
-                Por ahora, el login UC está deshabilitado, así que debes ingresar
-                tus cursos manualmente.
+                Por ahora, el <span className='font-bold'>login UC no está funcionando</span>, así que
+                debes <a href="https://github.com/open-source-uc/planner/pull/276#issue-1808769979" target="_blank" rel="noopener noreferrer">
+                  ingresar tus cursos manualmente en el modo invitado
+                </a>.
               </li>
-                  )
-                : null
-            }
           </ul>
         </div>
       </AlertModal>

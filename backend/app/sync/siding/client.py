@@ -122,10 +122,10 @@ class InfoEstudiante(BaseModel):
     Nombre: str
     # Seems to be either 'M' or 'F'.
     # Not used.
-    Sexo: str
+    Sexo: str | None
     # The cyear string associated with the student (e.g. "C2020", "C2013", etc...).
     # Usually coupled with `PeriodoAdmision`
-    Curriculo: str
+    Curriculo: str | None
     # Major code of the self-reported intended major.
     MajorInscrito: MajorCode | None
     # Minor code of the self-reported intended minor.
@@ -141,7 +141,7 @@ class InfoEstudiante(BaseModel):
     Carrera: str
     # Semester in which the student joined the university.
     # For example, '2012-2' for the second semester of 2012.
-    PeriodoAdmision: AcademicPeriod
+    PeriodoAdmision: AcademicPeriod | None
 
     # Average student grades
     # Since this is somewhat sensitive data and we don't use it, it's best to ignore it

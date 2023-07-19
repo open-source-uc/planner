@@ -2,11 +2,13 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { AccessLevelOverview } from '../models/AccessLevelOverview';
+import type { Body_generate_plan } from '../models/Body_generate_plan';
 import type { CourseDetails } from '../models/CourseDetails';
 import type { CourseFilter } from '../models/CourseFilter';
 import type { CourseOverview } from '../models/CourseOverview';
 import type { EquivDetails } from '../models/EquivDetails';
 import type { FullOffer } from '../models/FullOffer';
+import type { HealthResponse } from '../models/HealthResponse';
 import type { LowDetailPlanView } from '../models/LowDetailPlanView';
 import type { Major } from '../models/Major';
 import type { Minor } from '../models/Minor';
@@ -36,10 +38,10 @@ export class DefaultService {
 
     /**
      * Health
-     * @returns any Successful Response
+     * @returns HealthResponse Successful Response
      * @throws ApiError
      */
-    public static health(): CancelablePromise<any> {
+    public static health(): CancelablePromise<HealthResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/health',
@@ -49,10 +51,13 @@ export class DefaultService {
     /**
      * Sync Database
      * Initiate a synchronization of the internal database from external sources.
+     *
+     * NOTE: This endpoint is currently broken: a server restart is necessary after syncing
+     * the database in order for the changes to reach all workers.
      * @param courses
      * @param curriculums
      * @param offer
-     * @param courseinfo
+     * @param packedcourses
      * @returns any Successful Response
      * @throws ApiError
      */
@@ -60,7 +65,7 @@ export class DefaultService {
         courses: boolean,
         curriculums: boolean,
         offer: boolean,
-        courseinfo: boolean,
+        packedcourses: boolean,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -69,7 +74,7 @@ export class DefaultService {
                 'courses': courses,
                 'curriculums': curriculums,
                 'offer': offer,
-                'courseinfo': courseinfo,
+                'packedcourses': packedcourses,
             },
             errors: {
                 422: `Validation Error`,
@@ -460,7 +465,7 @@ export class DefaultService {
      * @throws ApiError
      */
     public static generatePlan(
-        requestBody: ValidatablePlan,
+        requestBody: Body_generate_plan,
     ): CancelablePromise<ValidatablePlan> {
         return __request(OpenAPI, {
             method: 'POST',

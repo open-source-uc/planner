@@ -15,6 +15,7 @@ from prisma.models import (
 from prisma.models import (
     Title as DbTitle,
 )
+from zeep.exceptions import Fault
 
 from app.plan.course import ConcreteId, EquivalenceId, PseudoCourse
 from app.plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
@@ -178,20 +179,6 @@ def _patch_capacities(block: Block):
             block.cap = c
 
 
-def _patch_equivalencies(curriculum: Curriculum, block: Block):
-    if isinstance(block, Combination):
-        for child in block.children:
-            _patch_equivalencies(curriculum, child)
-    else:
-        to_add: set[str] = set()
-        for code in block.codes:
-            if code in curriculum.equivalencies:
-                equiv = curriculum.equivalencies[code]
-                if equiv != code and equiv not in block.codes:
-                    to_add.add(code)
-        block.codes.update(to_add)
-
-
 async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curriculum:
     """
     Call into the SIDING webservice and get the curriculum definition for a given spec.
@@ -229,15 +216,32 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
             recommended = EquivalenceId(code=code, credits=raw_block.Creditos)
             # Special treatment if the equivalence is homogeneous
             if info.is_homogeneous and len(info.courses) >= 1:
-                recommended = ConcreteId(code=info.courses[0], equivalence=recommended)
-                # TODO: Make equivalences actually global
-                # For example, ICS1113 and ICS113H should be equivalent.
-                # However, if there is no ICS1113-ICS113H homogeneous equivalence in the
-                # current plan, they will not be considered equivalent!
-                # Equivalencies should "spread" across curriculums.
-                for equivalent in info.courses:
-                    curriculum.equivalencies[equivalent] = info.courses[0]
-                curriculum.equivalencies[code] = info.courses[0]
+                concrete_info = courseinfo.try_course(info.courses[0])
+                if concrete_info is not None:
+                    recommended = ConcreteId(
+                        code=info.courses[0],
+                        equivalence=recommended,
+                    )
+                    # TODO: Make equivalences actually global
+                    # For example, ICS1113 and ICS113H should be equivalent.
+                    # However, if there is no ICS1113-ICS113H homogeneous equivalence in
+                    # the current plan, they will not be considered equivalent!
+                    # Equivalencies should "spread" across curriculums.
+                    multiplicity = curriculum.multiplicity_of(
+                        courseinfo,
+                        info.courses[0],
+                    ).copy(update={"group": list(codes)})
+                    for equivalent in info.courses:
+                        if equivalent in curriculum.multiplicity:
+                            assert (
+                                set(curriculum.multiplicity[equivalent].group) == codes
+                            )
+                            assert (
+                                curriculum.multiplicity[equivalent].credits
+                                == multiplicity.credits
+                            )
+                        curriculum.multiplicity[equivalent] = multiplicity
+                    curriculum.multiplicity[code] = multiplicity
         # 0-credit courses get a single ghost credit
         creds = 1 if raw_block.Creditos == 0 else raw_block.Creditos
         recommended_order = raw_block.SemestreBloque * 10 + raw_block.OrdenSemestre
@@ -279,9 +283,6 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
 
     # Patch any `-1` capacities to be the sum of child capacities
     _patch_capacities(curriculum.root)
-
-    # Make sure equivalents of a course are always considered
-    _patch_equivalencies(curriculum, curriculum.root)
 
     return curriculum
 
@@ -360,16 +361,29 @@ async def fetch_student_info(rut: str) -> StudentInfo:
 
     Request the basic student information for a given RUT from SIDING.
     """
-    raw = await client.get_student_info(rut)
-    return StudentInfo(
-        full_name=raw.Nombre,
-        cyear=raw.Curriculo,
-        is_cyear_supported=Cyear.from_str(raw.Curriculo) is not None,
-        admission=_decode_period(raw.PeriodoAdmision),
-        reported_major=MajorCode(raw.MajorInscrito) if raw.MajorInscrito else None,
-        reported_minor=MinorCode(raw.MinorInscrito) if raw.MinorInscrito else None,
-        reported_title=TitleCode(raw.TituloInscrito) if raw.TituloInscrito else None,
-    )
+    try:
+        raw = await client.get_student_info(rut)
+        career = "INGENIERÍA CIVIL"
+        assert raw.Curriculo is not None and raw.Carrera == career
+
+        return StudentInfo(
+            full_name=raw.Nombre,
+            cyear=raw.Curriculo,
+            is_cyear_supported=Cyear.from_str(raw.Curriculo) is not None,
+            reported_major=MajorCode(raw.MajorInscrito) if raw.MajorInscrito else None,
+            reported_minor=MinorCode(raw.MinorInscrito) if raw.MinorInscrito else None,
+            reported_title=TitleCode(raw.TituloInscrito)
+            if raw.TituloInscrito
+            else None,
+        )
+
+    except (AssertionError, Fault) as err:
+        if (isinstance(err, Fault) and "no pertenece" in err.message) or isinstance(
+            err,
+            AssertionError,
+        ):
+            raise ValueError("Not a valid engineering student") from err
+        raise err
 
 
 async def fetch_student_previous_courses(
@@ -384,24 +398,26 @@ async def fetch_student_previous_courses(
 
     raw = await client.get_student_done_courses(rut)
     semesters: list[list[PseudoCourse]] = []
-    # Make sure semester 1 is always odd, adding an empty semester if necessary
-    start_period = (info.admission[0], 1)
     in_course: list[list[bool]] = []
-    for c in raw:
-        sem = _semesters_elapsed(start_period, _decode_period(c.Periodo))
-        while len(semesters) <= sem:
-            semesters.append([])
-        while len(in_course) <= sem:
-            in_course.append([])
-        if c.Estado.startswith("2"):
-            # Failed course
-            course = ConcreteId(code="#FAILED", failed=c.Sigla)
-        else:
-            # Approved course
-            course = ConcreteId(code=c.Sigla)
-        semesters[sem].append(course)
-        currently_coursing = c.Estado.startswith("3")
-        in_course[sem].append(currently_coursing)
+    # Make sure semester 1 is always odd, adding an empty semester if necessary
+    if raw:
+        start_year = int(raw[0].Periodo.split("-")[0])
+        start_period = (start_year, 1)
+        for c in raw:
+            sem = _semesters_elapsed(start_period, _decode_period(c.Periodo))
+            while len(semesters) <= sem:
+                semesters.append([])
+            while len(in_course) <= sem:
+                in_course.append([])
+            if c.Estado.startswith("2"):
+                # Failed course
+                course = ConcreteId(code="#FAILED", failed=c.Sigla)
+            else:
+                # Approved course
+                course = ConcreteId(code=c.Sigla)
+            semesters[sem].append(course)
+            currently_coursing = c.Estado.startswith("3")
+            in_course[sem].append(currently_coursing)
 
     # Check if the last semester is currently being coursed
     last_semester_in_course = bool(in_course and in_course[-1] and all(in_course[-1]))

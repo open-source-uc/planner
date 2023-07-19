@@ -1,4 +1,6 @@
+import asyncio
 import logging
+import random
 from typing import TYPE_CHECKING, Annotated, Literal
 
 import sentry_sdk
@@ -11,7 +13,8 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from app import routes
 from app.database import prisma
-from app.logger import setup_rich_logger
+from app.logger import setup_logger
+from app.plan.courseinfo import course_info
 from app.redis import get_redis
 from app.settings import settings
 from app.sync.siding.client import client as siding_soap_client
@@ -37,7 +40,7 @@ if settings.env != "development":
         # Set traces_sample_rate to 1.0 to capture 100%
         # of transactions for performance monitoring.
         # (We probably want to change this after release to be lower)
-        traces_sample_rate=1.0,
+        traces_sample_rate=0.5,
         profiles_sample_rate=0.5,
     )
     logging.info("Sentry initialized")
@@ -79,19 +82,23 @@ app.add_middleware(
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*", "sentry-trace", "baggage"],
 )
 
 
 @app.on_event("startup")  # type: ignore
 async def startup():
     # Initialize logging
-    setup_rich_logger()
+    setup_logger()
     logging.info(f"Starting up worker. Environment: {settings.env}")
     # Connect to database
     await prisma.connect()
     # Setup SIDING webservice
     siding_soap_client.on_startup()
+    # HACK: Random sleep to avoid DDoSing the DB
+    await asyncio.sleep(random.SystemRandom().random() * 15)
+    # Prime local in-memory course info cache
+    await course_info()
 
 
 @app.on_event("shutdown")  # type: ignore
