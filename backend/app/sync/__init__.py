@@ -211,6 +211,7 @@ async def get_student_data(user: UserKey) -> StudentContext:
                 403,
                 "User is not a valid engineering student.",
             ) from err
+        raise ValueError from err
 
     passed, in_course = await siding_translate.fetch_student_previous_courses(
         user.rut,
