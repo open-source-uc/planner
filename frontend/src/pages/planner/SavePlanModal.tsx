@@ -41,7 +41,7 @@ const SavePlanModal = ({ isOpen, onClose, savePlan }: { isOpen: boolean, onClose
                          ¿Cómo quieres llamarle a esta planificación?
                       </Dialog.Title>
                       <div className="mt-2">
-                        <input className="grow rounded py-1 w-full my-2" type="text" id="planName" value={planName} onChange={(e) => { setPlanName(e.target.value) }}/>
+                        <input className="grow rounded py-1 w-full my-2 sentry-mask" type="text" id="planName" value={planName} onChange={(e) => { setPlanName(e.target.value) }}/>
                       </div>
                     </div>
                   </div>

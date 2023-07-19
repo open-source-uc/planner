@@ -40,7 +40,7 @@ if settings.env != "development":
         # Set traces_sample_rate to 1.0 to capture 100%
         # of transactions for performance monitoring.
         # (We probably want to change this after release to be lower)
-        traces_sample_rate=1.0,
+        traces_sample_rate=0.5,
         profiles_sample_rate=0.5,
     )
     logging.info("Sentry initialized")
@@ -82,7 +82,7 @@ app.add_middleware(
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*", "sentry-trace", "baggage"],
 )
 
 

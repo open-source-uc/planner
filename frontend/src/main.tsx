@@ -16,12 +16,21 @@ if (import.meta.env.MODE !== 'development') {
     dsn: 'https://deb7a1791e004fd6887189c03b568e8c@o4505547874172928.ingest.sentry.io/4505547928109056',
     integrations: [
       new Sentry.BrowserTracing(),
-      new Sentry.Replay()
+      new Sentry.Replay({
+        // We don't have any PII shown in the UI
+        // But if we add some, we should manually add the sentry-mask class
+        // to the elements that contain it
+        // see https://docs.sentry.io/platforms/javascript/session-replay/privacy/
+        maskAllText: false,
+        // While this is a good default, this masks the curriculum selectors by default
+        // And it's not obvious how to unmask them
+        maskAllInputs: false
+      })
     ],
 
     // Set tracesSampleRate to 1.0 to capture 100%
     // of transactions for performance monitoring.
-    tracesSampleRate: 1.0,
+    tracesSampleRate: 0.7,
 
     // Set `tracePropagationTargets` to control for which URLs distributed tracing should be enabled
     tracePropagationTargets: [
