@@ -16,7 +16,7 @@ from app.redis import get_redis
 from app.settings import settings
 from app.sync.siding import translate
 from app.sync.siding.client import client as siding_soap_client
-from app.sync.siding.client import get_titles, get_student_info
+from app.sync.siding.client import get_titles
 
 if TYPE_CHECKING:
     from typing import Any
