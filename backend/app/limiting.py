@@ -1,3 +1,4 @@
+import logging
 import warnings
 from collections.abc import Callable
 
@@ -10,6 +11,10 @@ from app.user.key import UserKey
 
 LIMIT_REACHED_ERROR = HTTPException(429, detail="Too many requests")
 
+# Note: This uses a synchronous connection pool, which is
+# why we cannot use the async pool we create in app.redis
+# This plausibly has a performance impact,
+# but it is not clear how much.
 storage = limits.storage.RedisStorage(settings.redis_uri)
 
 # Ping the Redis server to check if it is alive
@@ -46,14 +51,15 @@ def ratelimit_guest(limit: str) -> Callable[..., None]:
     limiter = Limiter(limit)
 
     def check_limit(request: Request):
-        # Check for the X-Forwarded-For header, if it exists, use it as the key.
-        # Otherwise, use the client IP address.
-        # This assumes that the proxy will always set the X-Forwarded-For header
-        # and that in development there is no proxy.
-        key = request.headers.get("X-Forwarded-For", "")
-        if key == "" and request.client:
-            key = request.client.host
-        limiter.check(key)
+        # IMPORTANT: The validity of this depends on
+        # a chain of trusted reverse proxy and a properly
+        # configured ProxyHeadersMiddleware.
+        assert (
+            request.client is not None
+        ), "Request has no client. This is a security issue."
+        logging.debug(f"Checking rate limit for {request.client.host}")
+        logging.debug(f"X-Forwarded-For: {request.headers.get('X-Forwarded-For')}")
+        limiter.check(request.client.host)
 
     return check_limit
 

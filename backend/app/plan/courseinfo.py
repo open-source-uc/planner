@@ -2,6 +2,7 @@
 Cache course info from the database in memory, for easy access.
 """
 
+import logging
 from dataclasses import dataclass
 
 import pydantic
@@ -158,7 +159,7 @@ _course_info_cache: CourseInfo | None = None
 
 
 async def add_equivalence(equiv: EquivDetails):
-    print(f"adding equivalence {equiv.code}")
+    logging.info(f"adding equivalence {equiv.code}")
     # Add equivalence to database
     await Equivalence.prisma().query_raw(
         """
@@ -241,7 +242,7 @@ async def course_info() -> CourseInfo:
     global _course_info_cache
     if _course_info_cache is None:
         # Derive course rules from courses in database
-        print("caching courseinfo database to local memory")
+        logging.info("caching courseinfo database to local memory")
 
         print("  fetching packed course details...")
         packed = await DbPackedCourseInfo.prisma().find_unique(
@@ -256,15 +257,15 @@ async def course_info() -> CourseInfo:
             packed.info,
         )
 
-        print(f"  processed {len(courses)} courses")
+        logging.info(f"  processed {len(courses)} courses")
 
         # Load equivalences
-        print("  loading equivalences from database...")
+        logging.info("  loading equivalences from database...")
         all_equivs = await Equivalence.prisma().find_many()
         equivs: dict[str, EquivDetails] = {}
         for equiv in all_equivs:
             equivs[equiv.code] = await EquivDetails.from_db(equiv)
-        print(f"  processed {len(equivs)} equivalences")
+        logging.info(f"  processed {len(equivs)} equivalences")
 
         _course_info_cache = CourseInfo(courses=courses, equivs=equivs)
 
