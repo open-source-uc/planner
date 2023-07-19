@@ -3,7 +3,6 @@ Transform the Siding format into something usable.
 """
 
 
-from zeep.exceptions import Fault
 from prisma.models import (
     Major as DbMajor,
 )
@@ -16,6 +15,7 @@ from prisma.models import (
 from prisma.models import (
     Title as DbTitle,
 )
+from zeep.exceptions import Fault
 
 from app.plan.course import ConcreteId, EquivalenceId, PseudoCourse
 from app.plan.courseinfo import CourseInfo, EquivDetails, add_equivalence
@@ -364,7 +364,7 @@ async def fetch_student_info(rut: str) -> StudentInfo:
     try:
         raw = await client.get_student_info(rut)
         CAREER = "INGENIERÍA CIVIL"
-        assert raw.Curriculo is not None and raw.Carrera is CAREER
+        assert raw.Curriculo is not None and raw.Carrera == CAREER
 
         return StudentInfo(
             full_name=raw.Nombre,
@@ -379,7 +379,8 @@ async def fetch_student_info(rut: str) -> StudentInfo:
 
     except (AssertionError, Fault) as err:
         if (isinstance(err, Fault) and "no pertenece" in err.message) or isinstance(
-            err, AssertionError
+            err,
+            AssertionError,
         ):
             raise ValueError("Not a valid engineering student") from err
         else:
