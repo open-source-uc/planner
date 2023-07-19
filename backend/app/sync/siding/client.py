@@ -125,7 +125,7 @@ class InfoEstudiante(BaseModel):
     Sexo: str | None
     # The cyear string associated with the student (e.g. "C2020", "C2013", etc...).
     # Usually coupled with `PeriodoAdmision`
-    Curriculo: str
+    Curriculo: str | None
     # Major code of the self-reported intended major.
     MajorInscrito: MajorCode | None
     # Minor code of the self-reported intended minor.

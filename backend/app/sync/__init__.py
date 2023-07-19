@@ -7,6 +7,7 @@ import time
 import traceback
 from collections import OrderedDict
 
+from fastapi import HTTPException
 from prisma.models import (
     Course as DbCourse,
 )
@@ -258,7 +259,17 @@ async def get_student_data(user: UserKey) -> StudentContext:
 
     # Request user context from SIDING
     print(f"fetching user data for student {user.rut} from SIDING...")
-    info = await siding_translate.fetch_student_info(user.rut)
+    try:
+        info = await siding_translate.fetch_student_info(user.rut)
+    except ValueError as err:
+        # TODO: Refactor ValueError to use a custom exception
+        if "Not a valid" in str(err):
+            raise HTTPException(
+                403,
+                "User is not a valid engineering student.",
+            ) from err
+        raise ValueError from err
+
     passed, in_course = await siding_translate.fetch_student_previous_courses(
         user.rut,
         info,
