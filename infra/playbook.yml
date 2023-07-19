@@ -62,6 +62,7 @@
         name: "*"
         state: latest
         update_only: true
+      failed_when: false
 
     - name: Install packages
       ansible.builtin.dnf:
@@ -122,6 +123,14 @@
         enabled: true
         state: started
 
+    - name: Wait for snapd to finish seeding (snap wait system seed.loaded)
+      ansible.builtin.command:
+        cmd: snap wait system seed.loaded
+      check_mode: false
+      changed_when: false
+      failed_when: false
+
+
     - name: Enable classic snap support
       ansible.builtin.command:
         cmd: ln -s /var/lib/snapd/snap /snap
@@ -132,37 +141,15 @@
         cmd: snap install just --classic --edge
         creates: /snap/bin/just
 
+    - name: Install the magic wormhole
+      ansible.builtin.command:
+        cmd: snap install wormhole
+        creates: /snap/bin/wormhole
+
     - name: Enable selinux
       ansible.posix.selinux:
         policy: targeted
         state: enforcing
-
-    - name: Enable firewalld
-      ansible.builtin.service:
-        name: firewalld
-        enabled: true
-        state: started
-
-    - name: Open HTTP port
-      ansible.posix.firewalld:
-        service: http
-        permanent: true
-        state: enabled
-        immediate: true
-
-    - name: Open HTTPS port
-      ansible.posix.firewalld:
-        service: https
-        permanent: true
-        state: enabled
-        immediate: true
-
-    - name: Open HTTP/3 port
-      ansible.posix.firewalld:
-        service: http3
-        permanent: true
-        state: enabled
-        immediate: true
 
     - name: Install and connect to Tailscale network
       ansible.builtin.include_role:
@@ -410,7 +397,7 @@
 
     - name: Create backend .env
       ansible.builtin.copy:
-        src: /home/planner/planner/backend/.env.{{ env_mode }}}
+        src: /home/planner/planner/backend/.env.{{ env_mode }}.template
         dest: /home/planner/planner/backend/.env
         owner: planner
         group: planner
@@ -420,7 +407,7 @@
 
     - name: Create frontend .env
       ansible.builtin.copy:
-        src: /home/planner/planner/frontend/.env.{{ env_mode }}}
+        src: /home/planner/planner/frontend/.env.{{ env_mode }}.template
         dest: /home/planner/planner/frontend/.env
         owner: planner
         group: planner
@@ -430,7 +417,7 @@
 
     - name: Create database .env
       ansible.builtin.copy:
-        src: /home/planner/planner/database/.env.{{ env_mode }}}
+        src: /home/planner/planner/database/.env.{{ env_mode }}.template
         dest: /home/planner/planner/database/.env
         owner: planner
         group: planner

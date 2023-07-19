@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { type ClassId, type CourseRequirementErr, type CurriculumSpec, type ValidationResult } from '../../client'
 import { type PseudoCourseDetail, isCourseRequirementErr, isDiagWithAssociatedCourses } from './utils/Types'
 import { Spinner } from '../../components/Spinner'
 import AutoFix from './utils/AutoFix'
 import { collectRequirements, getCourseName, getCourseNameWithCode } from './utils/utils'
 import { validateCyear } from './utils/planBoardFunctions'
+import { useConfetti } from '../../contexts/confetti.context'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
 type RequirementExpr = CourseRequirementErr['missing']
@@ -14,7 +15,7 @@ type RequirementExpr = CourseRequirementErr['missing']
 const NoMessages = ({ open }: { open: boolean }): JSX.Element => {
   return (
     <div className="w-fit flex p-3 mb-4 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50 " role="alert">
-      <svg aria-hidden="true" className="flex-shrink-0 inline-flex w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path></svg>
+      🎉
       <span className="sr-only">Info</span>
       <div className={`min-w-[14rem] ml-2 ${open ? '' : 'hidden'} `}>
         <span className='font-medium'>Felicitaciones!</span> No hay errores o advertencias.
@@ -228,6 +229,22 @@ const ErrorTray = ({ setValidatablePlan, diagnostics, validating, courseDetails,
     }
     return Message({ setValidatablePlan, diag: diagWithAssociated, key: index, open: open || hasError, getCourseDetails, reqCourses })
   })
+
+  // Determine when we get 0 messages to launch the confetti
+  const hadErrorsRef = useRef(false)
+  const hasErrors = messageList.length > 0
+  const confetti = useConfetti()
+  useEffect(() => {
+    if (hadErrorsRef.current && !hasErrors) {
+      if (confetti != null) {
+        void confetti.addConfetti({
+          emojis: ['🌈', '⚡️', '💥', '✨', '💫'],
+          emojiSize: 70
+        })
+      }
+    }
+    hadErrorsRef.current = hasErrors
+  }, [hasErrors, confetti])
 
   return (
     <div className={`h-[95%] z-20 flex flex-col relative border-slate-300 border-2 rounded-lg bg-slate-100 shadow-lg mb-2 py-4  motion-reduce:transition-none transition-all ${hasError || open ? 'w-80 min-w-[20rem]' : 'min-w-[4.5rem]'}`}>
