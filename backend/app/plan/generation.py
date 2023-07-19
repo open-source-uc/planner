@@ -34,6 +34,7 @@ from app.plan.validation.curriculum.tree import (
     Curriculum,
     CurriculumSpec,
     Cyear,
+    FillerCourse,
 )
 from app.sync import get_curriculum
 from app.user.auth import UserKey
@@ -227,6 +228,7 @@ def _reselect_equivs(
                     by_name[equiv_info.name].append(ref_course)
 
     # Re-select filler equivalences in courses_to_pass if they match reference choices
+    extra_fillers: defaultdict[str, list[FillerCourse]] = defaultdict(list)
     for fillers in curriculum.fillers.values():
         for filler in fillers:
             equiv = filler.course
@@ -240,12 +242,20 @@ def _reselect_equivs(
                 continue
             for ref_choice in by_name[equiv_info.name]:
                 if ref_choice.code in equiv_info.courses:
-                    filler.course = ref_choice.copy(
-                        update={
-                            "equivalence": equiv,
-                        },
+                    extra_fillers[ref_choice.code].append(
+                        FillerCourse(
+                            course=ref_choice.copy(update={"equivalence": equiv}),
+                            order=filler.order,
+                            cost_offset=filler.cost_offset - 1,
+                        ),
                     )
                     break
+
+    # Add extra fillers at the start of the lists
+    for code, extra in extra_fillers.items():
+        if code in curriculum.fillers:
+            extra.extend(curriculum.fillers[code])
+        curriculum.fillers[code] = extra
 
 
 def _compute_courses_to_pass(
