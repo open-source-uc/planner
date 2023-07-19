@@ -3,6 +3,7 @@ Transform the Siding format into something usable.
 """
 
 
+from zeep.exceptions import Fault
 from prisma.models import (
     Major as DbMajor,
 )
@@ -360,15 +361,29 @@ async def fetch_student_info(rut: str) -> StudentInfo:
 
     Request the basic student information for a given RUT from SIDING.
     """
-    raw = await client.get_student_info(rut)
-    return StudentInfo(
-        full_name=raw.Nombre,
-        cyear=raw.Curriculo,
-        is_cyear_supported=Cyear.from_str(raw.Curriculo) is not None,
-        reported_major=MajorCode(raw.MajorInscrito) if raw.MajorInscrito else None,
-        reported_minor=MinorCode(raw.MinorInscrito) if raw.MinorInscrito else None,
-        reported_title=TitleCode(raw.TituloInscrito) if raw.TituloInscrito else None,
-    )
+    try:
+        raw = await client.get_student_info(rut)
+        CAREER = "INGENIERÍA CIVIL"
+        assert raw.Curriculo is not None and raw.Carrera is CAREER
+
+        return StudentInfo(
+            full_name=raw.Nombre,
+            cyear=raw.Curriculo,
+            is_cyear_supported=Cyear.from_str(raw.Curriculo) is not None,
+            reported_major=MajorCode(raw.MajorInscrito) if raw.MajorInscrito else None,
+            reported_minor=MinorCode(raw.MinorInscrito) if raw.MinorInscrito else None,
+            reported_title=TitleCode(raw.TituloInscrito)
+            if raw.TituloInscrito
+            else None,
+        )
+
+    except (AssertionError, Fault) as err:
+        if (isinstance(err, Fault) and "no pertenece" in err.message) or isinstance(
+            err, AssertionError
+        ):
+            raise ValueError("Not a valid engineering student") from err
+        else:
+            raise err
 
 
 async def fetch_student_previous_courses(

@@ -14,8 +14,9 @@ from app.database import prisma
 from app.logger import setup_logger
 from app.redis import get_redis
 from app.settings import settings
+from app.sync.siding import translate
 from app.sync.siding.client import client as siding_soap_client
-from app.sync.siding.client import get_titles
+from app.sync.siding.client import get_titles, get_student_info
 
 if TYPE_CHECKING:
     from typing import Any
@@ -146,6 +147,13 @@ async def health(redis: Annotated["Redis[Any]", Depends(get_redis)]) -> HealthRe
             detail=response.detail,
         )
     return response
+
+
+@app.post("/debug/fetch")
+# FIXME: REMOVER DESPUES DE DEBUG
+# TODO: REMOVE AFTER DEBUG
+async def fetch_user_info(rut: str):
+    return await translate.fetch_student_info(rut)
 
 
 for router in routes.routers:

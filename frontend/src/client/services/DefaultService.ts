@@ -48,6 +48,27 @@ export class DefaultService {
     }
 
     /**
+     * Fetch User Info
+     * @param rut
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static fetchUserInfo(
+        rut: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/debug/fetch',
+            query: {
+                'rut': rut,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
      * Sync Database
      * Initiate a synchronization of the internal database from external sources.
      * @param courses
