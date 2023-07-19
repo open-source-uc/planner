@@ -6,7 +6,7 @@ const UserInfo = (): JSX.Element => {
 
   useEffect(() => {
     console.log(authState)
-  }, [])
+  }, [authState])
 
   return (
     <>

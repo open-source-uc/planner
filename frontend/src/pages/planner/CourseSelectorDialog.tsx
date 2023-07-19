@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment, memo, useRef } from 'react'
+import { useState, useEffect, Fragment, memo, useRef, useCallback } from 'react'
 import { Dialog, Transition, Switch } from '@headlessui/react'
 import { DefaultService, type EquivDetails, type CourseOverview, type CourseDetails, type CancelablePromise } from '../../client'
 import { Spinner } from '../../components/Spinner'
@@ -39,7 +39,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
 
   const [promiseInstance, setPromiseInstance] = useState<CancelablePromise<any> | null>(null)
 
-  function resetFilters (): void {
+  const resetFilters = useCallback((): void => {
     setSelectedCourse(undefined)
     setFilter({
       name: '',
@@ -53,7 +53,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       setPromiseInstance(null)
       setLoadingCoursesData(false)
     }
-  }
+  }, [promiseInstance])
 
   async function getCourseDetails (coursesCodes: string[]): Promise<void> {
     if (coursesCodes.length === 0) return
@@ -75,7 +75,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     setLoadingCoursesData(false)
   }
 
-  async function handleSearch (filterProp: Filter): Promise<void> {
+  const handleSearch = useCallback(async (filterProp: Filter): Promise<void> => {
     console.log(equivalence, filterProp)
     setLoadingCoursesData(true)
     const crd = filterProp.credits === '' ? undefined : parseInt(filterProp.credits)
@@ -135,7 +135,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       setFilteredCodes(response.flat())
       setLoadingCoursesData(false)
     }
-  }
+  }, [equivalence, loadedCourses, promiseInstance])
 
   const handleScroll: React.EventHandler<React.SyntheticEvent<HTMLTableSectionElement>> = event => {
     if (!open || loadingCoursesData) return
@@ -175,7 +175,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     if (showCoursesCount < coursesBatchSize && filteredCodes.length > 0) {
       getCourseDetails(filteredCodes.filter((code) => !Object.keys(loadedCourses).includes(code)).splice(0, coursesBatchSize)).catch(err => { console.log(err) })
     }
-  }, [filteredCodes])
+  }, [filteredCodes, loadedCourses])
 
   useEffect(() => {
     if (!open) {
@@ -185,7 +185,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     } else if (equivalence !== undefined) {
       void handleSearch(filter)
     }
-  }, [open])
+  }, [open, equivalence, resetFilters, handleSearch, filter])
 
   return (
     <Transition.Root show={open} as={Fragment}>

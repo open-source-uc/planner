@@ -32,15 +32,16 @@ const Selector = memo(function _Selector ({
   onChange
 }: SelectorProps): JSX.Element {
   const selectedOption = value != null ? (data[value] ?? { name: `${name} Desconocido` }) : { name: 'Por Seleccionar' }
-  if (value !== undefined && value !== null && data[value] === undefined) {
-    useEffect(() => {
+  useEffect(() => {
+    if (value !== undefined && value !== null && data[value] === undefined) {
       toast.warn(`Tu ${name.toLowerCase()} todavía no está soportado oficialmente. Los cursos pueden estar incorrectos, revisa dos veces.`, {
         toastId: `UNSUPPORTED_${name}`,
         autoClose: false,
         position: 'bottom-left'
       })
-    }, [value])
-  }
+    }
+  }, [value, data, name])
+
   return (
     <Listbox value={value} onChange={onChange}>
       <Listbox.Button className="selectorButton">
