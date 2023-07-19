@@ -1,0 +1,21 @@
+
+name: Reporte de Bug 🐛
+description: Encontraste algo que no funciona como debería
+title: '[Bug]: '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Muchas gracias por tomarte el tiempo de reportar un problema :heart:
+
+        Antes de subir la issue, por favor, revisa las issues pineadas e intenta
+        buscar si tu problema no ha sido reportado en otra issue.
+
+  - type: textarea
+    id: descripcion
+    attributes:
+      label: Descripción
+      description: Describe el problema que encontraste
+    validations:
+      required: true
