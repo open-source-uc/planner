@@ -1,9 +1,19 @@
 const Logout = (): JSX.Element => {
   // Clear token from local storage
   localStorage.removeItem('access-token')
-  // Redirect to home page
-  window.location.href = '/'
-  return <p>Cerrando sesión...</p>
+
+  const casURL: string = import.meta.env.VITE_CAS_URL
+  console.assert(casURL, 'VITE_CAS_URL environment variable not set during build')
+
+  // Redirect to SSO logout URL
+  const ssoLogoutURL = new URL('logout', casURL).toString()
+  window.location.href = ssoLogoutURL
+
+  return <div className="mx-auto my-auto">
+    <h2 className="font-bold text-2xl">
+    Cerrando sesión... &nbsp; 👋
+    </h2>
+  </div>
 }
 
 export default Logout
