@@ -53,7 +53,8 @@ app = FastAPI(
     # Note: In development, always use the proxied root path
     # so you can properly use OpenAPI and Swagger UI.
     # (You can disable it by setting ROOT_PATH as "")
-    root_path=settings.root_path,
+    # DISABLED DUE TO HOTFIX
+    # root_path=settings.root_path,
 )
 
 # Set proxy headers

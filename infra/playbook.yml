@@ -62,6 +62,7 @@
         name: "*"
         state: latest
         update_only: true
+      failed_when: false
 
     - name: Install packages
       ansible.builtin.dnf:
@@ -149,33 +150,6 @@
       ansible.posix.selinux:
         policy: targeted
         state: enforcing
-
-    - name: Enable firewalld
-      ansible.builtin.service:
-        name: firewalld
-        enabled: true
-        state: started
-
-    - name: Open HTTP port
-      ansible.posix.firewalld:
-        service: http
-        permanent: true
-        state: enabled
-        immediate: true
-
-    - name: Open HTTPS port
-      ansible.posix.firewalld:
-        service: https
-        permanent: true
-        state: enabled
-        immediate: true
-
-    - name: Open HTTP/3 port
-      ansible.posix.firewalld:
-        service: http3
-        permanent: true
-        state: enabled
-        immediate: true
 
     - name: Install and connect to Tailscale network
       ansible.builtin.include_role:
