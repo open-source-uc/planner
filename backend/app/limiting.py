@@ -27,6 +27,7 @@ if not storage.check():
     assert storage.check()
 
 
+# TODO: Limit nicely in the frontend too.
 class Limiter:
     def __init__(self, limit: str) -> None:
         self.limiter = limits.strategies.FixedWindowRateLimiter(storage)

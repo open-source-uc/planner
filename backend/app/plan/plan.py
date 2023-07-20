@@ -1,9 +1,12 @@
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 from app.plan.course import PseudoCourse
 from app.plan.validation.curriculum.tree import CurriculumSpec
+
+MAX_SEMESTERS = 20
+MAX_CLASSES = 200
 
 
 class ValidatablePlan(BaseModel):
@@ -38,6 +41,18 @@ class ValidatablePlan(BaseModel):
     # The curriculum that the user wants to pursue
     # Validate the plan against this curriculum
     curriculum: CurriculumSpec
+
+    @validator("classes")
+    @classmethod
+    def validate_limits(
+        cls: type[Self],
+        classes: list[list[PseudoCourse]],
+    ) -> list[list[PseudoCourse]]:
+        if len(classes) > MAX_SEMESTERS:
+            raise ValueError("too many semesters")
+        if sum(len(sem) for sem in classes) > MAX_CLASSES:
+            raise ValueError("too many classes")
+        return classes
 
 
 class ClassId(BaseModel, frozen=True):
