@@ -795,12 +795,14 @@ export class DefaultService {
      * Redirect the browser to this page to initiate authentication.
      * @param next
      * @param ticket
+     * @param impersonateRut
      * @returns any Successful Response
      * @throws ApiError
      */
     public static authenticate(
         next?: string,
         ticket?: string,
+        impersonateRut?: string,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
@@ -808,6 +810,7 @@ export class DefaultService {
             query: {
                 'next': next,
                 'ticket': ticket,
+                'impersonate_rut': impersonateRut,
             },
             errors: {
                 422: `Validation Error`,
