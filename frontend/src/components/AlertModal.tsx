@@ -14,7 +14,6 @@ function useCanClose ({ disclaimer, close }: { close: Function, disclaimer?: boo
   const [canClose, setCanClose] = useState(false)
 
   useEffect(() => {
-    console.log(localStorage.getItem('reconexion'))
     if (disclaimer === true && localStorage.getItem('reconexion') === null) {
       const timer = setTimeout(() => {
         setCanClose(true)
