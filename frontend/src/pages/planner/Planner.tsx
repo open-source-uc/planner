@@ -182,19 +182,17 @@ const Planner = (): JSX.Element => {
     try {
       console.log('Getting Basic Plan...')
       let baseValidatablePlan
-      if (referenceValidatablePlan === undefined) {
+      if (referenceValidatablePlan === undefined || referenceValidatablePlan === null) {
         baseValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
       } else {
         baseValidatablePlan = { ...referenceValidatablePlan, classes: [...referenceValidatablePlan.classes] }
+        truncateAt = truncateAt ?? (authState?.student?.next_semester ?? 0)
+        baseValidatablePlan.classes.splice(truncateAt)
       }
-      // truncate the validatablePlan to the passed courses
-      truncateAt = truncateAt ?? (authState?.student?.next_semester ?? 0)
-      baseValidatablePlan.classes.splice(truncateAt)
       // truncate the validatablePlan to the last not empty semester
       while (baseValidatablePlan.classes.length > 0 && baseValidatablePlan.classes[baseValidatablePlan.classes.length - 1].length === 0) {
         baseValidatablePlan.classes.pop()
       }
-      console.log(baseValidatablePlan)
       const response: ValidatablePlan = await DefaultService.generatePlan({
         passed: baseValidatablePlan,
         reference: referenceValidatablePlan ?? undefined
@@ -237,6 +235,8 @@ const Planner = (): JSX.Element => {
           await getPlanById(planID)
         }
       } else {
+        console.log('validatablePlan')
+        console.log(validatablePlan)
         await getDefaultPlan(validatablePlan ?? undefined)
       }
     } catch (error) {
@@ -247,7 +247,7 @@ const Planner = (): JSX.Element => {
   }
 
   async function getCourseDetails (courses: PseudoCourseId[]): Promise<void> {
-    console.log('getting Courses Details...')
+    console.log('Getting Courses Details...')
     const pseudocourseCodes = new Set<string>()
     for (const courseid of courses) {
       const code = ('failed' in courseid ? courseid.failed : null) ?? courseid.code
@@ -486,6 +486,10 @@ const Planner = (): JSX.Element => {
           while (newValidatablePlan.classes.length <= modalData.semester) {
             newValidatablePlan.classes.push([])
           }
+          // Busca si el curso puede reemplazar una equivalencia no concreta
+          // const equivalenceWithNewClass = newValidatablePlan.classes.flat().find(
+          //   (classItem) => classItem.is_concrete === false && 'courses' in courseDetails[classItem.code] && (selection.code in courseDetails[classItem.code].courses)
+          // )
           newValidatablePlan.classes[modalData.semester][index] = {
             is_concrete: true,
             code: selection.code,
