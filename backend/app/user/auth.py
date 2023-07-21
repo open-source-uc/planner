@@ -93,6 +93,10 @@ def _get_login_url(service_params: dict[str, str]) -> str:
     return f"{cas_login_url}?{cas_login_params}"
 
 
+def _normalize_rut(rut: str) -> str:
+    return rut.replace(".", "").strip().lstrip("0")
+
+
 async def _is_admin(rut: str):
     """
     Checks if user with given RUT is an admin.
@@ -151,7 +155,9 @@ def decode_token(token: str) -> UserKey:
     if not isinstance(payload["rut"], str):
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    return UserKey(payload["rut"])
+    rut = payload["rut"]
+    rut = _normalize_rut(rut)
+    return UserKey(rut)
 
 
 def require_authentication(
@@ -260,12 +266,13 @@ async def login_cas(
             status_code=500,
             detail="RUT is missing from CAS attributes",
         )
+    rut = _normalize_rut(rut)
 
     # Only allow impersonation if the user is a mod
     if impersonate_rut is not None:
         if not _is_mod(rut):
             raise HTTPException(status_code=403, detail="Insufficient privileges")
-        rut = impersonate_rut
+        rut = _normalize_rut(impersonate_rut)
 
     # CAS token was validated, generate JWT token
     token = await generate_token(rut)
