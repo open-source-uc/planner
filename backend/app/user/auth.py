@@ -48,19 +48,18 @@ async def _is_mod(rut: str):
     return level.is_mod
 
 
-async def generate_token(user: str, rut: str, expire_delta: float | None = None):
+async def generate_token(rut: str, expire_delta: float | None = None):
     """
-    Generate a signed token (one that is unforgeable) with the given user, rut and
+    Generate a signed token (one that is unforgeable) with the given rut and
     expiration time.
     """
     # Calculate the time that this token expires
     if expire_delta is None:
         expire_delta = settings.jwt_expire
     expire_time = datetime.now(tz=UTC) + timedelta(seconds=expire_delta)
-    # Pack user, rut and expire date into a signed token
+    # Pack rut and expire date into a signed token
     payload: dict[str, datetime | str | bool] = {
         "exp": expire_time,
-        "sub": user,
         "rut": rut,
     }
     return jwt.encode(
@@ -84,12 +83,10 @@ def decode_token(token: str) -> UserKey:
         raise HTTPException(status_code=401, detail="Token expired") from None
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token") from None
-    if not isinstance(payload["sub"], str):
-        raise HTTPException(status_code=401, detail="Invalid token")
     if not isinstance(payload["rut"], str):
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    return UserKey(payload["sub"], payload["rut"])
+    return UserKey(payload["rut"])
 
 
 def require_authentication(
@@ -118,7 +115,7 @@ async def require_mod_auth(
     key = require_authentication(bearer=bearer)
     if not await _is_mod(key.rut):
         raise HTTPException(status_code=403, detail="Insufficient access")
-    return ModKey(key.username, key.rut)
+    return ModKey(key.rut)
 
 
 async def require_admin_auth(
@@ -134,7 +131,7 @@ async def require_admin_auth(
     key = require_authentication(bearer=bearer)
     if not await _is_admin(key.rut):
         raise HTTPException(status_code=403, detail="Insufficient access")
-    return AdminKey(key.username, key.rut)
+    return AdminKey(key.rut)
 
 
 async def login_cas(
@@ -172,12 +169,12 @@ async def login_cas(
         return HTTPException(status_code=422, detail="Missing next URL")
 
     # Verify that the ticket is valid directly with the authority (the CAS server)
-    user: Any
-    attributes: Any
+    username: Any  # CAS username (ie. mail without @uc.cl)
+    attributes: Any  # CAS attributes
     _pgtiou: Any
     try:
         (
-            user,
+            username,
             attributes,
             _pgtiou,
         ) = cas_verify_client.verify_ticket(  # pyright: ignore
@@ -187,7 +184,7 @@ async def login_cas(
         traceback.print_exc()
         return HTTPException(status_code=502, detail="Error verifying CAS ticket")
 
-    if not isinstance(user, str) or not isinstance(attributes, dict):
+    if not isinstance(username, str) or not isinstance(attributes, dict):
         # Failed to authenticate
         return HTTPException(status_code=401, detail="Authentication failed")
 
@@ -208,15 +205,13 @@ async def login_cas(
         rut = impersonate_rut
 
     # CAS token was validated, generate JWT token
-    token = await generate_token(user, rut)
+    token = await generate_token(rut)
 
     # Redirect to next URL with JWT token attached
     return RedirectResponse(next + f"?token={token}")
 
 
 class AccessLevelOverview(BaseModel):
-    name: str | None = None
-
     # attributes from db
     user_rut: str
     is_mod: bool
