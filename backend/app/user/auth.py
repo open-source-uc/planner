@@ -137,7 +137,11 @@ async def require_admin_auth(
     return AdminKey(key.username, key.rut)
 
 
-async def login_cas(next: str | None = None, ticket: str | None = None):
+async def login_cas(
+    next: str | None = None,
+    ticket: str | None = None,
+    impersonate_rut: str | None = None,
+):
     """
     Login endpoint.
     Has two uses, depending on the presence of `ticket`.
@@ -196,6 +200,12 @@ async def login_cas(next: str | None = None, ticket: str | None = None):
             status_code=500,
             detail="RUT is missing from CAS attributes",
         )
+
+    # Only allow impersonation if the user is a mod
+    if impersonate_rut is not None:
+        if not _is_mod(rut):
+            raise HTTPException(status_code=403, detail="Insufficient privileges")
+        rut = impersonate_rut
 
     # CAS token was validated, generate JWT token
     token = await generate_token(user, rut)
