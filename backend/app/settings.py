@@ -2,7 +2,6 @@ import secrets
 import warnings
 from pathlib import Path
 from typing import Literal
-from urllib.parse import urlencode, urljoin
 
 from pydantic import AnyHttpUrl, BaseSettings, Field, RedisDsn, SecretStr
 
@@ -50,21 +49,6 @@ class Settings(BaseSettings):
     # This is the path used in case of prefix stripping (i.e. hosting in /api)
     # This is ignored in development mode for convenience
     root_path: str = "/api"
-
-    @property
-    def cas_callback_url(self):
-        """
-        Get the "CAS callback URL", also known as "service URL" in CAS terms.
-        After the user enters their username and password in the CAS webpage, the CAS
-        webpage will redirect the user's browser to this URL, with the CAS token
-        attached as a URL parameter.
-        Therefore, this URL must be able to receive the CAS token, create a JWT token
-        and hand it to the frontend.
-        """
-        next_url = urljoin(self.planner_url, "/")
-        auth_login_url = urljoin(self.planner_url, "/api/user/login")
-        params = urlencode({"next": next_url})
-        return f"{auth_login_url}?{params}"
 
     # Admin RUT as string. This user will always be the only admin.
     # TODO: Maybe use the username instead of the RUT, because RUTs can have zeros in
