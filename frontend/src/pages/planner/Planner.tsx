@@ -186,9 +186,9 @@ const Planner = (): JSX.Element => {
         baseValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
       } else {
         baseValidatablePlan = { ...referenceValidatablePlan, classes: [...referenceValidatablePlan.classes] }
+        truncateAt = truncateAt ?? (authState?.student?.next_semester ?? 0)
+        baseValidatablePlan.classes.splice(truncateAt)
       }
-      truncateAt = truncateAt ?? (authState?.student?.next_semester ?? 0)
-      baseValidatablePlan.classes.splice(truncateAt)
       // truncate the validatablePlan to the last not empty semester
       while (baseValidatablePlan.classes.length > 0 && baseValidatablePlan.classes[baseValidatablePlan.classes.length - 1].length === 0) {
         baseValidatablePlan.classes.pop()
