@@ -235,8 +235,6 @@ const Planner = (): JSX.Element => {
           await getPlanById(planID)
         }
       } else {
-        console.log('validatablePlan')
-        console.log(validatablePlan)
         await getDefaultPlan(validatablePlan ?? undefined)
       }
     } catch (error) {
@@ -486,10 +484,6 @@ const Planner = (): JSX.Element => {
           while (newValidatablePlan.classes.length <= modalData.semester) {
             newValidatablePlan.classes.push([])
           }
-          // Busca si el curso puede reemplazar una equivalencia no concreta
-          // const equivalenceWithNewClass = newValidatablePlan.classes.flat().find(
-          //   (classItem) => classItem.is_concrete === false && 'courses' in courseDetails[classItem.code] && (selection.code in courseDetails[classItem.code].courses)
-          // )
           newValidatablePlan.classes[modalData.semester][index] = {
             is_concrete: true,
             code: selection.code,
