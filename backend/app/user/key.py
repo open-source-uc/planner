@@ -11,11 +11,10 @@ class UserKey:
     function requires authorization to access the user".
 
     Example:
-    << user = UserKey(username="usuario", rut="12345678-9")
-    >> UserKey(username='usuario', rut='12345678-9')
+    << user = UserKey(rut="12345678-9")
+    >> UserKey(rut='12345678-9')
     """
 
-    username: str
     rut: str
 
 
@@ -29,15 +28,15 @@ class ModKey(UserKey):
     function requires mod authorization".
 
     Example:
-    << mod = ModKey(username="moderador", rut="12345678-9")
-    >> ModKey(username='moderador', rut='12345678-9')
+    << mod = ModKey(rut="12345678-9")
+    >> ModKey(rut='12345678-9')
     """
 
     def as_any_user(self, user_rut: str) -> UserKey:
         """
         Moderators can access the resources of any user.
         """
-        return UserKey("", user_rut)
+        return UserKey(user_rut)
 
 
 class AdminKey(ModKey):
@@ -50,6 +49,6 @@ class AdminKey(ModKey):
     function requires admin authorization".
 
     Example:
-    << admin = AdminKey(username="administrador", rut="12345678-9")
-    >> AdminKey(username='administrador', rut='12345678-9')
+    << admin = AdminKey(rut="12345678-9")
+    >> AdminKey(rut='12345678-9')
     """
