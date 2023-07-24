@@ -7,7 +7,7 @@ ENV PYTHONUNBUFFERED 1
 # RUN pip3 --disable-pip-version-check --no-cache-dir install -r /tmp/pip-tmp/requirements.txt \
 #    && rm -rf /tmp/pip-tmp
 
-ARG NODE_VERSION="16"
+ARG NODE_VERSION="18"
 RUN if [ "${NODE_VERSION}" != "none" ]; then su vscode -c "umask 0002 && . /usr/local/share/nvm/nvm.sh && nvm install ${NODE_VERSION} 2>&1"; fi
 
 # Install Just
