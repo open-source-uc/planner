@@ -45,6 +45,7 @@ from app.plan.validation.curriculum.tree import (
 )
 from app.settings import settings
 from app.sync import buscacursos_dl
+from app.sync.nativemock import native_mock_data
 from app.sync.siding import translate as siding_translate
 from app.user.auth import UserKey
 from app.user.info import StudentContext
@@ -175,6 +176,7 @@ async def _get_curriculum_piece(spec: CurriculumSpec) -> Curriculum:
             print(f"regenerating curriculum for {spec}: failed to parse cache")
             traceback.print_exc()
 
+    # Get the curriculum for this piece
     courseinfo = await course_info()
     curr = await siding_translate.fetch_curriculum(courseinfo, spec)
     await DbCurriculum.prisma().query_raw(
@@ -202,42 +204,26 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
     returned `Curriculum`.
     Therefore, each call to `get_curriculum` should result in a fresh curriculum.
     """
+
+    native_mock = native_mock_data()
     out = Curriculum.empty()
 
     # Fetch major (or common plan)
-    major = await _get_curriculum_piece(
-        CurriculumSpec(
-            cyear=spec.cyear,
-            major=spec.major,
-            minor=None,
-            title=None,
-        ),
-    )
-    out.extend(major)
+    if not (curr := native_mock.get_major(spec)):
+        curr = await _get_curriculum_piece(spec.no_minor().no_title())
+    out.extend(curr)
 
     # Fetch minor
-    if spec.minor is not None:
-        minor = await _get_curriculum_piece(
-            CurriculumSpec(
-                cyear=spec.cyear,
-                major=None,
-                minor=spec.minor,
-                title=None,
-            ),
-        )
-        out.extend(minor)
+    if spec.has_minor():
+        if not (curr := native_mock.get_minor(spec)):
+            curr = await _get_curriculum_piece(spec.no_major().no_title())
+        out.extend(curr)
 
     # Fetch title
-    if spec.title is not None:
-        title = await _get_curriculum_piece(
-            CurriculumSpec(
-                cyear=spec.cyear,
-                major=None,
-                minor=None,
-                title=spec.title,
-            ),
-        )
-        out.extend(title)
+    if spec.has_title():
+        if not (curr := native_mock.get_title(spec)):
+            curr = await _get_curriculum_piece(spec.no_major().no_minor())
+        out.extend(curr)
 
     return out
 
