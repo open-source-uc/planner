@@ -9,6 +9,7 @@ from app.user.auth import (
     AccessLevelOverview,
     AdminKey,
     require_admin_auth,
+    validar_rut,
 )
 
 router = APIRouter(prefix="/admin")
@@ -66,6 +67,9 @@ async def add_mod(rut: str, user: AdminKey = Depends(require_admin_auth)):
     """
     Give mod access to a user with the specified RUT.
     """
+    if not validar_rut(rut):
+        raise HTTPException(status_code=400, detail="RUT chileno no válido")
+
     return await DbAccessLevel.prisma().upsert(
         where={
             "user_rut": rut,

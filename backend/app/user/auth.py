@@ -1,6 +1,7 @@
 import contextlib
 import traceback
 from datetime import UTC, datetime, timedelta
+from itertools import cycle
 from typing import Any
 from urllib.parse import urlencode, urljoin
 
@@ -95,6 +96,21 @@ def _get_login_url(service_params: dict[str, str]) -> str:
 
 def _normalize_rut(rut: str) -> str:
     return rut.replace(".", "").strip().lstrip("0")
+
+
+def validar_rut(rut: str) -> bool:
+    """
+    Verifica que el RUT sea válido segun su digito verificador.
+    """
+    aux = _normalize_rut(rut.replace("-", ""))
+    dv = rut[-1:]
+    revertido = map(int, reversed(str(aux)))
+    factors = cycle(range(2, len(aux) + 2))
+    s = sum(d * f for d, f in zip(revertido, factors, strict=False))
+    res = (-s) % 11
+    if str(res) == dv:
+        return True
+    return bool(dv == "K" and res == 10)
 
 
 async def _is_admin(rut: str):
