@@ -78,21 +78,24 @@ class Settings(BaseSettings):
     # Siding mock database file.
     # If "", it does not load any mock data.
     # Failing to read the mock database is not a fatal error, only a warning.
-    siding_mock_path: Path = Path("../siding-mock-data/data.json")
+    siding_mock_path: Literal[""] | Path = Path("../siding-mock-data/data.json")
 
     # Where to store recorded SIDING responses.
     # If "", responses are not recorded.
     # Steps to record SIDING responses:
     # 1. Set SIDING_RECORD_PATH in the `.env` file to some path
-    #   (eg. "./mock-data/siding-mock.json").
-    # 2. Run the backend. You may want to clear some caches to force the SIDING
-    #   requests to execute and be recorded.
+    #   (eg. "./siding-mock-data/data.json").
+    # 2. Run the backend. You may want to reset the database so that the cache is
+    #   cleared and it forces the SIDING requests to execute and be recorded.
     # 3. Close the backend **with CTRL+C**.
     #   Force-closing the backend through VSCode will not trigger the shutdown hook to
     #   write the recorded responses.
     # 4. A JSON file will be saved with previous mock data (if any) + the recorded data.
     #   Note that the file may contain sensitive data!
     siding_record_path: Literal[""] | Path = ""
+
+    # A mock for curriculums in the native format.
+    native_mock_path: Literal[""] | Path = Path("../native-mock-data/data.json")
 
     # Time to expire cached student information in seconds.
     student_info_expire: float = 1800
