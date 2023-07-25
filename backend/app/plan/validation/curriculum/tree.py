@@ -279,3 +279,30 @@ class CurriculumSpec(BaseModel, frozen=True):
     major: MajorCode | None
     minor: MinorCode | None
     title: TitleCode | None
+
+    def has_major(self) -> bool:
+        return self.major is not None
+
+    def has_minor(self) -> bool:
+        return self.minor is not None
+
+    def has_title(self) -> bool:
+        return self.title is not None
+
+    def with_major(self, major: MajorCode | None) -> "CurriculumSpec":
+        return self.copy(update={"major": major})
+
+    def with_minor(self, minor: MinorCode | None) -> "CurriculumSpec":
+        return self.copy(update={"minor": minor})
+
+    def with_title(self, title: TitleCode | None) -> "CurriculumSpec":
+        return self.copy(update={"title": title})
+
+    def no_major(self) -> "CurriculumSpec":
+        return self.with_major(None)
+
+    def no_minor(self) -> "CurriculumSpec":
+        return self.with_minor(None)
+
+    def no_title(self) -> "CurriculumSpec":
+        return self.with_title(None)
