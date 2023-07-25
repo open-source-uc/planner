@@ -1,27 +1,27 @@
 {
-  "files": [
+  "files":[
     "contributors.md"
   ],
-  "imageSize": 100,
-  "commit": false,
-  "commitType": "docs",
-  "commitConvention": "angular",
-  "contributors": [
+  "imageSize":100,
+  "commit":false,
+  "commitType":"docs",
+  "commitConvention":"angular",
+  "contributors":[
     {
-      "login": "nicoabarca",
-      "name": "Nicolás Abarca",
-      "avatar_url": "https://avatars.githubusercontent.com/u/29152538?v=4",
-      "profile": "https://github.com/nicoabarca",
-      "contributions": [
+      "login":"nicoabarca",
+      "name":"Nicolás Abarca",
+      "avatar_url":"https://avatars.githubusercontent.com/u/29152538?v=4",
+      "profile":"https://github.com/nicoabarca",
+      "contributions":[
         "design"
       ]
     },
     {
-      "login": "benjavicente",
-      "name": "Benjamín Vicente",
-      "avatar_url": "https://avatars.githubusercontent.com/u/62021328?v=4",
-      "profile": "http://benjavicente.github.io",
-      "contributions": [
+      "login":"benjavicente",
+      "name":"Benjamín Vicente",
+      "avatar_url":"https://avatars.githubusercontent.com/u/62021328?v=4",
+      "profile":"http://benjavicente.github.io",
+      "contributions":[
         "doc",
         "code",
         "eventOrganizing",
@@ -29,50 +29,50 @@
       ]
     },
     {
-      "login": "tomastrivino",
-      "name": "Tomás Triviño",
-      "avatar_url": "https://avatars.githubusercontent.com/u/98418205?v=4",
-      "profile": "https://github.com/tomastrivino",
-      "contributions": [
+      "login":"tomastrivino",
+      "name":"Tomás Triviño",
+      "avatar_url":"https://avatars.githubusercontent.com/u/98418205?v=4",
+      "profile":"https://github.com/tomastrivino",
+      "contributions":[
         "content"
       ]
     },
     {
-      "login": "fernandosmither",
-      "name": "Fernando",
-      "avatar_url": "https://avatars.githubusercontent.com/u/66154723?v=4",
-      "profile": "https://github.com/fernandosmither",
-      "contributions": [
-          "eventOrganizing",
-          "research"
+      "login":"fernandosmither",
+      "name":"Fernando",
+      "avatar_url":"https://avatars.githubusercontent.com/u/66154723?v=4",
+      "profile":"https://github.com/fernandosmither",
+      "contributions":[
+        "eventOrganizing",
+        "research"
       ]
-      },
-      {
-      "login": "riadeane",
-      "name": "Ria Deane",
-      "avatar_url": "https://avatars.githubusercontent.com/u/62292336?v=4",
-      "profile": "http://riadeane.dev",
-      "contributions": [
+    },
+    {
+      "login":"riadeane",
+      "name":"Ria Deane",
+      "avatar_url":"https://avatars.githubusercontent.com/u/62292336?v=4",
+      "profile":"http://riadeane.dev",
+      "contributions":[
         "fundingFinding",
         "eventOrganizing",
         "research"
       ]
     },
     {
-      "login": "a-maccormack",
-      "name": "Alister MacCormack",
-      "avatar_url": "https://avatars.githubusercontent.com/u/78695941?v=4",
-      "profile": "http://www.linkedin.com/in/a-maccormack",
-      "contributions": [
+      "login":"a-maccormack",
+      "name":"Alister MacCormack",
+      "avatar_url":"https://avatars.githubusercontent.com/u/78695941?v=4",
+      "profile":"http://www.linkedin.com/in/a-maccormack",
+      "contributions":[
         "eventOrganizing",
         "research"
       ]
     }
   ],
-  "contributorsPerLine": 7,
-  "skipCi": true,
-  "repoType": "github",
-  "repoHost": "https://github.com",
-  "projectName": "planner",
-  "projectOwner": "open-source-uc"
+  "contributorsPerLine":7,
+  "skipCi":true,
+  "repoType":"github",
+  "repoHost":"https://github.com",
+  "projectName":"planner",
+  "projectOwner":"open-source-uc"
 }
