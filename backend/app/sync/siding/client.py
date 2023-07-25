@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from decimal import Decimal
 from pathlib import Path
 from typing import Annotated, Any, Literal
@@ -121,10 +122,10 @@ class InfoEstudiante(BaseModel):
     Nombre: str
     # Seems to be either 'M' or 'F'.
     # Not used.
-    Sexo: str
+    Sexo: str | None
     # The cyear string associated with the student (e.g. "C2020", "C2013", etc...).
     # Usually coupled with `PeriodoAdmision`
-    Curriculo: str
+    Curriculo: str | None
     # Major code of the self-reported intended major.
     MajorInscrito: MajorCode | None
     # Minor code of the self-reported intended minor.
@@ -140,7 +141,7 @@ class InfoEstudiante(BaseModel):
     Carrera: str
     # Semester in which the student joined the university.
     # For example, '2012-2' for the second semester of 2012.
-    PeriodoAdmision: AcademicPeriod
+    PeriodoAdmision: AcademicPeriod | None
 
     # Average student grades
     # Since this is somewhat sensitive data and we don't use it, it's best to ignore it
@@ -186,13 +187,13 @@ class SoapClient:
             try:
                 self.mock_db = json.loads(settings.siding_mock_path.read_text())
                 cnt = sum(len(r) for r in self.mock_db.values())
-                print(
-                    f"loaded {cnt} SIDING mock responses from"
+                logging.info(
+                    f"Loaded {cnt} SIDING mock responses from"
                     f" '{settings.siding_mock_path}'",
                 )
             except (OSError, ValueError) as err:
-                print(
-                    "failed to read SIDING mock data from"
+                logging.error(
+                    "Failed to read SIDING mock data from"
                     f" '{settings.siding_mock_path}': {err}",
                 )
                 self.mock_db = {}
@@ -210,12 +211,12 @@ class SoapClient:
                 wsdl_url,
                 transport=AsyncTransport(http_client),
             )
-            print("connected to live SIDING webservice")
+            logging.info("Connected to live SIDING webservice")
 
         # Setup response recording
         if settings.siding_record_path != "":
             self.record_path = settings.siding_record_path
-            print("recording SIDING responses")
+            logging.info("Recording SIDING responses")
 
     async def call_endpoint(
         self,

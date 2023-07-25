@@ -8,12 +8,18 @@
     - name: "machine_name"
       prompt: "Desired machine name (e.g. staging, optional)"
       private: false
+    - name: "env_mode"
+      prompt: "Environment mode (production or staging)"
+      private: false
+      default: "production"
     - name: "planner_domain"
       prompt: "Planner domain (e.g. planner.example.com, optional)"
       private: false
+      default: "mallastest.ing.uc.cl"
     - name: "cas_server_url"
-      prompt: "CAS URL (e.g. https://sso.uc.cl/cas, optional)"
+      prompt: "CAS URL (optional)"
       private: false
+      default: "https://sso.uc.cl/cas"
     - name: "admin_rut"
       prompt: "Admin RUT (e.g. 12345678-9, optional)"
       private: false
@@ -56,6 +62,7 @@
         name: "*"
         state: latest
         update_only: true
+      failed_when: false
 
     - name: Install packages
       ansible.builtin.dnf:
@@ -116,6 +123,14 @@
         enabled: true
         state: started
 
+    - name: Wait for snapd to finish seeding (snap wait system seed.loaded)
+      ansible.builtin.command:
+        cmd: snap wait system seed.loaded
+      check_mode: false
+      changed_when: false
+      failed_when: false
+
+
     - name: Enable classic snap support
       ansible.builtin.command:
         cmd: ln -s /var/lib/snapd/snap /snap
@@ -126,37 +141,15 @@
         cmd: snap install just --classic --edge
         creates: /snap/bin/just
 
+    - name: Install the magic wormhole
+      ansible.builtin.command:
+        cmd: snap install wormhole
+        creates: /snap/bin/wormhole
+
     - name: Enable selinux
       ansible.posix.selinux:
         policy: targeted
         state: enforcing
-
-    - name: Enable firewalld
-      ansible.builtin.service:
-        name: firewalld
-        enabled: true
-        state: started
-
-    - name: Open HTTP port
-      ansible.posix.firewalld:
-        service: http
-        permanent: true
-        state: enabled
-        immediate: true
-
-    - name: Open HTTPS port
-      ansible.posix.firewalld:
-        service: https
-        permanent: true
-        state: enabled
-        immediate: true
-
-    - name: Open HTTP/3 port
-      ansible.posix.firewalld:
-        service: http3
-        permanent: true
-        state: enabled
-        immediate: true
 
     - name: Install and connect to Tailscale network
       ansible.builtin.include_role:
@@ -176,6 +169,72 @@
         - Stop tailscale
         - Load Tailscale selinux policy
         - Start tailscale
+
+    - name: Use higher default receive buffer
+      ansible.posix.sysctl:
+        name: net.core.rmem_default
+        value: 31457280
+        state: present
+
+    - name: Increase maximum receive buffer
+      ansible.posix.sysctl:
+        name: net.core.rmem_max
+        value: 12582912
+        state: present
+
+    - name: Use higher default send buffer
+      ansible.posix.sysctl:
+        name: net.core.wmem_default
+        value: 31457280
+        state: present
+
+    - name: Increase maximum send buffer size
+      ansible.posix.sysctl:
+        name: net.core.wmem_max
+        value: 12582912
+        state: present
+
+    - name: Increase TCP buffer space
+      ansible.posix.sysctl:
+        name: net.ipv4.tcp_mem
+        value: 65536 131072 262144
+        state: present
+
+    - name: Increase UDP buffer space
+      ansible.posix.sysctl:
+        name: net.ipv4.udp_mem
+        value: 65536 131072 262144
+        state: present
+
+    - name: Increase TCP read buffer
+      ansible.posix.sysctl:
+        name: net.ipv4.tcp_rmem
+        value: 8192 87380 16777216
+        state: present
+
+    - name: Increase TCP write buffer
+      ansible.posix.sysctl:
+        name: net.ipv4.tcp_wmem
+        value: 8192 65536 16777216
+        state: present
+
+    - name: Increase UDP read buffer
+      ansible.posix.sysctl:
+        name: net.ipv4.udp_rmem_min
+        value: 16384
+        state: present
+
+    - name: Increase UDP write buffer
+      ansible.posix.sysctl:
+        name: net.ipv4.udp_wmem_min
+        value: 16384
+        state: present
+
+    - name: Increase somaxconn
+      ansible.posix.sysctl:
+        name: net.core.somaxconn
+        value: 4096
+        state: present
 
     - name: Enable memory overcommit (for Redis)
       ansible.posix.sysctl:
@@ -338,7 +397,7 @@
 
     - name: Create backend .env
       ansible.builtin.copy:
-        src: /home/planner/planner/backend/.env.production
+        src: /home/planner/planner/backend/.env.{{ env_mode }}.template
         dest: /home/planner/planner/backend/.env
         owner: planner
         group: planner
@@ -348,7 +407,7 @@
 
     - name: Create frontend .env
       ansible.builtin.copy:
-        src: /home/planner/planner/frontend/.env.production
+        src: /home/planner/planner/frontend/.env.{{ env_mode }}.template
         dest: /home/planner/planner/frontend/.env
         owner: planner
         group: planner
@@ -358,7 +417,7 @@
 
     - name: Create database .env
       ansible.builtin.copy:
-        src: /home/planner/planner/database/.env.production
+        src: /home/planner/planner/database/.env.{{ env_mode }}.template
         dest: /home/planner/planner/database/.env
         owner: planner
         group: planner
@@ -370,6 +429,26 @@
       ansible.builtin.set_fact:
         planner_url: "https://{{ planner_domain }}"
       when: planner_domain | length > 0
+
+    - name: Configure back-end mode
+      ansible.builtin.lineinfile:
+        path: /home/planner/planner/backend/.env
+        regexp: '^PYTHON_ENV'
+        line: 'PYTHON_ENV={{ env_mode }}'
+        state: present
+        insertafter: '^# PYTHON_ENV'
+        firstmatch: true
+      when: env_mode | length > 0
+
+    - name: Configure front-end mode
+      ansible.builtin.lineinfile:
+        path: /home/planner/planner/frontend/.env
+        regexp: '^NODE_ENV'
+        line: 'NODE_ENV={{ env_mode }}'
+        state: present
+        insertafter: '^# NODE_ENV'
+        firstmatch: true
+      when: env_mode | length > 0
 
     - name: Configure back-end URL
       ansible.builtin.lineinfile:
@@ -446,6 +525,13 @@
         line: 'PLANNER_URL={{ planner_url }}'
         state: present
       when: planner_domain | length > 0
+
+    - name: Create caddy_data volume
+      ansible.builtin.command:
+        cmd: docker volume create caddy_data
+        creates: /var/lib/docker/volumes/caddy_data/
+      become: true
+      become_user: planner
 
     - name: Build and start containers
       ansible.builtin.command:

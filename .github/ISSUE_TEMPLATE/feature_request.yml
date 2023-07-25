@@ -1,0 +1,20 @@
+name: Petición de Funcionalidad 🚀
+description: Quieres pedir que se implemente una nueva funcionalidad o modificar una ya existente
+title: '[Feat]: '
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Muchas gracias por tomarte el tiempo de aportar al proyecto :heart:
+
+        Antes de subir la issue, por favor, revisa las issues pineadas e intenta
+        buscar si tu idea no ha sido pedida en otra issue.
+
+  - type: textarea
+    id: descripcion
+    attributes:
+      label: Descripción
+      description: Describe la funcionalidad que quieres que se implemente (o la que quieres que se modifique) con el mayor detalle posible.
+    validations:
+      required: true

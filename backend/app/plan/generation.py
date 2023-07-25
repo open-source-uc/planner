@@ -31,8 +31,10 @@ from app.plan.validation.curriculum.solve import (
 )
 from app.plan.validation.curriculum.tree import (
     LATEST_CYEAR,
+    Curriculum,
     CurriculumSpec,
     Cyear,
+    FillerCourse,
 )
 from app.sync import get_curriculum
 from app.user.auth import UserKey
@@ -66,11 +68,8 @@ def _get_course_color_order(
     rep_idx = rep_counter[course_code]
     rep_counter[course_code] += 1
     superblock = ""
-    mapped = g.map_class_id(course_code, rep_idx)
-    if mapped is not None:
-        course_code, rep_idx = mapped
-        if course_code in g.superblocks and rep_idx < len(g.superblocks[course_code]):
-            superblock = g.superblocks[course_code][rep_idx]
+    if course_code in g.superblocks and rep_idx < len(g.superblocks[course_code]):
+        superblock = g.superblocks[course_code][rep_idx]
     return SUPERBLOCK_COLOR_ORDER_TABLE.get(superblock, 1000)
 
 
@@ -97,7 +96,7 @@ def _extract_active_fillers(
             )
 
     # Sort courses by order
-    to_pass.sort()
+    to_pass.sort(key=lambda pair: pair[0])
 
     # Remove order information
     return OrderedDict({i: course for i, (_order, course) in enumerate(to_pass)})
@@ -201,6 +200,59 @@ def _find_hidden_requirements(
         option_courses.sort()
     options.sort(key=len)
     return options
+
+
+def _reselect_equivs(
+    courseinfo: CourseInfo,
+    curriculum: Curriculum,
+    reference: ValidatablePlan,
+):
+    """
+    Update the filler equivalences in `curriculum` to match choices in `reference`.
+    """
+
+    # Collect equivalence choices by equivalence name
+    by_name: defaultdict[str, list[ConcreteId]] = defaultdict(list)
+    for ref_sem in reference.classes:
+        for ref_course in ref_sem:
+            if (
+                isinstance(ref_course, ConcreteId)
+                and ref_course.equivalence is not None
+            ):
+                ref_equiv = ref_course.equivalence
+                equiv_info = courseinfo.try_equiv(ref_equiv.code)
+                if equiv_info is not None:
+                    by_name[equiv_info.name].append(ref_course)
+
+    # Re-select filler equivalences in courses_to_pass if they match reference choices
+    extra_fillers: defaultdict[str, list[FillerCourse]] = defaultdict(list)
+    for fillers in curriculum.fillers.values():
+        for filler in fillers:
+            equiv = filler.course
+            if isinstance(equiv, ConcreteId) and equiv.equivalence is not None:
+                equiv = equiv
+            if not isinstance(equiv, EquivalenceId):
+                continue
+
+            equiv_info = courseinfo.try_equiv(equiv.code)
+            if equiv_info is None or equiv_info.name not in by_name:
+                continue
+            for ref_choice in by_name[equiv_info.name]:
+                if ref_choice.code in equiv_info.courses:
+                    extra_fillers[ref_choice.code].append(
+                        FillerCourse(
+                            course=ref_choice.copy(update={"equivalence": equiv}),
+                            order=filler.order,
+                            cost_offset=filler.cost_offset - 1,
+                        ),
+                    )
+                    break
+
+    # Add extra fillers at the start of the lists
+    for code, extra in extra_fillers.items():
+        if code in curriculum.fillers:
+            extra.extend(curriculum.fillers[code])
+        curriculum.fillers[code] = extra
 
 
 def _compute_courses_to_pass(
@@ -422,7 +474,10 @@ async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
     )
 
 
-async def generate_recommended_plan(passed: ValidatablePlan):
+async def generate_recommended_plan(
+    passed: ValidatablePlan,
+    reference: ValidatablePlan | None = None,
+):
     """
     Take a base plan that the user has already passed, and recommend a plan that should
     lead to the user getting the title in whatever major-minor-career they chose.
@@ -434,9 +489,13 @@ async def generate_recommended_plan(passed: ValidatablePlan):
     curriculum = await get_curriculum(passed.curriculum)
     t1 = t()
 
+    # Re-select courses from equivalences using reference plan
+    if reference is not None:
+        _reselect_equivs(courseinfo, curriculum, reference)
+
     # Solve the curriculum to determine which courses have not been passed yet (and need
     # to be passed)
-    g = solve_curriculum(courseinfo, curriculum, passed.classes)
+    g = solve_curriculum(courseinfo, passed.curriculum, curriculum, passed.classes)
 
     # Flat list of all curriculum courses left to pass
     courses_to_pass, ignore_reqs = _compute_courses_to_pass(

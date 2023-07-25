@@ -23,6 +23,7 @@ from app.plan.validation.curriculum.tree import (
     CurriculumSpec,
     FillerCourse,
     Leaf,
+    Multiplicity,
 )
 
 
@@ -208,7 +209,10 @@ def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum)
                         "Selección ",
                     ):
                         # Permitir que cuenten por el doble de creditos de lo normal
-                        curriculum.multiplicity[code] = 2 * info.credits
+                        curriculum.multiplicity[code] = Multiplicity(
+                            group=[code],
+                            credits=2 * info.credits,
+                        )
                 # Only do it once
                 return
 
@@ -342,9 +346,22 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                 )
                 superblock.children[block_i] = block
 
-    # Hacer que los OFGs sean livianos para que se coloquen OFGs antes que teologicos
+
+def _c2020_defer_general_ofg(curriculum: Curriculum):
+    # Hacer que los ramos de relleno de OFG se prefieran sobre los ramos de relleno de
+    # teologico, para que no se autogenere un teologico y se tome el curso teologico
+    # como OFG
     if "!L1" in curriculum.fillers:
         for filler in curriculum.fillers["!L1"]:
+            filler.cost_offset -= 1
+
+
+def _c2022_defer_free_area_ofg(curriculum: Curriculum):
+    # Hacer que los ramos de relleno de area libre se prefieran sobre los ramos de
+    # relleno de area restringida, para que no se autogenere un area restringida y se
+    # tome el curso pasado como area libre
+    if "!C10351" in curriculum.fillers:
+        for filler in curriculum.fillers["!C10351"]:
             filler.cost_offset -= 1
 
 
@@ -616,6 +633,7 @@ async def apply_curriculum_rules(
             _limit_ofg10(courseinfo, curriculum)
             _minor_transformation(courseinfo, curriculum)
             await _title_transformation(courseinfo, curriculum)
+            _c2020_defer_general_ofg(curriculum)
             # TODO: Algunos minors y titulos tienen requerimientos especiales que no son
             #   representables en el formato que provee SIDING, y por ende faltan del
             #   mock (y estan incompletos en el webservice real).
@@ -653,6 +671,7 @@ async def apply_curriculum_rules(
             _allow_selection_duplication(courseinfo, curriculum)
             _minor_transformation(courseinfo, curriculum)
             await _title_transformation(courseinfo, curriculum)
+            _c2022_defer_free_area_ofg(curriculum)
     return curriculum
 
 

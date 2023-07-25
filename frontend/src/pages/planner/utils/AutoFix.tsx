@@ -141,7 +141,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: Aut
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
             const planArreglado = fixOutdatedPlan(plan, diag, auth)
-            void getCourseDetails(planArreglado.classes)
+            void getCourseDetails(planArreglado.classes.flat())
             return planArreglado
           })
         }}>Actualizar semestres {diag.associated_to.map(s => s + 1).join(', ')}</button>

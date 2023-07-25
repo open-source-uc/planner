@@ -6,6 +6,14 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/auth.context'
 import { hideLogin } from '../utils/featureFlags'
 
+const AlertMobileUssage = (): JSX.Element => {
+  return (
+    <div className='lg:hidden mx-auto w-[90%] my-4 mb-8 text-lg text-center bg-red-100 border-red-600 text-red-950 p-2 border-2 rounded max-w-lg'>
+      <span className='font-bold'>Importante:</span> La plataforma aún no está optimizada para pantallas pequeñas. Te recomendamos usar un computador.
+    </div>
+  )
+}
+
 const Home = (): JSX.Element => {
   const authState = useAuth()
   const [disclaimerIsOpen, setDisclaimerIsOpen] = useState(true)
@@ -41,19 +49,20 @@ const Home = (): JSX.Element => {
             </li>
             {
               hideLogin
-                ? (
-                <li>
-                Por ahora, el login UC está deshabilitado, así que debes ingresar
-                tus cursos manualmente.
-              </li>
-                  )
-                : null
+                ? (<li>
+                Por ahora, el <span className='font-bold'>login UC no está funcionando</span>, así que
+                debes <a href="https://github.com/open-source-uc/planner/pull/276#issue-1808769979" target="_blank" rel="noopener noreferrer">
+                  ingresar tus cursos manualmente en el modo invitado
+                </a>.
+              </li>)
+                : (<li><span className='font-bold'> El login UC ya está habilitado!</span> 🎉</li>)
             }
           </ul>
         </div>
       </AlertModal>
-      <div className="max-w-3xl mx-auto mt-8 prose center">
-        <h1 className="text-white text-center font-medium">
+      <div className="max-w-3xl mx-auto mt-8 center">
+        <AlertMobileUssage />
+        <h1 className="text-white text-center text-4xl mb-8 font-medium">
           Bienvenido al Nuevo Planner, el lugar donde puedes planificar tu
           carrera universitaria
         </h1>
@@ -90,7 +99,7 @@ const Home = (): JSX.Element => {
                   ))}
         </div>
       </div>
-      <img className="w-auto m-5 mx-auto h-3/5" alt="demo" src={demoGif}></img>
+      <img className="p-2 mx-auto max-w-2xl w-full aspect-auto" alt="demo" src={demoGif}></img>
     </div>
   )
 }

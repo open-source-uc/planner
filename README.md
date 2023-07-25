@@ -117,16 +117,18 @@ Abajo se entregan instrucciones manuales de deploy.
 El ambiente de staging está diseñado para testear las nuevas versiones del planner en un ambiente real antes de pasar a producción.
 
 En primer lugar, es necesario generar manualmente los archivos `.env` y reemplazar los valores según corresponda para cada servicio utilizando los ejemplos ubicados en cada carpeta:
-- _API_ → `backend/.env.staging`
-- _servidor web_ → `frontend/.env.staging`
-- _base de datos_ → `database/.env.staging`
+- _API_ → `backend/.env.staging.template`
+- _servidor web_ → `frontend/.env.staging.template`
+- _base de datos_ → `database/.env.staging.template`
 
-Luego, para correr la aplicación utilizando un servidor mock de **CAS externo** se debe:
+Luego, se debe crear el volumen de Caddy con `docker volume create caddy_data`.
+
+Ahora, para correr la aplicación utilizando un servidor mock de **CAS externo** se debe:
 1. Definir las variables `CAS_SERVER_URL` y `CAS_LOGIN_REDIRECTION_URL` en `backend/.env` con la URL del servidor externo.
 2. Levantar los contenedores con `docker compose up planner -d --build` desde la raíz del repositorio.
 
 Alternativamente, para correr la aplicación utilizando un servidor mock de **CAS local**:
-1. Dejar las variables `CAS_SERVER_URL` y `CAS_LOGIN_REDIRECTION_URL` en `backend/.env` con los valores predeterminados del archivo de ejemplo `.env.staging`.
+1. Dejar las variables `CAS_SERVER_URL` y `CAS_LOGIN_REDIRECTION_URL` en `backend/.env` con los valores predeterminados del archivo de ejemplo `.env.staging.template`.
 2. Luego, es necesario generar el archivo `cas-mock-users.json` en `cas-mock/data` a partir del ejemplo `cas-mock-users.json.example`.
 3. Levantar los contenedores con `docker compose up -d --build` desde la raíz del repositorio.
 
@@ -136,14 +138,15 @@ Finalmente, se puede detener la app con `docker compose down` desde la raíz del
 
 El ambiente de producción es manejado por la universidad de forma interna, por lo que aquí se detallan las **instrucciones para desplegar el planner** de forma manual:
 1. Se deben crear tres archivos `.env`, uno por cada servicio y dentro de su respectiva carpeta:
-- `backend/.env` a partir del ejemplo `backend/.env.production` (_API_)
-- `frontend/.env` a partir del ejemplo `frontend/.env.production` (_servidor web_).
-- `database/.env` a partir del ejemplo `database/.env.production` (_base de datos_).
+- `backend/.env` a partir del ejemplo `backend/.env.production.template` (_API_)
+- `frontend/.env` a partir del ejemplo `frontend/.env.production.template` (_servidor web_).
+- `database/.env` a partir del ejemplo `database/.env.production.template` (_base de datos_).
 2. Reemplazar los valores de las variables de entorno según corresponda en todos los archivos `.env` creados. **IMPORTANTE:** no olvidar modificar la variable `JWT_SECRET` en `backend/.env` y otras variables que puedan contener secretos para evitar vulnerabilidades de seguridad.
 - Para generar una clave `JWT_SECRET` segura y aleatoria se puede utilizar el comando `openssl rand -base64 32`.
-3. Levantar los contenedores con `docker compose up planner -d --build` desde la raíz del repositorio. Requiere _Docker_ y _Docker Compose_ instalados en la máquina.
-4. Revisar el estado de los contenedores con `docker ps` o `docker container ls`.
-5. Finalmente, se puede detener la app con `docker compose down` desde la misma ubicación.
+3. Se debe crear el volumen donde Caddy guardará los certificados SSL con `docker volume create caddy_data`.
+4. Levantar los contenedores con `docker compose up planner -d --build` desde la raíz del repositorio. Requiere _Docker_ y _Docker Compose_ instalados en la máquina.
+5. Revisar el estado de los contenedores con `docker ps` o `docker container ls`.
+6. Finalmente, se puede detener la app con `docker compose down` desde la misma ubicación.
 
 Nota: los comandos podrían variar ligeramente dependiendo del sistema operativo y versión de *Docker Compose*. En particular, podría ser necesario utilizar `docker-compose` en vez de `docker compose` y `sudo docker compose` en vez de `docker compose`.
 
@@ -161,6 +164,6 @@ Además del equipo núcleo, nos apoyan los contribuidores al proyecto. Puedes ve
 
 ## Licencia
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./license.md)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](./license.md)
 
 <p align="right">(<a href="#readme-top">volver arriba</a>)</p>

@@ -2,7 +2,6 @@ import secrets
 import warnings
 from pathlib import Path
 from typing import Literal
-from urllib.parse import urlencode, urljoin
 
 from pydantic import AnyHttpUrl, BaseSettings, Field, RedisDsn, SecretStr
 
@@ -19,6 +18,13 @@ def generate_random_jwt_secret():
 
 
 class Settings(BaseSettings):
+    # Environment name. Used to select the correct environment variables.
+    # Possible values: "development", "production".
+    env: Literal["development", "staging", "production"] = Field(
+        "development",
+        env="PYTHON_ENV",
+    )
+
     # URL to the CAS verification server.
     # When a user arrives with a CAS token the backend verifies the token directly with
     # this server.
@@ -29,7 +35,7 @@ class Settings(BaseSettings):
     # If left empty, the same URL as `cas_server_url` is used.
     # If the backend server is in a different network than the client's browser, it may
     # need to use a different address to reach the CAS server.
-    cas_login_redirection_url: AnyHttpUrl | Literal[""] = ""
+    cas_login_redirection_url: Literal[""] | AnyHttpUrl = ""
 
     # URL to the backend endpoint that performs authentication.
     # This URL needs to be whitelisted in the CAS server.
@@ -40,20 +46,9 @@ class Settings(BaseSettings):
     # token as a query parameter.
     planner_url: AnyHttpUrl = Field("http://localhost:3000")
 
-    @property
-    def cas_callback_url(self):
-        """
-        Get the "CAS callback URL", also known as "service URL" in CAS terms.
-        After the user enters their username and password in the CAS webpage, the CAS
-        webpage will redirect the user's browser to this URL, with the CAS token
-        attached as a URL parameter.
-        Therefore, this URL must be able to receive the CAS token, create a JWT token
-        and hand it to the frontend.
-        """
-        next_url = urljoin(self.planner_url, "/")
-        auth_login_url = urljoin(self.planner_url, "/api/user/login")
-        params = urlencode({"next": next_url})
-        return f"{auth_login_url}?{params}"
+    # This is the path used in case of prefix stripping (i.e. hosting in /api)
+    # This is ignored in development mode for convenience
+    root_path: str = "/api"
 
     # Admin RUT as string. This user will always be the only admin.
     # TODO: Maybe use the username instead of the RUT, because RUTs can have zeros in
@@ -97,7 +92,7 @@ class Settings(BaseSettings):
     #   write the recorded responses.
     # 4. A JSON file will be saved with previous mock data (if any) + the recorded data.
     #   Note that the file may contain sensitive data!
-    siding_record_path: Path = Path("")
+    siding_record_path: Literal[""] | Path = ""
 
     # Time to expire cached student information in seconds.
     student_info_expire: float = 1800
@@ -112,10 +107,28 @@ class Settings(BaseSettings):
     autosync_offer: bool = True
 
     # Whether to resynchronize the courseinfo cache on server startup.
-    autosync_courseinfo: bool = True
+    autosync_packedcourses: bool = True
 
     # URL for the Redis server.
     redis_uri: RedisDsn = Field("redis://localhost:6379")
+
+    # URL for buscacursos-dl, the current temporary catalogo and buscacursos scraper
+    # that we use as a courseinfo source.
+    buscacursos_dl_url: AnyHttpUrl = Field(
+        "https://github.com/negamartin/buscacursos-dl/releases/download/universal-4/coursedata-noprogram.json.xz",
+    )
+
+    # Logging level
+    log_level: Literal[
+        "CRITICAL",
+        "ERROR",
+        "WARNING",
+        "INFO",
+        "DEBUG",
+    ] = "INFO"
+
+    # Where to store logs (only used in development)
+    log_path: Path = Path("logs")
 
 
 # Load settings and allow global app access to them

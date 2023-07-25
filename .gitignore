@@ -282,3 +282,5 @@ $RECYCLE.BIN/
 
 # Dummy CAS database
 /cas-mock/data/cas-mock-users.json
+
+logs/

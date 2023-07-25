@@ -11,13 +11,16 @@ services:
     restart: always
     ports:
       - "80:80"
-      # - "443:443" # TODO: Re-enable once SSL is configured
+      - "443:443"
     networks:
       - caddy
     depends_on:
       - api
     env_file:
       - ./frontend/.env
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
   api:
     build: ./backend
     container_name: planner-api
