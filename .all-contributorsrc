@@ -33,6 +33,17 @@
       "contributions": [
         "content"
       ]
+    },
+    {
+      "login": "riadeane",
+      "name": "Ria Deane",
+      "avatar_url": "https://avatars.githubusercontent.com/u/62292336?v=4",
+      "profile": "http://riadeane.dev",
+      "contributions": [
+        "fundingFinding",
+        "eventOrganizing",
+        "research"
+      ]
     }
   ],
   "contributorsPerLine": 7,
