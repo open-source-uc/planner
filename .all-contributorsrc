@@ -33,6 +33,16 @@
       "contributions": [
         "content"
       ]
+    },
+    {
+      "login": "fernandosmither",
+      "name": "Fernando",
+      "avatar_url": "https://avatars.githubusercontent.com/u/66154723?v=4",
+      "profile": "https://github.com/fernandosmither",
+      "contributions": [
+        "eventOrganizing",
+        "research"
+      ]
     }
   ],
   "contributorsPerLine": 7,
