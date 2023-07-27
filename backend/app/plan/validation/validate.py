@@ -21,15 +21,15 @@ async def diagnose_plan(
     curriculum = await get_curriculum(plan.curriculum)
     out = ValidationResult.empty(plan)
 
+    # Validate against user context, if there is any context
+    if user_ctx is not None:
+        validate_against_owner(plan, user_ctx, out)
+
     # Ensure course requirements are met
     course_ctx = ValidationContext(courseinfo, plan, user_ctx)
     course_ctx.validate_all(out)
 
     # Ensure the given curriculum is fulfilled
     diagnose_curriculum(courseinfo, curriculum, plan, user_ctx, out)
-
-    # Validate against user context, if there is any context
-    if user_ctx is not None:
-        validate_against_owner(plan, user_ctx, out)
 
     return out

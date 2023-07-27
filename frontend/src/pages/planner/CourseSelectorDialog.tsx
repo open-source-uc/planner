@@ -3,7 +3,7 @@ import { Dialog, Transition, Switch } from '@headlessui/react'
 import { DefaultService, type EquivDetails, type CourseOverview, type CourseDetails, type CancelablePromise } from '../../client'
 import { Spinner } from '../../components/Spinner'
 import { Info } from '../../components/Info'
-import { type PseudoCourseDetail } from './utils/Types'
+import { type PseudoCourseDetail, isCancelError } from './utils/Types'
 
 // TODO: fetch school list from backend
 // Existen escuelas en buscacursos que no tienen cursos: 'Acad Inter de Filosofía'
@@ -56,22 +56,28 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   }, [promiseInstance])
 
   async function getCourseDetails (coursesCodes: string[]): Promise<void> {
-    if (coursesCodes.length === 0) return
-    setLoadingCoursesData(true)
+    try {
+      if (coursesCodes.length === 0) return
+      setLoadingCoursesData(true)
 
-    const promise = DefaultService.getPseudocourseDetails(coursesCodes)
-    setPromiseInstance(promise)
-    const response = await promise
-    setPromiseInstance(null)
+      const promise = DefaultService.getPseudocourseDetails(coursesCodes)
+      setPromiseInstance(promise)
+      const response = await promise
+      setPromiseInstance(null)
 
-    const dict = response.reduce((acc: Record<string, CourseDetails>, curr: PseudoCourseDetail) => {
-      if (!('credits' in curr)) {
-        throw new Error('expected only concrete courses in equivalence')
+      const dict = response.reduce((acc: Record<string, CourseDetails>, curr: PseudoCourseDetail) => {
+        if (!('credits' in curr)) {
+          throw new Error('expected only concrete courses in equivalence')
+        }
+        acc[curr.code] = curr
+        return acc
+      }, {})
+      setLoadedCourses((prev) => { return { ...prev, ...dict } })
+    } catch (err) {
+      if (!isCancelError(err)) {
+        console.error(err)
       }
-      acc[curr.code] = curr
-      return acc
-    }, {})
-    setLoadedCourses((prev) => { return { ...prev, ...dict } })
+    }
     setLoadingCoursesData(false)
   }
 
@@ -275,8 +281,8 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                   <label className="mr-3 my-auto" htmlFor="semesterFilter">Semestralidad: </label>
                   <select className="grow rounded py-1" id="semesterFilter" value={filter.on_semester} onChange={e => { setFilter({ ...filter, on_semester: parseInt(e.target.value) }) }}>
                     <option value={0}>Cualquiera</option>
-                    <option value={1}>Pares</option>
-                    <option value={2}>Impares</option>
+                    <option value={1}>Impares</option>
+                    <option value={2}>Pares</option>
                   </select>
                 </div>
 

@@ -17,11 +17,12 @@ router = APIRouter(prefix="/user")
 async def authenticate(
     next: str | None = None,
     ticket: str | None = None,
+    impersonate_rut: str | None = None,
 ):
     """
     Redirect the browser to this page to initiate authentication.
     """
-    return await login_cas(next, ticket)
+    return await login_cas(next, ticket, impersonate_rut)
 
 
 @router.get("/check")

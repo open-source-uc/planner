@@ -2,6 +2,7 @@ import contextlib
 import traceback
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from urllib.parse import urlencode, urljoin
 
 from cas import CASClientV3
 from fastapi import Depends, HTTPException
@@ -14,18 +15,86 @@ from pydantic import BaseModel
 from app.settings import settings
 from app.user.key import AdminKey, ModKey, UserKey
 
-# CASClient abuses class constructors (__new__),
-# so we are using the versioned class directly
-cas_verify_client: CASClientV3 = CASClientV3(
-    service_url=settings.cas_callback_url,
-    server_url=settings.cas_server_url,
-)
+cas_client_store: CASClientV3 | None = None
 
-# Use a separate dummy CAS client instance to get the login URL.
-cas_redirect_client: CASClientV3 = CASClientV3(
-    service_url=settings.cas_callback_url,
-    server_url=settings.cas_login_redirection_url or settings.cas_server_url,
-)
+
+def _get_service_url(params: dict[str, str]) -> str:
+    """
+    Get the "CAS service URL" corresponding to this service.
+
+    Example: `https://plan.ing.uc.cl/api/user/login`
+    Another example: `https://plan.ing.uc.cl/api/user/login?next=https://plan.ing.uc.cl`
+
+    After the user logs in at the CAS login page, they will be redirected to this URL.
+    This URL must be whitelisted in the official CAS server.
+
+    `params` are query parameters to include in the URL.
+    """
+
+    # We must import this module inside a function
+    # Otherwise we would form an import cycle
+    from app.routes.user import router as user_router
+
+    callback_endpoint = "/api" + user_router.url_path_for("authenticate")
+    url = urljoin(settings.planner_url, callback_endpoint)
+    if params:
+        query_params = urlencode(params)
+        url = f"{url}?{query_params}"
+    return url
+
+
+def _get_cas_client() -> CASClientV3:
+    """
+    Lazily get the CAS client.
+
+    This must be lazy, because in order to get the service URL we must call
+    `_get_service_url`, which imports `app.routes.user`.
+    If we imported `app.routes.user` outside of a function, it would cause an import
+    loop.
+    """
+    global cas_client_store
+    if cas_client_store is None:
+        cas_client_store = CASClientV3(
+            service_url=_get_service_url({}),
+            server_url=settings.cas_server_url,
+        )
+    return cas_client_store
+
+
+def _get_login_url(service_params: dict[str, str]) -> str:
+    """
+    Get the login URL.
+    Redirect the user to this URL to start a CAS login.
+
+    Example: `https://sso.uc.cl/cas/login?service=https://plan.ing.uc.cl/api/user/login?next=https://plan.ing.uc.cl`
+    This means:
+    1. Go to `sso.uc.cl/cas/login` and let the user enter their username and password.
+    2. When done, redirect to `plan.ing.uc.cl/api/user/login` with the CAS token, to
+        generate a JWT token.
+    3. When the token is generated, redirect to `plan.ing.uc.cl` with the JWT token.
+
+    `service_params` are extra URL parameters to include in step 2.
+    """
+
+    # Include the `next` parameter to indicate where to redirect after generating the
+    # JWT token.
+    service_params["next"] = urljoin(settings.planner_url, "/")
+    # Generate the service URL, including the `next` parameter and any extra parameters
+    service_url = _get_service_url(service_params)
+
+    # The base URL for logging in
+    # Something like `https://sso.uc.cl/cas`
+    cas_login_server = settings.cas_login_redirection_url or settings.cas_server_url
+    # The login URL
+    # Something like `https://sso.uc.cl/cas/login`
+    cas_login_url = urljoin(cas_login_server, "login")
+    # The URL parameters to include in the login request
+    cas_login_params = urlencode({"service": service_url})
+    return f"{cas_login_url}?{cas_login_params}"
+
+
+def _normalize_rut(rut: str) -> str:
+    return rut.replace(".", "").strip().lstrip("0")
 
 
 async def _is_admin(rut: str):
@@ -48,19 +117,18 @@ async def _is_mod(rut: str):
     return level.is_mod
 
 
-async def generate_token(user: str, rut: str, expire_delta: float | None = None):
+async def generate_token(rut: str, expire_delta: float | None = None):
     """
-    Generate a signed token (one that is unforgeable) with the given user, rut and
+    Generate a signed token (one that is unforgeable) with the given rut and
     expiration time.
     """
     # Calculate the time that this token expires
     if expire_delta is None:
         expire_delta = settings.jwt_expire
     expire_time = datetime.now(tz=UTC) + timedelta(seconds=expire_delta)
-    # Pack user, rut and expire date into a signed token
+    # Pack rut and expire date into a signed token
     payload: dict[str, datetime | str | bool] = {
         "exp": expire_time,
-        "sub": user,
         "rut": rut,
     }
     return jwt.encode(
@@ -84,12 +152,12 @@ def decode_token(token: str) -> UserKey:
         raise HTTPException(status_code=401, detail="Token expired") from None
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token") from None
-    if not isinstance(payload["sub"], str):
-        raise HTTPException(status_code=401, detail="Invalid token")
     if not isinstance(payload["rut"], str):
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    return UserKey(payload["sub"], payload["rut"])
+    rut = payload["rut"]
+    rut = _normalize_rut(rut)
+    return UserKey(rut)
 
 
 def require_authentication(
@@ -118,7 +186,7 @@ async def require_mod_auth(
     key = require_authentication(bearer=bearer)
     if not await _is_mod(key.rut):
         raise HTTPException(status_code=403, detail="Insufficient access")
-    return ModKey(key.username, key.rut)
+    return ModKey(key.rut)
 
 
 async def require_admin_auth(
@@ -134,10 +202,14 @@ async def require_admin_auth(
     key = require_authentication(bearer=bearer)
     if not await _is_admin(key.rut):
         raise HTTPException(status_code=403, detail="Insufficient access")
-    return AdminKey(key.username, key.rut)
+    return AdminKey(key.rut)
 
 
-async def login_cas(next: str | None = None, ticket: str | None = None):
+async def login_cas(
+    next: str | None = None,
+    ticket: str | None = None,
+    impersonate_rut: str | None = None,
+):
     """
     Login endpoint.
     Has two uses, depending on the presence of `ticket`.
@@ -154,12 +226,10 @@ async def login_cas(next: str | None = None, ticket: str | None = None):
     if ticket is None:
         # User wants to authenticate
         # Redirect to authentication page
-        cas_login_url: Any = cas_redirect_client.get_login_url()  # pyright: ignore
-        if not isinstance(cas_login_url, str):
-            return HTTPException(
-                status_code=500,
-                detail="CAS redirection URL not found",
-            )
+        params = {}
+        if impersonate_rut is not None:
+            params["impersonate_rut"] = impersonate_rut
+        cas_login_url = _get_login_url(params)
         return RedirectResponse(cas_login_url)
 
     # User has just authenticated themselves with CAS, and were redirected here
@@ -168,22 +238,22 @@ async def login_cas(next: str | None = None, ticket: str | None = None):
         return HTTPException(status_code=422, detail="Missing next URL")
 
     # Verify that the ticket is valid directly with the authority (the CAS server)
-    user: Any
-    attributes: Any
+    username: Any  # CAS username (ie. mail without @uc.cl)
+    attributes: Any  # CAS attributes
     _pgtiou: Any
     try:
         (
-            user,
+            username,
             attributes,
             _pgtiou,
-        ) = cas_verify_client.verify_ticket(  # pyright: ignore
+        ) = _get_cas_client().verify_ticket(  # pyright: ignore
             ticket,
         )
     except Exception:  # noqa: BLE001 (CAS lib is untyped)
         traceback.print_exc()
         return HTTPException(status_code=502, detail="Error verifying CAS ticket")
 
-    if not isinstance(user, str) or not isinstance(attributes, dict):
+    if not isinstance(username, str) or not isinstance(attributes, dict):
         # Failed to authenticate
         return HTTPException(status_code=401, detail="Authentication failed")
 
@@ -196,17 +266,22 @@ async def login_cas(next: str | None = None, ticket: str | None = None):
             status_code=500,
             detail="RUT is missing from CAS attributes",
         )
+    rut = _normalize_rut(rut)
+
+    # Only allow impersonation if the user is a mod
+    if impersonate_rut is not None:
+        if not _is_mod(rut):
+            raise HTTPException(status_code=403, detail="Insufficient privileges")
+        rut = _normalize_rut(impersonate_rut)
 
     # CAS token was validated, generate JWT token
-    token = await generate_token(user, rut)
+    token = await generate_token(rut)
 
     # Redirect to next URL with JWT token attached
     return RedirectResponse(next + f"?token={token}")
 
 
 class AccessLevelOverview(BaseModel):
-    name: str | None = None
-
     # attributes from db
     user_rut: str
     is_mod: bool
