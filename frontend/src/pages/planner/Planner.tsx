@@ -178,72 +178,6 @@ const Planner = (): JSX.Element => {
     }
   }, [])
 
-  const getDefaultPlan = useCallback(async (referenceValidatablePlan?: ValidatablePlan, truncateAt?: number): Promise<void> => {
-    try {
-      console.log('Getting Basic Plan...')
-      let baseValidatablePlan
-      if (referenceValidatablePlan === undefined || referenceValidatablePlan === null) {
-        baseValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
-      } else {
-        baseValidatablePlan = { ...referenceValidatablePlan, classes: [...referenceValidatablePlan.classes] }
-        truncateAt = truncateAt ?? (authState?.student?.next_semester ?? 0)
-        baseValidatablePlan.classes.splice(truncateAt)
-      }
-      // truncate the validatablePlan to the last not empty semester
-      while (baseValidatablePlan.classes.length > 0 && baseValidatablePlan.classes[baseValidatablePlan.classes.length - 1].length === 0) {
-        baseValidatablePlan.classes.pop()
-      }
-      const response: ValidatablePlan = await DefaultService.generatePlan({
-        passed: baseValidatablePlan,
-        reference: referenceValidatablePlan ?? undefined
-      })
-      await Promise.all([
-        getCourseDetails(response.classes.flat()),
-        loadCurriculumsData(response.curriculum.cyear.raw, response.curriculum.major),
-        validate(response)
-      ])
-      setValidatablePlan(response)
-      console.log('data loaded')
-    } catch (err) {
-      handleErrors(err)
-    }
-  }, [authState?.student?.next_semester, authState?.user, getCourseDetails, handleErrors, loadCurriculumsData, validate])
-
-  const getPlanById = useCallback(async (id: string): Promise<void> => {
-    try {
-      console.log('Getting Plan by Id...')
-      const response: PlanView = await DefaultService.readPlan(id)
-      await Promise.all([
-        getCourseDetails(response.validatable_plan.classes.flat()),
-        loadCurriculumsData(response.validatable_plan.curriculum.cyear.raw, response.validatable_plan.curriculum.major),
-        validate(response.validatable_plan)
-      ])
-      setValidatablePlan(response.validatable_plan)
-      setPlanName(response.name)
-      console.log('data loaded')
-    } catch (err) {
-      handleErrors(err)
-    }
-  }, [getCourseDetails, handleErrors, loadCurriculumsData, validate])
-
-  const fetchData = useCallback(async (): Promise<void> => {
-    try {
-      if (planID != null) {
-        if (validatablePlan != null) {
-          await getDefaultPlan(validatablePlan)
-        } else {
-          await getPlanById(planID)
-        }
-      } else {
-        await getDefaultPlan(validatablePlan ?? undefined)
-      }
-    } catch (error) {
-      setError('Hubo un error al cargar el planner')
-      console.error(error)
-      setPlannerStatus(PlannerStatus.ERROR)
-    }
-  }, [getDefaultPlan, getPlanById, planID, validatablePlan])
-
   const getCourseDetails = useCallback(async (courses: PseudoCourseId[]): Promise<void> => {
     console.log('Getting Courses Details...')
     const pseudocourseCodes = new Set<string>()
@@ -447,6 +381,72 @@ const Planner = (): JSX.Element => {
       ofCyear: cYear
     })
   }, [curriculumData])
+
+  const getPlanById = useCallback(async (id: string): Promise<void> => {
+    try {
+      console.log('Getting Plan by Id...')
+      const response: PlanView = await DefaultService.readPlan(id)
+      await Promise.all([
+        getCourseDetails(response.validatable_plan.classes.flat()),
+        loadCurriculumsData(response.validatable_plan.curriculum.cyear.raw, response.validatable_plan.curriculum.major),
+        validate(response.validatable_plan)
+      ])
+      setValidatablePlan(response.validatable_plan)
+      setPlanName(response.name)
+      console.log('data loaded')
+    } catch (err) {
+      handleErrors(err)
+    }
+  }, [getCourseDetails, handleErrors, loadCurriculumsData, validate])
+
+  const getDefaultPlan = useCallback(async (referenceValidatablePlan?: ValidatablePlan, truncateAt?: number): Promise<void> => {
+    try {
+      console.log('Getting Basic Plan...')
+      let baseValidatablePlan
+      if (referenceValidatablePlan === undefined || referenceValidatablePlan === null) {
+        baseValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
+      } else {
+        baseValidatablePlan = { ...referenceValidatablePlan, classes: [...referenceValidatablePlan.classes] }
+        truncateAt = truncateAt ?? (authState?.student?.next_semester ?? 0)
+        baseValidatablePlan.classes.splice(truncateAt)
+      }
+      // truncate the validatablePlan to the last not empty semester
+      while (baseValidatablePlan.classes.length > 0 && baseValidatablePlan.classes[baseValidatablePlan.classes.length - 1].length === 0) {
+        baseValidatablePlan.classes.pop()
+      }
+      const response: ValidatablePlan = await DefaultService.generatePlan({
+        passed: baseValidatablePlan,
+        reference: referenceValidatablePlan ?? undefined
+      })
+      await Promise.all([
+        getCourseDetails(response.classes.flat()),
+        loadCurriculumsData(response.curriculum.cyear.raw, response.curriculum.major),
+        validate(response)
+      ])
+      setValidatablePlan(response)
+      console.log('data loaded')
+    } catch (err) {
+      handleErrors(err)
+    }
+  }, [authState?.student?.next_semester, authState?.user, getCourseDetails, handleErrors, loadCurriculumsData, validate])
+
+  const fetchData = useCallback(async (): Promise<void> => {
+    try {
+      if (planID != null) {
+        if (validatablePlan != null) {
+          await getDefaultPlan(validatablePlan)
+        } else {
+          await getPlanById(planID)
+        }
+      } else {
+        await getDefaultPlan(validatablePlan ?? undefined)
+      }
+    } catch (error) {
+      setError('Hubo un error al cargar el planner')
+      console.error(error)
+      setPlannerStatus(PlannerStatus.ERROR)
+    }
+  }, [getDefaultPlan, getPlanById, planID, validatablePlan])
 
   const openModal = useCallback(async (equivalence: EquivDetails | EquivalenceId, semester: number, index?: number): Promise<void> => {
     if ('courses' in equivalence) {
