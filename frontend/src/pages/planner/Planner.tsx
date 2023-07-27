@@ -143,7 +143,7 @@ const Planner = (): JSX.Element => {
     return digest
   }, [validatablePlan, planDigest, validationResult])
 
-  function handleErrors (err: unknown): void {
+  const handleErrors = useCallback((err: unknown): void => {
     if (isApiError(err)) {
       console.error(err)
       switch (err.status) {
@@ -176,9 +176,9 @@ const Planner = (): JSX.Element => {
       console.error(err)
       setPlannerStatus(PlannerStatus.ERROR)
     }
-  }
+  }, [])
 
-  async function getDefaultPlan (referenceValidatablePlan?: ValidatablePlan, truncateAt?: number): Promise<void> {
+  const getDefaultPlan = useCallback(async (referenceValidatablePlan?: ValidatablePlan, truncateAt?: number): Promise<void> => {
     try {
       console.log('Getting Basic Plan...')
       let baseValidatablePlan
@@ -207,9 +207,9 @@ const Planner = (): JSX.Element => {
     } catch (err) {
       handleErrors(err)
     }
-  }
+  }, [authState?.student?.next_semester, authState?.user, getCourseDetails, handleErrors, loadCurriculumsData, validate])
 
-  async function getPlanById (id: string): Promise<void> {
+  const getPlanById = useCallback(async (id: string): Promise<void> => {
     try {
       console.log('Getting Plan by Id...')
       const response: PlanView = await DefaultService.readPlan(id)
@@ -224,9 +224,9 @@ const Planner = (): JSX.Element => {
     } catch (err) {
       handleErrors(err)
     }
-  }
+  }, [getCourseDetails, handleErrors, loadCurriculumsData, validate])
 
-  async function fetchData (): Promise<void> {
+  const fetchData = useCallback(async (): Promise<void> => {
     try {
       if (planID != null) {
         if (validatablePlan != null) {
@@ -242,9 +242,9 @@ const Planner = (): JSX.Element => {
       console.error(error)
       setPlannerStatus(PlannerStatus.ERROR)
     }
-  }
+  }, [getDefaultPlan, getPlanById, planID, validatablePlan])
 
-  async function getCourseDetails (courses: PseudoCourseId[]): Promise<void> {
+  const getCourseDetails = useCallback(async (courses: PseudoCourseId[]): Promise<void> => {
     console.log('Getting Courses Details...')
     const pseudocourseCodes = new Set<string>()
     for (const courseid of courses) {
@@ -268,9 +268,9 @@ const Planner = (): JSX.Element => {
     } catch (err) {
       handleErrors(err)
     }
-  }
+  }, [courseDetails, handleErrors])
 
-  async function validate (validatablePlan: ValidatablePlan): Promise<void> {
+  const validate = useCallback(async (validatablePlan: ValidatablePlan): Promise<void> => {
     try {
       if (validationPromise != null) {
         validationPromise.cancel()
@@ -330,9 +330,9 @@ const Planner = (): JSX.Element => {
     } catch (err) {
       handleErrors(err)
     }
-  }
+  }, [authState?.user, getCourseDetails, handleErrors, validationPromise])
 
-  async function savePlan (planName: string): Promise<void> {
+  const savePlan = useCallback(async (planName: string): Promise<void> => {
     if (validatablePlan == null) {
       toast.error('No se ha generado un plan aun')
       return
@@ -359,7 +359,7 @@ const Planner = (): JSX.Element => {
       }
     }
     setPlannerStatus(PlannerStatus.READY)
-  }
+  }, [handleErrors, planID, validatablePlan])
 
   const openModalForExtraClass = useCallback((semIdx: number): void => {
     setModalData({
@@ -409,7 +409,7 @@ const Planner = (): JSX.Element => {
     })
   }, []) // moveCourse should not depend on `validatablePlan`, so that memoing does its work
 
-  async function loadCurriculumsData (cYear: string, cMajor?: string): Promise<void> {
+  const loadCurriculumsData = useCallback(async (cYear: string, cMajor?: string): Promise<void> => {
     function listToRecord<T> (list: Array<T & { code: string }>): Record<string, T> {
       const dict: Record<string, T> = {}
       for (const item of list) {
@@ -446,7 +446,7 @@ const Planner = (): JSX.Element => {
       ofMajor: cMajor,
       ofCyear: cYear
     })
-  }
+  }, [curriculumData])
 
   const openModal = useCallback(async (equivalence: EquivDetails | EquivalenceId, semester: number, index?: number): Promise<void> => {
     if ('courses' in equivalence) {
@@ -580,7 +580,7 @@ const Planner = (): JSX.Element => {
     } else {
       await savePlan(planName)
     }
-  }, [setIsSavePlanModalOpen, validatablePlan, planName])
+  }, [planName, savePlan])
 
   const closeSavePlanModal = useCallback((): void => {
     setIsSavePlanModalOpen(false)
@@ -617,7 +617,7 @@ const Planner = (): JSX.Element => {
       }
       return { ...prev, curriculum: newCurriculum }
     })
-  }, [setValidatablePlan, authState]) // this sensitivity list shouldn't contain frequently-changing attributes
+  }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
 
   const selectMinor = useCallback((minorCode: string | undefined): void => {
     setValidatablePlan((prev) => {
@@ -625,7 +625,7 @@ const Planner = (): JSX.Element => {
       const newCurriculum = { ...prev.curriculum, minor: minorCode }
       return { ...prev, curriculum: newCurriculum }
     })
-  }, [setValidatablePlan, authState]) // this sensitivity list shouldn't contain frequently-changing attributes
+  }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
 
   const selectTitle = useCallback((titleCode: string | undefined): void => {
     setValidatablePlan((prev) => {
@@ -633,7 +633,7 @@ const Planner = (): JSX.Element => {
       const newCurriculum = { ...prev.curriculum, title: titleCode }
       return { ...prev, curriculum: newCurriculum }
     })
-  }, [setValidatablePlan, authState]) // this sensitivity list shouldn't contain frequently-changing attributes
+  }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
 
   const checkMinorForNewMajor = useCallback(async (major: Major): Promise<void> => {
     const newMinors = await DefaultService.getMinors(major.cyear, major.code)
@@ -707,7 +707,7 @@ const Planner = (): JSX.Element => {
     if (plannerStatus === 'LOADING') {
       void fetchData()
     }
-  }, [plannerStatus])
+  }, [fetchData, plannerStatus])
 
   useEffect(() => {
     if (validatablePlan != null) {
@@ -726,7 +726,7 @@ const Planner = (): JSX.Element => {
         })
       }
     }
-  }, [validatablePlan])
+  }, [handleErrors, validatablePlan, validate])
 
   return (
     <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
