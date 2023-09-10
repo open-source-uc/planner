@@ -75,7 +75,7 @@ const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, t
   }
   return (
     <div ref={ref} draggable={true} className={`${isDragging ? 'opacity-0 z-0' : 'mb-3'} mx-1 ${(isPassed || isCurrent) ? 'cursor-not-allowed opacity-50' : 'cursor-grab'} `}>
-      <ConditionalWrapper condition={course.is_concrete !== true && courseBlock != null} wrapper={(children: ReactNode) => <button className='w-full' onClick={() => { callOpenSelector() }}>{children}</button>}>
+      <ConditionalWrapper condition={course.is_concrete !== true && courseBlock !== '' && courseBlock !== null} wrapper={(children: ReactNode) => <button className='w-full' onClick={() => { callOpenSelector() }}>{children}</button>}>
           <CourseCard
             courseBlock={courseBlock}
             course={course}
@@ -108,7 +108,7 @@ const CourseCard = memo(function _CourseCard ({ courseBlock, course, credits, na
         : <div className='opacity-60 absolute w-3 top-2 left-2'><EditIcon/></div>
       )}
       {blockId === ''
-        ? <>{isPassed || isCurrent ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>}</>
+        ? <>{(isPassed || isCurrent) ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>}</>
         : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{blockId}</div>
       }
       <div className='flex items-center justify-center text-center flex-col'>
