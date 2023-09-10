@@ -37,7 +37,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     on_semester: 0
   }))
 
-  const [promiseInstance, setPromiseInstance] = useState<CancelablePromise<any> | null>(null)
+  const [, setPromiseInstance] = useState<CancelablePromise<any> | null>(null)
 
   const resetFilters = useCallback((): void => {
     setSelectedCourse(undefined)
@@ -48,12 +48,26 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       available: true,
       on_semester: 0
     })
-    if (promiseInstance != null) {
-      promiseInstance.cancel()
-      setPromiseInstance(null)
-      setLoadingCoursesData(false)
-    }
-  }, [promiseInstance])
+    setPromiseInstance(prev => {
+      if (prev != null) {
+        prev.cancel()
+        return null
+      }
+      return prev
+    })
+    setLoadingCoursesData(prev => {
+      if (!prev) {
+        return false
+      }
+      return prev
+    })
+  }, [])
+
+  const close = useCallback((): void => {
+    resetFilters()
+    setFilteredCodes([])
+    setLoadedCourses({})
+  }, [resetFilters])
 
   async function getCourseDetails (coursesCodes: string[]): Promise<void> {
     try {
@@ -81,15 +95,11 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     setLoadingCoursesData(false)
   }
 
-  const handleSearch = useCallback(async (filterProp: Filter): Promise<void> => {
+  const handleSearch = useCallback(async (filterProp: Filter, equivalence?: EquivDetails, loadedCourses?: CourseOverview): Promise<void> => {
     console.log(equivalence, filterProp)
     setLoadingCoursesData(true)
     const crd = filterProp.credits === '' ? undefined : parseInt(filterProp.credits)
     const onlyAvaible = filterProp.available ? filterProp.available : undefined
-    if (promiseInstance != null) {
-      promiseInstance.cancel()
-      setPromiseInstance(null)
-    }
     if (equivalence === undefined) {
       const promise = DefaultService.searchCourseDetails({
         text: filterProp.name,
@@ -99,7 +109,12 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
         first_semester: semestreApiOptions[filterProp.on_semester][0],
         second_semester: semestreApiOptions[filterProp.on_semester][1]
       })
-      setPromiseInstance(promise)
+      setPromiseInstance(prev => {
+        if (prev != null) {
+          prev.cancel()
+        }
+        return promise
+      })
       const response = await promise
       setPromiseInstance(null)
       const dict = response.flat().reduce((acc: Record<string, CourseOverview>, curr: CourseOverview) => {
@@ -122,13 +137,18 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
         second_semester: semestreApiOptions[filterProp.on_semester][1],
         equiv: equivalence.code
       })
-      setPromiseInstance(promise)
+      setPromiseInstance(prev => {
+        if (prev != null) {
+          prev.cancel()
+        }
+        return promise
+      })
       const response = await promise
       setPromiseInstance(null)
       const missingInfo = []
       for (const code of response.flat()) {
         if (missingInfo.length >= coursesBatchSize) break
-        if (code in loadedCourses) continue
+        if (loadedCourses !== undefined && code in loadedCourses) continue
         missingInfo.push(code)
       }
       if (missingInfo.length > 0) {
@@ -141,7 +161,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       setFilteredCodes(response.flat())
       setLoadingCoursesData(false)
     }
-  }, [equivalence, loadedCourses, promiseInstance])
+  }, [])
 
   const handleScroll: React.EventHandler<React.SyntheticEvent<HTMLTableSectionElement>> = event => {
     if (!open || loadingCoursesData) return
@@ -155,7 +175,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     if (e.key === 'Enter') {
       e.preventDefault()
       try {
-        void handleSearch(filter)
+        void handleSearch(filter, equivalence)
       } catch (err) {
         console.log(err)
       }
@@ -184,18 +204,14 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   }, [filteredCodes, loadedCourses])
 
   useEffect(() => {
-    if (!open) {
-      resetFilters()
-      setFilteredCodes([])
-      setLoadedCourses({})
-    } else if (equivalence !== undefined) {
-      void handleSearch(filter)
+    if (open && equivalence !== undefined) {
+      void handleSearch(filter, equivalence)
     }
-  }, [open, equivalence, resetFilters, handleSearch, filter])
+  }, [open, handleSearch, filter, equivalence])
 
   return (
     <Transition.Root show={open} as={Fragment}>
-    <Dialog as="div" className="modal relative" onClose={() => { setSelectedCourse(undefined); onClose() }}>
+    <Dialog as="div" className="modal relative" onClose={() => { setSelectedCourse(undefined); close(); onClose() }}>
       <Transition.Child
         as={Fragment}
         enter="ease-out duration-200"
@@ -311,13 +327,15 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                     onClick={() => {
                       resetFilters()
                       if (equivalence !== undefined) {
-                        void handleSearch({
-                          name: '',
-                          credits: '',
-                          school: '',
-                          available: true,
-                          on_semester: 0
-                        })
+                        void handleSearch(
+                          {
+                            name: '',
+                            credits: '',
+                            school: '',
+                            available: true,
+                            on_semester: 0
+                          },
+                          equivalence)
                       }
                     }}>
                       Limpiar Filtros
@@ -383,12 +401,19 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
               <div className='right-0'>
                 {Object.keys(loadedCourses).filter(key => filteredCodes.includes(key)).length} - {filteredCodes.length}{equivalence === undefined && filteredCodes.length === 50 && '+'}
                 <div className='float-right mx-2 inline-flex'>
-                  <button className="btn mr-2" onClick={() => onClose()}>Cancelar</button>
+                  <button className="btn mr-2" onClick={() => { close(); onClose() }}>Cancelar</button>
                   <div className="group relative flex justify-center">
                     <button
                       ref={acceptButton}
                       className={`btn ${selectedCourse === undefined ? 'cursor-not-allowed opacity-80' : ''}`}
-                      onClick={() => { selectedCourse !== undefined ? onClose(loadedCourses[selectedCourse]) : onClose() }}
+                      onClick={() => {
+                        if (selectedCourse !== undefined) {
+                          onClose(loadedCourses[selectedCourse])
+                        } else {
+                          onClose()
+                        }
+                        close()
+                      }}
                       disabled={selectedCourse === undefined}
                     >
                       Guardar

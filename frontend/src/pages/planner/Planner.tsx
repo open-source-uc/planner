@@ -23,6 +23,7 @@ import ReceivePaste from './utils/ReceivePaste'
 
 enum PlannerStatus {
   LOADING = 'LOADING',
+  CHANGING_CURRICULUM = 'CHANGING_CURRICULUM',
   VALIDATING = 'VALIDATING',
   SAVING = 'SAVING',
   ERROR = 'ERROR',
@@ -54,7 +55,7 @@ const Planner = (): JSX.Element => {
   const previousCurriculum = useRef<{ major: string | undefined, minor: string | undefined, title: string | undefined, cyear?: 'C2020' | 'C2022' }>({ major: '', minor: '', title: '' })
   const previousClasses = useRef<PseudoCourseId[][]>([[]])
 
-  const [validationPromise, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
+  const [, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
 
   const authState = useAuth()
 
@@ -183,9 +184,9 @@ const Planner = (): JSX.Element => {
     const pseudocourseCodes = new Set<string>()
     for (const courseid of courses) {
       const code = ('failed' in courseid ? courseid.failed : null) ?? courseid.code
-      if (!(code in courseDetails)) {
-        pseudocourseCodes.add(code)
-      }
+      // if (!(code in courseDetails)) {
+      pseudocourseCodes.add(code)
+      // }
     }
     if (pseudocourseCodes.size === 0) return
     try {
@@ -202,17 +203,18 @@ const Planner = (): JSX.Element => {
     } catch (err) {
       handleErrors(err)
     }
-  }, [courseDetails, handleErrors])
+  }, [handleErrors])
 
   const validate = useCallback(async (validatablePlan: ValidatablePlan): Promise<void> => {
     try {
-      if (validationPromise != null) {
-        validationPromise.cancel()
-        setValidationPromise(null)
-      }
       if (validatablePlan.classes.flat().length === 0) {
-        setValidationResult(null)
-        setPlannerStatus(PlannerStatus.READY)
+        setValidationPromise(prev => {
+          if (prev != null) {
+            prev.cancel()
+            return null
+          }
+          return prev
+        })
         previousClasses.current = validatablePlan.classes
         previousCurriculum.current = {
           major: validatablePlan.curriculum.major,
@@ -220,10 +222,16 @@ const Planner = (): JSX.Element => {
           title: validatablePlan.curriculum.title,
           cyear: validatablePlan.curriculum.cyear.raw
         }
+        setPlannerStatus(PlannerStatus.READY)
         return
       }
       const promise = authState?.user == null ? DefaultService.validateGuestPlan(validatablePlan) : DefaultService.validatePlanForUser(validatablePlan)
-      setValidationPromise(promise)
+      setValidationPromise(prev => {
+        if (prev != null) {
+          prev.cancel()
+        }
+        return promise
+      })
       const response = await promise
       setValidationPromise(null)
       previousCurriculum.current = {
@@ -258,13 +266,11 @@ const Planner = (): JSX.Element => {
         return response
       })
       setPlannerStatus(PlannerStatus.READY)
-      // No deberia ser necesario hacer una copia profunda, porque los planes debieran ser inmutables (!) ya que React lo requiere
-      // Al contrario, si se vuelve necesario hacer una copia profunda significa que hay un bug en algun lado porque se estan mutando datos que debieran ser inmutables.
       previousClasses.current = validatablePlan.classes
     } catch (err) {
       handleErrors(err)
     }
-  }, [authState?.user, getCourseDetails, handleErrors, validationPromise])
+  }, [authState?.user, getCourseDetails, handleErrors])
 
   const savePlan = useCallback(async (planName: string): Promise<void> => {
     if (validatablePlan == null) {
@@ -353,24 +359,24 @@ const Planner = (): JSX.Element => {
     }
 
     const { majors, minors, titles } = await (async () => {
-      if (curriculumData != null && curriculumData.ofCyear === cYear) {
-        if (curriculumData.ofMajor === cMajor) {
-          return curriculumData
-        } else {
-          return {
-            majors: curriculumData.majors,
-            minors: listToRecord(await DefaultService.getMinors(cYear, cMajor)),
-            titles: curriculumData.titles
-          }
-        }
-      } else {
-        const response = await DefaultService.getOffer(cYear, cMajor)
-        return {
-          majors: listToRecord(response.majors),
-          minors: listToRecord(response.minors),
-          titles: listToRecord(response.titles)
-        }
+      // if (curriculumData != null && curriculumData.ofCyear === cYear) {
+      //  if (curriculumData.ofMajor === cMajor) {
+      //    return curriculumData
+      //  } else {
+      //    return {
+      //      majors: curriculumData.majors,
+      //      minors: listToRecord(await DefaultService.getMinors(cYear, cMajor)),
+      //      titles: curriculumData.titles
+      //    }
+      //  }
+      // } else {
+      const response = await DefaultService.getOffer(cYear, cMajor)
+      return {
+        majors: listToRecord(response.majors),
+        minors: listToRecord(response.minors),
+        titles: listToRecord(response.titles)
       }
+      // }
     })()
 
     setCurriculumData({
@@ -380,7 +386,7 @@ const Planner = (): JSX.Element => {
       ofMajor: cMajor,
       ofCyear: cYear
     })
-  }, [curriculumData])
+  }, [])
 
   const getPlanById = useCallback(async (id: string): Promise<void> => {
     try {
@@ -431,22 +437,29 @@ const Planner = (): JSX.Element => {
   }, [authState?.student?.next_semester, authState?.user, getCourseDetails, handleErrors, loadCurriculumsData, validate])
 
   const fetchData = useCallback(async (): Promise<void> => {
+    setPlannerStatus(PlannerStatus.LOADING)
     try {
       if (planID != null) {
-        if (validatablePlan != null) {
-          await getDefaultPlan(validatablePlan)
-        } else {
-          await getPlanById(planID)
-        }
+        await getPlanById(planID)
       } else {
-        await getDefaultPlan(validatablePlan ?? undefined)
+        await getDefaultPlan()
       }
     } catch (error) {
       setError('Hubo un error al cargar el planner')
       console.error(error)
       setPlannerStatus(PlannerStatus.ERROR)
     }
-  }, [getDefaultPlan, getPlanById, planID, validatablePlan])
+  }, [getDefaultPlan, getPlanById, planID])
+
+  const loadNewPLan = useCallback(async (referenceValidatablePlan: ValidatablePlan): Promise<void> => {
+    try {
+      await getDefaultPlan(referenceValidatablePlan)
+    } catch (error) {
+      setError('Hubo un error al cargar el planner')
+      console.error(error)
+      setPlannerStatus(PlannerStatus.ERROR)
+    }
+  }, [getDefaultPlan])
 
   const openModal = useCallback(async (equivalence: EquivDetails | EquivalenceId, semester: number, index?: number): Promise<void> => {
     if ('courses' in equivalence) {
@@ -707,7 +720,7 @@ const Planner = (): JSX.Element => {
     if (plannerStatus === 'LOADING') {
       void fetchData()
     }
-  }, [fetchData, plannerStatus])
+  }, [plannerStatus, fetchData])
 
   useEffect(() => {
     if (validatablePlan != null) {
@@ -718,7 +731,8 @@ const Planner = (): JSX.Element => {
           title !== previousCurriculum.current.title ||
           cyear.raw !== previousCurriculum.current.cyear
       if (curriculumChanged) {
-        setPlannerStatus(PlannerStatus.LOADING)
+        setPlannerStatus(PlannerStatus.CHANGING_CURRICULUM)
+        void loadNewPLan(validatablePlan)
       } else {
         setPlannerStatus(PlannerStatus.VALIDATING)
         validate(validatablePlan).catch(err => {
@@ -726,7 +740,7 @@ const Planner = (): JSX.Element => {
         })
       }
     }
-  }, [handleErrors, validatablePlan, validate])
+  }, [handleErrors, validatablePlan, validate, loadNewPLan])
 
   return (
     <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
@@ -736,7 +750,7 @@ const Planner = (): JSX.Element => {
       <LegendModal open={isLegendModalOpen} onClose={closeLegendModal}/>
       <SavePlanModal isOpen={isSavePlanModalOpen} onClose={closeSavePlanModal} savePlan={savePlan}/>
       <AlertModal title={popUpAlert.title} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}>{popUpAlert.desc}</AlertModal>
-      {plannerStatus === 'LOADING' &&
+      {(plannerStatus === PlannerStatus.LOADING || plannerStatus === PlannerStatus.CHANGING_CURRICULUM) &&
         <div className="absolute w-screen h-full z-50 bg-white flex flex-col justify-center items-center">
           <Spinner message='Cargando planificación...' />
         </div>
