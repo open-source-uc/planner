@@ -18,7 +18,7 @@ interface SelectorProps {
   name: string
   canDeselect: boolean
   data: Record<string, { name: string }>
-  value: string | null | undefined
+  value: string | null
   showCode: boolean
   onChange: (value: string) => void
 }
@@ -41,7 +41,6 @@ const Selector = memo(function _Selector ({
       })
     }
   }, [value, data, name])
-
   return (
     <Listbox value={value} onChange={onChange}>
       <Listbox.Button className="selectorButton">
@@ -135,7 +134,7 @@ const CurriculumSelector = memo(function CurriculumSelector ({
               name="Major"
               canDeselect={false}
               data={curriculumData.majors}
-              value={curriculumSpec.major}
+              value={curriculumSpec.major ?? null}
               showCode={true}
               onChange={(t) => selectMajor({ cyear: curriculumData.majors[t].cyear, code: t })}
             />
@@ -157,7 +156,7 @@ const CurriculumSelector = memo(function CurriculumSelector ({
               name="Minor"
               canDeselect={true}
               data={curriculumData.minors}
-              value={curriculumSpec.minor}
+              value={curriculumSpec.minor ?? null}
               showCode={true}
               onChange={(t) => selectMinor(t)}
             />
@@ -179,7 +178,7 @@ const CurriculumSelector = memo(function CurriculumSelector ({
               name="Título"
               canDeselect={true}
               data={curriculumData.titles}
-              value={curriculumSpec.title}
+              value={curriculumSpec.title ?? null}
               showCode={true}
               onChange={(t) => selectTitle(t)}
             />
@@ -197,7 +196,7 @@ const CurriculumSelector = memo(function CurriculumSelector ({
                 C2020: { name: 'Admisión 2020 y 2021' },
                 C2022: { name: 'Admisión 2022 y posteriores' }
               }}
-              value={curriculumSpec.cyear?.raw}
+              value={curriculumSpec.cyear?.raw ?? null}
               showCode={true}
               onChange={(c) => selectYear(c)}
             />
