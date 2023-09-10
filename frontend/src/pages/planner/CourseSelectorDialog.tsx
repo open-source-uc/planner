@@ -95,8 +95,13 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     setLoadingCoursesData(false)
   }
 
-  const handleSearch = useCallback(async (filterProp: Filter, equivalence?: EquivDetails, loadedCourses?: CourseOverview): Promise<void> => {
-    console.log(equivalence, filterProp)
+  const handleSearch = useCallback(async (equivalence?: EquivDetails, filterProp: Filter = {
+    name: '',
+    credits: '',
+    school: '',
+    available: true,
+    on_semester: 0
+  }, loadedCourses?: CourseOverview): Promise<void> => {
     setLoadingCoursesData(true)
     const crd = filterProp.credits === '' ? undefined : parseInt(filterProp.credits)
     const onlyAvaible = filterProp.available ? filterProp.available : undefined
@@ -175,7 +180,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     if (e.key === 'Enter') {
       e.preventDefault()
       try {
-        void handleSearch(filter, equivalence)
+        void handleSearch(equivalence, filter)
       } catch (err) {
         console.log(err)
       }
@@ -205,9 +210,9 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
 
   useEffect(() => {
     if (open && equivalence !== undefined) {
-      void handleSearch(filter, equivalence)
+      void handleSearch(equivalence)
     }
-  }, [open, handleSearch, filter, equivalence])
+  }, [open, handleSearch, equivalence])
 
   return (
     <Transition.Root show={open} as={Fragment}>
@@ -245,7 +250,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                   checked={filter.available}
                   onChange={(e: boolean) => {
                     setFilter({ ...filter, available: e })
-                    void handleSearch({
+                    void handleSearch(equivalence, {
                       name: '',
                       credits: '',
                       school: '',
@@ -328,21 +333,21 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                       resetFilters()
                       if (equivalence !== undefined) {
                         void handleSearch(
+                          equivalence,
                           {
                             name: '',
                             credits: '',
                             school: '',
                             available: true,
                             on_semester: 0
-                          },
-                          equivalence)
+                          })
                       }
                     }}>
                       Limpiar Filtros
                   </button>
                   <button className="btn" onClick={() => {
                     try {
-                      void handleSearch(filter)
+                      void handleSearch(equivalence, filter)
                     } catch (err) {
                       console.log(err)
                     }
