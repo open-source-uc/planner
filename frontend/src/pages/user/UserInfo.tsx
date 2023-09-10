@@ -1,12 +1,7 @@
 import { useAuth } from '../../contexts/auth.context'
-import { useEffect } from 'react'
 
 const UserInfo = (): JSX.Element => {
   const authState = useAuth()
-
-  useEffect(() => {
-    console.log(authState)
-  }, [authState])
 
   return (
     <>
