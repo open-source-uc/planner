@@ -392,6 +392,13 @@ const Planner = (): JSX.Element => {
     try {
       console.log('Getting Plan by Id...')
       const response: PlanView = await DefaultService.readPlan(id)
+      previousClasses.current = response.validatable_plan.classes
+      previousCurriculum.current = {
+        major: response.validatable_plan.curriculum.major,
+        minor: response.validatable_plan.curriculum.minor,
+        title: response.validatable_plan.curriculum.title,
+        cyear: response.validatable_plan.curriculum.cyear.raw
+      }
       await Promise.all([
         getCourseDetails(response.validatable_plan.classes.flat()),
         loadCurriculumsData(response.validatable_plan.curriculum.cyear.raw, response.validatable_plan.curriculum.major),
@@ -424,6 +431,13 @@ const Planner = (): JSX.Element => {
         passed: baseValidatablePlan,
         reference: referenceValidatablePlan ?? undefined
       })
+      previousClasses.current = response.classes
+      previousCurriculum.current = {
+        major: response.curriculum.major,
+        minor: response.curriculum.minor,
+        title: response.curriculum.title,
+        cyear: response.curriculum.cyear.raw
+      }
       await Promise.all([
         getCourseDetails(response.classes.flat()),
         loadCurriculumsData(response.curriculum.cyear.raw, response.curriculum.major),
@@ -437,7 +451,6 @@ const Planner = (): JSX.Element => {
   }, [authState?.student?.next_semester, authState?.user, getCourseDetails, handleErrors, loadCurriculumsData, validate])
 
   const fetchData = useCallback(async (): Promise<void> => {
-    setPlannerStatus(PlannerStatus.LOADING)
     try {
       if (planID != null) {
         await getPlanById(planID)
@@ -597,12 +610,12 @@ const Planner = (): JSX.Element => {
 
   const closeSavePlanModal = useCallback((): void => {
     setIsSavePlanModalOpen(false)
-  }, [setIsSavePlanModalOpen])
+  }, [])
 
   const reset = useCallback((): void => {
     setPlannerStatus(PlannerStatus.LOADING)
     setValidatablePlan(null)
-  }, [setPlannerStatus, setValidatablePlan])
+  }, [])
 
   const selectYear = useCallback((cYear: 'C2020' | 'C2022', isMajorValid: boolean, isMinorValid: boolean): void => {
     setValidatablePlan((prev) => {
@@ -734,7 +747,10 @@ const Planner = (): JSX.Element => {
         setPlannerStatus(PlannerStatus.CHANGING_CURRICULUM)
         void loadNewPLan(validatablePlan)
       } else {
-        setPlannerStatus(PlannerStatus.VALIDATING)
+        setPlannerStatus(prev => {
+          if (prev === PlannerStatus.LOADING) return prev
+          return PlannerStatus.VALIDATING
+        })
         validate(validatablePlan).catch(err => {
           handleErrors(err)
         })
