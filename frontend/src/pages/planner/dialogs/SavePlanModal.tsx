@@ -3,6 +3,7 @@ import { Dialog, Transition } from '@headlessui/react'
 
 const SavePlanModal = ({ isOpen, onClose, savePlan }: { isOpen: boolean, onClose: Function, savePlan: Function }): JSX.Element => {
   const planNameInput = useRef(null)
+  const acceptButton = useRef<HTMLButtonElement>(null)
   const [planName, setPlanName] = useState<string>('')
 
   const isSaveButtonDisabled: boolean = planName === ''
@@ -63,6 +64,7 @@ const SavePlanModal = ({ isOpen, onClose, savePlan }: { isOpen: boolean, onClose
                     type="button"
                     disabled={isSaveButtonDisabled}
                     className='inline-flex w-full justify-center rounded-md text-sm btn shadow-sm sm:ml-3 sm:w-auto disabled:bg-gray-400'
+                    ref={acceptButton}
                     onClick={() => {
                       savePlan(planName)
                       onClose()
