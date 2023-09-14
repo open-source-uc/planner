@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { DefaultService, type LowDetailPlanView, type ApiError } from '../../client'
 import { Spinner } from '../../components/Spinner'
 import { toast } from 'react-toastify'
+import AlertModal from '../../components/AlertModal'
 
 const isApiError = (err: any): err is ApiError => {
   return err.status !== undefined
@@ -13,6 +14,7 @@ const isApiError = (err: any): err is ApiError => {
 const CurriculumList = (): JSX.Element => {
   const [plans, setPlans] = useState <LowDetailPlanView[]>([])
   const [loading, setLoading] = useState <boolean>(true)
+  const [popUpAlert, setPopUpAlert] = useState({ isOpen: false, id: '' })
 
   const readPlans = async (): Promise<void> => {
     const response = await DefaultService.readPlans()
@@ -31,6 +33,7 @@ const CurriculumList = (): JSX.Element => {
       }
     })
   }, [])
+
   async function handleDelete (id: string): Promise<void> {
     try {
       console.log('click', id)
@@ -46,9 +49,16 @@ const CurriculumList = (): JSX.Element => {
       }
     }
   }
+  function handlePopUpAlert (isCanceled: boolean): void {
+    if (!isCanceled) {
+      void handleDelete(popUpAlert.id)
+    }
+    setPopUpAlert({ isOpen: false, id: '' })
+  }
 
   return (
       <div className="flex mb-4 h-full w-full">
+        <AlertModal title={'Eliminar malla'} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}>{'¿Estás seguro/a de que deseas eliminar esta malla? Esta accion es irreversible'}</AlertModal>
           <div className="m-3 w-full">
                 <div className="flex gap-4 items-center">
                     <h2 className="text-3xl font-medium leading-normal mb-2 text-gray-800 text-center">Mis mallas</h2>
@@ -79,7 +89,7 @@ const CurriculumList = (): JSX.Element => {
                   <tbody className='bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'>
                     {plans?.map((plan: LowDetailPlanView) => {
                       return (
-                              <CurriculumListRow key={plan.id} handleDelete={handleDelete} curriculum={plan}/>
+                              <CurriculumListRow key={plan.id} handleDelete={(id: string) => { setPopUpAlert({ isOpen: true, id }) }} curriculum={plan}/>
                       )
                     })}
                   </tbody>
