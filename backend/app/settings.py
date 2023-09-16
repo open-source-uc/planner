@@ -78,7 +78,7 @@ class Settings(BaseSettings):
     # Siding mock database file.
     # If "", it does not load any mock data.
     # Failing to read the mock database is not a fatal error, only a warning.
-    siding_mock_path: Literal[""] | Path = Path("../siding-mock-data/data.json")
+    siding_mock_path: Literal[""] | Path = Path("../siding-mock-data/index.json")
 
     # Where to store recorded SIDING responses.
     # If "", responses are not recorded.
