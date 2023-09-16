@@ -105,11 +105,11 @@ async def _fetch_raw_blocks(
     keep_title = spec.title is not None
 
     def should_keep(block: BloqueMalla) -> bool:
-        if block.BloqueAcademico.startswith("Major"):
+        if block.BloqueAcademico and block.BloqueAcademico.startswith("Major"):
             return keep_major
-        if block.BloqueAcademico.startswith("Minor"):
+        if block.BloqueAcademico and block.BloqueAcademico.startswith("Minor"):
             return keep_minor
-        if block.BloqueAcademico.startswith("Ingeniero"):
+        if block.BloqueAcademico and block.BloqueAcademico.startswith("Ingeniero"):
             return keep_title
         return keep_others
 
@@ -129,6 +129,8 @@ async def _fetch_raw_blocks(
             raw_courses = await client.get_predefined_list(raw_block.CodLista)
             codes: list[str] = []
             for c in raw_courses:
+                if c.Sigla is None:
+                    continue
                 if courseinfo.try_course(c.Sigla) is None:
                     print(
                         f"unknown course {c.Sigla} in SIDING list"
@@ -153,6 +155,8 @@ async def _fetch_raw_blocks(
                 continue
             codes = [raw_block.CodSigla]
             for equiv in raw_block.Equivalencias.Cursos:
+                if equiv.Sigla is None:
+                    continue
                 codes.append(equiv.Sigla)
             equiv = EquivDetails(
                 code=code,
@@ -245,7 +249,7 @@ async def fetch_curriculum(courseinfo: CourseInfo, spec: CurriculumSpec) -> Curr
         # 0-credit courses get a single ghost credit
         creds = 1 if raw_block.Creditos == 0 else raw_block.Creditos
         recommended_order = raw_block.SemestreBloque * 10 + raw_block.OrdenSemestre
-        superblock = superblocks.setdefault(raw_block.BloqueAcademico, [])
+        superblock = superblocks.setdefault(raw_block.BloqueAcademico or "", [])
         superblock.append(
             Leaf(
                 debug_name=raw_block.Nombre,
