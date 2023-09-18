@@ -2,6 +2,7 @@ import Home from './pages/Home'
 import Planner from './pages/planner/Planner'
 import Layout from './layout/Layout'
 import UserPage from './pages/user/UserPage'
+import UserViewer from './pages/mod/userViewer'
 import Logout from './pages/Logout'
 import Error403 from './pages/errors/Error403'
 import Error404 from './pages/errors/Error404'
@@ -21,6 +22,10 @@ const homeRoute = new Route({
   path: '/',
   component: Home
 })
+
+async function modRoute (): Promise<void> {
+  await DefaultService.checkMod()
+}
 
 async function authenticateRoute (): Promise<void> {
   await DefaultService.checkAuth()
@@ -72,6 +77,22 @@ const getPlannerRoute = new Route({
   })
 })
 
+const UserViewerForMod = new Route({
+  getParentRoute: () => rootRoute,
+  path: '/mod/plans',
+  component: UserViewer,
+  beforeLoad: modRoute,
+  onLoadError: onAuthenticationError
+})
+
+const PlannerViewerForMod = new Route({
+  getParentRoute: () => rootRoute,
+  path: '/mod/planner/$userRut/$plannerId',
+  component: Planner,
+  beforeLoad: modRoute,
+  onLoadError: onAuthenticationError
+})
+
 const logoutRoute = new Route({
   getParentRoute: () => rootRoute,
   path: '/logout',
@@ -84,7 +105,7 @@ const error404 = new Route({
   component: Error404
 })
 
-const routeTree = rootRoute.addChildren([homeRoute, userPageRoute, error403, newPlannerRoute, getPlannerRoute, logoutRoute, error404])
+const routeTree = rootRoute.addChildren([homeRoute, userPageRoute, error403, newPlannerRoute, getPlannerRoute, UserViewerForMod, PlannerViewerForMod, logoutRoute, error404])
 
 export const router = new ReactRouter({
   routeTree

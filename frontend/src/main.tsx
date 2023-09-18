@@ -3,7 +3,10 @@ import ReactDOM from 'react-dom/client'
 import './index.css'
 import 'react-toastify/dist/ReactToastify.css'
 import * as Sentry from '@sentry/react'
-
+import {
+  QueryClient,
+  QueryClientProvider
+} from '@tanstack/react-query'
 import { OpenAPI } from './client'
 
 import { toastConfig } from './utils/toastConfig'
@@ -47,6 +50,7 @@ if (import.meta.env.MODE !== 'development') {
 }
 
 toastConfig()
+const queryClient = new QueryClient()
 
 const baseUrl = import.meta.env.VITE_BASE_API_URL
 if (typeof baseUrl !== 'string') {
@@ -63,6 +67,8 @@ OpenAPI.TOKEN = async () => {
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <App />
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
   </React.StrictMode>
 )
