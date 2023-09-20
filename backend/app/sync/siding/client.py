@@ -171,6 +171,12 @@ class CursoHecho(BaseModel):
     UnidadAcademica: str | None
 
 
+def decode_cyears(cyears: StringArray | None) -> list[str]:
+    if cyears is None:
+        return []
+    return cyears.strings.string
+
+
 class SoapClient:
     soap_client: AsyncClient | None
     mock_db: dict[str, dict[str, Any]]
