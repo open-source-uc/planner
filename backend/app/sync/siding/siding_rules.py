@@ -210,7 +210,7 @@ def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum)
                     ):
                         # Permitir que cuenten por el doble de creditos de lo normal
                         curriculum.multiplicity[code] = Multiplicity(
-                            group=[code],
+                            group={code},
                             credits=2 * info.credits,
                         )
                 # Only do it once
