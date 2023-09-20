@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 
 from pydantic import BaseModel, Field
+from unidecode import unidecode
 
 from app.plan.course import ConcreteId, EquivalenceId
 from app.plan.courseinfo import CourseInfo, EquivDetails
@@ -50,7 +51,7 @@ class SidingInfo(BaseModel):
     lists: dict[str, list[Curso]]
 
 
-async def fetch_siding() -> SidingInfo:
+async def fetch_siding(courseinfo: CourseInfo) -> SidingInfo:
     # Fetch major/minor/title offer
     siding = SidingInfo(
         majors=await siding_client.get_majors(),
@@ -74,7 +75,12 @@ async def fetch_siding() -> SidingInfo:
     await fetch_siding_plans(siding)
 
     # Fetch predefined lists
-    await fetch_siding_lists(siding)
+    await fetch_siding_lists(courseinfo, siding)
+
+    # Currently, SIDING returns empty lists for C2022 OFGs
+    # Fill in these lists "manually"
+    # TODO: Remove this hack once SIDING fixes this
+    fill_in_c2022_ofgs(courseinfo, siding)
 
     return siding
 
@@ -160,7 +166,7 @@ async def fetch_siding_plans(siding: SidingInfo):
             )
 
 
-async def fetch_siding_lists(siding: SidingInfo):
+async def fetch_siding_lists(courseinfo: CourseInfo, siding: SidingInfo):
     # Collect predefined lists
     predefined_lists: set[str] = set()
     for _cyear, plans in siding.plans.items():
@@ -271,3 +277,50 @@ def translate_siding(
         )
 
     return curriculum
+
+
+C2022_OFG_AREA_LISTS = {
+    "C10344": "Formación Filosófica",
+    "C10345": "Formación Teológica",
+    "C10348": "Ecología Integral y Sustentabilidad",
+    "C10349": "Humanidades",
+    "C10350": "Salud y Bienestar",
+    "C10347": "Ciencias Sociales",
+    "C10346": "Arte",
+    "C10351": "",
+}
+
+
+def fill_in_c2022_ofgs(courseinfo: CourseInfo, siding: SidingInfo):
+    """
+    Las listas de OFG para C2022 vienen vacias desde SIDING.
+    Por ahora, llenarlas manualmente a partir de la informacion de buscacursos.
+    """
+
+    # Agrupar los cursos por area
+    by_area: dict[str, list[str]] = {}
+    for course in courseinfo.courses.values():
+        if course.area is not None:
+            by_area.setdefault(course.area, []).append(course.code)
+
+    # Llenar las listas con los cursos correspondientes
+    for lcode, keyphrase in C2022_OFG_AREA_LISTS.items():
+        assert lcode in siding.lists
+        if siding.lists[lcode]:
+            log.warning(
+                "patching C2022 OFG list %s, but it is actually not empty",
+                lcode,
+            )
+        keywords = [unidecode(word).lower() for word in keyphrase.split(" ") if word]
+        for areaname, areacodes in by_area.items():
+            areawords = [
+                unidecode(word).lower() for word in areaname.split(" ") if word
+            ]
+            if all(
+                any(areaword[:3] == keyword[:3] for areaword in areawords)
+                for keyword in keywords
+            ):
+                siding.lists[lcode].extend(
+                    Curso(Sigla=code, Nombre=None, Semestralidad=None, Creditos=None)
+                    for code in areacodes
+                )
