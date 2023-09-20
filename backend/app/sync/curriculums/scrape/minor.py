@@ -213,35 +213,7 @@ def process_block(
 
     if "nivel 3000" in raw:
         # Si el bloque dice algo parecido a "cualquier curso nivel 3000", agregarlos
-        faculty_codes = set(REGEX_FACULTY_CODE.findall(raw))
-        if faculty_codes:
-            # Printear cual es el texto que triggereo esta operacion, para identificar
-            # mas facilmente operaciones que no tienen sentido
-            reference_text = REGEX_COURSE_CODE.split(raw)[-1].replace("\n", " ")
-            log.debug(
-                "        adding level 3000 courses of faculties %s to block",
-                faculty_codes,
-            )
-            if course_codes:
-                log.debug(f"            on top of {len(course_codes)} explicit courses")
-            log.debug(f'            based on text "{reference_text}"')
-
-            # Buscar los cursos con el codigo especificado y nivel 3000
-            extra_courses: list[tuple[str, str | None]] = []
-            for course_code in courseinfo.courses:
-                if (
-                    len(course_code) >= 4
-                    and course_code[3] == "3"
-                    and course_code[:3] in faculty_codes
-                ):
-                    extra_courses.append((course_code, None))
-            extra_courses[-1] = (extra_courses[-1][0], None)
-            course_codes.extend(extra_courses)
-        else:
-            log.warning(
-                "the text instructs to add level 3000 courses"
-                ", but it does not specify any 3-letter code",
-            )
+        add_level_3000_courses(courseinfo, course_codes, raw)
 
     # Identificar cuando no hay cursos en el bloque
     if not course_codes:
@@ -311,6 +283,42 @@ def process_block(
                 log.warning("course in equivalence has 'o' operator: %s", course_codes)
             block.options.append(code)
         out.blocks.append(block)
+
+
+def add_level_3000_courses(
+    courseinfo: CourseInfo,
+    course_codes: list[tuple[str, str | None]],
+    raw: str,
+):
+    faculty_codes = set(REGEX_FACULTY_CODE.findall(raw))
+    if faculty_codes:
+        # Printear cual es el texto que triggereo esta operacion, para identificar
+        # mas facilmente operaciones que no tienen sentido
+        reference_text = REGEX_COURSE_CODE.split(raw)[-1].replace("\n", " ")
+        log.debug(
+            "        adding level 3000 courses of faculties %s to block",
+            faculty_codes,
+        )
+        if course_codes:
+            log.debug(f"            on top of {len(course_codes)} explicit courses")
+        log.debug(f'            based on text "{reference_text}"')
+
+        # Buscar los cursos con el codigo especificado y nivel 3000
+        extra_courses: list[tuple[str, str | None]] = []
+        for course_code in courseinfo.courses:
+            if (
+                len(course_code) >= 4
+                and course_code[3] == "3"
+                and course_code[:3] in faculty_codes
+            ):
+                extra_courses.append((course_code, None))
+        extra_courses[-1] = (extra_courses[-1][0], None)
+        course_codes.extend(extra_courses)
+    else:
+        log.warning(
+            "the text instructs to add level 3000 courses"
+            ", but it does not specify any 3-letter code",
+        )
 
 
 def sanity_check_minor(courseinfo: CourseInfo, minor: ScrapedMinor):

@@ -49,7 +49,7 @@ async def collate_plans() -> CurriculumStorage:
     )
 
     # Fetch information from SIDING
-    siding = await fetch_siding()
+    siding = await fetch_siding(courseinfo)
 
     # Algunos majors/minors/titulos pueden no ser relevantes
     # Por ejemplo, algunos majors podrian no tener informacion de plan disponible en
@@ -77,7 +77,7 @@ async def collate_plans() -> CurriculumStorage:
                 minor=None,
                 title=None,
             )
-            curr = patch_major(spec, curr)
+            curr = patch_major(courseinfo, spec, curr)
             out.set_major(spec, curr)
 
     # Los minors se traducen desde la informacion scrapeada, y posiblemente ayudados por
