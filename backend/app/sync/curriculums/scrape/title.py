@@ -37,7 +37,7 @@ class ScrapedTitle(BaseModel):
     blocks: list[ScrapedTitleBlock]
 
 
-log = logging.getLogger("plan-scraper")
+log = logging.getLogger("plan-collator")
 
 # Usado para separar el archivo de texto enorme en bloques por codigo de titulo.
 REGEX_TITLE_CODE = re.compile(r"\(([\d]{5}(?:-\d)?)\)")

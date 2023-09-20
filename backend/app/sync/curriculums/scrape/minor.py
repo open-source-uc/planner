@@ -46,7 +46,7 @@ class ScrapedMinor(BaseModel):
     blocks: list[ScrapedMinorBlock]
 
 
-log = logging.getLogger("plan-scraper")
+log = logging.getLogger("plan-collator")
 
 # Usado para separar el archivo scrapeado en bloques por cada minor.
 REGEX_MINOR_CODE = re.compile(r"(N[\d]{3}(?:-\d)?)\)")
@@ -255,10 +255,14 @@ def process_block(
     # Identificar los optativos que no indican la cantidad de creditos
     # Hay que arreglar manualmente estos optativos!
     # Por eso emitimos un error aca
-    log.error(
-        "credit-less optative found, assuming %s creds but you should manually fix it",
-        creds,
-    )
+    if creds == 999:
+        log.error(
+            "credit-less optative %s found in minor %s,"
+            " assuming %s creds. you should manually fix it",
+            name,
+            out.code,
+            creds,
+        )
 
     if creds is None:
         # Si no se especifican creditos, este bloque probablemente consiste de una lista

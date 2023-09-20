@@ -68,6 +68,18 @@ class Combination(BaseBlock):
     # Children nodes that supply flow to this block.
     children: list["Block"]
 
+    def freeze_capacities(self):
+        """
+        If this node or any of its descendants have -1 capacity, replace these invalid
+        capacities by the total capacity of their children.
+        """
+
+        for child in self.children:
+            if isinstance(child, Combination):
+                child.freeze_capacities()
+        if self.cap == -1:
+            self.cap = sum(child.cap for child in self.children)
+
 
 class Leaf(BaseBlock):
     """
@@ -93,7 +105,7 @@ Combination.update_forward_refs()
 
 
 class Multiplicity(BaseModel):
-    group: list[str]
+    group: set[str]
     credits: int | None
 
 
@@ -116,11 +128,12 @@ class Curriculum(BaseModel):
         This makes it so that by default each course only counts at most once.
         For equivalencies that have no associated credit count, the multiplicity is
         infinite (eg. multiplicity["!L1"] = `None`).
-    - equivalencies: Specifies a course as being equivalent to another course. All
-        courses in an equivalence must point to the same course code.
-        (eg. FIS1523 -> FIS1523, IEE1523 -> FIS1523).
-        If not present for a particular course, it defaults to being equivalent with
-        itself.
+
+        Additionally, multiplicity specifies which courses should be equivalent in terms
+        of credit count.
+        For example, if TTF010 has a multiplicity group of [TTF010, TEO200] then taking
+        TTF010 or TEO200 is exactly the same, and the multiplicity is compared against
+        the total of credits among both courses.
 
     NOTE: Remember to reset the cache in the database after any changes, either manually
     or through migrations.
@@ -156,13 +169,13 @@ class Curriculum(BaseModel):
             return self.multiplicity[course_code]
         info = courseinfo.try_course(course_code)
         if info is not None:
-            return Multiplicity(group=[course_code], credits=info.credits or 1)
+            return Multiplicity(group={course_code}, credits=info.credits or 1)
         # TODO: Limit equivalence multiplicity to the total amount of credits in the
         # equivalence.
         # Ideally, we would want to store the total amount of credits in a field in the
         # equivalence, otherwise it is probably too costly to visit the 2000+ course
         # OFG equivalence.
-        return Multiplicity(group=[course_code], credits=None)
+        return Multiplicity(group={course_code}, credits=None)
 
 
 class Cyear(BaseModel, frozen=True):
