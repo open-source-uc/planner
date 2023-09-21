@@ -15,7 +15,10 @@ from app.plan.validation.curriculum.tree import (
     FillerCourse,
     Multiplicity,
 )
-from app.sync.curriculums.major import translate_common_plan, translate_major
+from app.sync.curriculums.major import (
+    translate_common_plan,
+    translate_major,
+)
 from app.sync.curriculums.minor import translate_minor
 from app.sync.curriculums.scrape.common import ScrapedProgram
 from app.sync.curriculums.scrape.minor import scrape_minors
@@ -123,6 +126,9 @@ async def collate_plans() -> CurriculumStorage:
                 siding.plans[cyear].plans[title.CodTitulo],
                 scraped.titles[title.CodTitulo],
             )
+
+    # Aplicar los ultimos parches faltantes
+    patch_globally(courseinfo, out)
 
     # Tratar las equivalencias homogeneas
     detect_homogeneous(courseinfo, out)
@@ -314,3 +320,49 @@ def detect_homogeneous(courseinfo: CourseInfo, out: CurriculumStorage):
                         )
                         curr.fillers.setdefault(concrete.code, []).append(new_filler)
                     del curr.fillers[equiv.code]
+
+
+def patch_globally(courseinfo: CourseInfo, out: CurriculumStorage):
+    """
+    Hay algunos parches que hay que aplicar globalmente sobre todos los curriculums, en
+    lugar de uno a uno.
+    Estos se aplican aca.
+    """
+
+    _mark_homogeneous_equivs(courseinfo, out)
+    _mark_unessential_equivs(courseinfo, out)
+
+
+FORCE_HOMOGENEOUS_EQUIVS = (
+    {"FIS1523", "ICM1003", "IIQ1003", "IIQ103H"},
+    {"FIS1533", "IEE1533"},
+    {"ICS1113", "ICS113H"},
+)
+
+
+def _mark_homogeneous_equivs(courseinfo: CourseInfo, out: CurriculumStorage):
+    max_len = max(len(homogeneous) for homogeneous in FORCE_HOMOGENEOUS_EQUIVS)
+    for equiv in out.lists.values():
+        if len(equiv.courses) <= max_len and any(
+            set(equiv.courses) == homogeneous
+            for homogeneous in FORCE_HOMOGENEOUS_EQUIVS
+        ):
+            equiv.is_homogeneous = True
+
+
+UNESSENTIAL_EQUIVS = {
+    "!L1",
+    "!L2",
+    "!C10345",
+    "!C10348",
+    "!C10349",
+    "!C10350",
+    "!C10347",
+    "!C10346",
+    "!C10351",
+}
+
+
+def _mark_unessential_equivs(courseinfo: CourseInfo, out: CurriculumStorage):
+    for unessential_code in UNESSENTIAL_EQUIVS:
+        out.lists[unessential_code].is_unessential = True
