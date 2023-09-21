@@ -537,9 +537,11 @@ def _build_problem(
         for inst in usable.instances:
             vars.append(inst.used_var)
             coeffs.append(
-                TAKEN_COST
-                if inst.filler is None
-                else FILLER_COST + inst.filler.cost_offset,
+                (
+                    TAKEN_COST
+                    if inst.filler is None
+                    else FILLER_COST + inst.filler.cost_offset
+                ) * inst.credits,
             )
     g.model.Minimize(cpsat.LinearExpr.WeightedSum(vars, coeffs))
 
