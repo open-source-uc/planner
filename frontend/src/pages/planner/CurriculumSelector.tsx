@@ -196,7 +196,7 @@ const CurriculumSelector = memo(function CurriculumSelector ({
                 C2020: { name: 'Admisión 2020 y 2021' },
                 C2022: { name: 'Admisión 2022 y posteriores' }
               }}
-              value={curriculumSpec.cyear?.raw ?? null}
+              value={curriculumSpec.cyear}
               showCode={true}
               onChange={(c) => selectYear(c)}
             />

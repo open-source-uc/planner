@@ -1,5 +1,5 @@
 
-import { type CourseRequirementErr, type UnknownCourseErr, type SemestralityWarn, type UnavailableCourseWarn, type AmbiguousCourseErr, type ApiError, type Major, type Minor, type Title, type CourseDetails, type EquivDetails, type ConcreteId, type EquivalenceId, CurriculumSpec } from '../../../client'
+import { type CourseRequirementErr, type UnknownCourseErr, type SemestralityWarn, type UnavailableCourseWarn, type AmbiguousCourseErr, type ApiError, type Major, type Minor, type Title, type CourseDetails, type EquivDetails, type ConcreteId, type EquivalenceId, type CurriculumSpec } from '../../../client'
 
 export interface CoursePos { semester: number, index: number }
 export interface CourseId { code: string, instance: number }
