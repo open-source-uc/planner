@@ -43,9 +43,9 @@ const Planner = (): JSX.Element => {
   const [plannerStatus, setPlannerStatus] = useState<PlannerStatus>(PlannerStatus.LOADING)
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [popUpAlert, setPopUpAlert] = useState<{ title: string, major?: string, year?: 'C2020' | 'C2022', deleteMajor: boolean, desc: string, isOpen: boolean }>({ title: '', major: '', deleteMajor: false, desc: '', isOpen: false })
+  const [popUpAlert, setPopUpAlert] = useState<{ title: string, major?: string, year?: Cyear, deleteMajor: boolean, desc: string, isOpen: boolean }>({ title: '', major: '', deleteMajor: false, desc: '', isOpen: false })
 
-  const previousCurriculum = useRef<{ major: string | undefined, minor: string | undefined, title: string | undefined, cyear?: 'C2020' | 'C2022' }>({ major: '', minor: '', title: '' })
+  const previousCurriculum = useRef<{ major: string | undefined, minor: string | undefined, title: string | undefined, cyear?: Cyear }>({ major: '', minor: '', title: '' })
   const previousClasses = useRef<PseudoCourseId[][]>([[]])
 
   const [, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
@@ -177,7 +177,7 @@ const Planner = (): JSX.Element => {
           major: validatablePlan.curriculum.major,
           minor: validatablePlan.curriculum.minor,
           title: validatablePlan.curriculum.title,
-          cyear: validatablePlan.curriculum.cyear.raw
+          cyear: validatablePlan.curriculum.cyear
         }
         setPlannerStatus(PlannerStatus.READY)
         return
@@ -199,7 +199,7 @@ const Planner = (): JSX.Element => {
         major: validatablePlan.curriculum.major,
         minor: validatablePlan.curriculum.minor,
         title: validatablePlan.curriculum.title,
-        cyear: validatablePlan.curriculum.cyear.raw
+        cyear: validatablePlan.curriculum.cyear
       }
       // Order diagnostics by putting errors first, then warnings.
       response.diagnostics.sort((a, b) => {
@@ -322,11 +322,11 @@ const Planner = (): JSX.Element => {
         major: response.validatable_plan.curriculum.major,
         minor: response.validatable_plan.curriculum.minor,
         title: response.validatable_plan.curriculum.title,
-        cyear: response.validatable_plan.curriculum.cyear.raw
+        cyear: response.validatable_plan.curriculum.cyear
       }
       await Promise.all([
         getCourseDetails(response.validatable_plan.classes.flat()),
-        loadCurriculumsData(response.validatable_plan.curriculum.cyear.raw, setCurriculumData, response.validatable_plan.curriculum.major),
+        loadCurriculumsData(response.validatable_plan.curriculum.cyear, setCurriculumData, response.validatable_plan.curriculum.major),
         validate(response.validatable_plan)
       ])
       setValidatablePlan(response.validatable_plan)
@@ -363,11 +363,11 @@ const Planner = (): JSX.Element => {
         major: response.curriculum.major,
         minor: response.curriculum.minor,
         title: response.curriculum.title,
-        cyear: response.curriculum.cyear.raw
+        cyear: response.curriculum.cyear
       }
       await Promise.all([
         getCourseDetails(response.classes.flat()),
-        loadCurriculumsData(response.curriculum.cyear.raw, setCurriculumData, response.curriculum.major),
+        loadCurriculumsData(response.curriculum.cyear, setCurriculumData, response.curriculum.major),
         validate(response)
       ])
       setValidatablePlan(response)
@@ -536,10 +536,10 @@ const Planner = (): JSX.Element => {
     setValidatablePlan(null)
   }, [])
 
-  const selectYear = useCallback((cYear: 'C2020' | 'C2022', isMajorValid: boolean, isMinorValid: boolean): void => {
+  const selectYear = useCallback((cYear: Cyear, isMajorValid: boolean, isMinorValid: boolean): void => {
     setValidatablePlan((prev) => {
-      if (prev == null || prev.curriculum.cyear.raw === cYear) return prev
-      const newCurriculum = { ...prev.curriculum, cyear: { raw: cYear } }
+      if (prev == null || prev.curriculum.cyear === cYear) return prev
+      const newCurriculum = { ...prev.curriculum, cyear: cYear }
       const newClasses = [...prev.classes]
       newClasses.splice(authState?.student?.next_semester ?? 0)
       if (!isMinorValid) {
@@ -589,7 +589,7 @@ const Planner = (): JSX.Element => {
     })
   }, [selectYear])
 
-  const checkMajorAndMinorForNewYear = useCallback(async (cyear: 'C2020' | 'C2022'): Promise<void> => {
+  const checkMajorAndMinorForNewYear = useCallback(async (cyear: Cyear): Promise<void> => {
     const isValidMajor = await isMajorValid(cyear, validatablePlan?.curriculum.major)
 
     if (!isValidMajor) {
@@ -646,7 +646,7 @@ const Planner = (): JSX.Element => {
           major !== previousCurriculum.current.major ||
           minor !== previousCurriculum.current.minor ||
           title !== previousCurriculum.current.title ||
-          cyear.raw !== previousCurriculum.current.cyear
+          cyear !== previousCurriculum.current.cyear
       if (curriculumChanged) {
         setPlannerStatus(PlannerStatus.CHANGING_CURRICULUM)
         void loadNewPLan(validatablePlan)

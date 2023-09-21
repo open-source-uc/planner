@@ -126,9 +126,9 @@ export const ValidationMessage: React.FC<FormatMessageProps> = ({ diag, reqCours
       return <span>El curriculum elegido ({formatCurriculum(diag.plan)}) es distinto al que tienes declarado oficialmente ({formatCurriculum(diag.user)}).</span>
     case 'cyear':
       if (validateCyear(diag.user) != null) {
-        return <span>Tu versión de curriculum es {diag.user}, pero el plan esta siendo validado para {diag.plan.raw}.</span>
+        return <span>Tu versión de curriculum es {diag.user}, pero el plan esta siendo validado para {diag.plan}.</span>
       } else {
-        return <span>Tu versión del curriculum es {diag.user} pero no es soportada. El plan esta siendo validado para la versión de curriculum {diag.plan.raw}.</span>
+        return <span>Tu versión del curriculum es {diag.user} pero no es soportada. El plan esta siendo validado para la versión de curriculum {diag.plan}.</span>
       }
     case 'equiv': {
       const n = diag.associated_to.length

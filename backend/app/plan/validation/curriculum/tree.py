@@ -4,7 +4,7 @@ Models a flow network in the context of curriculums.
 
 import re
 from collections.abc import Callable, Generator
-from typing import Annotated, Any, Literal, Optional, Self
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import BaseModel, Field
 from pydantic.fields import ModelField
@@ -178,36 +178,23 @@ class Curriculum(BaseModel):
         return Multiplicity(group={course_code}, credits=None)
 
 
-class Cyear(BaseModel, frozen=True):
-    """
-    A curriculum version, constrained to whatever curriculum versions we support.
-    Whenever something depends on the version of the curriculum, it should match
-    exhaustively on the `raw` field (using Python's `match` statement).
-    This allows the linter to pinpoint all places that need to be updated whenever a
-    new curriculum version is added.
-
-    NOTE: Remember to reset the cache in the database after any changes, either manually
-    or through migrations.
-    """
-
-    raw: Literal["C2020"] | Literal["C2022"]
-
-    @staticmethod
-    def from_str(cyear: str) -> Optional["Cyear"]:
-        if cyear == "C2020" or cyear == "C2022":
-            return Cyear(raw=cyear)
-        return None
-
-    def __str__(self) -> str:
-        """
-        Intended for communication with untyped systems like SIDING or the database.
-        To switch based on the curriculum version, use `raw` directly, which
-        preserves type information.
-        """
-        return self.raw
+# A curriculum version, constrained to whatever curriculum versions we support.
+# Whenever any code depends on the version of the curriculum, it should use `match`
+# blocks to exhaustively match on the versions.
+# This way, when a new version is added the linter can spot all of the locations where
+# the code depends on `Cyear`.
+Cyear = Literal["C2020"] | Literal["C2022"]
 
 
-LATEST_CYEAR = Cyear(raw="C2022")
+def cyear_from_str(cyear: str) -> Cyear | None:
+    match cyear:
+        case "C2020" | "C2022":
+            return cyear
+        case _:
+            return None
+
+
+LATEST_CYEAR: Cyear = "C2022"
 
 
 class CurriculumCode(str):

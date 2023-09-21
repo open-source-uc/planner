@@ -19,10 +19,10 @@ from zeep.exceptions import Fault
 
 from app.plan.course import ConcreteId, PseudoCourse
 from app.plan.validation.curriculum.tree import (
-    Cyear,
     MajorCode,
     MinorCode,
     TitleCode,
+    cyear_from_str,
 )
 from app.sync.siding import client
 from app.sync.siding.client import (
@@ -146,7 +146,7 @@ async def fetch_student_info(rut: str) -> StudentInfo:
         return StudentInfo(
             full_name=raw.Nombre,
             cyear=raw.Curriculo,
-            is_cyear_supported=Cyear.from_str(raw.Curriculo) is not None,
+            is_cyear_supported=cyear_from_str(raw.Curriculo) is not None,
             reported_major=MajorCode(raw.MajorInscrito) if raw.MajorInscrito else None,
             reported_minor=MinorCode(raw.MinorInscrito) if raw.MinorInscrito else None,
             reported_title=TitleCode(raw.TituloInscrito)

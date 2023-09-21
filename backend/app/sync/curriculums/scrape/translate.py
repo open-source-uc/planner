@@ -44,7 +44,7 @@ class ListBuilder:
         storage: CurriculumStorage,
         spec: CurriculumSpec,
     ) -> None:
-        self.unique_id = f"{kind.superblock_id.upper()}-{spec.cyear.raw}"
+        self.unique_id = f"{kind.superblock_id.upper()}-{spec.cyear}"
         if spec.major is not None:
             self.unique_id += f"-{spec.major}"
         if spec.minor is not None:
