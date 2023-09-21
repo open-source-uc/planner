@@ -5,6 +5,7 @@ Currently using unofficial sources until we get better API access.
 
 import time
 from collections import OrderedDict
+from typing import TYPE_CHECKING
 
 from fastapi import HTTPException
 from prisma.models import (
@@ -45,6 +46,14 @@ from app.sync.siding import translate as siding_translate
 from app.user.auth import UserKey
 from app.user.info import StudentContext
 
+if TYPE_CHECKING:
+    from prisma.types import (
+        MajorCreateInput,
+        MajorMinorCreateInput,
+        MinorCreateInput,
+        TitleCreateInput,
+    )
+
 _CACHED_CURRICULUM_ID: str = "cached-course-info"
 
 
@@ -52,7 +61,6 @@ async def run_upstream_sync(
     *,
     courses: bool,
     curriculums: bool,
-    offer: bool,
     packedcourses: bool,
 ):
     """
@@ -61,16 +69,6 @@ async def run_upstream_sync(
     NOTE: This function should only be called from a startup script, before any workers
     load.
     """
-
-    if offer:
-        print("syncing curriculum offer...")
-        # Clear available programs
-        await DbMajor.prisma().delete_many()
-        await DbMinor.prisma().delete_many()
-        await DbTitle.prisma().delete_many()
-        await DbMajorMinor.prisma().delete_many()
-        # Refetch available programs
-        await siding_translate.load_siding_offer_to_database()
 
     if curriculums or courses:
         # If we delete courses, we must also delete equivalences (because equivalences
@@ -112,6 +110,78 @@ async def run_upstream_sync(
                 "curriculums": storage.json(),
             },
         )
+
+        if curriculums:
+            # Update curriculum offer
+
+            # Clear available programs
+            print("updating curriculum offer...")
+            await DbMajor.prisma().delete_many()
+            await DbMinor.prisma().delete_many()
+            await DbTitle.prisma().delete_many()
+            await DbMajorMinor.prisma().delete_many()
+            # Put new offer in database
+            await _store_curriculum_offer_to_db(storage)
+
+
+async def _store_curriculum_offer_to_db(storage: CurriculumStorage):
+    # Store major list
+    majors: list[MajorCreateInput] = []
+    for cyear, offer in storage.offer.items():
+        for major in offer.major.values():
+            majors.append(
+                {
+                    "cyear": cyear,
+                    "code": major.code,
+                    "name": major.name,
+                    "version": major.version,  # TODO
+                },
+            )
+    await DbMajor.prisma().create_many(majors)
+
+    # Store minor list
+    minors: list[MinorCreateInput] = []
+    for cyear, offer in storage.offer.items():
+        for minor in offer.minor.values():
+            minors.append(
+                {
+                    "cyear": cyear,
+                    "code": minor.code,
+                    "name": minor.name,
+                    "version": minor.version,
+                    "minor_type": minor.program_type,
+                },
+            )
+    await DbMinor.prisma().create_many(minors)
+
+    # Store title list
+    titles: list[TitleCreateInput] = []
+    for cyear, offer in storage.offer.items():
+        for title in offer.title.values():
+            titles.append(
+                {
+                    "cyear": cyear,
+                    "code": title.code,
+                    "name": title.name,
+                    "version": title.version,
+                    "title_type": title.program_type,
+                },
+            )
+    await DbTitle.prisma().create_many(titles)
+
+    # Store major-minor associations
+    major_minor: list[MajorMinorCreateInput] = []
+    for cyear, offer in storage.offer.items():
+        for major in offer.major:
+            for minor in offer.major_minor[major]:
+                major_minor.append(
+                    {
+                        "cyear": cyear,
+                        "major": major,
+                        "minor": minor,
+                    },
+                )
+    await DbMajorMinor.prisma().create_many(major_minor)
 
 
 _curriculum_cache: CurriculumStorage | None = None

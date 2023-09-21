@@ -9,8 +9,8 @@ from app.plan.validation.curriculum.tree import (
 )
 from app.sync.curriculums.scrape.minor import ScrapedProgram
 from app.sync.curriculums.scrape.translate import ProgramType, translate_scrape
-from app.sync.curriculums.storage import CurriculumStorage
-from app.sync.siding.client import BloqueMalla, Titulo
+from app.sync.curriculums.storage import CurriculumStorage, ProgramDetails
+from app.sync.siding.client import BloqueMalla
 
 TITLE_EXCLUSIVE_CREDITS = 130
 TITLE_TYPE = ProgramType(
@@ -26,7 +26,7 @@ def translate_title(
     courseinfo: CourseInfo,
     out: CurriculumStorage,
     spec: CurriculumSpec,
-    siding_meta: Titulo,
+    meta: ProgramDetails,
     siding: list[BloqueMalla],
     scrape: ScrapedProgram,
 ):
@@ -43,7 +43,7 @@ def translate_title(
         courseinfo,
         out,
         spec,
-        siding_meta.Nombre,
+        meta.name,
         siding,
         scrape,
     )
