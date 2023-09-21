@@ -1,4 +1,4 @@
-import { Cyear, type CourseId, type CoursePos, type PseudoCourseId } from './Types'
+import { type Cyear, type CourseId, type CoursePos, type PseudoCourseId } from './Types'
 import { type ValidatablePlan } from '../../../client'
 
 export const getCoursePos = (prevCourses: PseudoCourseId[][], courseId: CourseId): CoursePos | null => {
