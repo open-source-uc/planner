@@ -103,9 +103,6 @@ class Settings(BaseSettings):
     # Whether to resynchronize curriculums on server startup.
     autosync_curriculums: bool = True
 
-    # Whether to resynchronize offer on server startup.
-    autosync_offer: bool = True
-
     # Whether to resynchronize the courseinfo cache on server startup.
     autosync_packedcourses: bool = True
 

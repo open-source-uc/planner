@@ -4,8 +4,8 @@ from app.plan.validation.curriculum.tree import (
 )
 from app.sync.curriculums.scrape.minor import ScrapedProgram
 from app.sync.curriculums.scrape.translate import ProgramType, translate_scrape
-from app.sync.curriculums.storage import CurriculumStorage
-from app.sync.siding.client import BloqueMalla, Minor
+from app.sync.curriculums.storage import CurriculumStorage, ProgramDetails
+from app.sync.siding.client import BloqueMalla
 
 MINOR_TYPE = ProgramType(
     superblock_id="Minor",
@@ -20,7 +20,7 @@ def translate_minor(
     courseinfo: CourseInfo,
     out: CurriculumStorage,
     spec: CurriculumSpec,
-    siding_meta: Minor,
+    meta: ProgramDetails,
     siding: list[BloqueMalla],
     scrape: ScrapedProgram,
 ):
@@ -29,7 +29,7 @@ def translate_minor(
         courseinfo,
         out,
         spec,
-        siding_meta.Nombre,
+        meta.name,
         siding,
         scrape,
     )

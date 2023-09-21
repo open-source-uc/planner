@@ -90,6 +90,7 @@ class SidingInfo(BaseModel):
     majors: list[Major]
     minors: list[Minor]
     titles: list[Titulo]
+    major_minor: dict[str, list[Minor]]
     plans: defaultdict[Cyear, MallasPorCodigo] = Field(
         default_factory=lambda: defaultdict(MallasPorCodigo),
     )
@@ -102,8 +103,15 @@ async def fetch_siding(courseinfo: CourseInfo) -> SidingInfo:
         majors=await siding_client.get_majors(),
         minors=await siding_client.get_minors(),
         titles=await siding_client.get_titles(),
+        major_minor={},
         lists={},
     )
+
+    # Fetch major-minor associations
+    for major in siding.majors:
+        siding.major_minor[major.CodMajor] = await siding_client.get_minors_for_major(
+            major.CodMajor,
+        )
 
     # Filter cyears that are not interesting for us
     siding.majors = list(
@@ -137,9 +145,9 @@ async def fetch_siding(courseinfo: CourseInfo) -> SidingInfo:
 def filter_relevant_cyears(cyears: StringArray | None) -> bool:
     if cyears is None:
         return False
-    cyears.strings.string = list(
-        filter(lambda cyear: cyear >= IGNORE_CYEARS_BEFORE, cyears.strings.string),
-    )
+    cyears.strings.string = [
+        cyear for cyear in cyears.strings.string if cyear >= IGNORE_CYEARS_BEFORE
+    ]
     return len(cyears.strings.string) > 0
 
 
@@ -287,7 +295,9 @@ def translate_siding(
                         codes.append(curso.Sigla)
                 is_homogeneous = True
             else:
-                raise Exception("siding api returned invalid curriculum block")
+                raise Exception(
+                    f"invalid raw SIDING block: {raw_block.json()}",
+                )
             if len(codes) == 1:
                 # Just a single course
                 code = codes[0]
