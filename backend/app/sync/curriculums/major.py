@@ -326,6 +326,8 @@ def patch_major(
             _c2020_defer_general_ofg(curr)
             _allow_selection_duplication(courseinfo, curr)
         case "C2022":
+            # TODO: Averiguar bien como funcionan los OFG y si falta alguna regla
+            # especial.
             _c2022_defer_free_area_ofg(curr)
             _allow_selection_duplication(courseinfo, curr)
 

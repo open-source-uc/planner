@@ -148,7 +148,29 @@ async def collate_plans() -> CurriculumStorage:
     # Agregar las listas a la base de datos global
     for equiv in out.lists.values():
         await add_equivalence(equiv)
-    # out.lists.clear()
+
+    # TODO: Algunos minors y titulos tienen requerimientos especiales que no son
+    #   representables en el formato que provee SIDING, y por ende faltan del
+    #   mock (y estan incompletos en el webservice real).
+    #   Tambien hay majors faltantes simplemente porque la Dipre no los ha
+    #   ingresado al parecer.
+    #
+    #   Programas faltantes:
+    #   - (M235) Major en Ingeniería, Diseño e Innovación - Track en Ingeniería
+    #       Vs.02
+    #   - (M143) Major en Ingeniería Física - Track Ingeniería Vs.01
+    #   - (M149) Major en Ingeniería Física - Track Física Vs.01
+    #   - (N242) Innovación Tecnológica Vs.01
+    #   - (N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02
+    #   - (N707) Minor de Profundidad de Articulación Proyectos de Diseño
+    #   - (N234) Minor de Articulación Premedicina Vs.02
+    #   - (N227) Minor de Profundidad Articulación Arquitectura Vs.02
+    #   - (N180) Track 1: Fundamentos de Optimización Vs.02
+    #   - (N181) Track 2: Fundamentos de Análisis Numérico Vs.02
+    #   - (N182) Track 3: Cuantificación de Incertidumbre Vs.02
+    #   - (N183) Track 4: Teoría de la Computación Vs.02
+    #   - (N184) Track 5: Data Science Vs.02
+    #   - (40023) Ingeniero Civil Matemático y Computacional
 
     return out
 
