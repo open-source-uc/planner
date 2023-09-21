@@ -142,13 +142,8 @@ model Plan {
   validatable_plan String
 }
 
-// A curriculum definition, fetched from SIDING and cached here.
-model Curriculum {
-  cyear      String
-  major      String
-  minor      String
-  title      String
-  curriculum String
-
-  @@id([cyear, major, minor, title])
+// All curriculums, cached into a single structure.
+model CachedCurriculum {
+  id          String @id
+  curriculums String
 }

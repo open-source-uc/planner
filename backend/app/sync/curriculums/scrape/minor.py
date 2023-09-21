@@ -21,30 +21,8 @@ import logging
 import re
 from pathlib import Path
 
-from pydantic import BaseModel
-
 from app.plan.courseinfo import CourseInfo
-
-
-class ScrapedMinorBlock(BaseModel):
-    """
-    - name: Name of the block. Might not be available for all blocks.
-    - creds: Amount of credits that this block weights. Might not be available if the
-    block consists of a single course.
-    - options: The course codes that this block admits.
-    - complementary: Whether the block is a complementary minor course or not.
-    """
-
-    name: str | None
-    creds: int | None
-    options: list[str]
-    complementary: bool
-
-
-class ScrapedMinor(BaseModel):
-    code: str
-    blocks: list[ScrapedMinorBlock]
-
+from app.sync.curriculums.scrape.common import ScrapedBlock, ScrapedProgram
 
 log = logging.getLogger("plan-collator")
 
@@ -79,7 +57,7 @@ REGEX_DETECT_AREA_FALLBACK = re.compile(r"de [^\n]+ área")
 REGEX_IDENTIFY_AREA = re.compile(r"(?:^|\n)(Área [^\n\(]+)")
 
 
-def scrape_minors(courseinfo: CourseInfo) -> dict[str, ScrapedMinor]:
+def scrape_minors(courseinfo: CourseInfo) -> dict[str, ScrapedProgram]:
     log.debug("scraping minors...")
 
     # Load raw pre-scraped text
@@ -92,7 +70,7 @@ def scrape_minors(courseinfo: CourseInfo) -> dict[str, ScrapedMinor]:
     raw_by_minor.pop(0)  # Erase any junk before the first minor
 
     # Procesar cada minor independientemente
-    minors: dict[str, ScrapedMinor] = {}
+    minors: dict[str, ScrapedProgram] = {}
     for minor_code, minor_raw in zip(
         raw_by_minor[::2],
         raw_by_minor[1::2],
@@ -106,9 +84,9 @@ def scrape_minors(courseinfo: CourseInfo) -> dict[str, ScrapedMinor]:
     return minors
 
 
-def scrape_minor(courseinfo: CourseInfo, code: str, raw: str) -> ScrapedMinor:
+def scrape_minor(courseinfo: CourseInfo, code: str, raw: str) -> ScrapedProgram:
     log.debug("scraping minor '%s'", code)
-    out = ScrapedMinor(code=code, blocks=[])
+    out = ScrapedProgram(code=code, blocks=[])
 
     split_by_block = REGEX_BLOCK_SPLITTER.split(raw)
     if REGEX_COURSE_CODE.search(split_by_block[0]):
@@ -192,7 +170,7 @@ def scrape_minor(courseinfo: CourseInfo, code: str, raw: str) -> ScrapedMinor:
 
 def process_block(
     courseinfo: CourseInfo,
-    out: ScrapedMinor,
+    out: ScrapedProgram,
     creds: int | None,
     complementary: bool,
     raw: str,
@@ -246,7 +224,7 @@ def process_block(
         while i < len(course_codes):
             # Generar un nuevo bloque para este ramo
             main_code, or_operator = course_codes[i]
-            block = ScrapedMinorBlock(
+            block = ScrapedBlock(
                 creds=None,
                 options=[main_code],
                 name=name,
@@ -272,7 +250,7 @@ def process_block(
     else:
         # Si se especifican creditos, entonces este bloque es una disyuncion que permite
         # rellenar con cualquiera de una lista de ramos
-        block = ScrapedMinorBlock(
+        block = ScrapedBlock(
             creds=creds,
             options=[],
             name=name,
@@ -321,7 +299,7 @@ def add_level_3000_courses(
         )
 
 
-def sanity_check_minor(courseinfo: CourseInfo, minor: ScrapedMinor):
+def sanity_check_minor(courseinfo: CourseInfo, minor: ScrapedProgram):
     """
     Hacer un sanity-check del minor.
     Esta funcion no modifica el minor, solo emite diagnosticos al log si algo falla.

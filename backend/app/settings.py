@@ -94,9 +94,6 @@ class Settings(BaseSettings):
     #   Note that the file may contain sensitive data!
     siding_record_path: Literal[""] | Path = ""
 
-    # A mock for curriculums in the native format.
-    native_mock_path: Literal[""] | Path = Path("../native-mock-data/data.json")
-
     # Time to expire cached student information in seconds.
     student_info_expire: float = 1800
 

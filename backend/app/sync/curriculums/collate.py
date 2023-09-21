@@ -8,18 +8,19 @@ import logging
 from pydantic import BaseModel
 
 from app.plan.course import ConcreteId, EquivalenceId
-from app.plan.courseinfo import CourseInfo, course_info
+from app.plan.courseinfo import CourseInfo, add_equivalence, course_info
 from app.plan.validation.curriculum.tree import (
     CurriculumSpec,
     Cyear,
     FillerCourse,
     Multiplicity,
 )
-from app.sync.curriculums.major import patch_major
+from app.sync.curriculums.major import translate_common_plan, translate_major
 from app.sync.curriculums.minor import translate_minor
-from app.sync.curriculums.scrape.minor import ScrapedMinor, scrape_minors
-from app.sync.curriculums.scrape.title import ScrapedTitle, scrape_titles
-from app.sync.curriculums.siding import SidingInfo, fetch_siding, translate_siding
+from app.sync.curriculums.scrape.common import ScrapedProgram
+from app.sync.curriculums.scrape.minor import scrape_minors
+from app.sync.curriculums.scrape.title import scrape_titles
+from app.sync.curriculums.siding import SidingInfo, fetch_siding
 from app.sync.curriculums.storage import CurriculumStorage
 from app.sync.curriculums.title import translate_title
 from app.sync.siding.client import (
@@ -34,8 +35,8 @@ log = logging.getLogger("plan-collator")
 
 
 class ScrapedInfo(BaseModel):
-    minors: dict[str, ScrapedMinor]
-    titles: dict[str, ScrapedTitle]
+    minors: dict[str, ScrapedProgram]
+    titles: dict[str, ScrapedProgram]
 
 
 async def collate_plans() -> CurriculumStorage:
@@ -59,26 +60,27 @@ async def collate_plans() -> CurriculumStorage:
     # Colocar los curriculums resultantes aca
     out = CurriculumStorage()
 
-    # Los majors no se scrapean, se traducen directamente desde SIDING y luego se
-    # aplican patches manuales
+    # Traducir los majors desde los datos de SIDING
     for major in siding.majors:
         for cyear_str in decode_cyears(major.Curriculum):
             cyear = Cyear.from_str(cyear_str)
             assert cyear is not None
-            curr = translate_siding(
-                courseinfo,
-                out,
-                siding,
-                siding.plans[cyear].plans[major.CodMajor],
-            )
             spec = CurriculumSpec(
                 cyear=cyear,
                 major=major.CodMajor,
                 minor=None,
                 title=None,
             )
-            curr = patch_major(courseinfo, spec, curr)
-            out.set_major(spec, curr)
+            translate_major(
+                courseinfo,
+                out,
+                spec,
+                siding,
+                siding.plans[cyear].plans[major.CodMajor],
+            )
+
+    # Agregar el plan comun
+    translate_common_plan(courseinfo, out, siding)
 
     # Los minors se traducen desde la informacion scrapeada, y posiblemente ayudados por
     # los datos de SIDING
@@ -117,6 +119,7 @@ async def collate_plans() -> CurriculumStorage:
                 courseinfo,
                 out,
                 spec,
+                title,
                 siding.plans[cyear].plans[title.CodTitulo],
                 scraped.titles[title.CodTitulo],
             )
@@ -124,12 +127,22 @@ async def collate_plans() -> CurriculumStorage:
     # Tratar las equivalencias homogeneas
     detect_homogeneous(courseinfo, out)
 
+    # Asegurarse que no hayan equivalencias vacias
+    for equiv in out.lists.values():
+        if not equiv.courses:
+            raise Exception(f"list {equiv.code} is empty")
+
     # Durante la construccion de los curriculums se usa la capacidad -1 como un
     # placeholder, que significa "la capacidad de este nodo es la suma de las
     # capacidades de mis hijos"
     # Por ende, hay que actualizar estas capacidades
     for curr in out.all_plans():
         curr.root.freeze_capacities()
+
+    # Agregar las listas a la base de datos global
+    for equiv in out.lists.values():
+        await add_equivalence(equiv)
+    # out.lists.clear()
 
     return out
 
@@ -224,7 +237,7 @@ def filter_relevant_blocks(
     keep_others: bool,
 ) -> list[BloqueMalla] | None:
     for block in plan:
-        if block.BloqueAcademico == plan_name:
+        if _is_block_relevant(plan_name, block):
             break
     else:
         # No hay ningun bloque que calce con el nombre del plan!
@@ -233,8 +246,12 @@ def filter_relevant_blocks(
         return None
 
     return [
-        block for block in plan if block.BloqueAcademico == plan_name or keep_others
+        block for block in plan if _is_block_relevant(plan_name, block) or keep_others
     ]
+
+
+def _is_block_relevant(plan_name: str, block: BloqueMalla) -> bool:
+    return block.Programa == plan_name or block.Programa == "Plan Común"
 
 
 def detect_homogeneous(courseinfo: CourseInfo, out: CurriculumStorage):
