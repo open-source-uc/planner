@@ -30,6 +30,50 @@ from app.sync.siding.client import (
 IGNORE_CYEARS_BEFORE = "C2020"
 
 
+# Los cursos de optativo en ciencias.
+C2020_OFG_SCIENCE_OPTS = {
+    "BIO014",
+    "EYP2355",
+    "ELM2431",
+    "EYP290I",
+    "FIZ0314",
+    "FIS1542",
+    "FIZ0311",
+    "FIZ0222",
+    "FIZ0223",
+    "FIZ0313",
+    "FIZ1428",
+    "MAT2205",
+    "MAT255I",
+    "MLM2221",
+    "MLM2301",
+    "MAT2305",
+    "MLM2401",
+    "MLM2411",
+    "MLM251I",
+    "MAT251I",
+    "MLM2541",
+    "MLM260I",
+    "MAT2605",
+    "QIM121",
+    "QIM122",
+    "QIM124",
+    "QIM109A",
+    "QIM130",
+    "QIM200",
+    "QUN1003",
+    "MAT2565",
+    "FIZ0315",
+    "FIZ0312",
+    "MAT380I",
+    "FIS0104",
+    "MAT270I",
+    "QIM202",
+    "FIZ0614",
+    "FIZ2110",
+}
+
+
 log = logging.getLogger("plan-collator")
 
 
@@ -81,6 +125,10 @@ async def fetch_siding(courseinfo: CourseInfo) -> SidingInfo:
     # Fill in these lists "manually"
     # TODO: Remove this hack once SIDING fixes this
     fill_in_c2022_ofgs(courseinfo, siding)
+
+    # Currently, SIDING does not include the science optatives in their C2020 OFG list
+    # Patch this
+    fill_in_c2020_science_ofg(courseinfo, siding)
 
     return siding
 
@@ -334,3 +382,17 @@ def fill_in_c2022_ofgs(courseinfo: CourseInfo, siding: SidingInfo):
                     Curso(Sigla=code, Nombre=None, Semestralidad=None, Creditos=None)
                     for code in areacodes
                 )
+
+
+def fill_in_c2020_science_ofg(courseinfo: CourseInfo, siding: SidingInfo):
+    """
+    La lista de OFGs para C2020, que se llama L1 en SIDING, no contiene los optativos de
+    ciencias.
+    Parcharla.
+    """
+
+    ofg_courses = siding.lists["L1"]
+    ofg_courses.extend(
+        Curso(Sigla=code, Nombre=None, Semestralidad=None, Creditos=None)
+        for code in C2020_OFG_SCIENCE_OPTS
+    )

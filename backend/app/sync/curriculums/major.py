@@ -12,7 +12,11 @@ from app.plan.validation.curriculum.tree import (
     Leaf,
     Multiplicity,
 )
-from app.sync.curriculums.siding import SidingInfo, translate_siding
+from app.sync.curriculums.siding import (
+    C2020_OFG_SCIENCE_OPTS,
+    SidingInfo,
+    translate_siding,
+)
 from app.sync.curriculums.storage import CurriculumStorage
 from app.sync.siding.client import BloqueMalla
 
@@ -150,50 +154,6 @@ def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum)
                         )
                 # Only do it once
                 return
-
-
-# Los cursos de optativo en ciencias.
-C2020_OFG_SCIENCE_OPTS = {
-    "BIO014",
-    "EYP2355",
-    "ELM2431",
-    "EYP290I",
-    "FIZ0314",
-    "FIS1542",
-    "FIZ0311",
-    "FIZ0222",
-    "FIZ0223",
-    "FIZ0313",
-    "FIZ1428",
-    "MAT2205",
-    "MAT255I",
-    "MLM2221",
-    "MLM2301",
-    "MAT2305",
-    "MLM2401",
-    "MLM2411",
-    "MLM251I",
-    "MAT251I",
-    "MLM2541",
-    "MLM260I",
-    "MAT2605",
-    "QIM121",
-    "QIM122",
-    "QIM124",
-    "QIM109A",
-    "QIM130",
-    "QIM200",
-    "QUN1003",
-    "MAT2565",
-    "FIZ0315",
-    "FIZ0312",
-    "MAT380I",
-    "FIS0104",
-    "MAT270I",
-    "QIM202",
-    "FIZ0614",
-    "FIZ2110",
-}
 
 
 def _ofg_classify(
@@ -372,7 +332,6 @@ def patch_major(
     # TODO: Marcar termodinamica, electromagnetismo y optimizacion como equivalencias
     # homogeneas.
     # TODO: Marcar los OFGs y los teologicos como equivalencias no esenciales.
-    # TODO: Agregar los optativos de ciencias a la lista L1.
 
     return curr
 
