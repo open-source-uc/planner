@@ -1,6 +1,7 @@
 import logging
 
 from pydantic import BaseModel
+from unidecode import unidecode
 
 from app.plan.course import ConcreteId, EquivalenceId
 from app.plan.courseinfo import CourseInfo, EquivDetails
@@ -188,14 +189,7 @@ def translate_block(
         # de minor
         name = f"Optativos (LISTA {listbuilder.next_optative()})"
 
-    if "IEE2XXX" in block.options:
-        # Arreglar los optativos de electrica
-        block.options.remove("IEE2XXX")
-        block.options.extend(
-            code
-            for code in courseinfo.courses
-            if code.startswith("IEE2") and len(code) == len("IEE2XXX")
-        )
+    _apply_course_patches(courseinfo, block.options)
 
     if block.creds is None and len(block.options) == 1:
         # Agregar este curso al plan
@@ -292,6 +286,44 @@ def translate_block(
             for _ in range(_ceil_div(creds, filler_creds))
         ]
     return exh, exc, fill
+
+
+def _apply_course_patches(courseinfo: CourseInfo, courses: list[str]):
+    if "IEE2XXX" in courses:
+        # Arreglar los optativos de electrica
+        courses.remove("IEE2XXX")
+        courses.extend(
+            code
+            for code in courseinfo.courses
+            if code.startswith("IEE2") and len(code) == len("IEE2XXX")
+        )
+
+    if "IDI999X" in courses:
+        # Optativo de N242 "Tecnologico de Profundizacion"
+        # Definido como:
+        # Investigación o Proyecto
+        # Trabajo Personal Dirigido
+        # Otro curso Tecnológico de Profundización
+        #
+        # Con una notita (e) que dice:
+        # "Aprobar 10 créditos entre el listado de cursos optativos ofrecidos por la
+        # Escuela de Ingeniería o Instituto vinculado a la Escuela de Ingeniería y
+        # aprobados por el Comité de Pregrado de la Escuela."
+        #
+        # Segun informacion sacada en reuniones, esto se ve estudiante por estudiante,
+        # asique mientras no tengamos acceso a los planes personalizados solo podemos
+        # ser conservadores.
+        # TODO: Fix this once we have student-custom plans
+        courses.remove("IDI999X")
+        courses.extend(
+            course.code
+            for course in courseinfo.courses.values()
+            if unidecode(course.school) == "Ingenieria"
+            and (
+                "Investigacion o Proyecto" in unidecode(course.name)
+                or "Trabajo Personal Dirigido" in unidecode(course.name)
+            )
+        )
 
 
 def _ceil_div(a: int, b: int):

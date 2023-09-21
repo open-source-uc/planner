@@ -65,6 +65,9 @@ async def collate_plans() -> CurriculumStorage:
     # Fetch information from SIDING
     siding = await fetch_siding(courseinfo)
 
+    # Algunos titulos se agregan manualmente
+    add_manual_title_offer(siding)
+
     # Colocar los curriculums resultantes aca
     out = CurriculumStorage()
 
@@ -78,9 +81,6 @@ async def collate_plans() -> CurriculumStorage:
 
     # Falta extraer los majors y sus minors asociados
     extract_major_minor_associations(siding, out)
-
-    # Algunos titulos se agregan manualmente
-    add_manual_title_offer(siding, out)
 
     # Traducir los majors desde los datos de SIDING
     for cyear, offer in out.offer.items():
@@ -301,7 +301,7 @@ def filter_program(
 
     blocks = filter_relevant_blocks(
         program.Nombre,
-        siding.plans[cyear].plans[code],
+        siding.plans[cyear].plans.get(code, []),
         keep_others,
     )
     if not blocks:
