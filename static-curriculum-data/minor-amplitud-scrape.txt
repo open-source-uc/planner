@@ -518,3 +518,76 @@ ICC2312
 Instalaciones en Edificios
 ICC2913
 Tecnologias de Informacion en Construccion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+este minor de amplitud tiene un optativo que no esta bien definido (se ve caso a caso)
+por ende, el optativo se construye en codigo de forma conservadora
+(N242) Innovación Tecnológica Vs.01
+40 cr
+19.1 Mínimos
+IDI2031
+10
+Prototipado y Validación de Innovaciones Tecnológicas
+Estrategia y Comercialización de Innovaciones
+ICS2031
+10
+Tecnológicas
+ICS2032
+10
+Financiamiento y Creación de Start-Ups
+ING2031
+5
+Vigilancia Tecnológica e Inteligencia Competitiva
+DEM298
+5
+Propiedad Intelectual y Transferencia Tecnológica
+19.2 Optativos, aprobar 10 cr. (e)
+Investigación o Proyecto
+10
+Trabajo Personal Dirigido(*)
+5
+Otro curso Tecnológico de Profundización
+10
+(*) En el caso de elegir Trabajo Personal Dirigido, se deberán aprobar 2
+para cumplir con los 10 cr. requeridos.
+
+IDI999X Ipre o trabajo personal dirigido  <-- agregado manualmente
