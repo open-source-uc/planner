@@ -14,28 +14,8 @@ import logging
 import re
 from pathlib import Path
 
-from pydantic import BaseModel
-
 from app.plan.courseinfo import CourseInfo
-
-
-class ScrapedTitleBlock(BaseModel):
-    """
-    - name: Name of the block. Might not be available for all blocks.
-    - creds: Amount of credits that this block weights. Might not be available if the
-    block consists of a single course.
-    - options: The course codes that this block admits.
-    """
-
-    name: str | None
-    creds: int | None
-    options: list[str]
-
-
-class ScrapedTitle(BaseModel):
-    code: str
-    blocks: list[ScrapedTitleBlock]
-
+from app.sync.curriculums.scrape.common import ScrapedBlock, ScrapedProgram
 
 log = logging.getLogger("plan-collator")
 
@@ -68,7 +48,7 @@ REGEX_DETECT_AREA = re.compile(r"cr de [^\n]+ área")
 REGEX_IDENTIFY_AREA = re.compile(r"Área \d+: ([^\n\(]+)")
 
 
-def scrape_titles(courseinfo: CourseInfo) -> dict[str, ScrapedTitle]:
+def scrape_titles(courseinfo: CourseInfo) -> dict[str, ScrapedProgram]:
     log.debug("scraping titles...")
 
     # Load raw pre-scraped text
@@ -78,7 +58,7 @@ def scrape_titles(courseinfo: CourseInfo) -> dict[str, ScrapedTitle]:
     raw_by_title = REGEX_TITLE_CODE.split(raw)
     raw_by_title.pop(0)  # Remove junk before first title code
 
-    titles: dict[str, ScrapedTitle] = {}
+    titles: dict[str, ScrapedProgram] = {}
     for title_code, title_raw in zip(
         raw_by_title[::2],
         raw_by_title[1::2],
@@ -89,9 +69,9 @@ def scrape_titles(courseinfo: CourseInfo) -> dict[str, ScrapedTitle]:
     return titles
 
 
-def scrape_title(courseinfo: CourseInfo, code: str, raw: str) -> ScrapedTitle:
+def scrape_title(courseinfo: CourseInfo, code: str, raw: str) -> ScrapedProgram:
     log.debug("scraping title '%s'", code)
-    out = ScrapedTitle(code=code, blocks=[])
+    out = ScrapedProgram(code=code, blocks=[])
 
     # Eliminar la practica 2, no nos interesa
     raw = raw.replace("ING2001", "")
@@ -143,7 +123,7 @@ def scrape_title(courseinfo: CourseInfo, code: str, raw: str) -> ScrapedTitle:
 
 def scrape_block(
     courseinfo: CourseInfo,
-    out: ScrapedTitle,
+    out: ScrapedProgram,
     creds_str: str | None,
     raw: str,
     name: str | None,
@@ -207,10 +187,11 @@ def scrape_block(
         while i < len(course_codes):
             # Generar un nuevo bloque para este ramo
             main_code, or_operator = course_codes[i]
-            block = ScrapedTitleBlock(
+            block = ScrapedBlock(
                 creds=None,
                 options=[main_code],
                 name=name,
+                complementary=False,
             )
             # Agregar al bloque cualquier ramo encadenado con 'o's
             while or_operator:
@@ -232,7 +213,7 @@ def scrape_block(
     else:
         # Si se especifican creditos, entonces este bloque es una disyuncion que permite
         # rellenar con cualquiera de una lista de ramos
-        block = ScrapedTitleBlock(creds=creds, options=[], name=name)
+        block = ScrapedBlock(creds=creds, options=[], name=name, complementary=False)
         for code, or_operator in course_codes:
             if or_operator:
                 log.warning("course in equivalence has 'o' operator: %s", course_codes)
