@@ -115,34 +115,39 @@ async def fetch_siding(courseinfo: CourseInfo) -> SidingInfo:
 
     # Filter cyears that are not interesting for us
     siding.majors = list(
-        filter(lambda m: filter_relevant_cyears(m.Curriculum), siding.majors),
+        filter(lambda m: _filter_relevant_cyears(m.Curriculum), siding.majors),
     )
     siding.minors = list(
-        filter(lambda m: filter_relevant_cyears(m.Curriculum), siding.minors),
+        filter(lambda m: _filter_relevant_cyears(m.Curriculum), siding.minors),
     )
     siding.titles = list(
-        filter(lambda m: filter_relevant_cyears(m.Curriculum), siding.titles),
+        filter(lambda m: _filter_relevant_cyears(m.Curriculum), siding.titles),
     )
 
     # Fetch plans
-    await fetch_siding_plans(siding)
+    await _fetch_siding_plans(siding)
 
     # Fetch predefined lists
-    await fetch_siding_lists(courseinfo, siding)
+    await _fetch_siding_lists(courseinfo, siding)
+
+    # Currently, SIDING lists C2022 as having no available titles
+    # Fill in these versions with C2020 titles
+    # TODO: Remove this hack once SIDING reports versions correctly
+    _fill_in_c2022_titles(courseinfo, siding)
 
     # Currently, SIDING returns empty lists for C2022 OFGs
     # Fill in these lists "manually"
     # TODO: Remove this hack once SIDING fixes this
-    fill_in_c2022_ofgs(courseinfo, siding)
+    _fill_in_c2022_ofgs(courseinfo, siding)
 
     # Currently, SIDING does not include the science optatives in their C2020 OFG list
     # Patch this
-    fill_in_c2020_science_ofg(courseinfo, siding)
+    _fill_in_c2020_science_ofg(courseinfo, siding)
 
     return siding
 
 
-def filter_relevant_cyears(cyears: StringArray | None) -> bool:
+def _filter_relevant_cyears(cyears: StringArray | None) -> bool:
     if cyears is None:
         return False
     cyears.strings.string = [
@@ -151,7 +156,7 @@ def filter_relevant_cyears(cyears: StringArray | None) -> bool:
     return len(cyears.strings.string) > 0
 
 
-async def fetch_siding_plans(siding: SidingInfo):
+async def _fetch_siding_plans(siding: SidingInfo):
     # Fetch majors in offer
     for major in siding.majors:
         if major.Curriculum is None:
@@ -223,7 +228,7 @@ async def fetch_siding_plans(siding: SidingInfo):
             )
 
 
-async def fetch_siding_lists(courseinfo: CourseInfo, siding: SidingInfo):
+async def _fetch_siding_lists(courseinfo: CourseInfo, siding: SidingInfo):
     # Collect predefined lists
     predefined_lists: set[str] = set()
     for _cyear, plans in siding.plans.items():
@@ -360,7 +365,24 @@ C2022_OFG_AREA_LISTS = {
 }
 
 
-def fill_in_c2022_ofgs(courseinfo: CourseInfo, siding: SidingInfo):
+def _fill_in_c2022_titles(courseinfo: CourseInfo, siding: SidingInfo):
+    """
+    Siding muestra que C2022 no tiene ningun titulo.
+    Parchar esto con los titulos de C2020.
+    """
+
+    for title in siding.titles:
+        if title.Curriculum is None:
+            continue
+        cyears = title.Curriculum.strings.string
+        if "C2020" in cyears and "C2022" not in cyears:
+            cyears.append("C2022")
+            siding.plans["C2022"].plans[title.CodTitulo] = siding.plans["C2020"].plans[
+                title.CodTitulo
+            ]
+
+
+def _fill_in_c2022_ofgs(courseinfo: CourseInfo, siding: SidingInfo):
     """
     Las listas de OFG para C2022 vienen vacias desde SIDING.
     Por ahora, llenarlas manualmente a partir de la informacion de buscacursos.
@@ -395,7 +417,7 @@ def fill_in_c2022_ofgs(courseinfo: CourseInfo, siding: SidingInfo):
                 )
 
 
-def fill_in_c2020_science_ofg(courseinfo: CourseInfo, siding: SidingInfo):
+def _fill_in_c2020_science_ofg(courseinfo: CourseInfo, siding: SidingInfo):
     """
     La lista de OFGs para C2020, que se llama L1 en SIDING, no contiene los optativos de
     ciencias.
