@@ -33,8 +33,8 @@ from app.plan.validation.curriculum.tree import (
     LATEST_CYEAR,
     Curriculum,
     CurriculumSpec,
-    Cyear,
     FillerCourse,
+    cyear_from_str,
 )
 from app.sync import get_curriculum
 from app.user.auth import UserKey
@@ -451,7 +451,7 @@ async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
         )
     else:
         student = await sync.get_student_data(user)
-        cyear = Cyear.from_str(student.info.cyear)
+        cyear = cyear_from_str(student.info.cyear)
         if cyear is None:
             # Just plow forward, after all the validation endpoint will generate an
             # error about the mismatched cyear

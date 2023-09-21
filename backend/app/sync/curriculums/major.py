@@ -74,7 +74,7 @@ def _map_bloqueacademico(cyear: Cyear, bloque_academico: str) -> str:
     id_words = unidecode(bloque_academico).lower().split()
     if len(id_words) < 1:
         return bloque_academico
-    match cyear.raw:
+    match cyear:
         case "C2020":
             superblock_table = C2020_SUPERBLOCK_TABLE
         case "C2022":
@@ -318,7 +318,7 @@ def patch_major(
     _skip_extras(curr)
     _identify_superblocks(spec, curr)
 
-    match spec.cyear.raw:
+    match spec.cyear:
         case "C2020":
             # NOTE: El orden en que se llama a estas funciones es importante
             _merge_c2020_ofgs(curr)
@@ -375,7 +375,7 @@ def translate_common_plan(
         if PLANCOMUN_BASE_MAJOR not in mallas.plans:
             raise Exception(
                 f"major {PLANCOMUN_BASE_MAJOR} (the base for plancomun)"
-                f" not found for cyear {cyear.raw}",
+                f" not found for cyear {cyear}",
             )
         # Filtrar por bloque academico
         filtered_blocks = [

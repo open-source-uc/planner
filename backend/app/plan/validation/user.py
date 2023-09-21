@@ -67,7 +67,7 @@ def validate_against_owner(
     user_ctx: StudentContext,
     out: ValidationResult,
 ):
-    if str(plan.curriculum.cyear) != user_ctx.info.cyear:
+    if plan.curriculum.cyear != user_ctx.info.cyear:
         out.add(
             MismatchedCyearErr(plan=plan.curriculum.cyear, user=user_ctx.info.cyear),
         )

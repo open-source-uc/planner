@@ -56,7 +56,6 @@ export class DefaultService {
      * the database in order for the changes to reach all workers.
      * @param courses
      * @param curriculums
-     * @param offer
      * @param packedcourses
      * @returns any Successful Response
      * @throws ApiError
@@ -64,7 +63,6 @@ export class DefaultService {
     public static syncDatabase(
         courses: boolean,
         curriculums: boolean,
-        offer: boolean,
         packedcourses: boolean,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
@@ -73,7 +71,6 @@ export class DefaultService {
             query: {
                 'courses': courses,
                 'curriculums': curriculums,
-                'offer': offer,
                 'packedcourses': packedcourses,
             },
             errors: {
