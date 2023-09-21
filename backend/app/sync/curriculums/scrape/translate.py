@@ -140,7 +140,7 @@ def translate_scrape(
 
     listbuilder = ListBuilder(kind, out, spec)
     for block in scrape.blocks:
-        exh, exc, fill = translate_block(
+        exh, exc, fills = translate_block(
             courseinfo,
             kind,
             spec,
@@ -151,7 +151,8 @@ def translate_scrape(
         if exh:
             exhaustive.children.append(exh)
         exclusive.children.append(exc)
-        curr.fillers.setdefault(fill.course.code, []).append(fill)
+        for fill in fills:
+            curr.fillers.setdefault(fill.course.code, []).append(fill)
 
     return curr
 
@@ -163,7 +164,7 @@ def translate_block(
     listbuilder: ListBuilder,
     block: ScrapedBlock,
     exclusive_credits: int,
-) -> tuple[Leaf | None, Leaf, FillerCourse]:
+) -> tuple[Leaf | None, Leaf, list[FillerCourse]]:
     # Encontrar un buen nombre para el bloque
     if block.name is not None:
         # El bloque tiene nombre, usar este nombre
@@ -216,15 +217,21 @@ def translate_block(
             cap=info.credits or 1,
             codes={code},
         )
-        fill = FillerCourse(
-            course=ConcreteId(code=code),
-            order=kind.order_base + listbuilder.last_idx,
-        )
+        fill = [
+            FillerCourse(
+                course=ConcreteId(code=code),
+                order=kind.order_base + listbuilder.last_idx,
+            ),
+        ]
     else:
         creds = block.creds
+        filler_creds = None
+        cost_offset = 0
         if block.complementary:
             # El bloque complementario puede rellenar hasta el minor completo
             creds = exclusive_credits
+            filler_creds = 10
+            cost_offset = 1
         if creds is None:
             # Si no hay informacion de creditos, se supone que todas las opciones
             # tienen el mismo creditaje
@@ -240,6 +247,8 @@ def translate_block(
                         f" {kind.superblock_id} {spec} are not homogeneous",
                     )
             creds = representative.credits
+        if filler_creds is None:
+            filler_creds = creds
 
         # Filtrar las opciones que no estan en la base de datos de cursos
         available_options: list[str] = []
@@ -274,9 +283,16 @@ def translate_block(
             cap=creds,
             codes=accept_codes,
         )
-
-        fill = FillerCourse(
-            course=EquivalenceId(code=equiv.code, credits=creds),
-            order=kind.order_base + listbuilder.last_idx,
-        )
+        fill = [
+            FillerCourse(
+                course=EquivalenceId(code=equiv.code, credits=filler_creds),
+                order=kind.order_base + listbuilder.last_idx,
+                cost_offset=cost_offset,
+            )
+            for _ in range(_ceil_div(creds, filler_creds))
+        ]
     return exh, exc, fill
+
+
+def _ceil_div(a: int, b: int):
+    return -(a // -b)
