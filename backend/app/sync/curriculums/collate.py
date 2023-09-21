@@ -4,6 +4,9 @@ specification.
 """
 
 import logging
+from collections import defaultdict
+from collections.abc import Iterable
+from dataclasses import dataclass, field
 
 from pydantic import BaseModel
 
@@ -13,7 +16,11 @@ from app.plan.validation.curriculum.tree import (
     CurriculumSpec,
     Cyear,
     FillerCourse,
+    MajorCode,
+    MinorCode,
     Multiplicity,
+    TitleCode,
+    cyear_from_str,
 )
 from app.sync.curriculums.major import (
     translate_common_plan,
@@ -21,10 +28,11 @@ from app.sync.curriculums.major import (
 )
 from app.sync.curriculums.minor import translate_minor
 from app.sync.curriculums.scrape.common import ScrapedProgram
+from app.sync.curriculums.scrape.major import scrape_majors
 from app.sync.curriculums.scrape.minor import scrape_minors
 from app.sync.curriculums.scrape.title import scrape_titles
 from app.sync.curriculums.siding import SidingInfo, fetch_siding
-from app.sync.curriculums.storage import CurriculumStorage
+from app.sync.curriculums.storage import CurriculumStorage, ProgramDetails, ProgramOffer
 from app.sync.curriculums.title import translate_title
 from app.sync.siding.client import (
     BloqueMalla,
@@ -38,6 +46,7 @@ log = logging.getLogger("plan-collator")
 
 
 class ScrapedInfo(BaseModel):
+    majors: set[str]
     minors: dict[str, ScrapedProgram]
     titles: dict[str, ScrapedProgram]
 
@@ -48,6 +57,7 @@ async def collate_plans() -> CurriculumStorage:
 
     # Scrape information from PDFs
     scraped = ScrapedInfo(
+        majors=scrape_majors(),
         minors=scrape_minors(courseinfo),
         titles=scrape_titles(courseinfo),
     )
@@ -55,22 +65,26 @@ async def collate_plans() -> CurriculumStorage:
     # Fetch information from SIDING
     siding = await fetch_siding(courseinfo)
 
-    # Algunos majors/minors/titulos pueden no ser relevantes
-    # Por ejemplo, algunos majors podrian no tener informacion de plan disponible en
-    # SIDING, o algunos minors o titulos podrian no estar en el scrape
-    filter_relevant_programs(siding, scraped)
-
     # Colocar los curriculums resultantes aca
     out = CurriculumStorage()
 
+    # La oferta de majors/minors/titulos de SIDING tiene mucha "basura"
+    # Es decir, majors y minors que no son "reales"
+    # Para arreglarlo, se compara con la lista scrapeada y contra las mallas que
+    # realmente existen
+    extract_true_offer("major", siding.majors, siding, scraped.majors, out.offer, True)
+    extract_true_offer("minor", siding.minors, siding, scraped.minors, out.offer, False)
+    extract_true_offer("title", siding.titles, siding, scraped.titles, out.offer, False)
+
+    # Falta extraer los majors y sus minors asociados
+    extract_major_minor_associations(siding, out)
+
     # Traducir los majors desde los datos de SIDING
-    for major in siding.majors:
-        for cyear_str in decode_cyears(major.Curriculum):
-            cyear = Cyear.from_str(cyear_str)
-            assert cyear is not None
+    for cyear, offer in out.offer.items():
+        for major in offer.major.values():
             spec = CurriculumSpec(
                 cyear=cyear,
-                major=major.CodMajor,
+                major=MajorCode(major.code),
                 minor=None,
                 title=None,
             )
@@ -79,7 +93,7 @@ async def collate_plans() -> CurriculumStorage:
                 out,
                 spec,
                 siding,
-                siding.plans[cyear].plans[major.CodMajor],
+                siding.plans[cyear].plans[major.code],
             )
 
     # Agregar el plan comun
@@ -87,14 +101,12 @@ async def collate_plans() -> CurriculumStorage:
 
     # Los minors se traducen desde la informacion scrapeada, y posiblemente ayudados por
     # los datos de SIDING
-    for minor in siding.minors:
-        for cyear_str in decode_cyears(minor.Curriculum):
-            cyear = Cyear.from_str(cyear_str)
-            assert cyear is not None
+    for cyear, offer in out.offer.items():
+        for minor in offer.minor.values():
             spec = CurriculumSpec(
                 cyear=cyear,
                 major=None,
-                minor=minor.CodMinor,
+                minor=MinorCode(minor.code),
                 title=None,
             )
             translate_minor(
@@ -102,29 +114,27 @@ async def collate_plans() -> CurriculumStorage:
                 out,
                 spec,
                 minor,
-                siding.plans[cyear].plans[minor.CodMinor],
-                scraped.minors[minor.CodMinor],
+                siding.plans[cyear].plans[minor.code],
+                scraped.minors[minor.code],
             )
 
     # Los titulos se traducen desde la informacion scrapeada combinada con los datos de
     # SIDING
-    for title in siding.titles:
-        for cyear_str in decode_cyears(title.Curriculum):
-            cyear = Cyear.from_str(cyear_str)
-            assert cyear is not None
+    for cyear, offer in out.offer.items():
+        for title in offer.title.values():
             spec = CurriculumSpec(
                 cyear=cyear,
                 major=None,
                 minor=None,
-                title=title.CodTitulo,
+                title=TitleCode(title.code),
             )
             translate_title(
                 courseinfo,
                 out,
                 spec,
                 title,
-                siding.plans[cyear].plans[title.CodTitulo],
-                scraped.titles[title.CodTitulo],
+                siding.plans[cyear].plans[title.code],
+                scraped.titles[title.code],
             )
 
     # Aplicar los ultimos parches faltantes
@@ -175,95 +185,141 @@ async def collate_plans() -> CurriculumStorage:
     return out
 
 
-def filter_relevant_programs(siding: SidingInfo, scraped: ScrapedInfo):
-    # Filtrar los majors que realmente estan disponibles
-    # Los majors no disponibles tienen informacion basura, que corresponde a otros
-    # programas
-    # Hay que filtrar esta basura
-    new_majors: list[Major] = []
-    for major in siding.majors:
-        for cyear_str in decode_cyears(major.Curriculum):
-            cyear = Cyear.from_str(cyear_str)
+@dataclass
+class FilteredCounter:
+    not_in_scrape: set[str] = field(default_factory=set)
+    no_malla: set[str] = field(default_factory=set)
+    not_in_offer: set[str] = field(default_factory=set)
+
+
+def extract_true_offer(
+    kind: str,
+    offer: list[Major] | list[Minor] | list[Titulo],
+    siding: SidingInfo,
+    scraped: Iterable[str],
+    out: defaultdict[Cyear, ProgramOffer],
+    require_siding: bool,
+):
+    counter = FilteredCounter()
+
+    # Here, it's clear that filtering a list of a single type will result in a list of a
+    # single type
+    # However, Python thinks it may result in a list of mixed types, so a type: ignore
+    # is needed
+    for program in offer:
+        for cyear_str in decode_cyears(program.Curriculum):
+            cyear = cyear_from_str(cyear_str)
             assert cyear is not None
-            blocks = filter_relevant_blocks(
-                major.Nombre,
-                siding.plans[cyear].plans[major.CodMajor],
-                True,
+            result = filter_program(
+                cyear,
+                program,
+                siding,
+                set(scraped),
+                counter,
+                require_siding,
             )
-            if blocks is not None:
-                new_majors.append(major)
-                siding.plans[cyear].plans[major.CodMajor] = blocks
-            else:
-                log.warning(
-                    "el major %s no esta disponible en la base de datos de SIDING",
-                    major.CodMajor,
-                )
-    siding.majors = new_majors
+            if result is not None:
+                if isinstance(program, Major):
+                    out[cyear].major[result.code] = result
+                elif isinstance(program, Minor):
+                    out[cyear].minor[result.code] = result
+                else:
+                    out[cyear].title[result.code] = result
 
-    # Filtrar los minors por los que estan realmente disponibles en la informacion
-    # scrapeada
-    new_minors: list[Minor] = []
-    for minor in siding.minors:
-        if minor.CodMinor not in scraped.minors:
-            log.warning(
-                "el minor %s esta en la oferta de SIDING pero no esta"
-                " en el scrape de los planes de estudio, skipeandolo",
-            )
-            continue
-        new_minors.append(minor)
+    # Make sure all scraped plans are present in the offer
+    available: set[str] = set()
+    for program in offer:
+        if isinstance(program, Major):
+            available.add(program.CodMajor)
+        elif isinstance(program, Minor):
+            available.add(program.CodMinor)
+        else:
+            available.add(program.CodTitulo)
+    for code in scraped:
+        if code not in available:
+            counter.not_in_offer.add(code)
 
-        for cyear_str in decode_cyears(minor.Curriculum):
-            cyear = Cyear.from_str(cyear_str)
-            assert cyear is not None
-            blocks = filter_relevant_blocks(
-                minor.Nombre,
-                siding.plans[cyear].plans[minor.CodMinor],
-                False,
-            )
-            if blocks is None:
-                log.warning(
-                    "el plan para el minor %s no esta disponible en SIDING",
-                    minor.CodMinor,
-                )
-                blocks = []
-            siding.plans[cyear].plans[minor.CodMinor] = blocks
-    siding.minors = new_minors
+    # Print results
+    if counter.not_in_scrape:
+        log.warning(
+            "%s %ss in SIDING offer but not in scraped list: %s",
+            len(counter.not_in_scrape),
+            kind,
+            counter.not_in_scrape,
+        )
+    if counter.no_malla:
+        log.warning(
+            "%s %ss are in SIDING offer and scrape"
+            ", but have no associated SIDING malla: %s",
+            len(counter.no_malla),
+            kind,
+            counter.no_malla,
+        )
+    if counter.not_in_offer:
+        log.warning(
+            "%s %ss in scrape but missing from SIDING offer: %s",
+            len(counter.not_in_offer),
+            kind,
+            counter.not_in_offer,
+        )
 
-    # Filtrar los titulos por los que estan realmente disponibles en la informacion
-    # scrapeada
-    new_titles: list[Titulo] = []
-    for title in siding.titles:
-        if title.CodTitulo not in scraped.titles:
-            log.warning(
-                "el titulo %s esta en la oferta de SIDING pero no esta"
-                " en el scrape de los planes de estudio, skipeandolo",
-            )
-            continue
-        new_titles.append(title)
 
-        for cyear_str in decode_cyears(title.Curriculum):
-            cyear = Cyear.from_str(cyear_str)
-            assert cyear is not None
-            blocks = filter_relevant_blocks(
-                title.Nombre,
-                siding.plans[cyear].plans[title.CodTitulo],
-                False,
-            )
-            if blocks is None:
-                log.warning(
-                    "el plan para el titulo %s no esta disponible en SIDING",
-                    title.CodTitulo,
-                )
-                blocks = []
-            siding.plans[cyear].plans[title.CodTitulo] = blocks
-    siding.titles = new_titles
+def filter_program(
+    cyear: Cyear,
+    program: Major | Minor | Titulo,
+    siding: SidingInfo,
+    scraped: set[str],
+    counter: FilteredCounter,
+    require_siding: bool,
+) -> ProgramDetails | None:
+    """
+    Procesar el programa `program`, y convertirlo en un `ProgramDetails`.
+    Si determinamos que este programa no esta realmente disponible, retornamos `None`.
+    """
+
+    keep_others = False
+    if isinstance(program, Major):
+        code = program.CodMajor
+        version = program.VersionMajor
+        program_type = ""
+        keep_others = True
+    elif isinstance(program, Minor):
+        code = program.CodMinor
+        version = program.VersionMinor
+        program_type = program.TipoMinor
+    else:
+        code = program.CodTitulo
+        version = program.VersionTitulo
+        program_type = program.TipoTitulo
+
+    if code not in scraped:
+        counter.not_in_scrape.add(code)
+        return None
+
+    blocks = filter_relevant_blocks(
+        program.Nombre,
+        siding.plans[cyear].plans[code],
+        keep_others,
+    )
+    if not blocks:
+        counter.no_malla.add(code)
+        if require_siding:
+            return None
+    siding.plans[cyear].plans[code] = blocks
+
+    return ProgramDetails(
+        code=code,
+        name=program.Nombre,
+        version=version or "",
+        program_type=program_type,
+    )
 
 
 def filter_relevant_blocks(
     plan_name: str,
     plan: list[BloqueMalla],
     keep_others: bool,
-) -> list[BloqueMalla] | None:
+) -> list[BloqueMalla]:
     for block in plan:
         if _is_block_relevant(plan_name, block):
             break
@@ -271,7 +327,12 @@ def filter_relevant_blocks(
         # No hay ningun bloque que calce con el nombre del plan!
         # Es decir, los bloques del plan no tienen nada que ver con lo que se pidio, y
         # por ende el plan es probablemente basura
-        return None
+        return []
+
+    for block in plan:
+        if block.CodSigla is None and block.CodLista is None:
+            # Que hacer con este bloque??
+            return []
 
     return [
         block for block in plan if _is_block_relevant(plan_name, block) or keep_others
@@ -280,6 +341,19 @@ def filter_relevant_blocks(
 
 def _is_block_relevant(plan_name: str, block: BloqueMalla) -> bool:
     return block.Programa == plan_name or block.Programa == "Plan Común"
+
+
+def extract_major_minor_associations(siding: SidingInfo, out: CurriculumStorage):
+    """
+    Extraer la asociacion entre majors y minors a partir de la informacion de SIDING.
+    """
+    for _cyear, offer in out.offer.items():
+        for major_code in offer.major:
+            offer.major_minor[major_code] = [
+                minor.CodMinor
+                for minor in siding.major_minor[major_code]
+                if minor.CodMinor in offer.minor
+            ]
 
 
 def detect_homogeneous(courseinfo: CourseInfo, out: CurriculumStorage):

@@ -18,7 +18,6 @@ router = APIRouter(prefix="/admin")
 async def sync_database(
     courses: bool,
     curriculums: bool,
-    offer: bool,
     packedcourses: bool,
     admin: AdminKey = Depends(require_admin_auth),
 ):
@@ -31,7 +30,6 @@ async def sync_database(
     await sync.run_upstream_sync(
         courses=courses,
         curriculums=curriculums,
-        offer=offer,
         packedcourses=packedcourses,
     )
     return {

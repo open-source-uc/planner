@@ -1,17 +1,35 @@
+from collections import defaultdict
 from collections.abc import Iterator
 from itertools import chain
 
 from pydantic import BaseModel, Field
 
 from app.plan.courseinfo import EquivDetails
-from app.plan.validation.curriculum.tree import Curriculum, CurriculumSpec
+from app.plan.validation.curriculum.tree import Curriculum, CurriculumSpec, Cyear
 
 
 def _try_get(dict: dict[str, Curriculum], spec: CurriculumSpec) -> Curriculum | None:
     return dict.get(spec.json())
 
 
+class ProgramDetails(BaseModel):
+    code: str
+    name: str
+    version: str
+    program_type: str
+
+
+class ProgramOffer(BaseModel):
+    major: dict[str, ProgramDetails] = Field(default_factory=dict)
+    minor: dict[str, ProgramDetails] = Field(default_factory=dict)
+    title: dict[str, ProgramDetails] = Field(default_factory=dict)
+    major_minor: dict[str, list[str]] = Field(default_factory=dict)
+
+
 class CurriculumStorage(BaseModel):
+    offer: defaultdict[Cyear, ProgramOffer] = Field(
+        default_factory=lambda: defaultdict(ProgramOffer),
+    )
     majors: dict[str, Curriculum] = Field(default_factory=dict)
     minors: dict[str, Curriculum] = Field(default_factory=dict)
     titles: dict[str, Curriculum] = Field(default_factory=dict)
