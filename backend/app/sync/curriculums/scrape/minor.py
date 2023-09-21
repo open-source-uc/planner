@@ -258,7 +258,12 @@ def process_block(
         )
         for code, or_operator in course_codes:
             if or_operator:
-                log.warning("course in equivalence has 'o' operator: %s", course_codes)
+                log.warning(
+                    "course %s in equivalence %s in minor %s has 'o' operator",
+                    code,
+                    name or "?",
+                    out.code,
+                )
             block.options.append(code)
         out.blocks.append(block)
 
