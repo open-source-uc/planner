@@ -10,7 +10,7 @@ import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react'
 import { type CourseDetails, type Major, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise } from '../../client'
-import { type CourseId, type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type PlanDigest, type ValidationDigest, isApiError, isCancelError, isCourseRequirementErr } from './utils/Types'
+import { type CourseId, type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type PlanDigest, type ValidationDigest, isApiError, isCancelError, isCourseRequirementErr, Cyear } from './utils/Types'
 import { validateCourseMovement, updateClassesState, getCoursePos } from './utils/planBoardFunctions'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
@@ -49,9 +49,9 @@ const Planner = (): JSX.Element => {
   const [plannerStatus, setPlannerStatus] = useState<PlannerStatus>(PlannerStatus.LOADING)
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [popUpAlert, setPopUpAlert] = useState<{ title: string, major?: string, year?: 'C2020' | 'C2022', deleteMajor: boolean, desc: string, isOpen: boolean }>({ title: '', major: '', deleteMajor: false, desc: '', isOpen: false })
+  const [popUpAlert, setPopUpAlert] = useState<{ title: string, major?: string, year?: Cyear, deleteMajor: boolean, desc: string, isOpen: boolean }>({ title: '', major: '', deleteMajor: false, desc: '', isOpen: false })
 
-  const previousCurriculum = useRef<{ major: string | undefined, minor: string | undefined, title: string | undefined, cyear?: 'C2020' | 'C2022' }>({ major: '', minor: '', title: '' })
+  const previousCurriculum = useRef<{ major: string | undefined, minor: string | undefined, title: string | undefined, cyear?: Cyear }>({ major: '', minor: '', title: '' })
   const previousClasses = useRef<PseudoCourseId[][]>([[]])
 
   const [validationPromise, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
@@ -199,7 +199,7 @@ const Planner = (): JSX.Element => {
       })
       await Promise.all([
         getCourseDetails(response.classes.flat()),
-        loadCurriculumsData(response.curriculum.cyear.raw, response.curriculum.major),
+        loadCurriculumsData(response.curriculum.cyear, response.curriculum.major),
         validate(response)
       ])
       setValidatablePlan(response)
@@ -215,7 +215,7 @@ const Planner = (): JSX.Element => {
       const response: PlanView = await DefaultService.readPlan(id)
       await Promise.all([
         getCourseDetails(response.validatable_plan.classes.flat()),
-        loadCurriculumsData(response.validatable_plan.curriculum.cyear.raw, response.validatable_plan.curriculum.major),
+        loadCurriculumsData(response.validatable_plan.curriculum.cyear, response.validatable_plan.curriculum.major),
         validate(response.validatable_plan)
       ])
       setValidatablePlan(response.validatable_plan)
@@ -284,7 +284,7 @@ const Planner = (): JSX.Element => {
           major: validatablePlan.curriculum.major,
           minor: validatablePlan.curriculum.minor,
           title: validatablePlan.curriculum.title,
-          cyear: validatablePlan.curriculum.cyear.raw
+          cyear: validatablePlan.curriculum.cyear
         }
         return
       }
@@ -296,7 +296,7 @@ const Planner = (): JSX.Element => {
         major: validatablePlan.curriculum.major,
         minor: validatablePlan.curriculum.minor,
         title: validatablePlan.curriculum.title,
-        cyear: validatablePlan.curriculum.cyear.raw
+        cyear: validatablePlan.curriculum.cyear
       }
       // Order diagnostics by putting errors first, then warnings.
       response.diagnostics.sort((a, b) => {
@@ -591,10 +591,10 @@ const Planner = (): JSX.Element => {
     setValidatablePlan(null)
   }, [setPlannerStatus, setValidatablePlan])
 
-  const selectYear = useCallback((cYear: 'C2020' | 'C2022', isMajorValid: boolean, isMinorValid: boolean): void => {
+  const selectYear = useCallback((cYear: Cyear, isMajorValid: boolean, isMinorValid: boolean): void => {
     setValidatablePlan((prev) => {
-      if (prev == null || prev.curriculum.cyear.raw === cYear) return prev
-      const newCurriculum = { ...prev.curriculum, cyear: { raw: cYear } }
+      if (prev == null || prev.curriculum.cyear === cYear) return prev
+      const newCurriculum = { ...prev.curriculum, cyear: cYear }
       const newClasses = [...prev.classes]
       newClasses.splice(authState?.student?.next_semester ?? 0)
       if (!isMinorValid) {
@@ -651,7 +651,7 @@ const Planner = (): JSX.Element => {
     }
   }, [validatablePlan?.curriculum, setPopUpAlert, selectMajor]) // this sensitivity list shouldn't contain frequently-changing attributes
 
-  const checkMajorAndMinorForNewYear = useCallback(async (cyear: 'C2020' | 'C2022'): Promise<void> => {
+  const checkMajorAndMinorForNewYear = useCallback(async (cyear: Cyear): Promise<void> => {
     const newMajors = await DefaultService.getMajors(cyear)
     const isValidMajor = validatablePlan?.curriculum.major === null || validatablePlan?.curriculum.major === undefined || newMajors.some(m => m.code === validatablePlan?.curriculum.major)
 
@@ -716,7 +716,7 @@ const Planner = (): JSX.Element => {
           major !== previousCurriculum.current.major ||
           minor !== previousCurriculum.current.minor ||
           title !== previousCurriculum.current.title ||
-          cyear.raw !== previousCurriculum.current.cyear
+          cyear !== previousCurriculum.current.cyear
       if (curriculumChanged) {
         setPlannerStatus(PlannerStatus.LOADING)
       } else {

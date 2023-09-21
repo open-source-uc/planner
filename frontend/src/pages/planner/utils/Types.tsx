@@ -1,11 +1,12 @@
 
-import { type CourseRequirementErr, type UnknownCourseErr, type SemestralityWarn, type UnavailableCourseWarn, type AmbiguousCourseErr, type ApiError, type Major, type Minor, type Title, type CourseDetails, type EquivDetails, type ConcreteId, type EquivalenceId } from '../../../client'
+import { type CourseRequirementErr, type UnknownCourseErr, type SemestralityWarn, type UnavailableCourseWarn, type AmbiguousCourseErr, type ApiError, type Major, type Minor, type Title, type CourseDetails, type EquivDetails, type ConcreteId, type EquivalenceId, CurriculumSpec } from '../../../client'
 
 export interface CoursePos { semester: number, index: number }
 export interface CourseId { code: string, instance: number }
 export type PseudoCourseId = ConcreteId | EquivalenceId
 export type PseudoCourseDetail = CourseDetails | EquivDetails
 export type ModalData = { equivalence: EquivDetails | undefined, selector: boolean, semester: number, index?: number } | undefined
+export type Cyear = CurriculumSpec['cyear']
 
 export interface CurriculumData {
   majors: Record<string, Major>

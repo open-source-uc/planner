@@ -14,6 +14,7 @@ from app.plan.validation.curriculum.tree import (
     Cyear,
     FillerCourse,
     Leaf,
+    cyear_from_str,
 )
 from app.sync.curriculums.storage import CurriculumStorage
 from app.sync.siding import client as siding_client
@@ -148,7 +149,7 @@ async def fetch_siding_plans(siding: SidingInfo):
         if major.Curriculum is None:
             continue
         for cyear_str in major.Curriculum.strings.string:
-            cyear = Cyear.from_str(cyear_str)
+            cyear = cyear_from_str(cyear_str)
             if cyear is None:
                 log.error(
                     "el major %s tiene version de curriculum %s que no esta soportada",
@@ -171,7 +172,7 @@ async def fetch_siding_plans(siding: SidingInfo):
         if minor.Curriculum is None:
             continue
         for cyear_str in minor.Curriculum.strings.string:
-            cyear = Cyear.from_str(cyear_str)
+            cyear = cyear_from_str(cyear_str)
             if cyear is None:
                 log.error(
                     "el minor %s tiene version de curriculum %s que no esta soportada",
@@ -194,7 +195,7 @@ async def fetch_siding_plans(siding: SidingInfo):
         if title.Curriculum is None:
             continue
         for cyear_str in title.Curriculum.strings.string:
-            cyear = Cyear.from_str(cyear_str)
+            cyear = cyear_from_str(cyear_str)
             if cyear is None:
                 log.error(
                     "el titulo %s tiene version de curriculum %s que no esta soportada",
