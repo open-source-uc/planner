@@ -8,9 +8,13 @@ from app.plan.validation.curriculum.tree import (
     Combination,
     Curriculum,
     CurriculumSpec,
+    Cyear,
     Leaf,
     Multiplicity,
 )
+from app.sync.curriculums.siding import SidingInfo, translate_siding
+from app.sync.curriculums.storage import CurriculumStorage
+from app.sync.siding.client import BloqueMalla
 
 
 def _skip_extras(curriculum: Curriculum):
@@ -57,6 +61,23 @@ C2022_SUPERBLOCK_TABLE = {
 }
 
 
+def _map_bloqueacademico(cyear: Cyear, bloque_academico: str) -> str:
+    """
+    Mapear un bloque academico de SIDING en un superblock id.
+    """
+    # Heuristica: tomar la primera palabra, normalizarla (quitarle los tildes y todo
+    # a minúscula) y buscar en una tabla hardcodeada.
+    id_words = unidecode(bloque_academico).lower().split()
+    if len(id_words) < 1:
+        return bloque_academico
+    match cyear.raw:
+        case "C2020":
+            superblock_table = C2020_SUPERBLOCK_TABLE
+        case "C2022":
+            superblock_table = C2022_SUPERBLOCK_TABLE
+    return superblock_table.get(id_words[0], bloque_academico)
+
+
 def _identify_superblocks(spec: CurriculumSpec, curriculum: Curriculum):
     # Cambia los codigos de los bloques academicos a nombres "machine readable".
     # Por ejemplo, cambia "Ingeniero Civil en Computación" a 'title'
@@ -64,17 +85,7 @@ def _identify_superblocks(spec: CurriculumSpec, curriculum: Curriculum):
         if not superblock.block_code.startswith(SUPERBLOCK_PREFIX):
             continue
         og_superblock_id = superblock.block_code[len(SUPERBLOCK_PREFIX) :]
-        # Heuristica: tomar la primera palabra, normalizarla (quitarle los tildes y todo
-        # a minúscula) y buscar en una tabla hardcodeada.
-        id_words = unidecode(og_superblock_id).lower().split()
-        if len(id_words) < 1:
-            continue
-        match spec.cyear.raw:
-            case "C2020":
-                superblock_table = C2020_SUPERBLOCK_TABLE
-            case "C2022":
-                superblock_table = C2022_SUPERBLOCK_TABLE
-        superblock_id = superblock_table.get(id_words[0], og_superblock_id)
+        superblock_id = _map_bloqueacademico(spec.cyear, og_superblock_id)
         superblock.block_code = f"{SUPERBLOCK_PREFIX}{superblock_id}"
 
 
@@ -358,4 +369,65 @@ def patch_major(
             _c2022_defer_free_area_ofg(curr)
             _allow_selection_duplication(courseinfo, curr)
 
+    # TODO: Marcar termodinamica, electromagnetismo y optimizacion como equivalencias
+    # homogeneas.
+    # TODO: Marcar los OFGs y los teologicos como equivalencias no esenciales.
+    # TODO: Agregar los optativos de ciencias a la lista L1.
+
     return curr
+
+
+def translate_major(
+    courseinfo: CourseInfo,
+    out: CurriculumStorage,
+    spec: CurriculumSpec,
+    siding: SidingInfo,
+    raw_blocks: list[BloqueMalla],
+):
+    # Traducir la malla de SIDING en un curriculum nativo pero incompleto
+    curr = translate_siding(courseinfo, out, siding, raw_blocks)
+
+    # Completar los detalles faltantes
+    curr = patch_major(courseinfo, spec, curr)
+
+    # Agregar al set de curriculums
+    out.set_major(spec, curr)
+
+
+PLANCOMUN_BASE_MAJOR = "M245"
+PLANCOMUN_SUPERBLOCKS = {"PlanComun", "FormacionGeneral"}
+
+
+def translate_common_plan(
+    courseinfo: CourseInfo,
+    out: CurriculumStorage,
+    siding: SidingInfo,
+):
+    """
+    Generar el plan comun.
+    Para esto se toma algun major arbitrario (por ahora computacion) y se eliminan los
+    ramos especificos de major.
+    """
+
+    # Generar un plan comun para cada version del curriculum
+    for cyear, mallas in siding.plans.items():
+        if PLANCOMUN_BASE_MAJOR not in mallas.plans:
+            raise Exception(
+                f"major {PLANCOMUN_BASE_MAJOR} (the base for plancomun)"
+                f" not found for cyear {cyear.raw}",
+            )
+        # Filtrar por bloque academico
+        filtered_blocks = [
+            block
+            for block in mallas.plans[PLANCOMUN_BASE_MAJOR]
+            if _map_bloqueacademico(cyear, block.BloqueAcademico or "")
+            in PLANCOMUN_SUPERBLOCKS
+        ]
+        # Traducir como un major cualquiera, pero sin un major particular
+        translate_major(
+            courseinfo,
+            out,
+            CurriculumSpec(cyear=cyear, major=None, minor=None, title=None),
+            siding,
+            filtered_blocks,
+        )

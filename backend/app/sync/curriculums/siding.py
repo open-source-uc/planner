@@ -209,7 +209,7 @@ def translate_siding(
             # Concrete course
             code = raw_block.CodSigla
             recommended = ConcreteId(code=code)
-            codes = {code}
+            codes = [code]
         else:
             # Equivalence
             is_homogeneous = False
@@ -219,7 +219,17 @@ def translate_siding(
                 cursos = siding.lists.get(raw_block.CodLista)
                 if cursos is None:
                     raise Exception(f"unknown SIDING list code {raw_block.CodLista}")
-                codes = [curso.Sigla for curso in cursos if curso.Sigla is not None]
+                codes: list[str] = []
+                for curso in cursos:
+                    if curso.Sigla is None:
+                        continue
+                    if courseinfo.try_course(curso.Sigla) is None:
+                        log.warning(
+                            f"unknown course {curso.Sigla}"
+                            f" in SIDING list {raw_block.CodLista}",
+                        )
+                        continue
+                    codes.append(curso.Sigla)
             elif raw_block.CodSigla is not None and raw_block.Equivalencias is not None:
                 code = f"?{raw_block.CodSigla}"
                 codes = [raw_block.CodSigla]
