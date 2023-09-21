@@ -33,7 +33,7 @@ from app.sync.curriculums.scrape.minor import scrape_minors
 from app.sync.curriculums.scrape.title import scrape_titles
 from app.sync.curriculums.siding import SidingInfo, fetch_siding
 from app.sync.curriculums.storage import CurriculumStorage, ProgramDetails, ProgramOffer
-from app.sync.curriculums.title import translate_title
+from app.sync.curriculums.title import add_manual_title_offer, translate_title
 from app.sync.siding.client import (
     BloqueMalla,
     Major,
@@ -79,6 +79,9 @@ async def collate_plans() -> CurriculumStorage:
     # Falta extraer los majors y sus minors asociados
     extract_major_minor_associations(siding, out)
 
+    # Algunos titulos se agregan manualmente
+    add_manual_title_offer(siding, out)
+
     # Traducir los majors desde los datos de SIDING
     for cyear, offer in out.offer.items():
         for major in offer.major.values():
@@ -93,7 +96,7 @@ async def collate_plans() -> CurriculumStorage:
                 out,
                 spec,
                 siding,
-                siding.plans[cyear].plans[major.code],
+                siding.plans[cyear].plans.get(major.code, []),
             )
 
     # Agregar el plan comun
@@ -114,7 +117,7 @@ async def collate_plans() -> CurriculumStorage:
                 out,
                 spec,
                 minor,
-                siding.plans[cyear].plans[minor.code],
+                siding.plans[cyear].plans.get(minor.code, []),
                 scraped.minors[minor.code],
             )
 
@@ -133,7 +136,7 @@ async def collate_plans() -> CurriculumStorage:
                 out,
                 spec,
                 title,
-                siding.plans[cyear].plans[title.code],
+                siding.plans[cyear].plans.get(title.code, []),
                 scraped.titles[title.code],
             )
 

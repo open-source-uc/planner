@@ -6,11 +6,13 @@ from app.plan.validation.curriculum.tree import (
     CurriculumSpec,
     FillerCourse,
     Leaf,
+    cyear_from_str,
 )
 from app.sync.curriculums.scrape.minor import ScrapedProgram
 from app.sync.curriculums.scrape.translate import ProgramType, translate_scrape
+from app.sync.curriculums.siding import SidingInfo
 from app.sync.curriculums.storage import CurriculumStorage, ProgramDetails
-from app.sync.siding.client import BloqueMalla
+from app.sync.siding.client import BloqueMalla, decode_cyears
 
 TITLE_EXCLUSIVE_CREDITS = 130
 TITLE_TYPE = ProgramType(
@@ -194,3 +196,29 @@ def _ceil_div(a: int, b: int) -> int:
     Compute `ceil(a / b)` without floating-point error.
     """
     return -(a // -b)
+
+
+def add_manual_title_offer(siding: SidingInfo, out: CurriculumStorage):
+    """
+    El título 40072 esta realmente dividido en 3, y por ende Planner lo separa en 3.
+    Sin embargo, SIDING no hace esto, por lo que hay que hacerlo a mano.
+    """
+
+    special_code = "40072"
+    areas = [
+        "Área 1: Ingeniería de Procesos",
+        "Área 2: Tecnología Ambiental",
+        "Área 3: Biotecnología",
+    ]
+
+    special = next(title for title in siding.titles if title.CodTitulo == special_code)
+    for cyear_str in decode_cyears(special.Curriculum):
+        cyear = cyear_from_str(cyear_str)
+        assert cyear is not None
+        for i, areaname in enumerate(areas):
+            out.offer[cyear].title[f"{special_code}-{i+1}"] = ProgramDetails(
+                code=f"{special_code}-{i+1}",
+                name=f"{special.Nombre} - {areaname}",
+                version=special.VersionTitulo or "",
+                program_type=special.TipoTitulo,
+            )
