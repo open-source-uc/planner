@@ -1,6 +1,10 @@
 """
 Este script descarga las mallas desde SIDING y las almacena en
 `/siding-mock-data/mallas.json`.
+
+Si hay algun cambio en SIDING hay que correr este script nuevamente.
+En `/siding-mock-data/README.md` estan las razones por las que es buena idea hacer
+manuales las actualizaciones desde SIDING, al menos por ahora.
 """
 
 from pathlib import Path
