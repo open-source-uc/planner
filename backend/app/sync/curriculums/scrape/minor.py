@@ -33,7 +33,7 @@ REGEX_MINOR_CODE = re.compile(r"(N[\d]{3}(?:-\d)?)\)")
 REGEX_BLOCK_SPLITTER = re.compile(
     r"(?P<split>"
     r"(?:Mínimo)"
-    r"|(?:(?:(?:Aprobar)|(?:Elegir)|(?:Optativos))"
+    r"|(?:(?:(?:[Aa]probar)|(?:Elegir)|(?:Optativos))"
     r" (?P<cr1>\d+) cr(?P<comp1>[^\n]*\(b\))?)"
     r"|(?:Optativos ?(?:Complementarios)? ?(?P<comp2>\(b\)))"
     r"|(?P<bad>Optativos(?:(?: [^\d\(C])|\n))"
