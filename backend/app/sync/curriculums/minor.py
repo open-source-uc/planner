@@ -79,13 +79,13 @@ def _patch_n290(
             code=equiv_code,
             is_homogeneous=False,
             is_unessential=False,
-            name="Optativos",
+            name="Optativos Minor",
             courses=[],
         )
 
         # Los cursos que no tienen limite conjunto de creditaje
         direct_requirements = Leaf(
-            debug_name="Optativos (genérico)",
+            debug_name="Optativos Minor (genérico)",
             block_code=f"courses:{equiv_code}",
             name=None,
             cap=N290_CREDITS,
@@ -110,6 +110,7 @@ def _patch_n290(
                 }
                 new_blocks.append(block)
                 equiv.courses.extend(block.codes)
+                block.codes.add(equiv_code)
 
         # Actualizar el superbloque resultante
         superblock.cap = N290_CREDITS
