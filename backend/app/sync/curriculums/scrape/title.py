@@ -15,6 +15,7 @@ import re
 from pathlib import Path
 
 from app.plan.courseinfo import CourseInfo
+from app.plan.validation.curriculum.tree import TitleCode
 from app.sync.curriculums.scrape.common import ScrapedBlock, ScrapedProgram
 
 log = logging.getLogger("plan-collator")
@@ -48,7 +49,7 @@ REGEX_DETECT_AREA = re.compile(r"cr de [^\n]+ área")
 REGEX_IDENTIFY_AREA = re.compile(r"Área \d+: ([^\n\(]+)")
 
 
-def scrape_titles(courseinfo: CourseInfo) -> dict[str, ScrapedProgram]:
+def scrape_titles(courseinfo: CourseInfo) -> dict[TitleCode, ScrapedProgram]:
     log.debug("scraping titles...")
 
     # Load raw pre-scraped text
@@ -58,20 +59,27 @@ def scrape_titles(courseinfo: CourseInfo) -> dict[str, ScrapedProgram]:
     raw_by_title = REGEX_TITLE_CODE.split(raw)
     raw_by_title.pop(0)  # Remove junk before first title code
 
-    titles: dict[str, ScrapedProgram] = {}
+    titles: dict[TitleCode, ScrapedProgram] = {}
     for title_code, title_raw in zip(
         raw_by_title[::2],
         raw_by_title[1::2],
         strict=True,
     ):
+        title_code = TitleCode(title_code)
         titles[title_code] = scrape_title(courseinfo, title_code, title_raw)
 
     return titles
 
 
-def scrape_title(courseinfo: CourseInfo, code: str, raw: str) -> ScrapedProgram:
+def scrape_title(courseinfo: CourseInfo, code: TitleCode, raw: str) -> ScrapedProgram:
     log.debug("scraping title '%s'", code)
-    out = ScrapedProgram(code=code, blocks=[])
+    out = ScrapedProgram(
+        code=code,
+        assoc_major=None,
+        assoc_minor=None,
+        assoc_title=code,
+        blocks=[],
+    )
 
     # Eliminar la practica 2, no nos interesa
     raw = raw.replace("ING2001", "")
