@@ -46,9 +46,9 @@ log = logging.getLogger("plan-collator")
 
 
 class ScrapedInfo(BaseModel):
-    majors: set[str]
-    minors: dict[str, ScrapedProgram]
-    titles: dict[str, ScrapedProgram]
+    majors: set[MajorCode]
+    minors: dict[MinorCode, list[ScrapedProgram]]
+    titles: dict[TitleCode, ScrapedProgram]
 
 
 async def collate_plans() -> CurriculumStorage:
@@ -105,31 +105,33 @@ async def collate_plans() -> CurriculumStorage:
     # Los minors se traducen desde la informacion scrapeada, y posiblemente ayudados por
     # los datos de SIDING
     for cyear, offer in out.offer.items():
-        for minor in offer.minor.values():
-            spec = CurriculumSpec(
-                cyear=cyear,
-                major=None,
-                minor=MinorCode(minor.code),
-                title=None,
-            )
-            translate_minor(
-                courseinfo,
-                out,
-                spec,
-                minor,
-                siding.plans[cyear].plans.get(minor.code, []),
-                scraped.minors[minor.code],
-            )
+        for minor_meta in offer.minor.values():
+            for minor_scrape in scraped.minors[MinorCode(minor_meta.code)]:
+                spec = CurriculumSpec(
+                    cyear=cyear,
+                    major=minor_scrape.assoc_major,
+                    minor=minor_scrape.assoc_minor,
+                    title=minor_scrape.assoc_title,
+                )
+                translate_minor(
+                    courseinfo,
+                    out,
+                    spec,
+                    minor_meta,
+                    siding.plans[cyear].plans.get(minor_meta.code, []),
+                    minor_scrape,
+                )
 
     # Los titulos se traducen desde la informacion scrapeada combinada con los datos de
     # SIDING
     for cyear, offer in out.offer.items():
         for title in offer.title.values():
+            scrape = scraped.titles[TitleCode(title.code)]
             spec = CurriculumSpec(
                 cyear=cyear,
-                major=None,
-                minor=None,
-                title=TitleCode(title.code),
+                major=scrape.assoc_major,
+                minor=scrape.assoc_minor,
+                title=scrape.assoc_title,
             )
             translate_title(
                 courseinfo,
@@ -137,7 +139,7 @@ async def collate_plans() -> CurriculumStorage:
                 spec,
                 title,
                 siding.plans[cyear].plans.get(title.code, []),
-                scraped.titles[title.code],
+                scrape,
             )
 
     # Aplicar los ultimos parches faltantes

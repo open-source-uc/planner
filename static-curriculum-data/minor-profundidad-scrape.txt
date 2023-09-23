@@ -29,7 +29,7 @@ ICS2813
 10
 10
 10
-Optativos (f) (b)
+Optativos (f) (b)  <--- este ( b ) fue agregado manualmente para que el scraper considerara este optativo como complementario
 Elegir 20 cr de un área diferente a la cursada en el Major
 Ingeniería Ambiental
 ICH2304
@@ -69,7 +69,7 @@ ICS2813
 10
 10
 10
-Optativos (f) (b)
+Optativos (f) (b)  <--- este ( b ) fue agregado manualmente para que el scraper considerara este optativo como complementario
 Elegir 20 cr de un área diferente a la cursada en el Major
 EYP2114
 Inferencia Estadística
@@ -132,7 +132,7 @@ ICS2813
 10
 10
 10
-Optativos (f) (b)
+Optativos (f) (b)  <--- este ( b ) fue agregado manualmente para que el scraper considerara este optativo como complementario
 Elegir 20 cr de un área diferente a la cursada en el Major
 IIC1253
 Matemáticas Discretas
@@ -179,7 +179,7 @@ ICS2813
 10
 10
 10
-Optativos (f) (b)
+Optativos (f) (b)  <--- este ( b ) fue agregado manualmente para que el scraper considerara este optativo como complementario
 Elegir 20 cr de un área diferente a la cursada en el Major
 ICT2443
 Ingeniería Logística
@@ -796,3 +796,593 @@ ICC2354
 Diseño de Edificios Sustentables
 ICE2703
 Ingeniería Antisísmica
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+el minor N290 se asocia a varios majors
+asociado a M231, M232, M180, M181, M182, M183, M170, M238, M234, M192, M235, M237
+dependiendo del major con el que se tome se excluyen distintas areas
+por ende, se incluyen varias copias del minor, una para cada eleccion de major
+
+<--- version asociada a Geociencias
+3.1 (M231-N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02 (o)
+Mínimos <--- agregado manualmente para que el scraper pesque estos ramos
+Área Construcción
+ICC2204
+Planificación y Control de Proyectos
+ICC2304
+Ingeniería de Construcción
+Área Estructural
+Estática
+ICE2006
+Análisis Estructural I
+ICE2114
+ICE2313
+Mecánica de Sólidos
+Área Geotecnia
+ICE2604
+Fundamentos de Geotecnia
+Área Hidráulica
+ICH2114
+Ingeniería Hidráulica
+ICH1104
+Mecánica de Fluidos
+Área Ambiental
+ICH2304
+Ingeniería Ambiental
+Área Materiales de Ingeniería
+ICC2105
+Materiales de Ingeniería Civil
+Área Transporte
+Elegir 10 cr entre:
+ICT2904
+Ingeniería de Sistemas de Transporte
+Ingeniería Vial
+ICC2514
+Área Diseño
+Elegir 10 cr entre: <--- manualmente movido al final para que queden solo estos ultimos ramos como optativo
+ICE2403
+Diseño Estructural
+Diseño y Construccion en Madera
+ICC2454
+Hormigón Armado
+ICE2413
+Estructuras de Acero
+ICE2533
+
+<--- version asociada a Estructural
+3.1 (M232-N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02 (o)
+Mínimos <--- agregado manualmente para que el scraper pesque estos ramos
+Área Construcción
+ICC2204
+Planificación y Control de Proyectos
+ICC2304
+Ingeniería de Construcción
+Área Estructural
+<--- aca iba el area de estructural, que se elimino manualmente
+Área Geotecnia
+ICE2604
+Fundamentos de Geotecnia
+Área Hidráulica
+ICH2114
+Ingeniería Hidráulica
+ICH1104
+Mecánica de Fluidos
+Área Ambiental
+ICH2304
+Ingeniería Ambiental
+Área Materiales de Ingeniería
+ICC2105
+Materiales de Ingeniería Civil
+Área Transporte
+Elegir 10 cr entre:
+ICT2904
+Ingeniería de Sistemas de Transporte
+Ingeniería Vial
+ICC2514
+Área Diseño
+Elegir 10 cr entre: <--- manualmente movido al final para que queden solo estos ultimos ramos como optativo
+ICE2403
+Diseño Estructural
+Diseño y Construccion en Madera
+ICC2454
+Hormigón Armado
+ICE2413
+Estructuras de Acero
+ICE2533
+
+<--- version asociada a Transporte (Area 1)
+3.1 (M180-N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02 (o)
+Mínimos <--- agregado manualmente para que el scraper pesque estos ramos
+Área Construcción
+ICC2204
+Planificación y Control de Proyectos
+ICC2304
+Ingeniería de Construcción
+Área Estructural
+Estática
+ICE2006
+Análisis Estructural I
+ICE2114
+ICE2313
+Mecánica de Sólidos
+Área Geotecnia
+ICE2604
+Fundamentos de Geotecnia
+Área Hidráulica
+ICH2114
+Ingeniería Hidráulica
+ICH1104
+Mecánica de Fluidos
+Área Ambiental
+ICH2304
+Ingeniería Ambiental
+Área Materiales de Ingeniería
+ICC2105
+Materiales de Ingeniería Civil
+Área Transporte
+<--- aca iba el area de transporte, que se elimino manualmente
+Área Diseño
+Elegir 10 cr entre: <--- manualmente movido al final para que queden solo estos ultimos ramos como optativo
+ICE2403
+Diseño Estructural
+Diseño y Construccion en Madera
+ICC2454
+Hormigón Armado
+ICE2413
+Estructuras de Acero
+ICE2533
+
+<--- version asociada a Transporte (Area 2)
+3.1 (M181-N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02 (o)
+Mínimos <--- agregado manualmente para que el scraper pesque estos ramos
+Área Construcción
+ICC2204
+Planificación y Control de Proyectos
+ICC2304
+Ingeniería de Construcción
+Área Estructural
+Estática
+ICE2006
+Análisis Estructural I
+ICE2114
+ICE2313
+Mecánica de Sólidos
+Área Geotecnia
+ICE2604
+Fundamentos de Geotecnia
+Área Hidráulica
+ICH2114
+Ingeniería Hidráulica
+ICH1104
+Mecánica de Fluidos
+Área Ambiental
+ICH2304
+Ingeniería Ambiental
+Área Materiales de Ingeniería
+ICC2105
+Materiales de Ingeniería Civil
+Área Transporte
+<--- aca iba el area de transporte, que se elimino manualmente
+Área Diseño
+Elegir 10 cr entre: <--- manualmente movido al final para que queden solo estos ultimos ramos como optativo
+ICE2403
+Diseño Estructural
+Diseño y Construccion en Madera
+ICC2454
+Hormigón Armado
+ICE2413
+Estructuras de Acero
+ICE2533
+
+<--- version asociada a Transporte (Area 2)
+3.1 (M181-N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02 (o)
+Mínimos <--- agregado manualmente para que el scraper pesque estos ramos
+Área Construcción
+ICC2204
+Planificación y Control de Proyectos
+ICC2304
+Ingeniería de Construcción
+Área Estructural
+Estática
+ICE2006
+Análisis Estructural I
+ICE2114
+ICE2313
+Mecánica de Sólidos
+Área Geotecnia
+ICE2604
+Fundamentos de Geotecnia
+Área Hidráulica
+ICH2114
+Ingeniería Hidráulica
+ICH1104
+Mecánica de Fluidos
+Área Ambiental
+ICH2304
+Ingeniería Ambiental
+Área Materiales de Ingeniería
+ICC2105
+Materiales de Ingeniería Civil
+Área Transporte
+<--- aca iba el area de transporte, que se elimino manualmente
+Área Diseño
+Elegir 10 cr entre: <--- manualmente movido al final para que queden solo estos ultimos ramos como optativo
+ICE2403
+Diseño Estructural
+Diseño y Construccion en Madera
+ICC2454
+Hormigón Armado
+ICE2413
+Estructuras de Acero
+ICE2533
+
+<--- version asociada a Transporte (Area 3)
+3.1 (M182-N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02 (o)
+Mínimos <--- agregado manualmente para que el scraper pesque estos ramos
+Área Construcción
+ICC2204
+Planificación y Control de Proyectos
+ICC2304
+Ingeniería de Construcción
+Área Estructural
+Estática
+ICE2006
+Análisis Estructural I
+ICE2114
+ICE2313
+Mecánica de Sólidos
+Área Geotecnia
+ICE2604
+Fundamentos de Geotecnia
+Área Hidráulica
+ICH2114
+Ingeniería Hidráulica
+ICH1104
+Mecánica de Fluidos
+Área Ambiental
+ICH2304
+Ingeniería Ambiental
+Área Materiales de Ingeniería
+ICC2105
+Materiales de Ingeniería Civil
+Área Transporte
+<--- aca iba el area de transporte, que se elimino manualmente
+Área Diseño
+Elegir 10 cr entre: <--- manualmente movido al final para que queden solo estos ultimos ramos como optativo
+ICE2403
+Diseño Estructural
+Diseño y Construccion en Madera
+ICC2454
+Hormigón Armado
+ICE2413
+Estructuras de Acero
+ICE2533
+
+<--- version asociada a Transporte (Area 4)
+3.1 (M183-N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02 (o)
+Mínimos <--- agregado manualmente para que el scraper pesque estos ramos
+Área Construcción
+ICC2204
+Planificación y Control de Proyectos
+ICC2304
+Ingeniería de Construcción
+Área Estructural
+Estática
+ICE2006
+Análisis Estructural I
+ICE2114
+ICE2313
+Mecánica de Sólidos
+Área Geotecnia
+ICE2604
+Fundamentos de Geotecnia
+Área Hidráulica
+ICH2114
+Ingeniería Hidráulica
+ICH1104
+Mecánica de Fluidos
+Área Ambiental
+ICH2304
+Ingeniería Ambiental
+Área Materiales de Ingeniería
+ICC2105
+Materiales de Ingeniería Civil
+Área Transporte
+<--- aca iba el area de transporte, que se elimino manualmente
+Área Diseño
+Elegir 10 cr entre: <--- manualmente movido al final para que queden solo estos ultimos ramos como optativo
+ICE2403
+Diseño Estructural
+Diseño y Construccion en Madera
+ICC2454
+Hormigón Armado
+ICE2413
+Estructuras de Acero
+ICE2533
+
+<--- version asociada a Ambiental
+3.1 (M170-N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02 (o)
+Mínimos <--- agregado manualmente para que el scraper pesque estos ramos
+Área Construcción
+ICC2204
+Planificación y Control de Proyectos
+ICC2304
+Ingeniería de Construcción
+Área Estructural
+Estática
+ICE2006
+Análisis Estructural I
+ICE2114
+ICE2313
+Mecánica de Sólidos
+Área Geotecnia
+ICE2604
+Fundamentos de Geotecnia
+Área Hidráulica
+ICH2114
+Ingeniería Hidráulica
+ICH1104
+Mecánica de Fluidos
+Área Ambiental
+<--- aca iba el area de ambiental, que fue eliminada manualmente
+Área Materiales de Ingeniería
+ICC2105
+Materiales de Ingeniería Civil
+Área Transporte
+Elegir 10 cr entre:
+ICT2904
+Ingeniería de Sistemas de Transporte
+Ingeniería Vial
+ICC2514
+Área Diseño
+Elegir 10 cr entre: <--- manualmente movido al final para que queden solo estos ultimos ramos como optativo
+ICE2403
+Diseño Estructural
+Diseño y Construccion en Madera
+ICC2454
+Hormigón Armado
+ICE2413
+Estructuras de Acero
+ICE2533
+
+<--- version asociada a Geotecnica
+3.1 (M238-N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02 (o)
+Mínimos <--- agregado manualmente para que el scraper pesque estos ramos
+Área Construcción
+ICC2204
+Planificación y Control de Proyectos
+ICC2304
+Ingeniería de Construcción
+Área Estructural
+Estática
+ICE2006
+Análisis Estructural I
+ICE2114
+ICE2313
+Mecánica de Sólidos
+Área Geotecnia
+<--- aca iba el area de geotecnia, que se elimino manualmente
+Área Hidráulica
+ICH2114
+Ingeniería Hidráulica
+ICH1104
+Mecánica de Fluidos
+Área Ambiental
+ICH2304
+Ingeniería Ambiental
+Área Materiales de Ingeniería
+ICC2105
+Materiales de Ingeniería Civil
+Área Transporte
+Elegir 10 cr entre:
+ICT2904
+Ingeniería de Sistemas de Transporte
+Ingeniería Vial
+ICC2514
+Área Diseño
+Elegir 10 cr entre: <--- manualmente movido al final para que queden solo estos ultimos ramos como optativo
+ICE2403
+Diseño Estructural
+Diseño y Construccion en Madera
+ICC2454
+Hormigón Armado
+ICE2413
+Estructuras de Acero
+ICE2533
+
+<--- version asociada a Hidraulica
+3.1 (M234-N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02 (o)
+Mínimos <--- agregado manualmente para que el scraper pesque estos ramos
+Área Construcción
+ICC2204
+Planificación y Control de Proyectos
+ICC2304
+Ingeniería de Construcción
+Área Estructural
+Estática
+ICE2006
+Análisis Estructural I
+ICE2114
+ICE2313
+Mecánica de Sólidos
+Área Geotecnia
+ICE2604
+Fundamentos de Geotecnia
+Área Hidráulica
+<--- aca iba el area de hidraulica, que se elimino manualmente
+Área Ambiental
+ICH2304
+Ingeniería Ambiental
+Área Materiales de Ingeniería
+ICC2105
+Materiales de Ingeniería Civil
+Área Transporte
+Elegir 10 cr entre:
+ICT2904
+Ingeniería de Sistemas de Transporte
+Ingeniería Vial
+ICC2514
+Área Diseño
+Elegir 10 cr entre: <--- manualmente movido al final para que queden solo estos ultimos ramos como optativo
+ICE2403
+Diseño Estructural
+Diseño y Construccion en Madera
+ICC2454
+Hormigón Armado
+ICE2413
+Estructuras de Acero
+ICE2533
+
+<--- version asociada a Mineria
+3.1 (M192-N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02 (o)
+Mínimos <--- agregado manualmente para que el scraper pesque estos ramos
+Área Construcción
+ICC2204
+Planificación y Control de Proyectos
+ICC2304
+Ingeniería de Construcción
+Área Estructural
+Estática
+ICE2006
+Análisis Estructural I
+ICE2114
+ICE2313
+Mecánica de Sólidos
+Área Geotecnia
+ICE2604
+Fundamentos de Geotecnia
+Área Hidráulica
+ICH2114
+Ingeniería Hidráulica
+ICH1104
+Mecánica de Fluidos
+Área Ambiental
+ICH2304
+Ingeniería Ambiental
+Área Materiales de Ingeniería
+ICC2105
+Materiales de Ingeniería Civil
+Área Transporte
+Elegir 10 cr entre:
+ICT2904
+Ingeniería de Sistemas de Transporte
+Ingeniería Vial
+ICC2514
+Área Diseño
+Elegir 10 cr entre: <--- manualmente movido al final para que queden solo estos ultimos ramos como optativo
+ICE2403
+Diseño Estructural
+Diseño y Construccion en Madera
+ICC2454
+Hormigón Armado
+ICE2413
+Estructuras de Acero
+ICE2533
+
+<--- version asociada a IDI (Track Ingenieria)
+3.1 (M235-N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02 (o)
+Mínimos <--- agregado manualmente para que el scraper pesque estos ramos
+Área Construcción
+ICC2204
+Planificación y Control de Proyectos
+ICC2304
+Ingeniería de Construcción
+Área Estructural
+Estática
+ICE2006
+Análisis Estructural I
+ICE2114
+ICE2313
+Mecánica de Sólidos
+Área Geotecnia
+ICE2604
+Fundamentos de Geotecnia
+Área Hidráulica
+ICH2114
+Ingeniería Hidráulica
+ICH1104
+Mecánica de Fluidos
+Área Ambiental
+ICH2304
+Ingeniería Ambiental
+Área Materiales de Ingeniería
+ICC2105
+Materiales de Ingeniería Civil
+Área Transporte
+Elegir 10 cr entre:
+ICT2904
+Ingeniería de Sistemas de Transporte
+Ingeniería Vial
+ICC2514
+Área Diseño
+<--- aca iba el area de diseño, que se elimino manualmente
+
+<--- version asociada a IDI (Track Ingenieria y Diseño)
+3.1 (M237-N290) Minor de Profundidad de Articulación Ingeniería Civil Vs.02 (o)
+Mínimos <--- agregado manualmente para que el scraper pesque estos ramos
+Área Construcción
+ICC2204
+Planificación y Control de Proyectos
+ICC2304
+Ingeniería de Construcción
+Área Estructural
+Estática
+ICE2006
+Análisis Estructural I
+ICE2114
+ICE2313
+Mecánica de Sólidos
+Área Geotecnia
+ICE2604
+Fundamentos de Geotecnia
+Área Hidráulica
+ICH2114
+Ingeniería Hidráulica
+ICH1104
+Mecánica de Fluidos
+Área Ambiental
+ICH2304
+Ingeniería Ambiental
+Área Materiales de Ingeniería
+ICC2105
+Materiales de Ingeniería Civil
+Área Transporte
+Elegir 10 cr entre:
+ICT2904
+Ingeniería de Sistemas de Transporte
+Ingeniería Vial
+ICC2514
+Área Diseño
+<--- aca iba el area de diseño, que se elimino manualmente

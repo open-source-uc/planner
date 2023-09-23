@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from app.plan.validation.curriculum.tree import MajorCode, MinorCode, TitleCode
+
 
 class ScrapedBlock(BaseModel):
     """
@@ -18,4 +20,7 @@ class ScrapedBlock(BaseModel):
 
 class ScrapedProgram(BaseModel):
     code: str
+    assoc_major: MajorCode | None
+    assoc_minor: MinorCode | None
+    assoc_title: TitleCode | None
     blocks: list[ScrapedBlock]
