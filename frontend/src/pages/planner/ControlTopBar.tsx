@@ -1,18 +1,15 @@
-import { useAuth } from '../../contexts/auth.context'
-
 interface ControlTopBarProps {
+  authState: any
   reset: Function
-  openSavePlanModal: Function
   openLegendModal: Function
+  openSavePlanModal: Function
 }
 
-function ControlTopBar ({ reset, openSavePlanModal, openLegendModal }: ControlTopBarProps): JSX.Element {
-  const authState = useAuth()
-
+function ControlTopBar ({ authState, reset, openLegendModal, openSavePlanModal }: ControlTopBarProps): JSX.Element {
   return (
         <ul className="flex items-center  ml-3 mb-2 gap-6">
           {authState?.user != null && (<>
-          <li className='inline'><button onClick={() => openSavePlanModal()}>Guardar malla</button></li>
+          <li className='inline'><button onClick={() => openSavePlanModal() }>Guardar malla</button></li>
           </>)}
           <li className='inline'><button onClick={() => reset()}>Restablecer malla</button></li>
           {/* <li className="inline opacity-50 cursor-not-allowed">Exportar malla</li> */}

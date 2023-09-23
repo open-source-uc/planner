@@ -6,7 +6,6 @@ const CurriculumListRow = ({ userRut, curriculum }: { userRut: string, curriculu
     const mydate = date.split('T')[0].split('-').reverse().join('-')
     return mydate
   }
-
   return (
         <tr className='bg-white border-b  hover:bg-gray-50 '>
             <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">

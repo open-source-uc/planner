@@ -1,26 +1,24 @@
 import { Spinner } from '../../components/Spinner'
-import ErrorTray from './ErrorTray'
-import PlanBoard from './planBoard/PlanBoard'
-import ControlTopBar from './ControlTopBar'
-import CourseSelectorDialog from './CourseSelectorDialog'
-import LegendModal from './LegendModal'
-import SavePlanModal from './SavePlanModal'
-import CurriculumSelector from './CurriculumSelector'
+import ErrorTray from '../planner/ErrorTray'
+import PlanBoard from '../planner/planBoard/PlanBoard'
+import ControlTopBar from '../planner/ControlTopBar'
+import CourseSelectorDialog from '../planner/CourseSelectorDialog'
+import LegendModal from '../planner/LegendModal'
+import CurriculumSelector from '../planner/CurriculumSelector'
 import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react'
 import { type CourseDetails, type Major, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise } from '../../client'
-import { type CourseId, type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type PlanDigest, type ValidationDigest, isCourseRequirementErr } from './utils/Types'
-import { validateCourseMovement, updateClassesState, getCoursePos } from './utils/PlanBoardFunctions'
-import { useAuth } from '../../contexts/auth.context'
+import { type CourseId, type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type PlanDigest, type ValidationDigest, isCourseRequirementErr } from '../planner/utils/Types'
+import { validateCourseMovement, updateClassesState, getCoursePos } from '../planner/utils/PlanBoardFunctions'
 import { toast } from 'react-toastify'
 import DebugGraph from '../../components/DebugGraph'
 import deepEqual from 'fast-deep-equal'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { collectRequirements, handleErrors, PlannerStatus } from './utils/utils'
-import { updateCurriculum, isMinorValid, isMajorValid, loadCurriculumsData } from './utils/CurriculumUtils'
-import ReceivePaste from './utils/ReceivePaste'
+import { collectRequirements, handleErrors, PlannerStatus } from '../planner/utils/utils'
+import { updateCurriculum, isMinorValid, isMajorValid, loadCurriculumsData } from '../planner//utils/CurriculumUtils'
+import ReceivePaste from '../planner/utils/ReceivePaste'
 
 const reduceCourseDetails = (old: Record<string, PseudoCourseDetail>, add: Record<string, PseudoCourseDetail>): Record<string, PseudoCourseDetail> => {
   return { ...old, ...add }
@@ -29,16 +27,15 @@ const reduceCourseDetails = (old: Record<string, PseudoCourseDetail>, add: Recor
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
-const Planner = (): JSX.Element => {
+const PlannerViewer = (): JSX.Element => {
   const [planName, setPlanName] = useState<string>('')
-  const [planID, setPlanID] = useState<string | undefined>(useParams()?.plannerId)
+  const [planID] = useState<string | undefined>(useParams()?.plannerId)
   const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null >(null)
   const [courseDetails, addCourseDetails] = useReducer(reduceCourseDetails, {})
   const [curriculumData, setCurriculumData] = useState<CurriculumData | null>(null)
   const [modalData, setModalData] = useState<ModalData>()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isLegendModalOpen, setIsLegendModalOpen] = useState(false)
-  const [isSavePlanModalOpen, setIsSavePlanModalOpen] = useState(false)
   const [plannerStatus, setPlannerStatus] = useState<PlannerStatus>(PlannerStatus.LOADING)
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -49,7 +46,9 @@ const Planner = (): JSX.Element => {
 
   const [, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
 
-  const authState = useAuth()
+  const { userRut } = useParams()
+
+  const authState = null
 
   const planDigest = useMemo((): PlanDigest => {
     const digest: PlanDigest = {
@@ -182,7 +181,7 @@ const Planner = (): JSX.Element => {
         setPlannerStatus(PlannerStatus.READY)
         return
       }
-      const promise = authState?.user == null ? DefaultService.validateGuestPlan(validatablePlan) : DefaultService.validatePlanForUser(validatablePlan)
+      const promise = DefaultService.validatePlanForAnyUser(userRut, validatablePlan)
       setValidationPromise(prev => {
         if (prev != null) {
           prev.cancel()
@@ -227,36 +226,7 @@ const Planner = (): JSX.Element => {
     } catch (err) {
       handleErrors(err, setPlannerStatus, setError)
     }
-  }, [authState?.user, getCourseDetails])
-
-  const savePlan = useCallback(async (planName: string): Promise<void> => {
-    if (validatablePlan == null) {
-      toast.error('No se ha generado un plan aun')
-      return
-    }
-    if (planID !== null && planID !== undefined) {
-      setPlannerStatus(PlannerStatus.VALIDATING)
-      try {
-        await DefaultService.updatePlan(planID, validatablePlan)
-        toast.success('Plan actualizado exitosamente.')
-      } catch (err) {
-        handleErrors(err, setPlannerStatus, setError)
-      }
-      setPlannerStatus(PlannerStatus.READY)
-    } else {
-      if (planName == null || planName === '') return
-      setPlannerStatus(PlannerStatus.VALIDATING)
-      try {
-        const res = await DefaultService.savePlan(planName, validatablePlan)
-        setPlanID(res.id)
-        setPlanName(res.name)
-        toast.success('Plan guardado exitosamente')
-      } catch (err) {
-        handleErrors(err, setPlannerStatus, setError)
-      }
-    }
-    setPlannerStatus(PlannerStatus.READY)
-  }, [planID, validatablePlan])
+  }, [getCourseDetails, userRut])
 
   const openModalForExtraClass = useCallback((semIdx: number): void => {
     setModalData({
@@ -307,7 +277,7 @@ const Planner = (): JSX.Element => {
   const getPlanById = useCallback(async (id: string): Promise<void> => {
     try {
       console.log('Getting Plan by Id...')
-      const response: PlanView = await DefaultService.readPlan(id)
+      const response: PlanView = await DefaultService.readAnyPlan(id)
       previousClasses.current = response.validatable_plan.classes
       previousCurriculum.current = {
         major: response.validatable_plan.curriculum.major,
@@ -333,7 +303,7 @@ const Planner = (): JSX.Element => {
       console.log('Getting Basic Plan...')
       let baseValidatablePlan
       if (referenceValidatablePlan === undefined || referenceValidatablePlan === null) {
-        baseValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
+        baseValidatablePlan = await DefaultService.emptyPlanForAnyUser(userRut)
       } else {
         baseValidatablePlan = { ...referenceValidatablePlan, classes: [...referenceValidatablePlan.classes] }
         truncateAt = truncateAt ?? (authState?.student?.next_semester ?? 0)
@@ -364,7 +334,7 @@ const Planner = (): JSX.Element => {
     } catch (err) {
       handleErrors(err, setPlannerStatus, setError)
     }
-  }, [authState?.student?.next_semester, authState?.user, getCourseDetails, validate])
+  }, [authState?.student?.next_semester, getCourseDetails, validate, userRut])
 
   const fetchData = useCallback(async (): Promise<void> => {
     try {
@@ -498,7 +468,7 @@ const Planner = (): JSX.Element => {
     } else {
       setIsModalOpen(false)
     }
-  }, [modalData])
+  }, [setValidatablePlan, setIsModalOpen, modalData])
 
   const openLegendModal = useCallback((): void => {
     setIsLegendModalOpen(true)
@@ -507,18 +477,6 @@ const Planner = (): JSX.Element => {
   const closeLegendModal = useCallback((): void => {
     setIsLegendModalOpen(false)
   }, [setIsLegendModalOpen])
-
-  const openSavePlanModal = useCallback(async (): Promise<void> => {
-    if (planName == null || planName === '') {
-      setIsSavePlanModalOpen(true)
-    } else {
-      await savePlan(planName)
-    }
-  }, [planName, savePlan])
-
-  const closeSavePlanModal = useCallback((): void => {
-    setIsSavePlanModalOpen(false)
-  }, [])
 
   const reset = useCallback((): void => {
     setPlannerStatus(PlannerStatus.LOADING)
@@ -558,26 +516,6 @@ const Planner = (): JSX.Element => {
     }
   }, [validatablePlan?.curriculum, setPopUpAlert]) // this sensitivity list shouldn't contain frequently-changing attributes
 
-  const handlePopUpAlert = useCallback(async (isCanceled: boolean): Promise<void> => {
-    setPopUpAlert(prev => {
-      if (!isCanceled) {
-        if ('major' in prev) {
-          setValidatablePlan(prevPlan => {
-            return updateCurriculum(prevPlan, 'major', prev.major, false)
-          })
-        }
-        if ('year' in prev && prev.year !== undefined) {
-          if (prev.deleteMajor) {
-            selectYear(prev.year, false, false)
-          } else {
-            selectYear(prev.year, true, false)
-          }
-        }
-      }
-      return { ...prev, isOpen: false }
-    })
-  }, [selectYear])
-
   const checkMajorAndMinorForNewYear = useCallback(async (cyear: 'C2020' | 'C2022'): Promise<void> => {
     const isValidMajor = await isMajorValid(cyear, validatablePlan?.curriculum.major)
 
@@ -605,11 +543,31 @@ const Planner = (): JSX.Element => {
     }
   }, [validatablePlan?.curriculum, setPopUpAlert, selectYear])
 
+  const handlePopUpAlert = useCallback(async (isCanceled: boolean): Promise<void> => {
+    setPopUpAlert(prev => {
+      if (!isCanceled) {
+        if ('major' in prev) {
+          setValidatablePlan(prevPlan => {
+            return updateCurriculum(prevPlan, 'major', prev.major, false)
+          })
+        }
+        if ('year' in prev && prev.year !== undefined) {
+          if (prev.deleteMajor) {
+            selectYear(prev.year, false, false)
+          } else {
+            selectYear(prev.year, true, false)
+          }
+        }
+      }
+      return { ...prev, isOpen: false }
+    })
+  }, [selectYear])
+
   const selectMinor = useCallback((minorCode: string | undefined): void => {
     setValidatablePlan(prev => {
       return updateCurriculum(prev, 'minor', minorCode, true)
     })
-  }, []) // this sensitivity list shouldn't contain frequently-changing attributes
+  }, [])
 
   const selectTitle = useCallback((titleCode: string | undefined): void => {
     setValidatablePlan(prev => {
@@ -657,7 +615,6 @@ const Planner = (): JSX.Element => {
       <ReceivePaste validatablePlan={validatablePlan} getDefaultPlan={getDefaultPlan} />
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
       <LegendModal open={isLegendModalOpen} onClose={closeLegendModal}/>
-      <SavePlanModal isOpen={isSavePlanModalOpen} onClose={closeSavePlanModal} savePlan={savePlan}/>
       <AlertModal title={popUpAlert.title} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}>{popUpAlert.desc}</AlertModal>
       {(plannerStatus === PlannerStatus.LOADING || plannerStatus === PlannerStatus.CHANGING_CURRICULUM) &&
         <div className="absolute w-screen h-full z-50 bg-white flex flex-col justify-center items-center">
@@ -684,7 +641,8 @@ const Planner = (): JSX.Element => {
               />
               <ControlTopBar
                 reset={reset}
-                openSavePlanModal={openSavePlanModal}
+                authState={null}
+                openSavePlanModal={() => { console.log('open save plan modal') }}
                 openLegendModal={openLegendModal}
               />
               <DndProvider backend={HTML5Backend}>
@@ -692,9 +650,9 @@ const Planner = (): JSX.Element => {
                   classesGrid={validatablePlan?.classes ?? []}
                   planDigest={planDigest}
                   classesDetails={courseDetails}
+                  authState={null}
                   moveCourse={moveCourse}
                   openModal={openModal}
-                  authState={authState}
                   addCourse={openModalForExtraClass}
                   remCourse={remCourse}
                   validationDigest={validationDigest}
@@ -714,4 +672,4 @@ const Planner = (): JSX.Element => {
   )
 }
 
-export default Planner
+export default PlannerViewer

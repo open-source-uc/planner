@@ -12,6 +12,7 @@ import {
   ReactRouter,
   RootRoute, Route
 } from '@tanstack/react-router'
+import PlannerViewer from './pages/mod/planViewer'
 
 const rootRoute = new RootRoute({
   component: Layout
@@ -79,7 +80,7 @@ const getPlannerRoute = new Route({
 
 const UserViewerForMod = new Route({
   getParentRoute: () => rootRoute,
-  path: '/mod/plans',
+  path: '/mod/users',
   component: UserViewer,
   beforeLoad: modRoute,
   onLoadError: onAuthenticationError
@@ -88,11 +89,18 @@ const UserViewerForMod = new Route({
 const PlannerViewerForMod = new Route({
   getParentRoute: () => rootRoute,
   path: '/mod/planner/$userRut/$plannerId',
-  component: Planner,
+  component: PlannerViewer,
   beforeLoad: modRoute,
   onLoadError: onAuthenticationError
 })
 
+const NewPlannerViewerForMod = new Route({
+  getParentRoute: () => rootRoute,
+  path: '/mod/planner/$userRut/new',
+  component: PlannerViewer,
+  beforeLoad: modRoute,
+  onLoadError: onAuthenticationError
+})
 const logoutRoute = new Route({
   getParentRoute: () => rootRoute,
   path: '/logout',
@@ -105,10 +113,13 @@ const error404 = new Route({
   component: Error404
 })
 
-const routeTree = rootRoute.addChildren([homeRoute, userPageRoute, error403, newPlannerRoute, getPlannerRoute, UserViewerForMod, PlannerViewerForMod, logoutRoute, error404])
+const routeTree = rootRoute.addChildren([homeRoute, userPageRoute, error403, newPlannerRoute, getPlannerRoute, UserViewerForMod, PlannerViewerForMod, NewPlannerViewerForMod, logoutRoute, error404])
 
 export const router = new ReactRouter({
-  routeTree
+  routeTree,
+  context: {
+    isMod: false
+  }
 })
 
 declare module '@tanstack/react-router'{

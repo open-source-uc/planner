@@ -7,6 +7,18 @@ const SavePlanModal = ({ isOpen, onClose, savePlan }: { isOpen: boolean, onClose
 
   const isSaveButtonDisabled: boolean = planName === ''
 
+  const handleKeyDown: React.EventHandler<React.KeyboardEvent<HTMLInputElement>> = e => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      if (isSaveButtonDisabled) return
+      try {
+        void savePlan(planNameInput); onClose()
+      } catch (err) {
+        console.log(err)
+      }
+    }
+  }
+
   return (
     <Transition.Root show={isOpen} as={Fragment}>
       <Dialog as="div" className="modal relative" initialFocus={planNameInput} onClose={() => onClose() }>
@@ -41,7 +53,7 @@ const SavePlanModal = ({ isOpen, onClose, savePlan }: { isOpen: boolean, onClose
                          ¿Cómo quieres llamarle a esta planificación?
                       </Dialog.Title>
                       <div className="mt-2">
-                        <input className="grow rounded py-1 w-full my-2 sentry-mask" type="text" id="planName" value={planName} onChange={(e) => { setPlanName(e.target.value) }}/>
+                        <input className="grow rounded py-1 w-full my-2 sentry-mask" type="text" id="planName" value={planName} onChange={(e) => { setPlanName(e.target.value) }} onKeyDown={handleKeyDown}/>
                       </div>
                     </div>
                   </div>

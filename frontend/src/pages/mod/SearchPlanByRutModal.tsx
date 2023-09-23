@@ -3,10 +3,28 @@ import { Dialog, Transition } from '@headlessui/react'
 
 const SearchPlanByRutModal = ({ isOpen, onClose, searchPlans }: { isOpen: boolean, onClose: Function, searchPlans: Function }): JSX.Element => {
   const planNameInput = useRef(null)
+  const acceptButton = useRef<HTMLButtonElement>(null)
   const [studentRut, setStudentRut] = useState<string>('')
 
   const isSaveButtonDisabled: boolean = studentRut === ''
 
+  const handleKeyDown: React.EventHandler<React.KeyboardEvent<HTMLInputElement>> = e => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      if (isSaveButtonDisabled) return
+      try {
+        void searchPlans(formattedRut); onClose()
+      } catch (err) {
+        console.log(err)
+      }
+    }
+  }
+
+  const handleInputChange: React.EventHandler<React.ChangeEvent<HTMLInputElement>> = e => {
+    const input = e.target.value
+    const cleanedInput = input.replace(/[^0-9kK-]/g, '')
+    setStudentRut(cleanedInput)
+  }
   return (
     <Transition.Root show={isOpen} as={Fragment}>
       <Dialog as="div" className="modal relative" initialFocus={planNameInput} onClose={() => onClose() }>
@@ -41,7 +59,7 @@ const SearchPlanByRutModal = ({ isOpen, onClose, searchPlans }: { isOpen: boolea
                          Rut del estudiante:
                       </Dialog.Title>
                       <div className="mt-2">
-                        <input className="grow rounded py-1 w-full my-2 sentry-mask" type="text" id="planName" value={studentRut} onChange={(e) => { setStudentRut(e.target.value) }}/>
+                        <input className="grow rounded py-1 w-full my-2 sentry-mask" type="text" id="planName" value={studentRut} onChange={handleInputChange} onKeyDown={handleKeyDown}/>
                       </div>
                     </div>
                   </div>
@@ -49,6 +67,7 @@ const SearchPlanByRutModal = ({ isOpen, onClose, searchPlans }: { isOpen: boolea
                 <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                   <button
                     type="button"
+                    ref={acceptButton}
                     disabled={isSaveButtonDisabled}
                     className='inline-flex w-full justify-center rounded-md text-sm btn shadow-sm sm:ml-3 sm:w-auto disabled:bg-gray-400'
                     onClick={() => {

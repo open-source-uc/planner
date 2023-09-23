@@ -8,6 +8,7 @@ export interface UserData {
 
 export interface AuthState {
   user: UserData | null
+  isMod: boolean | null
   setUser: Dispatch<SetStateAction<UserData | null>> | null
   student: StudentContext | null
 }
@@ -21,6 +22,7 @@ const AuthContext = React.createContext<AuthState | null>(null)
 
 export function AuthProvider ({ children, userData }: Props): JSX.Element {
   const [user, setUser] = React.useState<UserData | null>(userData)
+  const [isMod, setIsMod] = React.useState<boolean | null>(null)
   const [student, setStudent] = useState<StudentContext | null>(null)
 
   useEffect(() => {
@@ -50,11 +52,31 @@ export function AuthProvider ({ children, userData }: Props): JSX.Element {
           setStudent((_prevStudent) => student)
         }
       })
+    void DefaultService.checkMod().catch(err => {
+      if (err.status === 401) {
+        console.log('Token invalid or expired, loading re-login page...')
+        toast.error('Tu sesión ha expirado. Redireccionando a página de inicio de sesión..', {
+          toastId: 'ERROR401'
+        })
+      } else if (err.status === 403) {
+        console.log('El usuario no tiene permisos de mod')
+        setIsMod(() => false)
+      } else {
+        toast.error('Error al cargar información del usuario', {
+          toastId: 'ERROR401'
+        })
+      }
+    }).then(
+      response => {
+        if (response.stat !== 200) {
+          setIsMod(() => true)
+        }
+      })
   }, [user]
   )
 
   return (
-    <AuthContext.Provider value={{ user, setUser, student }}>
+    <AuthContext.Provider value={{ user, setUser, student, isMod }}>
       {children}
     </AuthContext.Provider>
   )
