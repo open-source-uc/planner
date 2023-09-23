@@ -22,12 +22,13 @@ import re
 from pathlib import Path
 
 from app.plan.courseinfo import CourseInfo
+from app.plan.validation.curriculum.tree import MajorCode, MinorCode
 from app.sync.curriculums.scrape.common import ScrapedBlock, ScrapedProgram
 
 log = logging.getLogger("plan-collator")
 
 # Usado para separar el archivo scrapeado en bloques por cada minor.
-REGEX_MINOR_CODE = re.compile(r"(N[\d]{3}(?:-\d)?)\)")
+REGEX_MINOR_CODE = re.compile(r"(?:(M\d{3})-)?(N[\d]{3}(?:-\d)?)\)")
 # Usado para separar el texto para un minor en bloques, donde cada bloque representa uno
 # o mas ramos
 REGEX_BLOCK_SPLITTER = re.compile(
@@ -57,7 +58,7 @@ REGEX_DETECT_AREA_FALLBACK = re.compile(r"de [^\n]+ área")
 REGEX_IDENTIFY_AREA = re.compile(r"(?:^|\n)(Área [^\n\(]+)")
 
 
-def scrape_minors(courseinfo: CourseInfo) -> dict[str, ScrapedProgram]:
+def scrape_minors(courseinfo: CourseInfo) -> dict[MinorCode, list[ScrapedProgram]]:
     log.debug("scraping minors...")
 
     # Load raw pre-scraped text
@@ -70,13 +71,19 @@ def scrape_minors(courseinfo: CourseInfo) -> dict[str, ScrapedProgram]:
     raw_by_minor.pop(0)  # Erase any junk before the first minor
 
     # Procesar cada minor independientemente
-    minors: dict[str, ScrapedProgram] = {}
-    for minor_code, minor_raw in zip(
-        raw_by_minor[::2],
-        raw_by_minor[1::2],
+    minors: dict[MinorCode, list[ScrapedProgram]] = {}
+    for major_code, minor_code, minor_raw in zip(
+        raw_by_minor[::3],
+        raw_by_minor[1::3],
+        raw_by_minor[2::3],
         strict=True,
     ):
-        minors[minor_code] = scrape_minor(courseinfo, minor_code, minor_raw)
+        minor_code = MinorCode(minor_code)
+        if major_code is not None:
+            major_code = MajorCode(major_code)
+        minors.setdefault(minor_code, []).append(
+            scrape_minor(courseinfo, minor_code, minor_raw, major_code),
+        )
 
     log.debug("processed %s minors", len(minors))
     log.debug("RECORDAR CHEQUEAR QUE ESTEN TODOS LOS OPTATIVOS COMPLEMENTARIOS")
@@ -84,9 +91,20 @@ def scrape_minors(courseinfo: CourseInfo) -> dict[str, ScrapedProgram]:
     return minors
 
 
-def scrape_minor(courseinfo: CourseInfo, code: str, raw: str) -> ScrapedProgram:
+def scrape_minor(
+    courseinfo: CourseInfo,
+    code: MinorCode,
+    raw: str,
+    major_code: MajorCode | None,
+) -> ScrapedProgram:
     log.debug("scraping minor '%s'", code)
-    out = ScrapedProgram(code=code, blocks=[])
+    out = ScrapedProgram(
+        code=code,
+        assoc_major=major_code,
+        assoc_minor=code,
+        assoc_title=None,
+        blocks=[],
+    )
 
     split_by_block = REGEX_BLOCK_SPLITTER.split(raw)
     if REGEX_COURSE_CODE.search(split_by_block[0]):
@@ -329,13 +347,15 @@ def sanity_check_minor(courseinfo: CourseInfo, minor: ScrapedProgram):
     # Chequear que la cantidad de creditos haga sentido
     if minor_credits != 50:
         log.warning(
-            "minor has %s credits, normally minors have 50 credits",
+            "minor %s has %s credits, normally minors have 50 credits",
+            minor.code,
             minor_credits,
         )
 
     # Chequear que no hayan demasiados optativos complementarios
     if complementary_blocks > 1:
         log.warning(
-            "minor has %s complementary blocks, expected 0 or 1",
+            "minor %s has %s complementary blocks, expected 0 or 1",
+            minor.code,
             complementary_blocks,
         )
