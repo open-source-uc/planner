@@ -13,7 +13,7 @@ const SearchPlanByRutModal = ({ isOpen, onClose, searchPlans }: { isOpen: boolea
       e.preventDefault()
       if (isSaveButtonDisabled) return
       try {
-        void searchPlans(formattedRut); onClose()
+        void searchPlans(studentRut); onClose()
       } catch (err) {
         console.log(err)
       }
