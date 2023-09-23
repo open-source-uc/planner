@@ -92,14 +92,12 @@ def translate_scrape(
     curr.root.cap = -1
 
     if kind.exclusive_credits is None:
-        # Determinar cuantos creditos tiene el programa, sin contar optativos
-        # complementarios
+        # Determinar cuantos creditos tiene el programa
+        # Los optativos complementarios de 0 creditos obviamente no aportan en esta
+        # cuenta
         exclusive_credits = 0
         for block in scrape.blocks:
-            if block.complementary:
-                # Los bloques complementarios no aportan
-                pass
-            elif block.creds is not None:
+            if block.creds is not None:
                 # Un optativo con un creditaje fijo
                 exclusive_credits += block.creds
             elif len(block.options) == 1 and courseinfo.try_course(block.options[0]):
@@ -139,6 +137,18 @@ def translate_scrape(
     curr.root.children.append(exhaustive)
     curr.root.children.append(exclusive)
 
+    # Convertir un optativo complementario con creditaje no-nulo en un optativo normal
+    # con creditaje y un optativo complementario sin creditaje
+    complementary_blocks: list[ScrapedBlock] = []
+    for block in scrape.blocks:
+        if block.complementary and block.creds is not None and block.creds > 0:
+            creditless_copy = block.copy()
+            creditless_copy.creds = 0
+            complementary_blocks.append(creditless_copy)
+            block.complementary = False
+    scrape.blocks.extend(complementary_blocks)
+
+    # Convertir bloque por bloque
     listbuilder = ListBuilder(kind, out, spec)
     for block in scrape.blocks:
         exh, exc, fills = translate_block(
@@ -189,6 +199,7 @@ def translate_block(
         # de minor
         name = f"Optativos (LISTA {listbuilder.next_optative()})"
 
+    # Convertir pseudocodigos como IEE2XXX en listas concretas
     _apply_course_patches(courseinfo, block.options)
 
     if block.creds is None and len(block.options) == 1:

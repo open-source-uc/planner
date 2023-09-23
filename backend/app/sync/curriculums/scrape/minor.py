@@ -153,7 +153,10 @@ def scrape_minor(
             continue
 
         if creds is None and complementary:
-            # Señalizamos los optativos complementarios como un bloque de 0 creditos
+            # Hay optativos complementarios opcionales, y tambien hay optativos normales
+            # que en caso de ser necesarios doblan como optativos complementarios
+            # Si un optativo complementario no tiene creditos, entonces es opcional y
+            # por ende tiene 0 creditos
             creds = 0
 
         if REGEX_DETECT_EACH_AREA.search(block_raw):
