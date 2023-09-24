@@ -1,19 +1,36 @@
 import { memo, useRef, useState, Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
+import { DefaultService } from '../../client'
+import { toast } from 'react-toastify'
 
-const SearchPlanByRutModal = ({ isOpen, onClose, searchPlans }: { isOpen: boolean, onClose: Function, searchPlans: Function }): JSX.Element => {
+const SearchPlanByRutModal = ({ isOpen, onClose, searchPlans }: { isOpen: boolean, onClose: Function, searchUser: Function }): JSX.Element => {
   const planNameInput = useRef(null)
   const acceptButton = useRef<HTMLButtonElement>(null)
   const [studentRut, setStudentRut] = useState<string>('')
-
   const isSaveButtonDisabled: boolean = studentRut === ''
+
+  const handleUserSearch = async (rut: string): Promise<void> => {
+    let formattedRut = rut
+    if (formattedRut.charAt(formattedRut.length - 2) !== '-') {
+      formattedRut = formattedRut.slice(0, -1) + '-' + formattedRut.slice(-1)
+    }
+    try {
+      const stundetInfo = await DefaultService.getStudentInfoForAnyUser(formattedRut)
+      searchPlans(stundetInfo)
+    } catch (err) {
+      if ('status' in err && (err.status === 404 || err.status === 403)) {
+        toast.error(`No se encontró el estudiante, ${rut}`)
+      }
+      console.log(err)
+    }
+  }
 
   const handleKeyDown: React.EventHandler<React.KeyboardEvent<HTMLInputElement>> = e => {
     if (e.key === 'Enter') {
       e.preventDefault()
       if (isSaveButtonDisabled) return
       try {
-        void searchPlans(studentRut); onClose()
+        void handleUserSearch(studentRut); onClose()
       } catch (err) {
         console.log(err)
       }
@@ -70,10 +87,7 @@ const SearchPlanByRutModal = ({ isOpen, onClose, searchPlans }: { isOpen: boolea
                     ref={acceptButton}
                     disabled={isSaveButtonDisabled}
                     className='inline-flex w-full justify-center rounded-md text-sm btn shadow-sm sm:ml-3 sm:w-auto disabled:bg-gray-400'
-                    onClick={() => {
-                      searchPlans(studentRut)
-                      onClose()
-                    }}
+                    onClick={() => void handleUserSearch(studentRut)}
                   >
                     Buscar
                   </button>

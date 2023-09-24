@@ -19,7 +19,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend'
 import { collectRequirements, handleErrors, PlannerStatus } from '../planner/utils/utils'
 import { updateCurriculum, isMinorValid, isMajorValid, loadCurriculumsData } from '../planner//utils/CurriculumUtils'
 import ReceivePaste from '../planner/utils/ReceivePaste'
-
+import ModBanner from './ModBanner'
 const reduceCourseDetails = (old: Record<string, PseudoCourseDetail>, add: Record<string, PseudoCourseDetail>): Record<string, PseudoCourseDetail> => {
   return { ...old, ...add }
 }
@@ -613,6 +613,7 @@ const PlannerViewer = (): JSX.Element => {
     <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
       <DebugGraph validatablePlan={validatablePlan} />
       <ReceivePaste validatablePlan={validatablePlan} getDefaultPlan={getDefaultPlan} />
+      <ModBanner/>
       <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
       <LegendModal open={isLegendModalOpen} onClose={closeLegendModal}/>
       <AlertModal title={popUpAlert.title} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}>{popUpAlert.desc}</AlertModal>

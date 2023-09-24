@@ -875,4 +875,28 @@ export class DefaultService {
         });
     }
 
+    /**
+     * Get Student Info For Any User
+     * Same functionality as `get_student_info`, but works for any user identified by
+     * their RUT with `user_rut`.
+     * Moderator access is required.
+     * @param userRut
+     * @returns StudentContext Successful Response
+     * @throws ApiError
+     */
+    public static getStudentInfoForAnyUser(
+        userRut: string,
+    ): CancelablePromise<StudentContext> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/user/info_for_any_user',
+            query: {
+                'user_rut': userRut,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
 }

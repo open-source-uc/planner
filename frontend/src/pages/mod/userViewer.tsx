@@ -12,22 +12,27 @@ async function fetchUserPlans (rut: string): Promise<LowDetailPlanView[]> {
   return await DefaultService.readAnyPlans(rut)
 }
 
+async function getUserData (rut: string): Promise<any> {
+  if (rut === '') return await Promise.resolve([])
+  return await DefaultService.getStudentInfoForAnyUser(rut)
+}
+
 const UserViewer = (): JSX.Element => {
   const [userRut, setUserRut] = useState<string>('')
+  const [searchingPlanModalIsOpen, setSearchingPlanModalIsOpen] = useState<boolean>(true)
 
   const { status, error, data } = useQuery({
     queryKey: ['userPlans', userRut],
     queryFn: async () => await fetchUserPlans(userRut)
   })
-  const [searchingPlanModalIsOpen, setSearchingPlanModalIsOpen] = useState<boolean>(true)
+
   return (
     <div>
       <SearchPlanByRutModal
           isOpen = {searchingPlanModalIsOpen}
           onClose = {() => { setSearchingPlanModalIsOpen(false) }}
-          searchPlans = {(rut: string) => {
+          searchUser = {(rut: string) => {
             let formattedRut = rut
-            console.log(formattedRut.charAt(formattedRut.length - 2))
             if (formattedRut.charAt(formattedRut.length - 2) !== '-') {
               formattedRut = formattedRut.slice(0, -1) + '-' + formattedRut.slice(-1)
             } setUserRut(formattedRut)
@@ -75,7 +80,7 @@ const UserViewer = (): JSX.Element => {
                       </tr>
                     </thead>
                     <tbody className='bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'>
-                      {data?.map((plan: LowDetailPlanView) => {
+                      {plansData?.map((plan: LowDetailPlanView) => {
                         return (
                           <CurriculumListRow key={plan.id} userRut={userRut} curriculum={plan}/>
                         )
