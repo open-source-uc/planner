@@ -81,7 +81,11 @@ def add_opi_to_title(
 ):
     # Encontrar el bloque exclusivo de titulo
     exclusive_block = next(
-        (block for block in curr.root.children if block.cap == TITLE_EXCLUSIVE_CREDITS),
+        (
+            block
+            for block in curr.root.children
+            if f"{TITLE_EXCLUSIVE_CREDITS} créditos exclusivos" in block.debug_name
+        ),
         None,
     )
     if exclusive_block is None:

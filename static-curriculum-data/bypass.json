@@ -3659,5 +3659,674 @@
             }
         }
     ],
-    "titles": []
+    "titles": [
+        {
+            "title": "40023",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Ingeniero Civil Matemático y Computacional",
+                        "name": "Título",
+                        "superblock": "Titulo",
+                        "layer": "title",
+                        "children": [
+                            {
+                                "debug_name": "Optimización",
+                                "name": "Optimización",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS1113",
+                                    "ICS113H"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        201
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Matemática Discretas",
+                                "name": "Matemática Discretas",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC1253"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        202
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Inferencia Estadística",
+                                "name": "Inferencia Estadística",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP2114"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        203
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Análisis Real",
+                                "name": "Análisis Real",
+                                "credits": 10,
+                                "codes": [
+                                    "MAT251I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        204
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Cálculo Científico I",
+                                "name": "Cálculo Científico I",
+                                "credits": 10,
+                                "codes": [
+                                    "MAT2605"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        205
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Análisis de Regresión",
+                                "name": "Análisis de Regresión",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP230I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        206
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Análisis Funcional",
+                                "name": "Análisis Funcional",
+                                "credits": 10,
+                                "codes": [
+                                    "MAT255I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        207
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Algoritmos Paralelos en Computación Científica",
+                                "name": "Algoritmos Paralelos en Computación Científica",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT2112"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        208
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optimización Avanzada",
+                                "name": "Optimización Avanzada",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS3153"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        209
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Complejidad Computacional",
+                                "name": "Complejidad Computacional",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC3242"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        210
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Fundamentos Matemáticos para Ciencia de Datos",
+                                "name": "Fundamentos Matemáticos para Ciencia de Datos",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT3120"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        211
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Aplicaciones de Ecuaciones Diferenciales Parciales y Análisis Funcional en Ingeniería",
+                                "name": "Aplicaciones de Ecuaciones Diferenciales Parciales y Análisis Funcional en Ingeniería",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT3130"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        212
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Taller de Ingeniería Matemática (Proyecto de Título)",
+                                "name": "Taller de Ingeniería Matemática (Proyecto de Título)",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT3140"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        213
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos de Aplicación en Ingeniería",
+                                "name": "Optativos de Aplicación en Ingeniería",
+                                "credits": 20,
+                                "codes": [
+                                    "IBM3202",
+                                    "ICH3224",
+                                    "ICM3920",
+                                    "ICS3105",
+                                    "ICS3151",
+                                    "ICS3233",
+                                    "ICS3252",
+                                    "ICS3413",
+                                    "IEE3002",
+                                    "IEE3433",
+                                    "IEE3692",
+                                    "IEE3732",
+                                    "IEE3764",
+                                    "FIM3436",
+                                    "FIM4141",
+                                    "IIC3253",
+                                    "IIC3272",
+                                    "IIC3284",
+                                    "IIC3413",
+                                    "IIC3633",
+                                    "IIC3640",
+                                    "IIC3697",
+                                    "IIC3724",
+                                    "IIC3733",
+                                    "IIC3783"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        214,
+                                        215
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos de Profundización",
+                                "name": "Optativos de Profundización",
+                                "credits": 20,
+                                "codes": [
+                                    "ICS3143",
+                                    "IMT3800",
+                                    "FIZ0313",
+                                    "IMT3810",
+                                    "EYP243I",
+                                    "EYP290I",
+                                    "EYP2915",
+                                    "IMT3820",
+                                    "MAT2825",
+                                    "MAT380I",
+                                    "IIC3263",
+                                    "IIC3632",
+                                    "IIC3810",
+                                    "IIC3413",
+                                    "IIC3423",
+                                    "IIC3432",
+                                    "IIC3633",
+                                    "IIC3695"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        216,
+                                        217
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativo de aplicación o de profundización",
+                                "name": "Optativo de aplicación o de profundización",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS3143",
+                                    "IMT3800",
+                                    "FIZ0313",
+                                    "IMT3810",
+                                    "EYP243I",
+                                    "EYP290I",
+                                    "EYP2915",
+                                    "IMT3820",
+                                    "MAT2825",
+                                    "MAT380I",
+                                    "IIC3263",
+                                    "IIC3632",
+                                    "IIC3810",
+                                    "IIC3413",
+                                    "IIC3423",
+                                    "IIC3432",
+                                    "IIC3633",
+                                    "IIC3695",
+                                    "IBM3202",
+                                    "ICH3224",
+                                    "ICM3920",
+                                    "ICS3105",
+                                    "ICS3151",
+                                    "ICS3233",
+                                    "ICS3252",
+                                    "ICS3413",
+                                    "IEE3002",
+                                    "IEE3433",
+                                    "IEE3692",
+                                    "IEE3732",
+                                    "IEE3764",
+                                    "FIM3436",
+                                    "FIM4141",
+                                    "IIC3253",
+                                    "IIC3272",
+                                    "IIC3284",
+                                    "IIC3640",
+                                    "IIC3697",
+                                    "IIC3724",
+                                    "IIC3733",
+                                    "IIC3783"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        218
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Ingeniero Civil Matemático y Computacional (130 créditos exclusivos)",
+                        "name": "Título (130 créditos exclusivos)",
+                        "superblock": "Titulo",
+                        "cap": 50,
+                        "children": [
+                            {
+                                "debug_name": "Optimización",
+                                "name": "Optimización",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS1113",
+                                    "ICS113H"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        201
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Matemática Discretas",
+                                "name": "Matemática Discretas",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC1253"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        202
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Inferencia Estadística",
+                                "name": "Inferencia Estadística",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP2114"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        203
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Análisis Real",
+                                "name": "Análisis Real",
+                                "credits": 10,
+                                "codes": [
+                                    "MAT251I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        204
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Cálculo Científico I",
+                                "name": "Cálculo Científico I",
+                                "credits": 10,
+                                "codes": [
+                                    "MAT2605"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        205
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos de Aplicación en Ingeniería",
+                                "name": "Optativos de Aplicación en Ingeniería",
+                                "credits": 20,
+                                "codes": [
+                                    "IBM3202",
+                                    "ICH3224",
+                                    "ICM3920",
+                                    "ICS3105",
+                                    "ICS3151",
+                                    "ICS3233",
+                                    "ICS3252",
+                                    "ICS3413",
+                                    "IEE3002",
+                                    "IEE3433",
+                                    "IEE3692",
+                                    "IEE3732",
+                                    "IEE3764",
+                                    "FIM3436",
+                                    "FIM4141",
+                                    "IIC3253",
+                                    "IIC3272",
+                                    "IIC3284",
+                                    "IIC3413",
+                                    "IIC3633",
+                                    "IIC3640",
+                                    "IIC3697",
+                                    "IIC3724",
+                                    "IIC3733",
+                                    "IIC3783"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        214,
+                                        215
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos de Profundización",
+                                "name": "Optativos de Profundización",
+                                "credits": 20,
+                                "codes": [
+                                    "ICS3143",
+                                    "IMT3800",
+                                    "FIZ0313",
+                                    "IMT3810",
+                                    "EYP243I",
+                                    "EYP290I",
+                                    "EYP2915",
+                                    "IMT3820",
+                                    "MAT2825",
+                                    "MAT380I",
+                                    "IIC3263",
+                                    "IIC3632",
+                                    "IIC3810",
+                                    "IIC3413",
+                                    "IIC3423",
+                                    "IIC3432",
+                                    "IIC3633",
+                                    "IIC3695"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        216,
+                                        217
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativo de aplicación o de profundización",
+                                "name": "Optativo de aplicación o de profundización",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS3143",
+                                    "IMT3800",
+                                    "FIZ0313",
+                                    "IMT3810",
+                                    "EYP243I",
+                                    "EYP290I",
+                                    "EYP2915",
+                                    "IMT3820",
+                                    "MAT2825",
+                                    "MAT380I",
+                                    "IIC3263",
+                                    "IIC3632",
+                                    "IIC3810",
+                                    "IIC3413",
+                                    "IIC3423",
+                                    "IIC3432",
+                                    "IIC3633",
+                                    "IIC3695",
+                                    "IBM3202",
+                                    "ICH3224",
+                                    "ICM3920",
+                                    "ICS3105",
+                                    "ICS3151",
+                                    "ICS3233",
+                                    "ICS3252",
+                                    "ICS3413",
+                                    "IEE3002",
+                                    "IEE3433",
+                                    "IEE3692",
+                                    "IEE3732",
+                                    "IEE3764",
+                                    "FIM3436",
+                                    "FIM4141",
+                                    "IIC3253",
+                                    "IIC3272",
+                                    "IIC3284",
+                                    "IIC3640",
+                                    "IIC3697",
+                                    "IIC3724",
+                                    "IIC3733",
+                                    "IIC3783"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        218
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Ingeniero Civil Matemático y Computacional - Anexo (e)",
+                        "name": "Título (80 créditos exclusivos)",
+                        "superblock": "Titulo",
+                        "cap": 80,
+                        "children": [
+                            {
+                                "debug_name": "Análisis de Regresión",
+                                "name": "Análisis de Regresión",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP230I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        206
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Análisis Funcional",
+                                "name": "Análisis Funcional",
+                                "credits": 10,
+                                "codes": [
+                                    "MAT255I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        207
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Algoritmos Paralelos en Computación Científica",
+                                "name": "Algoritmos Paralelos en Computación Científica",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT2112"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        208
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optimización Avanzada",
+                                "name": "Optimización Avanzada",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS3153"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        209
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Complejidad Computacional",
+                                "name": "Complejidad Computacional",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC3242"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        210
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Fundamentos Matemáticos para Ciencia de Datos",
+                                "name": "Fundamentos Matemáticos para Ciencia de Datos",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT3120"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        211
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Aplicaciones de Ecuaciones Diferenciales Parciales y Análisis Funcional en Ingeniería",
+                                "name": "Aplicaciones de Ecuaciones Diferenciales Parciales y Análisis Funcional en Ingeniería",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT3130"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        212
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Taller de Ingeniería Matemática (Proyecto de Título)",
+                                "name": "Taller de Ingeniería Matemática (Proyecto de Título)",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT3140"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        213
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativo Complementario Especialidad",
+                                "name": "Optativo Complementario Especialidad",
+                                "credits": 80,
+                                "codes": [
+                                    "ICS2121",
+                                    "ICS3143",
+                                    "IMT2111",
+                                    "IMT2115",
+                                    "IMT2565",
+                                    "IMT2111",
+                                    "IMT2113",
+                                    "IMT2115",
+                                    "IMT2565",
+                                    "MAT270I",
+                                    "EYP211I",
+                                    "EYP243I",
+                                    "EYP2625",
+                                    "EYP290I",
+                                    "EYP2915",
+                                    "ICS2123",
+                                    "ICS2562",
+                                    "IMT2113",
+                                    "MAT2825",
+                                    "MAT380I",
+                                    "IIC2283",
+                                    "IIC3263",
+                                    "IIC3632",
+                                    "IIC3800",
+                                    "EYP210I",
+                                    "EYP270I",
+                                    "IIC2433",
+                                    "IIC2613",
+                                    "IIC3413",
+                                    "IIC3423",
+                                    "IIC3432",
+                                    "IIC3633",
+                                    "IIC3695"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        221,
+                                        222,
+                                        223,
+                                        224,
+                                        225,
+                                        226,
+                                        227,
+                                        228
+                                    ],
+                                    "cost_offset": 1
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
 }
