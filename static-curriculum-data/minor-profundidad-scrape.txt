@@ -796,3 +796,58 @@ ICC2354
 Diseño de Edificios Sustentables
 ICE2703
 Ingeniería Antisísmica
+
+(N707) Minor de Profundidad de Articulación Proyectos de Diseño
+Vs.01 (e)
+(nonexclusive) <--- agregado manualmente para que considere los siguientes ramos como no-exclusivos
+Teorías y Procesos Psicológicos (f)
+PSB400B
+Teoría de la Comunicación (f)
+SOG104
+Representación (f)
+DNO0114
+Mínimos
+DNO0211
+Taller: Identidad
+DNO0321
+Taller: Calidad II
+DNO0221
+Taller: Producto
+Optativos
+Elegir 10 cr entre:
+DNO0212
+Comunicación del Proyecto
+DNO0323
+Procesos de Producción
+
+(N234) Minor de Articulación Premedicina Vs.02 (g)
+(nonexclusive) <--- agregado manualmente para que considere los siguientes ramos como no-exclusivos
+MED107A
+Bases y Fundamentos de la Medicina I (h)
+MED108A
+Bases y Fundamentos de la Medicina II (h)
+MED109A
+Psicología Médica (h) (j)
+MED206A
+Salud Pública (h) (j)
+Mínimos
+MED111A
+Morfología I
+MED212A
+Morfología II
+MED213A
+Morfología III
+MED208A
+Inmunología y Genética
+
+(N227) Minor de Profundidad Articulación Arquitectura Vs.02 (f)
+(nonexclusive) <--- agregado manualmente para que considere los siguientes ramos como no-exclusivos
+AQH0200 Arquitectura Antigua y Tradición Clásica (f)
+AQH0300 Arquitectura y Tradición Moderna (f)
+AQC0210 Forma Sismorresistente (f)
+AQU0200 Ciudad y Paisaje II: El Proyecto Urbano (f)
+Mínimos
+AQT0200 Taller de Formación y Representación II
+AQT0300 Taller de Formación y Representación III
+ICC2105
+Materiales de Ingeniería Civil

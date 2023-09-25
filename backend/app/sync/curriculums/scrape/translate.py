@@ -90,6 +90,8 @@ def translate_scrape(
         # cuenta
         exclusive_credits = 0
         for block in scrape.blocks:
+            if block.nonexclusive:
+                continue
             if block.creds is not None:
                 # Un optativo con un creditaje fijo
                 exclusive_credits += block.creds
@@ -152,7 +154,8 @@ def translate_scrape(
         )
         if exh:
             exhaustive.children.append(exh)
-        exclusive.children.append(exc)
+        if exc:
+            exclusive.children.append(exc)
         for fill in fills:
             curr.fillers.setdefault(fill.course.code, []).append(fill)
 
@@ -166,7 +169,7 @@ def translate_block(
     listbuilder: ListBuilder,
     block: ScrapedBlock,
     exclusive_credits: int,
-) -> tuple[Leaf | None, Leaf, list[FillerCourse]]:
+) -> tuple[Leaf | None, Leaf | None, list[FillerCourse]]:
     # Encontrar un buen nombre para el bloque
     if block.name is not None:
         # El bloque tiene nombre, usar este nombre
@@ -272,12 +275,16 @@ def translate_block(
                 )
             )
         )
-        exc = Leaf(
-            debug_name=name,
-            name=name,
-            superblock=kind.superblock_id,
-            cap=creds,
-            codes=accept_codes,
+        exc = (
+            None
+            if block.nonexclusive
+            else Leaf(
+                debug_name=name,
+                name=name,
+                superblock=kind.superblock_id,
+                cap=creds,
+                codes=accept_codes,
+            )
         )
         fill = [
             FillerCourse(
