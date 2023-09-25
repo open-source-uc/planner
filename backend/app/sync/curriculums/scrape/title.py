@@ -200,6 +200,7 @@ def scrape_block(
                 options=[main_code],
                 name=name,
                 complementary=False,
+                nonexclusive=False,
             )
             # Agregar al bloque cualquier ramo encadenado con 'o's
             while or_operator:
@@ -221,7 +222,13 @@ def scrape_block(
     else:
         # Si se especifican creditos, entonces este bloque es una disyuncion que permite
         # rellenar con cualquiera de una lista de ramos
-        block = ScrapedBlock(creds=creds, options=[], name=name, complementary=False)
+        block = ScrapedBlock(
+            creds=creds,
+            options=[],
+            name=name,
+            complementary=False,
+            nonexclusive=False,
+        )
         for code, or_operator in course_codes:
             if or_operator:
                 log.warning(

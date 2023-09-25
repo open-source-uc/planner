@@ -34,6 +34,7 @@ REGEX_MINOR_CODE = re.compile(r"(?:(M\d{3})-)?(N[\d]{3}(?:-\d)?)\)")
 REGEX_BLOCK_SPLITTER = re.compile(
     r"(?P<split>"
     r"(?:Mínimo)"
+    r"|(?P<nonexc>\(nonexclusive\))"
     r"|(?:(?:(?:[Aa]probar)|(?:Elegir)|(?:Optativos))"
     r" (?P<cr1>\d+) cr(?P<comp1>[^\n]*\(b\))?)"
     r"|(?:Optativos ?(?:Complementarios)? ?(?P<comp2>\(b\)))"
@@ -41,7 +42,7 @@ REGEX_BLOCK_SPLITTER = re.compile(
     r")",
 )
 # Describe que representa cada capture group del regex anterior
-REGEX_SPLITTER_GROUPS = ["split", "cr", "comp", "comp", "bad", "txt"]
+REGEX_SPLITTER_GROUPS = ["split", "nonexc", "cr", "comp", "comp", "bad", "txt"]
 # Identifica un codigo de curso
 # Usado para extraer los cursos de cada bloque
 REGEX_COURSE_CODE = re.compile(r"([A-Z]{3}\d[\dX]{2}[\dA-Z]?)( o)?")
@@ -121,32 +122,9 @@ def scrape_minor(
             split_by_block[j] for j in range(i, i + len(REGEX_SPLITTER_GROUPS))
         ]
 
-        creds = None
-        complementary = False
-        block_raw = None
-        for kind, capture in zip(REGEX_SPLITTER_GROUPS, block_captures, strict=True):
-            if capture is None:
-                continue
-            if kind == "cr":
-                # Este bloque tiene un creditaje asociado
-                creds = int(capture)
-            elif kind == "comp":
-                # Este bloque representa un optativo complementario
-                complementary = True
-            elif kind == "bad":
-                # Este bloque representa un optativo sin creditos (!)
-                # Hay que arreglarlo a mano lamentablemente
-                creds = 999
-            elif kind == "txt":
-                # El texto en bruto asociado a este bloque
-                # Contiene los ramos que componen al bloque
-                block_raw = capture.strip()
-            elif kind == "split":
-                # Un divisor
-                # No se usa por ahora
-                pass
-            else:
-                raise Exception("unreachable")
+        creds, complementary, nonexclusive, block_raw = _extract_block_metadata(
+            block_captures,
+        )
 
         if not block_raw:
             # Este bloque no tiene texto (y por ende no tiene cursos)
@@ -177,16 +155,63 @@ def scrape_minor(
                     out,
                     creds,
                     complementary,
+                    nonexclusive,
                     area_raw,
                     area_name,
                 )
         else:
             # Un curso o optativo
-            process_block(courseinfo, out, creds, complementary, block_raw, None)
+            process_block(
+                courseinfo,
+                out,
+                creds,
+                complementary,
+                nonexclusive,
+                block_raw,
+                None,
+            )
 
     sanity_check_minor(courseinfo, out)
 
     return out
+
+
+def _extract_block_metadata(
+    block_captures: list[str | None],
+) -> tuple[int | None, bool, bool, str]:
+    creds = None
+    complementary = False
+    nonexclusive = False
+    block_raw = None
+    for kind, capture in zip(REGEX_SPLITTER_GROUPS, block_captures, strict=True):
+        if capture is None:
+            continue
+        if kind == "cr":
+            # Este bloque tiene un creditaje asociado
+            creds = int(capture)
+        elif kind == "nonexc":
+            # Este bloque es no-exclusivo
+            # Esto significa que el creditaje de estos cursos no importa, solo
+            # importa que se tomen en algun bloque (posiblemente como OFG)
+            nonexclusive = True
+        elif kind == "comp":
+            # Este bloque representa un optativo complementario
+            complementary = True
+        elif kind == "bad":
+            # Este bloque representa un optativo sin creditos (!)
+            # Hay que arreglarlo a mano lamentablemente
+            creds = 999
+        elif kind == "txt":
+            # El texto en bruto asociado a este bloque
+            # Contiene los ramos que componen al bloque
+            block_raw = capture.strip()
+        elif kind == "split":
+            # Un divisor
+            # No se usa por ahora
+            pass
+        else:
+            raise Exception("unreachable")
+    return creds, complementary, nonexclusive, block_raw or ""
 
 
 def process_block(
@@ -194,6 +219,7 @@ def process_block(
     out: ScrapedProgram,
     creds: int | None,
     complementary: bool,
+    nonexclusive: bool,
     raw: str,
     name: str | None,
 ):
@@ -250,6 +276,7 @@ def process_block(
                 options=[main_code],
                 name=name,
                 complementary=complementary,
+                nonexclusive=nonexclusive,
             )
             # Agregar al bloque cualquier ramo encadenado con 'o's
             while or_operator:
@@ -276,6 +303,7 @@ def process_block(
             options=[],
             name=name,
             complementary=complementary,
+            nonexclusive=nonexclusive,
         )
         for code, or_operator in course_codes:
             if or_operator:
@@ -335,6 +363,8 @@ def sanity_check_minor(courseinfo: CourseInfo, minor: ScrapedProgram):
     complementary_blocks = 0
     optatives = 0
     for block in minor.blocks:
+        if block.nonexclusive:
+            continue
         if block.complementary:
             # Complementary block
             complementary_blocks += 1
