@@ -43,9 +43,6 @@ class BaseBlock(BaseModel):
     # The name of this block.
     # Used for debug purposes.
     debug_name: str
-    # Computer-readable code for this block.
-    # Identifies the block.
-    block_code: str
     # The user-facing name of this block.
     # May not be present (eg. the root block has no name).
     name: str | None
@@ -90,6 +87,8 @@ class Leaf(BaseBlock):
     # A set of course codes that comprise this leaf.
     # This should include the equivalence code!
     codes: set[str]
+    # The ID of the superblock that this course belongs to.
+    superblock: str
     # Course nodes are deduplicated by their codes.
     # However, this behavior can be controlled by the `layer` property.
     # Course nodes with different `layer` values will not be deduplicated.
@@ -148,7 +147,6 @@ class Curriculum(BaseModel):
         return Curriculum(
             root=Combination(
                 debug_name="Raíz",
-                block_code="root",
                 name=None,
                 cap=0,
                 children=[],
@@ -306,3 +304,13 @@ class CurriculumSpec(BaseModel, frozen=True):
 
     def no_title(self) -> "CurriculumSpec":
         return self.with_title(None)
+
+    def __str__(self) -> str:
+        s = self.cyear
+        if self.major is not None:
+            s += f"-{self.major}"
+        if self.minor is not None:
+            s += f"-{self.minor}"
+        if self.title is not None:
+            s += f"-{self.title}"
+        return s
