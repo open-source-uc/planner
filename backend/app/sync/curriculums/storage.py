@@ -9,7 +9,7 @@ from app.plan.validation.curriculum.tree import Curriculum, CurriculumSpec, Cyea
 
 
 def _try_get(dict: dict[str, Curriculum], spec: CurriculumSpec) -> Curriculum | None:
-    return dict.get(spec.json())
+    return dict.get(str(spec))
 
 
 class ProgramDetails(BaseModel):
@@ -69,13 +69,13 @@ class CurriculumStorage(BaseModel):
         return None
 
     def set_major(self, spec: CurriculumSpec, curr: Curriculum):
-        self.majors[spec.json()] = curr
+        self.majors[str(spec)] = curr
 
     def set_minor(self, spec: CurriculumSpec, curr: Curriculum):
-        self.minors[spec.json()] = curr
+        self.minors[str(spec)] = curr
 
     def set_title(self, spec: CurriculumSpec, curr: Curriculum):
-        self.titles[spec.json()] = curr
+        self.titles[str(spec)] = curr
 
     def all_plans(self) -> Iterator[Curriculum]:
         return chain(self.majors.values(), self.minors.values(), self.titles.values())
