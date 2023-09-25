@@ -31,7 +31,7 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
   const openSelector = useCallback((course: PseudoCourseId, semester: number, index: number) => {
     if ('equivalence' in course) openModal(course.equivalence, semester, index)
     else openModal(course, semester, index)
-  }, [])
+  }, [openModal])
 
   const [, drop] = useDrop(() => ({
     accept: 'card',
@@ -98,12 +98,12 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
       setDragged(null)
       setActive(null)
     }
-  }, [coursesId])
+  }, [coursesId, semester, setActive])
 
   const openSelectorSemester = useCallback((courseId: CourseId) => {
     const index = coursesId.indexOf(courseId)
     openSelector(classes[index], semester, index)
-  }, [coursesId, classes])
+  }, [coursesId, openSelector, classes, semester])
 
   return (
     <div className={`drop-shadow-xl w-[161px] shrink-0 bg-base-200 rounded-lg flex flex-col border-2 ${border} `}>
