@@ -4,7 +4,7 @@ from unidecode import unidecode
 
 from app.plan.courseinfo import CourseDetails, CourseInfo
 from app.plan.validation.curriculum.tree import (
-    SUPERBLOCK_PREFIX,
+    Block,
     Combination,
     Curriculum,
     CurriculumSpec,
@@ -82,19 +82,24 @@ def _map_bloqueacademico(cyear: Cyear, bloque_academico: str) -> str:
     return superblock_table.get(id_words[0], bloque_academico)
 
 
-def _identify_superblocks(spec: CurriculumSpec, curriculum: Curriculum):
-    # Cambia los codigos de los bloques academicos a nombres "machine readable".
-    # Por ejemplo, cambia "Ingeniero Civil en Computación" a 'title'
-    for superblock in curriculum.root.children:
-        if not superblock.block_code.startswith(SUPERBLOCK_PREFIX):
-            continue
-        og_superblock_id = superblock.block_code[len(SUPERBLOCK_PREFIX) :]
-        superblock_id = _map_bloqueacademico(spec.cyear, og_superblock_id)
-        superblock.block_code = f"{SUPERBLOCK_PREFIX}{superblock_id}"
+def _identify_superblocks(spec: CurriculumSpec, block: Block):
+    """
+    Cambia los codigos de los bloques academicos a nombres "machine readable".
+    Por ejemplo, cambia "Ingeniero Civil en Computación" a 'title'
+    """
+
+    if isinstance(block, Combination):
+        for subblock in block.children:
+            _identify_superblocks(spec, subblock)
+    else:
+        block.superblock = _map_bloqueacademico(spec.cyear, block.superblock)
 
 
-# Identifica a los bloques de OFG de C2020.
-C2020_OFG_BLOCK_CODE = "courses:!L1"
+# Identifica si un bloque es OFG de C2020.
+def _is_c2020_ofg(block: Block) -> bool:
+    if isinstance(block, Combination):
+        return any(_is_c2020_ofg(child) for child in block.children)
+    return "!L1" in block.codes
 
 
 def _merge_c2020_ofgs(curriculum: Curriculum):
@@ -107,22 +112,20 @@ def _merge_c2020_ofgs(curriculum: Curriculum):
         l1_blocks: list[Leaf] = [
             block
             for block in superblock.children
-            if isinstance(block, Leaf) and block.block_code == C2020_OFG_BLOCK_CODE
+            if isinstance(block, Leaf) and _is_c2020_ofg(block)
         ]
         if len(l1_blocks) > 0:
             # Elimina todos los bloques que son OFG de `superblock.children`
             superblock.children = [
-                block
-                for block in superblock.children
-                if block.block_code != C2020_OFG_BLOCK_CODE
+                block for block in superblock.children if not _is_c2020_ofg(block)
             ]
             # Juntar todos los bloques OFG en un bloque y agregarlo de vuelta
             total_cap = sum(block.cap for block in l1_blocks)
             superblock.children.append(
                 Leaf(
                     debug_name=l1_blocks[0].debug_name,
-                    block_code=C2020_OFG_BLOCK_CODE,
                     name=l1_blocks[0].name,
+                    superblock=l1_blocks[0].superblock,
                     cap=total_cap,
                     codes=l1_blocks[0].codes,
                 ),
@@ -137,7 +140,7 @@ def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum)
         if not isinstance(superblock, Combination):
             continue
         for block in superblock.children:
-            if isinstance(block, Leaf) and block.block_code == C2020_OFG_BLOCK_CODE:
+            if isinstance(block, Leaf) and _is_c2020_ofg(block):
                 for code in block.codes:
                     if not code.startswith("DPT"):
                         continue
@@ -224,7 +227,7 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
         if not isinstance(superblock, Combination):
             continue
         for block_i, block in enumerate(superblock.children):
-            if isinstance(block, Leaf) and block.block_code == C2020_OFG_BLOCK_CODE:
+            if isinstance(block, Leaf) and _is_c2020_ofg(block):
                 # Segregar los cursos de 5 creditos que cumplan los requisitos
                 limited: set[str] = set()
                 unlimited: set[str] = set()
@@ -239,28 +242,27 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                 # Separar el bloque en 3
                 limited_block = Leaf(
                     debug_name=f"{block.debug_name} (máx. 10 creds. DPT y otros)",
-                    block_code=f"{C2020_OFG_BLOCK_CODE}:limited",
                     name=None,
+                    superblock=block.superblock,
                     cap=10,
                     codes=limited,
                 )
                 unlimited_block = Leaf(
                     debug_name=f"{block.debug_name} (genérico)",
-                    block_code=f"{C2020_OFG_BLOCK_CODE}:unlimited",
                     name=None,
+                    superblock=block.superblock,
                     cap=block.cap,
                     codes=unlimited,
                 )
                 science_block = Leaf(
                     debug_name=f"{block.debug_name} (optativo de ciencias)",
-                    block_code=f"{C2020_OFG_BLOCK_CODE}:science",
                     name=None,
+                    superblock=block.superblock,
                     cap=10,
                     codes=science,
                 )
                 block = Combination(
                     debug_name=block.debug_name,
-                    block_code=f"{C2020_OFG_BLOCK_CODE}:root",
                     name=block.name,
                     cap=block.cap,
                     children=[
@@ -316,7 +318,7 @@ def patch_major(
     """
 
     _skip_extras(curr)
-    _identify_superblocks(spec, curr)
+    _identify_superblocks(spec, curr.root)
 
     match spec.cyear:
         case "C2020":

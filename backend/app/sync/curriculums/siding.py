@@ -7,7 +7,6 @@ from unidecode import unidecode
 from app.plan.course import ConcreteId, EquivalenceId
 from app.plan.courseinfo import CourseInfo, EquivDetails
 from app.plan.validation.curriculum.tree import (
-    SUPERBLOCK_PREFIX,
     Block,
     Combination,
     Curriculum,
@@ -328,8 +327,8 @@ def translate_siding(
         superblock.append(
             Leaf(
                 debug_name=raw_block.Nombre,
-                block_code=f"courses:{code}",
                 name=raw_block.Nombre,
+                superblock=raw_block.BloqueAcademico or "",
                 cap=creds,
                 codes=set(codes),
             ),
@@ -343,7 +342,6 @@ def translate_siding(
         curriculum.root.children.append(
             Combination(
                 debug_name=superblock_name,
-                block_code=f"{SUPERBLOCK_PREFIX}{superblock_name}",
                 name=superblock_name,
                 cap=-1,
                 children=leaves,

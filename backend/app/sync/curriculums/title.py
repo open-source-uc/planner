@@ -87,6 +87,7 @@ def add_opi_to_title(
     if exclusive_block is None:
         raise Exception(f"couldn't find exclusive block for title {spec}")
     assert isinstance(exclusive_block, Combination)
+    assert exclusive_block.children
 
     # Conseguir la equivalencia de OPIs
     opi_equiv = build_opi_equiv(courseinfo, out)
@@ -111,7 +112,6 @@ def add_opi_to_title(
     exclusive_block.children.append(
         Combination(
             debug_name=OPI_NAME,
-            block_code=f"{OPI_BLOCK_CODE}:root",
             name=OPI_NAME,
             cap=TITLE_EXCLUSIVE_CREDITS,
             children=[
@@ -120,16 +120,16 @@ def add_opi_to_title(
                 # `unlimited_block` en los OFGs.
                 Leaf(
                     debug_name=f"{OPI_NAME} (genérico)",
-                    block_code=f"{OPI_BLOCK_CODE}:any",
                     name=None,
+                    superblock="Titulo",
                     cap=TITLE_EXCLUSIVE_CREDITS,
                     codes=opi_set,
                     # cost=1,  # Preferir los ramos normales por un poquito
                 ),
                 Leaf(
                     debug_name=f"{OPI_NAME} (IPre)",
-                    block_code=f"{OPI_BLOCK_CODE}:ipre",
                     name=None,
+                    superblock="Titulo",
                     cap=20,
                     codes=ipre_set,
                     # cost=1,  # Preferir los ramos normales por un poquito

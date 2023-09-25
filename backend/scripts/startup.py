@@ -11,19 +11,14 @@ async def sync_and_cache_curricular_data():
     async with prisma:
         client.on_startup()
         try:
-            # Autosync courses if enabled
-            await sync.run_upstream_sync(
-                courses=settings.autosync_courses,
-                curriculums=settings.autosync_curriculums,
-                packedcourses=settings.autosync_packedcourses,
-            )
             # Auto-sync database if empty
             course_sample = await DbCourse.prisma().find_first()
             curriculum_sample = await DbCachedCurriculum.prisma().find_first()
+            # Autosync courses if enabled
             await sync.run_upstream_sync(
-                courses=course_sample is None,
-                curriculums=curriculum_sample is None,
-                packedcourses=False,
+                courses=settings.autosync_courses or course_sample is None,
+                curriculums=settings.autosync_curriculums or curriculum_sample is None,
+                packedcourses=settings.autosync_packedcourses,
             )
         finally:
             if client.soap_client:

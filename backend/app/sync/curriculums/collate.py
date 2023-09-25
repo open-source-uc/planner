@@ -7,6 +7,7 @@ import logging
 from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass, field
+from itertools import chain
 
 from pydantic import BaseModel
 
@@ -22,6 +23,7 @@ from app.plan.validation.curriculum.tree import (
     TitleCode,
     cyear_from_str,
 )
+from app.sync.curriculums.bypass import Bypass
 from app.sync.curriculums.major import (
     translate_common_plan,
     translate_major,
@@ -43,6 +45,19 @@ from app.sync.siding.client import (
 )
 
 log = logging.getLogger("plan-collator")
+
+
+class BypassProgram(BaseModel):
+    major: MajorCode | None = None
+    minor: MinorCode | None = None
+    title: TitleCode | None = None
+    plan: Bypass
+
+
+class BypassInfo(BaseModel):
+    majors: list[BypassProgram]
+    minors: list[BypassProgram]
+    titles: list[BypassProgram]
 
 
 class ScrapedInfo(BaseModel):
@@ -68,6 +83,9 @@ async def collate_plans() -> CurriculumStorage:
     # Algunos titulos se agregan manualmente
     add_manual_title_offer(siding)
 
+    # Cargar los planes que se agregan manualmente
+    bypass = load_bypass(courseinfo, scraped, siding)
+
     # Colocar los curriculums resultantes aca
     out = CurriculumStorage()
 
@@ -75,9 +93,39 @@ async def collate_plans() -> CurriculumStorage:
     # Es decir, majors y minors que no son "reales"
     # Para arreglarlo, se compara con la lista scrapeada y contra las mallas que
     # realmente existen
-    extract_true_offer("major", siding.majors, siding, scraped.majors, out.offer, True)
-    extract_true_offer("minor", siding.minors, siding, scraped.minors, out.offer, False)
-    extract_true_offer("title", siding.titles, siding, scraped.titles, out.offer, False)
+    extract_true_offer(
+        "major",
+        siding.majors,
+        siding,
+        chain(
+            scraped.majors,
+            (major.major or MajorCode("M") for major in bypass.majors),
+        ),
+        out.offer,
+        True,
+    )
+    extract_true_offer(
+        "minor",
+        siding.minors,
+        siding,
+        chain(
+            scraped.minors,
+            (minor.minor or MinorCode("N") for minor in bypass.minors),
+        ),
+        out.offer,
+        False,
+    )
+    extract_true_offer(
+        "title",
+        siding.titles,
+        siding,
+        chain(
+            scraped.titles,
+            (title.title or TitleCode("") for title in bypass.titles),
+        ),
+        out.offer,
+        False,
+    )
 
     # Falta extraer los majors y sus minors asociados
     extract_major_minor_associations(siding, out)
@@ -85,6 +133,8 @@ async def collate_plans() -> CurriculumStorage:
     # Traducir los majors desde los datos de SIDING
     for cyear, offer in out.offer.items():
         for major in offer.major.values():
+            if major.code not in siding.plans[cyear].plans:
+                continue
             spec = CurriculumSpec(
                 cyear=cyear,
                 major=MajorCode(major.code),
@@ -96,7 +146,7 @@ async def collate_plans() -> CurriculumStorage:
                 out,
                 spec,
                 siding,
-                siding.plans[cyear].plans.get(major.code, []),
+                siding.plans[cyear].plans[major.code],
             )
 
     # Agregar el plan comun
@@ -106,6 +156,8 @@ async def collate_plans() -> CurriculumStorage:
     # los datos de SIDING
     for cyear, offer in out.offer.items():
         for minor_meta in offer.minor.values():
+            if MinorCode(minor_meta.code) not in scraped.minors:
+                continue
             for minor_scrape in scraped.minors[MinorCode(minor_meta.code)]:
                 spec = CurriculumSpec(
                     cyear=cyear,
@@ -126,6 +178,8 @@ async def collate_plans() -> CurriculumStorage:
     # SIDING
     for cyear, offer in out.offer.items():
         for title in offer.title.values():
+            if TitleCode(title.code) not in scraped.titles:
+                continue
             scrape = scraped.titles[TitleCode(title.code)]
             spec = CurriculumSpec(
                 cyear=cyear,
@@ -141,6 +195,9 @@ async def collate_plans() -> CurriculumStorage:
                 siding.plans[cyear].plans.get(title.code, []),
                 scrape,
             )
+
+    # Cargar majors minors y titulos desde el bypass
+    translate_bypass(courseinfo, siding, bypass, out)
 
     # Aplicar los ultimos parches faltantes
     patch_globally(courseinfo, out)
@@ -205,6 +262,7 @@ def extract_true_offer(
     out: defaultdict[Cyear, ProgramOffer],
     require_siding: bool,
 ):
+    scraped = set(scraped)
     counter = FilteredCounter()
 
     # Here, it's clear that filtering a list of a single type will result in a list of a
@@ -219,7 +277,7 @@ def extract_true_offer(
                 cyear,
                 program,
                 siding,
-                set(scraped),
+                scraped,
                 counter,
                 require_siding,
             )
@@ -467,3 +525,55 @@ UNESSENTIAL_EQUIVS = {
 def _mark_unessential_equivs(courseinfo: CourseInfo, out: CurriculumStorage):
     for unessential_code in UNESSENTIAL_EQUIVS:
         out.lists[unessential_code].is_unessential = True
+
+
+def load_bypass(courseinfo: CourseInfo, scraped: ScrapedInfo, siding: SidingInfo):
+    return BypassInfo.parse_file("../static-curriculum-data/bypass.json")
+
+
+def translate_bypass(
+    courseinfo: CourseInfo,
+    siding: SidingInfo,
+    bypass: BypassInfo,
+    out: CurriculumStorage,
+):
+    """
+    Para algunos planes especialmente problematicos, hay una base de datos "hardcodeada"
+    a mano, que "bypassea" los procesos de ingesta de datos.
+    Este formato se mapea muy directo a la representacion interna, pero es mas facil de
+    escribir a mano que el formato interno.
+    """
+    for cyear, _offer in out.offer.items():
+        for bp in bypass.majors:
+            spec = CurriculumSpec(
+                cyear=cyear,
+                major=bp.major,
+                minor=bp.minor,
+                title=bp.title,
+            )
+            out.set_major(
+                spec,
+                bp.plan.translate(courseinfo, siding, out, f"MAJOR-{spec}"),
+            )
+        for bp in bypass.minors:
+            spec = CurriculumSpec(
+                cyear=cyear,
+                major=bp.major,
+                minor=bp.minor,
+                title=bp.title,
+            )
+            out.set_minor(
+                spec,
+                bp.plan.translate(courseinfo, siding, out, f"MINOR-{spec}"),
+            )
+        for bp in bypass.titles:
+            spec = CurriculumSpec(
+                cyear=cyear,
+                major=bp.major,
+                minor=bp.minor,
+                title=bp.title,
+            )
+            out.set_title(
+                spec,
+                bp.plan.translate(courseinfo, siding, out, f"TITLE-{spec}"),
+            )

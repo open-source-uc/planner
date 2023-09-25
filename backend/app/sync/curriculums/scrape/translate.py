@@ -6,7 +6,6 @@ from unidecode import unidecode
 from app.plan.course import ConcreteId, EquivalenceId
 from app.plan.courseinfo import CourseInfo, EquivDetails
 from app.plan.validation.curriculum.tree import (
-    SUPERBLOCK_PREFIX,
     Combination,
     Curriculum,
     CurriculumSpec,
@@ -45,13 +44,7 @@ class ListBuilder:
         storage: CurriculumStorage,
         spec: CurriculumSpec,
     ) -> None:
-        self.unique_id = f"{kind.superblock_id.upper()}-{spec.cyear}"
-        if spec.major is not None:
-            self.unique_id += f"-{spec.major}"
-        if spec.minor is not None:
-            self.unique_id += f"-{spec.minor}"
-        if spec.title is not None:
-            self.unique_id += f"-{spec.title}"
+        self.unique_id = f"{kind.superblock_id.upper()}-{spec}"
         self.storage = storage
         self.last_idx = 0
         self.optative_idx = 0
@@ -115,7 +108,6 @@ def translate_scrape(
     # compartirse entre minor exhaustivo y major/titulo
     exhaustive = Combination(
         debug_name=name,
-        block_code=f"{SUPERBLOCK_PREFIX}{kind.superblock_id}",
         name=kind.readable_id,
         cap=-1,
         children=[],
@@ -128,7 +120,6 @@ def translate_scrape(
     # optativo complementario para que el minor exclusivo este completo
     exclusive = Combination(
         debug_name=f"{name} ({exclusive_credits} créditos exclusivos)",
-        block_code=f"{SUPERBLOCK_PREFIX}{kind.superblock_id}",
         name=kind.readable_id,
         cap=exclusive_credits,
         children=[],
@@ -209,16 +200,16 @@ def translate_block(
         assert info is not None
         exh = Leaf(
             debug_name=name,
-            block_code=f"courses:{code}",
             name=name,
+            superblock=kind.superblock_id,
             cap=info.credits or 1,
             codes={code},
             layer=kind.layer_id,
         )
         exc = Leaf(
             debug_name=name,
-            block_code=f"courses:{code}",
             name=name,
+            superblock=kind.superblock_id,
             cap=info.credits or 1,
             codes={code},
         )
@@ -273,8 +264,8 @@ def translate_block(
             else (
                 Leaf(
                     debug_name=name,
-                    block_code=f"courses:{equiv.code}",
                     name=name,
+                    superblock=kind.superblock_id,
                     cap=creds,
                     codes=accept_codes,
                     layer=kind.layer_id,
@@ -283,8 +274,8 @@ def translate_block(
         )
         exc = Leaf(
             debug_name=name,
-            block_code=f"courses:{equiv.code}",
             name=name,
+            superblock=kind.superblock_id,
             cap=creds,
             codes=accept_codes,
         )
