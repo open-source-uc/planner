@@ -35,6 +35,8 @@ def _diagnose_blocks(
             if inst.filler is None or inst.flow == 0:
                 continue
 
+            options: list[list[PseudoCourse]] = g.find_filler_options(inst)
+
             # This filler is active, therefore something is missing
             out.add(
                 CurriculumErr(
@@ -47,11 +49,9 @@ def _diagnose_blocks(
                         for layer in inst.layers.values()
                         if layer.active_edge is not None
                     ],
-                    credits=courseinfo.get_credits(inst.filler.course) or 0,
+                    credits=inst.flow,
                     fill_options=[
-                        fetch_name(
-                            inst.filler.course,
-                        ),
+                        fetch_name(filler) for option in options for filler in option
                     ],
                 ),
             )

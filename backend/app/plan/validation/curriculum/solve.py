@@ -63,7 +63,12 @@ from dataclasses import dataclass, field
 
 from ortools.linear_solver import pywraplp as lmip
 
-from app.plan.course import ConcreteId, EquivalenceId, PseudoCourse
+from app.plan.course import (
+    ConcreteId,
+    EquivalenceId,
+    PseudoCourse,
+    pseudocourse_with_credits,
+)
 from app.plan.courseinfo import CourseInfo
 from app.plan.validation.curriculum.tree import (
     Block,
@@ -204,6 +209,16 @@ class SolvedCurriculum:
         self.usable_keys = set()
         self.superblocks = {}
         self.mapping = {}
+
+    def find_filler_options(self, inst: UsableInstance) -> list[list[PseudoCourse]]:
+        """
+        Given an active course (ie. a course that has flow through it in the current
+        optimal solution), compute all of the equivalent fillers that could take its
+        place (possibly including itself).
+        """
+
+        assert inst.flow > 0
+        return _explore_options_for(self, inst)
 
     def dump_graphviz_pretty(self, curriculum: Curriculum) -> str:
         from app.plan.validation.curriculum.dump import GraphDumper
@@ -501,21 +516,20 @@ def _build_problem(
                 if len(layer.block_edges) <= 1:
                     continue
                 g.model.Add(
-                    g.model.Sum([edge.active_var for edge in layer.block_edges]) <= 1.0,
+                    g.model.Sum([edge.active_var for edge in layer.block_edges]) <= 1,
                 )
 
     # Minimize the amount of used course flow
     costs: list[lmip.LinearExpr] = []
     for usable in g.usable.values():
         for inst in usable.instances:
-            costs.append(
-                (
-                    TAKEN_COST
-                    if inst.filler is None
-                    else FILLER_COST + inst.filler.cost_offset
-                )
-                * inst.flow_var,
+            cost_per_credit = (
+                TAKEN_COST
+                if inst.filler is None
+                else FILLER_COST + inst.filler.cost_offset
             )
+            costs.append(cost_per_credit * inst.flow_var)
+
     g.model.Minimize(g.model.Sum(costs))
 
     return g
@@ -612,3 +626,55 @@ def solve_curriculum(
     _tag_superblocks(g)
 
     return g
+
+
+def _explore_options_for(
+    g: SolvedCurriculum,
+    og_inst: UsableInstance,
+) -> list[list[PseudoCourse]]:
+    # Place the options in here
+    opts: list[list[PseudoCourse]] = []
+    # Place the variables that will need their upperbounds restored in here
+    restore: list[tuple[lmip.Variable, float]] = []
+
+    insts = [og_inst]
+    while True:
+        # If this option is a filler, include it in the options
+        if any(inst.filler for inst in insts):
+            opts.append(
+                [
+                    pseudocourse_with_credits(
+                        inst.filler.course,
+                        round(inst.flow_var.SolutionValue()),
+                    )
+                    for inst in insts
+                    if inst.filler
+                ],
+            )
+
+        # Forbid these courses
+        for inst in insts:
+            restore.append((inst.flow_var, inst.flow_var.Ub()))
+            inst.flow_var.SetUb(0)
+
+        # Solve with these new restrictions
+        solve_status = g.model.Solve()
+        if not (
+            solve_status == lmip.Solver.OPTIMAL or solve_status == lmip.Solver.FEASIBLE
+        ):
+            # Could not solve, we ran out of options
+            break
+
+        # Find which course(s) were used to fill in the gap
+        insts.clear()
+        for usable in g.usable.values():
+            for inst in usable.instances:
+                if round(inst.flow_var.SolutionValue()) > inst.flow:
+                    insts.append(inst)
+        assert insts
+
+    # Re-enable the killed variables
+    for var, ub in restore:
+        var.SetUb(ub)
+
+    return opts
