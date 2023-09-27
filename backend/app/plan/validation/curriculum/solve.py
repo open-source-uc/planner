@@ -80,10 +80,11 @@ INFINITY: int = 10**18
 # Base cost of using a filler course. In contrast with a taken course, filler courses
 # are virtual courses that are not actually taken by the user. Instead, filler courses
 # serve as a "fallback" when a curriculum can't be filled with taken courses only.
-FILLER_COST = 10**6
+FILLER_COST = 10**2
 # Base cost of taking a course. This number should be large enough so that cost offsets
 # dont make it more profitable to take an extra course.
-TAKEN_COST = 10**3
+# However, using values that are too large creates precision errors with SCIP.
+TAKEN_COST = 10**1
 
 
 IntExpr = int | lmip.LinearExpr
