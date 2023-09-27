@@ -1,5 +1,7 @@
 from collections import defaultdict
 
+from fastapi import HTTPException
+
 from app.plan.course import PseudoCourse
 from app.plan.courseinfo import CourseInfo
 from app.plan.plan import ValidatablePlan
@@ -35,7 +37,7 @@ def _diagnose_blocks(
             if inst.filler is None or inst.flow == 0:
                 continue
 
-            options: list[list[PseudoCourse]] = g.find_filler_options(inst)
+            options: list[list[PseudoCourse]] = g.find_swapouts(inst)
 
             # This filler is active, therefore something is missing
             out.add(
@@ -102,3 +104,31 @@ def diagnose_curriculum(
             if code in g.superblocks and rep_idx < len(g.superblocks[code]):
                 superblocks[code][rep_idx] = g.superblocks[code][rep_idx]
     out.course_superblocks = superblocks
+
+
+def find_swapouts(
+    courseinfo: CourseInfo,
+    curriculum: Curriculum,
+    plan: ValidatablePlan,
+    sem_idx: int,
+    class_idx: int,
+) -> list[list[PseudoCourse]]:
+    # Determine the course code and instance index
+    if sem_idx >= len(plan.classes) or class_idx >= len(plan.classes[sem_idx]):
+        raise HTTPException(400, "invalid class index")
+    code = plan.classes[sem_idx][class_idx].code
+    instance_idx = 0
+    for sem_i, sem in enumerate(plan.classes):
+        for cl_i, cl in enumerate(sem):
+            if sem_i == sem_idx and cl_i == class_idx:
+                break
+            if cl.code == code:
+                instance_idx += 1
+        if sem_i == sem_idx:
+            break
+
+    # Solve the plan first
+    g = solve_curriculum(courseinfo, plan.curriculum, curriculum, plan.classes)
+
+    # Now, get the equivalents for the given class
+    return g.find_swapouts(g.usable[code].instances[instance_idx])
