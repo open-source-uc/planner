@@ -1,0 +1,853 @@
+(N191) Minor de Profundidad Articulación - Área 1: Externalidades e Impacto Ambiental Vs.01
+Ingeniería de Transporte Vs.01
+Mínimos
+Modelos Estocásticos
+ICS2123
+Contabilidad y Control de Gestión
+ICS2613
+Organización y Comportamiento en la Empresa
+ICS2813
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+400 cr
+50 cr
+30 cr
+10
+10
+10
+Optativos (f) (b)  <--- este ( b ) fue agregado manualmente para que el scraper considerara este optativo como complementario
+Elegir 20 cr de un área diferente a la cursada en el Major
+Ingeniería Ambiental
+ICH2304
+Contaminación Atmosférica
+IIQ234320 cr
+Externalidades de Transporte10
+ICT2253
+
+(N192) Minor de Profundidad Articulación - Área 2: Herramientas de Análisis y Modelación Vs.01
+Ingeniería de Transporte Vs.01
+Mínimos
+Modelos Estocásticos
+ICS2123
+Contabilidad y Control de Gestión
+ICS2613
+Organización y Comportamiento en la Empresa
+ICS2813
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+400 cr
+50 cr
+30 cr
+10
+10
+10
+Optativos (f) (b)  <--- este ( b ) fue agregado manualmente para que el scraper considerara este optativo como complementario
+Elegir 20 cr de un área diferente a la cursada en el Major
+EYP2114
+Inferencia Estadística
+ELM230I o
+Análisis de Regresión
+EYP230I
+ICT2953
+Tópicos de Econometría
+ICT3244
+Modelos Econométricos en Ingeniería
+Métodos Avanzados para Sistemas de Transporte y
+ICT3463
+Logística
+ICS2562
+Econometría Aplicada
+ICS2563
+ICS2133 o Fundamentos de Simulación de Sistemas Estocásticos
+ICS3723
+Simulación
+ICS3143
+Programación Entera
+10
+10
+10
+10
+10
+10
+10
+10
+10
+
+(N193) Minor de Profundidad Articulación - Área 3: Manejo de Bases de Datos Vs.01
+Ingeniería de Transporte Vs.01
+Mínimos
+Modelos Estocásticos
+ICS2123
+Contabilidad y Control de Gestión
+ICS2613
+Organización y Comportamiento en la Empresa
+ICS2813
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+400 cr
+50 cr
+30 cr
+10
+10
+10
+Optativos (f) (b)  <--- este ( b ) fue agregado manualmente para que el scraper considerara este optativo como complementario
+Elegir 20 cr de un área diferente a la cursada en el Major
+IIC1253
+Matemáticas Discretas
+IIC2115
+Programación Como Herramienta para la Ingeniería10
+10
+IIC2133
+IIC2413
+IIC2433Estructuras de Datos y Algoritmos
+Bases de Datos
+Minería de Datos10
+10
+10
+IIC2613Inteligencia Artificial10
+
+(N194) Minor de Profundidad Articulación - Área 4: Profundización en Ingeniería de Transporte Vs.01
+Ingeniería de Transporte Vs.01
+Mínimos
+Modelos Estocásticos
+ICS2123
+Contabilidad y Control de Gestión
+ICS2613
+Organización y Comportamiento en la Empresa
+ICS2813
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+400 cr
+50 cr
+30 cr
+10
+10
+10
+Optativos (f) (b)  <--- este ( b ) fue agregado manualmente para que el scraper considerara este optativo como complementario
+Elegir 20 cr de un área diferente a la cursada en el Major
+ICT2443
+Ingeniería Logística
+ICT3443
+ICT3103
+Economía de Transporte
+ICT3283
+Equilibrio en Redes de Transporte
+Externalidades de Transporte
+ICT2253
+ICT2303
+Tecnología de Medios de Transporte
+Cualquier optativo ICT nivel 3000
+
+1 (N160) Minor de Profundidad en Fundamentos Científicos y
+Tecnológicos de la Computación Vs.02 (h)
+Mínimos
+IIC2213
+IIC2223
+IIC2283
+IIC2523
+Lógica para Ciencias de la Computación
+Teoría de Autómatas y Lenguajes Formales
+Diseño y Análisis de Algoritmos
+Sistemas Distribuidos
+400 cr
+50 cr
+40 cr.
+10
+10
+10
+10
+Aprobar 10 cr. de la siguiente lista de optativos:
+IIC2333
+Sistemas Operativos y Redes
+IIC2343
+Arquitectura de Computadores
+IIC2613
+Inteligencia Artificial
+IIC3253
+Criptografía y Seguridad Computacional
+3.2 (N161) Minor de Profundidad en Data Science y Analytics Vs.01
+Mínimos (g)
+IIC2433
+Minería de Datos
+EYP2114
+Inferencia Estadística
+IIC2026
+Visualización de Información
+IIC2613
+Inteligencia Artificial
+10
+10
+10
+10
+50 cr
+Aprobar 10 cr. de la siguiente lista de optativos: (b)
+IIC3757
+Minería de Procesos
+IIC3695
+Tópicos Avanzados en Inteligencia de Máquina
+IIC3633
+Sistemas Recomendadores
+IIC3413
+Implementación de Sistemas de Base de Datos
+IIC3432
+Topicos Avanzados en Bases de Datos
+IIC3423
+Big Data
+IIC3640
+Modelos Gráficos Probabilísticos
+IIC3724
+Reconocimiento de Patrones
+EYP230I
+Análisis de Regresión
+EYP280I
+Métodos Bayesianos
+ICS2123
+Modelos Estocásticos
+1 
+(N343) Minor de Profundidad en Ingeniería Eléctrica
+Mínimos
+Sistemas Electrónicos Programables
+IEE2463
+Optativos
+Elegir 10 cr entre:
+Laboratorio de Máquinas Eléctricas
+IEE2273
+Laboratorio de Control Automático
+IEE2683
+Laboratorio de Telecomunicaciones
+IEE2573
+Elegir 30 cr entre:
+IBM2012 Monitoreo Fisiológico y Análisis de Datos
+IBM2101 Imágenes Biomédicas
+Programación Avanzada
+IIC2233
+IIC2115
+Programación Como Herramienta para Ingeniería
+IRB2001
+Fundamentos de Robótica
+ICS2121
+Métodos de Optimización
+IEE2XXX
+Cualquier curso IEE nivel 2000
+1 (N291) Minor de Profundidad en Mecatrónica Vs.02
+Mínimos
+ICM2003 Sistemas Electromecánicos
+Optativos
+Elegir 10 cr de cada una de las siguientes áreas:
+Área 1: Programación
+Programación Como Herramienta para Ingeniería
+IIC2115
+IIC2233
+Programación Avanzada
+Área 2: Procesamiento de Señales
+IEE2123
+Circuitos Eléctricos
+IEE2103
+Señales y Sistemas
+IEE2713
+Sistemas Digitales
+Área 3: Aplicaciones Mecatrónicas
+ICM2132
+Astronáutica
+ICM2982
+Laboratorio de Maquinas Termicas
+IEE2213
+Máquinas Eléctricas
+IEE2413
+Electrónica
+Área 4: Hands On (Aplicación)
+ICM2316
+Introducción al Diseño Gráfico
+ICM2981
+Trabajo Personal Dirigido
+ICM2985
+Investigación o Proyecto
+ICM2986
+Investigacion o Proyecto
+ICM2987
+Investigacion o Proyecto
+IIC2685
+Robótica Móvil
+IEE2183
+Laboratorio de Mediciones Eléctricas
+IEE2273
+Laboratorio de Máquinas Eléctricas
+(N288) Minor de Profundidad en Gestión y Operaciones Mineras Vs.0
+Mínimos
+IMM2503 Perforación y Tronadura
+IMM2103 Gestión Ambiental
+IMM2213 Fundamentos de la Economía de Minerales
+Elegir 20 cr. entre:
+ICE2640
+Recursos y Exploración Geológica
+IMM2521 Tecnologías Mineras
+IMM2985
+IMM2986 Investigacion o Proyecto
+IMM2987
+(N228) Minor de Profundidad en Ingeniería de Procesos Vs.02
+Mínimos
+QIM106A Química Inorgánica I
+QUO1112 Laboratorio de Química Orgánica
+Residuos Sólidos y Peligrosos
+IIQ2363
+Optativos 20 cr
+IIQ2985
+IIQ2673
+IIQ2423
+IIQ2303
+Investigación o Proyecto
+Bioseparaciones
+Energía I
+Matemática Aplicada a la Ingeniería de Procesos
+
+(N226) Minor de Profundidad en Ingeniería de Alimentos Vs.01
+Mínimos
+IIQ2633
+IIQ2623
+IIQ2723
+IIQ2603
+Química y Análisis de Alimentos
+Microbiología e Higiene de Alimentos
+Ingeniería de alimentos
+Ciencia de los Alimentos
+Optativos 10 cr
+IIQ2930
+IIQ2985
+(N232) Minor de Profundidad Articulación Ingeniería de
+Construcción Vs.02
+Mínimos
+Mecánica de Sólidos
+ICE2313
+Fundamentos de Geotecnia
+ICE2604
+Ingeniería Vial
+ICC2514
+ICH1104
+Mecánica de Fluidos
+Optativos 10 cr
+ICE2533
+Estructuras de Acero
+ICE2413
+Hormigón Armado
+ICC2454
+Diseño y Construccion en Madera
+(N339) Minor de Profundidad en Geología Ingenieril Vs.01
+Mínimos
+Sistemas de Información Geográfica
+GEO202
+Métodos Numéricos en Ingeniería
+ICE2135
+Optativos (k)(l)
+Elegir 30 créditos entre cualquiera de las siguientes áreas:
+(Combinando o no las áreas recomendadas)
+Área Geología Ambiental Vs.01
+IMM2103 Gestión Ambiental
+Geomorfología Dinámica y Climática
+GEO303
+GEO406
+Sustentabilidad y Territorio
+GEO309
+Percepción Remota Satelital
+Gestión y Administración Territorial
+GEO503
+Climatología
+GEO201
+Ingeniería Ambiental
+ICH2304
+Residuos Sólidos y Peligrosos
+IIQ2363
+Contaminación Atmosférica
+IIQ2343
+Área Peligros Geológicos Vs.01
+GEO2910
+Riesgo de Tsunami
+GEO3086
+Principios de Volcanología
+Estática
+ICE2006
+Análisis Estructural I
+ICE2114
+ICE2313
+Mecánica de Sólidos
+ICE2403 o
+Diseño Estructural
+ICE2413
+Hormigón Armado
+ICE2533
+Estructuras de Acero
+ICC2454
+Diseño y Construccion en Madera
+ICE2604
+Fundamentos de Geotecnia
+ICC2105
+Materiales de Ingeniería Civil
+ICE2614
+Mecánica de Suelos
+IMM2083
+Mecánica de rocas para minería
+Área Recursos Geológicos Mineros Vs.01
+Minería a Cielo Abierto
+IMM2013
+Geoestadística
+IMM2033
+Minería Subterránea
+IMM2043
+Procesos Mineralúrgicos
+IMM2023
+IMM2073
+Minería Sustentable
+IMM2053
+Procesos Metalúrgicos
+Área Recursos Geológicos Hídricos Vs.01
+Mecánica de Fluidos
+ICH1104
+ICH2114
+Ingeniería Hidráulica
+ICH2214
+Agua Subterránea
+ICH2204
+Hidrología
+Calidad del Agua
+ICH2314
+
+
+(N236) Área Procesos
+Mínimo
+BIO252I
+Ingeniería Genética y Bioinformática
+IIQ2013
+Operaciones Unitarias I
+IIQ2303
+Matemática Aplicada a la Ingeniería de Procesos
+Elegir 20 cr. entre:
+IIQ2023
+Operaciones Unitarias II
+IIC2433
+Minería de Datos
+IBM2121
+Biomateriales
+IIQ2985
+Investigación o Proyecto
+ING0700
+QUO1112
+Laboratorio de Química Orgánica
+N237) Área Medioambiente
+Mínimos
+BIO252I
+Ingeniería Genética y Bioinformática
+ICH1104
+Mecánica de Fluidos
+ICH2304
+Ingeniería Ambiental
+Elegir 20 cr. entre:
+ICH2314
+Calidad del Agua
+ICH2374
+Principios de Tratamiento Fisicoquímico
+IIQ2363
+Residuos Sólidos y Peligrosos
+IIQ2985
+Investigación o Proyecto
+ING0700
+(N238) Área Biomedicina
+Mínimos
+BIO252I
+Ingeniería Genética y Bioinformática
+BIO389E
+Inmunología Celular y Molecular
+IBM2121
+Biomateriales
+Elegir 20 cr. entre:
+BIO272C
+Farmacología Molecular
+BIO135C
+Fisiología
+IBM2025
+Mecánica de la Célula
+IBM2012
+Monitoreo Fisiológico y Análisis de Datos
+IIQ2985
+Investigación o Proyecto
+ING0700
+QUO1112
+Laboratorio de Química Orgánica
+N239) Área Biología Sintética
+Mínimos
+BIO252I
+Ingeniería Genética y Bioinformática
+IIQ2313
+Dinámica y Control de Procesos
+IBM2992
+Biología Sintética y Prototipado de Funciones
+Elegir 20 cr. entre:
+BIO288C
+Genetica Molecular
+BIO325C
+Biología de Sistemas
+IIQ2985
+Investigación o Proyecto
+ING0700
+Laboratorio de Química Orgánica
+QUO1112
+(N240) Área Bioinformática
+Mínimos
+BIO252I
+Ingeniería Genética y Bioinformática
+IIC2233
+Programación Avanzada
+IIC2433
+Minería de Datos
+Elegir 20 cr. entre:
+IIC2133
+Estructuras de Datos y Algoritmos
+IIC2613
+Inteligencia Artificial
+BIO325C
+Biología de Sistemas
+IIQ2985
+Investigación o Proyecto
+ING0700
+1 (N233) Minor de Profundidad en Ingeniería Biomédica Vs.01
+Mínimos
+IBM2101
+ICE2020 o
+IBM2020
+IBM2121
+Imágenes Biomédicas
+50 cr
+30 cr
+10
+Introducción a la Biomecánica10
+Biomateriales10
+Optativos
+Elegir 20 créditos entre:
+IBM2012
+Monitoreo Fisiológico y Análisis de Datos
+IBM2025
+Mecánica de la Célula
+IBM2026
+Prototyping for Bioengineers
+ICE2135
+Métodos Numéricos en Ingeniería
+ICM2403
+Ciencia de los Materiales
+IEE2714
+Fundamentos de Procesamiento de Imágenes
+IBM2985
+Investigación o Proyecto
+ING0700
+IIC2233
+Programación Avanzada
+IIC2613
+Inteligencia Artificial
+(N294) Área 1: Ingeniería de Sistemas de Automatización Vs.02
+Mínimos
+IEE2213
+Máquinas Eléctricas
+IEE2413
+Electrónica
+IEE2513
+Comunicaciones
+Optativos
+Elegir 20 cr. entre:
+ICS1113 o Optimización
+ICS113H
+Optimización-Honors
+IEE2183
+Laboratorio de Mediciones Eléctricas
+IEE2473
+Laboratorio de Electrónica Analógica y Digital
+IEE2683
+Laboratorio de Control Automático
+IEE2273
+Laboratorio de Máquinas Eléctricas
+IEE2103
+Señales y Sistemas
+IIC1253
+Matemáticas Discretas
+IIC2133
+Estructuras de Datos y Algoritmos
+IIC2283
+Diseño y Análisis de Algoritmos
+IEE2693
+Electro-Óptica
+IEE2714
+Fundamentos de Procesamiento de Imágenes
+IEE2123
+Circuitos Eléctricos
+IEE2313
+Sistemas de Potencia
+IEE2613
+Control Automático
+IEE2463
+Sistemas Electrónicos Programables
+IIC2613
+Inteligencia Artificial
+IIC2685
+Robótica Móvil
+IIC2343
+Arquitectura de Computadores
+ICM2003 Sistemas Electromecánicos
+ICM2813 Control de Sistemas Mecánicos
+ING2050 Desarrollo y Aplicaciones de Sistemas Aéreos No
+Tripulados
+IRB0600
+Trabajo Personal Dirigido
+IRB0601
+Trabajo Personal Dirigido
+IRB0700 o Investigación o Proyecto
+IRB0701
+Investigación o Proyecto
+(N295) Área 2: Inteligencia Computacional Vs.02
+Mínimos
+Lógica para Ciencias de la Computación
+IIC2213
+IIC2223
+Teoría de Autómatas y Lenguajes Formales
+Estructuras de Datos y Algoritmos
+IIC2133
+Optativos
+Elegir 20 cr. entre:
+ICS1113 o
+Optimización
+ICS113H
+Optimización-Honors
+IIC2413
+Bases de Datos
+IIC2513
+Tecnologías y Aplicaciones Web
+IIC3423
+Big Data
+IIC3697
+Aprendizaje Profundo
+IIC2283
+Diseño y Análisis de Algoritmos
+IIC2343
+Arquitectura de Computadores
+IIC2613
+Inteligencia Artificial
+IIC2685
+Robótica Móvil
+IEE2123
+Circuitos Eléctricos
+IEE2103
+Señales y Sistemas
+IEE2613
+Control Automático
+IEE2463
+Sistemas Electrónicos Programables
+IEE2714
+Fundamentos de Procesamiento de Imágenes
+ICM2003
+Sistemas Electromecánicos
+ICM2813
+Control de Sistemas Mecánicos
+Desarrollo y Aplicaciones de Sistemas Aéreos No
+ING2050
+Tripulados
+IRB0600
+Trabajo Personal Dirigido
+IRB0601
+Trabajo Personal Dirigido
+IRB0700
+Investigación o Proyecto
+IRB0701
+IEE2985
+(N296) Área 3: Mecatrónica Vs.02
+Mínimos
+ICH1104
+Mecánica de Fluidos
+ICM2022
+Diseño Mecánico
+ICM2028
+Mecánica de Materiales
+Optativos
+Elegir 20 cr. entre:
+ICS1113 o
+Optimización
+ICS113H
+Optimización-Honors
+ICM2213
+Conversión de Energía
+ICM2223
+Transferencia de Calor
+ICM2403
+Ciencia de los Materiales
+ICM2003
+Sistemas Electromecánicos
+ICM2813
+Control de Sistemas Mecánicos
+ICM2982
+Laboratorio de Maquinas Termicas
+IEE2123
+Circuitos Eléctricos
+IEE2213
+Máquinas Eléctricas
+IEE2413
+Electrónica
+IEE2513
+Comunicaciones
+IEE2693
+Electro-Óptica
+IEE2714
+Fundamentos de Procesamiento de Imágenes
+IEE2313
+Sistemas de Potencia
+IEE2103
+Señales y Sistemas
+IEE2613
+Control Automático
+IEE2463
+Sistemas Electrónicos Programables
+IIC1253
+Matemáticas Discretas
+IIC2613
+Inteligencia Artificial
+IIC2685
+Robótica Móvil
+IIC2133
+Estructuras de Datos y Algoritmos
+IIC2283
+Diseño y Análisis de Algoritmos
+Arquitectura de Computadores
+IIC2343
+Desarrollo y Aplicaciones de Sistemas Aéreos No
+ING2050
+Tripulados
+IRB0600
+Trabajo Personal Dirigido
+IRB0601
+Trabajo Personal Dirigido
+IRB0700
+Investigación o Proyecto
+IRB0701
+(N230) Minor de Profundidad Articulación Ingeniería Civil (Ing. y
+Arq.) Vs.02
+Mínimos
+ICH1104
+Mecánica de Fluidos
+ICC2105
+Materiales de Ingeniería Civil
+ICC2913
+Tecnologias de Informacion en Construccion
+Optativos
+Elegir 20 cr entre:
+ICE2604
+Fundamentos de Geotecnia
+ICH2114
+Ingeniería Hidráulica
+ICC2354
+Diseño de Edificios Sustentables
+ICE2703
+Ingeniería Antisísmica
+
+(N707) Minor de Profundidad de Articulación Proyectos de Diseño
+Vs.01 (e)
+(nonexclusive) <--- agregado manualmente para que considere los siguientes ramos como no-exclusivos
+Teorías y Procesos Psicológicos (f)
+PSB400B
+Teoría de la Comunicación (f)
+SOG104
+Representación (f)
+DNO0114
+Mínimos
+DNO0211
+Taller: Identidad
+DNO0321
+Taller: Calidad II
+DNO0221
+Taller: Producto
+Optativos
+Elegir 10 cr entre:
+DNO0212
+Comunicación del Proyecto
+DNO0323
+Procesos de Producción
+
+(N234) Minor de Articulación Premedicina Vs.02 (g)
+(nonexclusive) <--- agregado manualmente para que considere los siguientes ramos como no-exclusivos
+MED107A
+Bases y Fundamentos de la Medicina I (h)
+MED108A
+Bases y Fundamentos de la Medicina II (h)
+MED109A
+Psicología Médica (h) (j)
+MED206A
+Salud Pública (h) (j)
+Mínimos
+MED111A
+Morfología I
+MED212A
+Morfología II
+MED213A
+Morfología III
+MED208A
+Inmunología y Genética
+
+(N227) Minor de Profundidad Articulación Arquitectura Vs.02 (f)
+(nonexclusive) <--- agregado manualmente para que considere los siguientes ramos como no-exclusivos
+AQH0200 Arquitectura Antigua y Tradición Clásica (f)
+AQH0300 Arquitectura y Tradición Moderna (f)
+AQC0210 Forma Sismorresistente (f)
+AQU0200 Ciudad y Paisaje II: El Proyecto Urbano (f)
+Mínimos
+AQT0200 Taller de Formación y Representación II
+AQT0300 Taller de Formación y Representación III
+ICC2105
+Materiales de Ingeniería Civil

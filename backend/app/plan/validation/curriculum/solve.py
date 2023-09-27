@@ -89,7 +89,6 @@ from ortools.sat.python import cp_model as cpsat
 from app.plan.course import ConcreteId, EquivalenceId, PseudoCourse
 from app.plan.courseinfo import CourseInfo
 from app.plan.validation.curriculum.tree import (
-    SUPERBLOCK_PREFIX,
     Block,
     Curriculum,
     CurriculumSpec,
@@ -537,9 +536,12 @@ def _build_problem(
         for inst in usable.instances:
             vars.append(inst.used_var)
             coeffs.append(
-                TAKEN_COST
-                if inst.filler is None
-                else FILLER_COST + inst.filler.cost_offset,
+                (
+                    TAKEN_COST
+                    if inst.filler is None
+                    else FILLER_COST + inst.filler.cost_offset
+                )
+                * inst.credits,
             )
     g.model.Minimize(cpsat.LinearExpr.WeightedSum(vars, coeffs))
 
@@ -567,10 +569,10 @@ def _get_superblock(
     for _layer_id, layer in sorted(inst.layers.items(), key=lambda pair: pair[0]):
         if layer.active_edge is not None:
             # This block edge is active!
-            # Use the first superblock block in the path
-            for block in layer.active_edge.block_path:
-                if block.block_code.startswith(SUPERBLOCK_PREFIX):
-                    return block.block_code[len(SUPERBLOCK_PREFIX) :]
+            # Use the superblock of the leaf (the last block in the path)
+            leaf = layer.active_edge.block_path[-1]
+            assert isinstance(leaf, Leaf)
+            return leaf.superblock
 
     # No superblock found
     return ""

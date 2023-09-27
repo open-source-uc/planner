@@ -4,7 +4,7 @@ Models a flow network in the context of curriculums.
 
 import re
 from collections.abc import Callable, Generator
-from typing import Annotated, Any, Literal, Optional, Self
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import BaseModel, Field
 from pydantic.fields import ModelField
@@ -43,9 +43,6 @@ class BaseBlock(BaseModel):
     # The name of this block.
     # Used for debug purposes.
     debug_name: str
-    # Computer-readable code for this block.
-    # Identifies the block.
-    block_code: str
     # The user-facing name of this block.
     # May not be present (eg. the root block has no name).
     name: str | None
@@ -68,6 +65,18 @@ class Combination(BaseBlock):
     # Children nodes that supply flow to this block.
     children: list["Block"]
 
+    def freeze_capacities(self):
+        """
+        If this node or any of its descendants have -1 capacity, replace these invalid
+        capacities by the total capacity of their children.
+        """
+
+        for child in self.children:
+            if isinstance(child, Combination):
+                child.freeze_capacities()
+        if self.cap == -1:
+            self.cap = sum(child.cap for child in self.children)
+
 
 class Leaf(BaseBlock):
     """
@@ -78,6 +87,8 @@ class Leaf(BaseBlock):
     # A set of course codes that comprise this leaf.
     # This should include the equivalence code!
     codes: set[str]
+    # The ID of the superblock that this course belongs to.
+    superblock: str
     # Course nodes are deduplicated by their codes.
     # However, this behavior can be controlled by the `layer` property.
     # Course nodes with different `layer` values will not be deduplicated.
@@ -93,7 +104,7 @@ Combination.update_forward_refs()
 
 
 class Multiplicity(BaseModel):
-    group: list[str]
+    group: set[str]
     credits: int | None
 
 
@@ -116,11 +127,12 @@ class Curriculum(BaseModel):
         This makes it so that by default each course only counts at most once.
         For equivalencies that have no associated credit count, the multiplicity is
         infinite (eg. multiplicity["!L1"] = `None`).
-    - equivalencies: Specifies a course as being equivalent to another course. All
-        courses in an equivalence must point to the same course code.
-        (eg. FIS1523 -> FIS1523, IEE1523 -> FIS1523).
-        If not present for a particular course, it defaults to being equivalent with
-        itself.
+
+        Additionally, multiplicity specifies which courses should be equivalent in terms
+        of credit count.
+        For example, if TTF010 has a multiplicity group of [TTF010, TEO200] then taking
+        TTF010 or TEO200 is exactly the same, and the multiplicity is compared against
+        the total of credits among both courses.
 
     NOTE: Remember to reset the cache in the database after any changes, either manually
     or through migrations.
@@ -135,7 +147,6 @@ class Curriculum(BaseModel):
         return Curriculum(
             root=Combination(
                 debug_name="Raíz",
-                block_code="root",
                 name=None,
                 cap=0,
                 children=[],
@@ -156,45 +167,32 @@ class Curriculum(BaseModel):
             return self.multiplicity[course_code]
         info = courseinfo.try_course(course_code)
         if info is not None:
-            return Multiplicity(group=[course_code], credits=info.credits or 1)
+            return Multiplicity(group={course_code}, credits=info.credits or 1)
         # TODO: Limit equivalence multiplicity to the total amount of credits in the
         # equivalence.
         # Ideally, we would want to store the total amount of credits in a field in the
         # equivalence, otherwise it is probably too costly to visit the 2000+ course
         # OFG equivalence.
-        return Multiplicity(group=[course_code], credits=None)
+        return Multiplicity(group={course_code}, credits=None)
 
 
-class Cyear(BaseModel, frozen=True):
-    """
-    A curriculum version, constrained to whatever curriculum versions we support.
-    Whenever something depends on the version of the curriculum, it should match
-    exhaustively on the `raw` field (using Python's `match` statement).
-    This allows the linter to pinpoint all places that need to be updated whenever a
-    new curriculum version is added.
-
-    NOTE: Remember to reset the cache in the database after any changes, either manually
-    or through migrations.
-    """
-
-    raw: Literal["C2020"] | Literal["C2022"]
-
-    @staticmethod
-    def from_str(cyear: str) -> Optional["Cyear"]:
-        if cyear == "C2020" or cyear == "C2022":
-            return Cyear(raw=cyear)
-        return None
-
-    def __str__(self) -> str:
-        """
-        Intended for communication with untyped systems like SIDING or the database.
-        To switch based on the curriculum version, use `raw` directly, which
-        preserves type information.
-        """
-        return self.raw
+# A curriculum version, constrained to whatever curriculum versions we support.
+# Whenever any code depends on the version of the curriculum, it should use `match`
+# blocks to exhaustively match on the versions.
+# This way, when a new version is added the linter can spot all of the locations where
+# the code depends on `Cyear`.
+Cyear = Literal["C2020"] | Literal["C2022"]
 
 
-LATEST_CYEAR = Cyear(raw="C2022")
+def cyear_from_str(cyear: str) -> Cyear | None:
+    match cyear:
+        case "C2020" | "C2022":
+            return cyear
+        case _:
+            return None
+
+
+LATEST_CYEAR: Cyear = "C2022"
 
 
 class CurriculumCode(str):
@@ -279,3 +277,40 @@ class CurriculumSpec(BaseModel, frozen=True):
     major: MajorCode | None
     minor: MinorCode | None
     title: TitleCode | None
+
+    def has_major(self) -> bool:
+        return self.major is not None
+
+    def has_minor(self) -> bool:
+        return self.minor is not None
+
+    def has_title(self) -> bool:
+        return self.title is not None
+
+    def with_major(self, major: MajorCode | None) -> "CurriculumSpec":
+        return self.copy(update={"major": major})
+
+    def with_minor(self, minor: MinorCode | None) -> "CurriculumSpec":
+        return self.copy(update={"minor": minor})
+
+    def with_title(self, title: TitleCode | None) -> "CurriculumSpec":
+        return self.copy(update={"title": title})
+
+    def no_major(self) -> "CurriculumSpec":
+        return self.with_major(None)
+
+    def no_minor(self) -> "CurriculumSpec":
+        return self.with_minor(None)
+
+    def no_title(self) -> "CurriculumSpec":
+        return self.with_title(None)
+
+    def __str__(self) -> str:
+        s = self.cyear
+        if self.major is not None:
+            s += f"-{self.major}"
+        if self.minor is not None:
+            s += f"-{self.minor}"
+        if self.title is not None:
+            s += f"-{self.title}"
+        return s

@@ -1,5 +1,5 @@
-import { type CourseId, type CoursePos, type PseudoCourseId } from './Types'
-import { type Cyear, type ValidatablePlan } from '../../../client'
+import { type Cyear, type CourseId, type CoursePos, type PseudoCourseId } from './Types'
+import { type ValidatablePlan } from '../../../client'
 
 export const getCoursePos = (prevCourses: PseudoCourseId[][], courseId: CourseId): CoursePos | null => {
   const positions: CoursePos[] = []
@@ -74,12 +74,12 @@ type MustInclude<T, U extends T[]> = [T] extends [ValueOf<U>] ? U : never
 function stringUnionToArray<T> () {
   return <U extends NonEmptyArray<T>>(...elements: MustInclude<T, U>) => elements
 }
-export const VALID_CYEARS = stringUnionToArray<Cyear['raw']>()('C2020', 'C2022')
+export const VALID_CYEARS = stringUnionToArray<Cyear>()('C2020', 'C2022')
 
 export const validateCyear = (raw: string): Cyear | null => {
   for (const cyear of VALID_CYEARS) {
     if (raw === cyear) {
-      return { raw: cyear }
+      return cyear
     }
   }
   return null

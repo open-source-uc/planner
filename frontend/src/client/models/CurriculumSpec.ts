@@ -2,8 +2,6 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import type { Cyear } from './Cyear';
-
 /**
  * Represents a curriculum specification.
  * This specification should uniquely identify a curriculum, although it contains no
@@ -16,7 +14,7 @@ export type CurriculumSpec = {
     /**
      * The curriculum version.
      */
-    cyear: Cyear;
+    cyear: ('C2020' | 'C2022');
     /**
      * A major code, eg. `M072` for hydraulic engineering.
      */
