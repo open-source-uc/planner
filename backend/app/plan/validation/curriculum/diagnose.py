@@ -32,7 +32,7 @@ def _diagnose_blocks(
     # Get any fillers in use
     for usable in g.usable.values():
         for inst in usable.instances:
-            if inst.filler is None or not inst.used:
+            if inst.filler is None or inst.flow == 0:
                 continue
 
             # This filler is active, therefore something is missing
