@@ -123,10 +123,10 @@ class GraphDumper:
                         label = f"{label} #{inst.instance_idx+1}"
                     # label += f"\n{inst.original_pseudocourse}"
                     style = ""
-                    subflow = inst.credits if edge.active else 0
+                    subflow = edge.flow
                     if inst.filler is not None:
                         if self.style == "pretty":
-                            if not edge.active:
+                            if edge.flow == 0:
                                 continue
                             subflow = 0
                         label += "\n(faltante)"
@@ -159,7 +159,7 @@ class GraphDumper:
                         # Connect the course node to the instance node
                         total_inst_flow = 0
                         for block_edge in layer.block_edges:
-                            total_inst_flow += inst.credits if block_edge.active else 0
+                            total_inst_flow += block_edge.flow
                         self.mkflowedge(
                             courseids[code],
                             inst_id,
