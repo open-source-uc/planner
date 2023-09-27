@@ -3,9 +3,11 @@
 /* eslint-disable */
 import type { AccessLevelOverview } from '../models/AccessLevelOverview';
 import type { Body_generate_plan } from '../models/Body_generate_plan';
+import type { ConcreteId } from '../models/ConcreteId';
 import type { CourseDetails } from '../models/CourseDetails';
 import type { CourseFilter } from '../models/CourseFilter';
 import type { CourseOverview } from '../models/CourseOverview';
+import type { EquivalenceId } from '../models/EquivalenceId';
 import type { EquivDetails } from '../models/EquivDetails';
 import type { FullOffer } from '../models/FullOffer';
 import type { HealthResponse } from '../models/HealthResponse';
@@ -417,6 +419,62 @@ export class DefaultService {
             url: '/plan/validate_for_any',
             query: {
                 'user_rut': userRut,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * List Swapouts Guest
+     * @param semesterIdx
+     * @param classIdx
+     * @param requestBody
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static listSwapoutsGuest(
+        semesterIdx: number,
+        classIdx: number,
+        requestBody: ValidatablePlan,
+    ): CancelablePromise<Array<Array<(ConcreteId | EquivalenceId)>>> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/plan/swapouts',
+            query: {
+                'semester_idx': semesterIdx,
+                'class_idx': classIdx,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+
+    /**
+     * List Swapouts For
+     * @param semesterIdx
+     * @param classIdx
+     * @param requestBody
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static listSwapoutsFor(
+        semesterIdx: number,
+        classIdx: number,
+        requestBody: ValidatablePlan,
+    ): CancelablePromise<Array<Array<(ConcreteId | EquivalenceId)>>> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/plan/swapouts_for',
+            query: {
+                'semester_idx': semesterIdx,
+                'class_idx': classIdx,
             },
             body: requestBody,
             mediaType: 'application/json',

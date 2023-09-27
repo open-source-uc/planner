@@ -75,7 +75,7 @@ const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, t
   }
   return (
     <div ref={ref} draggable={true} className={`${isDragging ? 'opacity-0 z-0' : 'mb-3'} mx-1 ${(isPassed || isCurrent) ? 'cursor-not-allowed opacity-50' : 'cursor-grab'} `}>
-      <ConditionalWrapper condition={course.is_concrete !== true && courseBlock !== '' && courseBlock !== null} wrapper={(children: ReactNode) => <button className='w-full' onClick={() => { callOpenSelector() }}>{children}</button>}>
+      <ConditionalWrapper condition={course.is_concrete !== true && courseBlock !== '' && courseBlock !== null} wrapper={(children: ReactNode) => <button className='w-full' onClick={callOpenSelector}>{children}</button>}>
           <CourseCard
             courseBlock={courseBlock}
             course={course}

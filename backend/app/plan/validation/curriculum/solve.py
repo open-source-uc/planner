@@ -211,7 +211,7 @@ class SolvedCurriculum:
         self.superblocks = {}
         self.mapping = {}
 
-    def find_filler_options(self, inst: UsableInstance) -> list[list[PseudoCourse]]:
+    def find_swapouts(self, inst: UsableInstance) -> list[list[PseudoCourse]]:
         """
         Given an active course (ie. a course that has flow through it in the current
         optimal solution), compute all of the equivalent fillers that could take its
