@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 
 from app import sync
 from app.limiting import ratelimit_guest, ratelimit_user
+from app.plan.course import PseudoCourse
 from app.plan.courseinfo import (
     course_info,
 )
@@ -19,7 +20,7 @@ from app.plan.storage import (
 )
 from app.plan.validation.curriculum.solve import solve_curriculum
 from app.plan.validation.diagnostic import ValidationResult
-from app.plan.validation.validate import diagnose_plan
+from app.plan.validation.validate import diagnose_plan, list_swapouts
 from app.user.auth import (
     ModKey,
     UserKey,
@@ -103,6 +104,26 @@ async def validate_plan_for_any_user(
     """
     user_ctx = await sync.get_student_data(mod.as_any_user(user_rut))
     return await diagnose_plan(plan, user_ctx)
+
+
+@router.post("/swapouts", response_model=list[list[PseudoCourse]])
+async def list_swapouts_guest(
+    plan: ValidatablePlan,
+    semester_idx: int,
+    class_idx: int,
+    _limited: None = Depends(ratelimit_guest("8/5second")),
+):
+    return await list_swapouts(plan, semester_idx, class_idx)
+
+
+@router.post("/swapouts_for", response_model=list[list[PseudoCourse]])
+async def list_swapouts_for(
+    plan: ValidatablePlan,
+    semester_idx: int,
+    class_idx: int,
+    _limited: UserKey = Depends(ratelimit_user("7/5second")),
+):
+    return await list_swapouts(plan, semester_idx, class_idx)
 
 
 @router.post("/curriculum_graph")
