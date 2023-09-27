@@ -84,7 +84,7 @@ def _extract_active_fillers(
     to_pass: list[tuple[int, PseudoCourse]] = []
     for usable in g.usable.values():
         for inst in usable.instances:
-            if inst.filler is None or not inst.used:
+            if inst.filler is None or inst.flow == 0:
                 continue
 
             # Add this course
