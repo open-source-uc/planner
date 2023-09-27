@@ -39,6 +39,6 @@ def pseudocourse_with_credits(pseudocourse: PseudoCourse, credits: int) -> Pseud
     """
     return (
         pseudocourse.copy(update={"credits": credits})
-        if isinstance(pseudocourse, EquivalenceId)
+        if isinstance(pseudocourse, EquivalenceId) and credits != pseudocourse.credits
         else pseudocourse
     )
