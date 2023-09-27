@@ -232,7 +232,7 @@ class Solver:
          Creates a named constraint with -infinity and +infinity bounds.
         """
         return _pywraplp.Solver_Constraint(self, *args)
-    def Objective(self):
+    def Objective(self) -> Objective:
         r"""Returns the mutable objective object."""
         return _pywraplp.Solver_Objective(self)
     OPTIMAL: int = _pywraplp.Solver_OPTIMAL
@@ -554,7 +554,7 @@ class Objective:
     def minimization(self):
         r"""Is the optimization direction set to minimize?"""
         return _pywraplp.Objective_minimization(self)
-    def Value(self):
+    def Value(self) -> float:
         r"""
         Returns the objective value of the best solution found so far.
 
@@ -620,7 +620,7 @@ class Variable(LinearExpr):
     def ub(self):
         r"""Returns the upper bound."""
         return _pywraplp.Variable_ub(self)
-    def SetBounds(self, lb, ub):
+    def SetBounds(self, lb: float, ub: float) -> None:
         r"""Sets both the lower and upper bounds."""
         return _pywraplp.Variable_SetBounds(self, lb, ub)
     def reduced_cost(self):
@@ -668,13 +668,13 @@ class Variable(LinearExpr):
         return _pywraplp.Variable_SolutionValue(self)
     def Integer(self):
         return _pywraplp.Variable_Integer(self)
-    def Lb(self):
+    def Lb(self) -> float:
         return _pywraplp.Variable_Lb(self)
-    def Ub(self):
+    def Ub(self) -> float:
         return _pywraplp.Variable_Ub(self)
-    def SetLb(self, x):
+    def SetLb(self, x: float) -> None:
         return _pywraplp.Variable_SetLb(self, x)
-    def SetUb(self, x):
+    def SetUb(self, x: float) -> None:
         return _pywraplp.Variable_SetUb(self, x)
     def ReducedCost(self):
         return _pywraplp.Variable_ReducedCost(self)
@@ -729,7 +729,7 @@ class Constraint:
     def SetBounds(self, lb, ub):
         r"""Sets both the lower and upper bounds."""
         return _pywraplp.Constraint_SetBounds(self, lb, ub)
-    def set_is_lazy(self, laziness):
+    def set_is_lazy(self, laziness: bool) -> None:
         r"""
         Advanced usage: sets the constraint "laziness".
 
