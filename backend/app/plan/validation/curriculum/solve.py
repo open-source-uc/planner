@@ -88,7 +88,8 @@ INFINITY: int = 10**18
 FILLER_COST = 10**2
 # Base cost of taking a course. This number should be large enough so that cost offsets
 # dont make it more profitable to take an extra course.
-# However, using values that are too large creates precision errors with SCIP.
+# This value might be a little low for my liking, but a value of 20 starts showing
+# precision issues with the SCIP solver.
 TAKEN_COST = 10**1
 
 
@@ -652,10 +653,15 @@ def _explore_options_for(
                 ],
             )
 
-        # Forbid these courses
-        for inst in insts:
-            restore.append((inst.flow_var, inst.flow_var.Ub()))
-            inst.flow_var.SetUb(0)
+        # Forbid this courses
+        # Note that not only the active instances are forbidden, but also all of the
+        # instances associated to their courses
+        # These prevents duplicate fillers from showing up in the suggestions
+        courses = {inst.code for inst in insts}
+        for code in courses:
+            for inst in g.usable[code].instances:
+                restore.append((inst.flow_var, inst.flow_var.Ub()))
+                inst.flow_var.SetUb(0)
 
         # Solve with these new restrictions
         solve_status = g.model.Solve()
