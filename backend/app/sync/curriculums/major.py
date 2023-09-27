@@ -186,7 +186,7 @@ def _ofg_is_unlimited(courseinfo: CourseInfo, code: str):
     info = courseinfo.try_course(code)
     if info is None:
         return True
-    return _ofg_classify(info) != "unlimited"
+    return _ofg_classify(info) == "unlimited"
 
 
 def _ofg_is_science(courseinfo: CourseInfo, code: str):
