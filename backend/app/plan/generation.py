@@ -2,7 +2,7 @@ from collections import OrderedDict, defaultdict
 from collections.abc import Iterable
 
 from app import sync
-from app.plan.course import ConcreteId, EquivalenceId
+from app.plan.course import ConcreteId, EquivalenceId, pseudocourse_with_credits
 from app.plan.courseinfo import CourseDetails, CourseInfo, course_info
 from app.plan.plan import (
     PseudoCourse,
@@ -91,7 +91,7 @@ def _extract_active_fillers(
             to_pass.append(
                 (
                     inst.filler.order,
-                    inst.filler.course,
+                    pseudocourse_with_credits(inst.filler.course, inst.flow),
                 ),
             )
 
