@@ -1,9 +1,9 @@
 import { useState, useEffect, Fragment, memo, useRef, useCallback } from 'react'
 import { Dialog, Transition, Switch } from '@headlessui/react'
-import { DefaultService, type EquivDetails, type CourseOverview, type CourseDetails, type CancelablePromise } from '../../client'
-import { Spinner } from '../../components/Spinner'
-import { Info } from '../../components/Info'
-import { type PseudoCourseDetail, isCancelError } from './utils/Types'
+import { DefaultService, type EquivDetails, type CourseOverview, type CourseDetails, type CancelablePromise } from '../../../client'
+import { Spinner } from '../../../components/Spinner'
+import { Info } from '../../../components/Info'
+import { type PseudoCourseDetail, isCancelError } from '../utils/Types'
 
 // TODO: fetch school list from backend
 // Existen escuelas en buscacursos que no tienen cursos: 'Acad Inter de Filosofía'

@@ -1,5 +1,5 @@
-import editBlackIcon from '../../assets/editBlack.svg'
-import currentBlackIcon from '../../assets/currentBlack.svg'
+import editBlackIcon from '../../../assets/editBlack.svg'
+import currentBlackIcon from '../../../assets/currentBlack.svg'
 
 const Description = ({ text }: { text: string }): JSX.Element => {
   return (

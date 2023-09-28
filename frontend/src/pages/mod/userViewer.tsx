@@ -1,4 +1,4 @@
-import SearchPlanByRutModal from './SearchPlanByRutModal'
+import SearchPlanByRutModal from './SearchPlanByRutDialog'
 import CurriculumListRow from '../user/CurriculumListRow'
 import { useState } from 'react'
 import { DefaultService, type StudentContext, type LowDetailPlanView } from '../../client'
