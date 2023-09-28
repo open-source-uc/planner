@@ -77,6 +77,22 @@ const getPlannerRoute = new Route({
   })
 })
 
+const newPlannerForModRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: '/mod/planner/new/$userRut',
+  component: Planner,
+  beforeLoad: modRoute,
+  onLoadError: onAuthenticationError
+})
+
+const viewPlannerForModRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: '/mod/planner/$userRut/$plannerId',
+  beforeLoad: modRoute,
+  component: Planner,
+  onLoadError: onAuthenticationError
+})
+
 const UserViewerForMod = new Route({
   getParentRoute: () => rootRoute,
   path: '/mod/users',
@@ -97,7 +113,7 @@ const error404 = new Route({
   component: Error404
 })
 
-const routeTree = rootRoute.addChildren([homeRoute, userPageRoute, error403, newPlannerRoute, getPlannerRoute, UserViewerForMod, logoutRoute, error404])
+const routeTree = rootRoute.addChildren([homeRoute, userPageRoute, error403, newPlannerRoute, getPlannerRoute, UserViewerForMod, newPlannerForModRoute, viewPlannerForModRoute, logoutRoute, error404])
 
 export const router = new ReactRouter({
   routeTree,

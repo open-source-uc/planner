@@ -17,33 +17,33 @@ async function fetchUserPlans (rut: string): Promise<LowDetailPlanView[]> {
 const UserViewer = (): JSX.Element => {
   const authState = useAuth()
   const [userRut, setUserRut] = useState<string>(authState?.student?.rut ?? '')
-  const [searchingPlanModalIsOpen, setSearchingPlanModalIsOpen] = useState<boolean>(authState?.student?.rut === undefined)
+  const [searchingPlanModalIsOpen, setSearchingPlanModalIsOpen] = useState<boolean>(authState?.student?.rut === null)
 
   const { status, error, data } = useQuery({
     queryKey: ['userPlans', userRut],
     queryFn: async () => await fetchUserPlans(userRut)
   })
 
+  const searchPlans = async (student: StudentContext, rut: string): Promise<void> => {
+    let formattedRut = rut
+    if (formattedRut.charAt(formattedRut.length - 2) !== '-') {
+      formattedRut = formattedRut.slice(0, -1) + '-' + formattedRut.slice(-1)
+    }
+    if (authState?.setStudent !== null) {
+      authState?.setStudent(prev => {
+        if (prev !== null) return { ...student, rut: formattedRut }
+        return prev
+      })
+    }
+    setUserRut(formattedRut)
+  }
+
   return (
     <div>
       <SearchPlanByRutModal
           isOpen = {searchingPlanModalIsOpen}
           onClose = {() => { setSearchingPlanModalIsOpen(false) }}
-          searchPlans = {(student: StudentContext, rut: string) => {
-            if (authState?.setStudent !== null) authState?.setStudent(student)
-            let formattedRut = rut
-            if (formattedRut.charAt(formattedRut.length - 2) !== '-') {
-              formattedRut = formattedRut.slice(0, -1) + '-' + formattedRut.slice(-1)
-            }
-            if (authState?.setStudent !== null) {
-              authState?.setStudent(prev => {
-                if (prev !== null) return { ...student, rut: formattedRut }
-                return prev
-              })
-            }
-
-            setUserRut(formattedRut)
-          } }
+          searchPlans = {searchPlans}
       />
       <div className="flex my-2 h-full">
         <div className="mx-auto">
@@ -58,7 +58,7 @@ const UserViewer = (): JSX.Element => {
               {status === 'success' && userRut !== '' &&
                 <div className="flex gap-4 items-center">
                   <h2 className="text-2xl font-medium leading-normal mb-2 text-gray-800 text-center">{authState?.student?.info.full_name}</h2>
-                  <Link to="/planner//new"
+                  <Link to="mod/planner/new/$userRut"
                     params={{
                       userRut
                     }}>
@@ -76,7 +76,7 @@ const UserViewer = (): JSX.Element => {
               {status === 'success' && userRut === '' && <div className="mx-auto my-auto"><p className="text-gray-500 text-center">Ingresa el rut del estudiante para buscar sus mallas.</p></div>}
 
               {(status === 'success' && userRut !== '') && (data.length === 0
-                ? <div className="mx-auto my-auto"><p className="text-gray-500 text-center">El usuario {userRut} no tiene ninguna malla.</p></div>
+                ? <div className="mx-auto my-auto"><p className="text-gray-500 text-center">El usuario no tiene ninguna malla.</p></div>
                 : <div className='relative overflow-x-auto shadow-md sm:rounded-lg max-w-2xl mt-2'>
                   <table className="w-full text-sm text-left text-gray-500">
                     <thead className="text-xs text-gray-700 uppercase bg-gray-50 ">
@@ -91,7 +91,7 @@ const UserViewer = (): JSX.Element => {
                     <tbody className='bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'>
                       {data?.map((plan: LowDetailPlanView) => {
                         return (
-                          <CurriculumListRow key={plan.id} curriculum={plan}/>
+                          <CurriculumListRow key={plan.id} curriculum={plan} impersonateRut={userRut}/>
                         )
                       })}
                     </tbody>

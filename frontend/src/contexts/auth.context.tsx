@@ -9,6 +9,7 @@ export interface UserData {
 interface Student extends StudentContext {
   rut?: string
 }
+
 export interface AuthState {
   user: UserData | null
   isMod: boolean | null
@@ -26,8 +27,8 @@ const AuthContext = React.createContext<AuthState | null>(null)
 
 export function AuthProvider ({ children, userData }: Props): JSX.Element {
   const [user, setUser] = React.useState<UserData | null>(userData)
-  const [isMod, setIsMod] = React.useState<boolean | null>(null)
-  const [student, setStudent] = useState<StudentContext | null>(null)
+  const [isMod, setIsMod] = React.useState<boolean >(false)
+  const [student, setStudent] = useState<Student | null>(null)
 
   useEffect(() => {
     if (user?.token == null) {
@@ -72,12 +73,11 @@ export function AuthProvider ({ children, userData }: Props): JSX.Element {
       }
     }).then(
       response => {
-        if (response.stat !== 200) {
-          setIsMod(() => true)
+        if (response !== undefined && response.stat !== 200) {
+          setIsMod(true)
         }
       })
-  }, [user?.token]
-  )
+  }, [user?.token])
 
   return (
     <AuthContext.Provider value={{ user, setUser, student, setStudent, isMod }}>
@@ -85,6 +85,7 @@ export function AuthProvider ({ children, userData }: Props): JSX.Element {
     </AuthContext.Provider>
   )
 }
+
 export function useToken (): UserData | null {
   // Check if we have a new token in the search params
   const urlParams = new URLSearchParams(window.location.search)

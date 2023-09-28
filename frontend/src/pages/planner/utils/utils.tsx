@@ -54,7 +54,7 @@ export const getCourseName = (course: ClassId | PseudoCourseDetail): string | un
   }
 }
 
-export const handleErrors = (err: unknown, setPlannerStatus: Function, setError: Function): void => {
+export const handleErrors = (err: unknown, setPlannerStatus: Function, setError: Function, isMod?: boolean): void => {
   if (isApiError(err)) {
     console.error(err)
     switch (err.status) {

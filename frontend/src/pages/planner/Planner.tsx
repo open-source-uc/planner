@@ -7,7 +7,7 @@ import LegendModal from './LegendModal'
 import SavePlanModal from './SavePlanModal'
 import CurriculumSelector from './CurriculumSelector'
 import AlertModal from '../../components/AlertModal'
-import { useParams } from '@tanstack/react-router'
+import { useParams, Navigate } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react'
 import { type CourseDetails, type Major, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise } from '../../client'
 import { type CourseId, type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type PlanDigest, type ValidationDigest, isCourseRequirementErr } from './utils/Types'
@@ -21,6 +21,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend'
 import { collectRequirements, handleErrors, PlannerStatus } from './utils/utils'
 import { updateCurriculum, isMinorValid, isMajorValid, loadCurriculumsData } from './utils/CurriculumUtils'
 import ReceivePaste from './utils/ReceivePaste'
+import ModBanner from '../mod/ModBanner'
 
 const reduceCourseDetails = (old: Record<string, PseudoCourseDetail>, add: Record<string, PseudoCourseDetail>): Record<string, PseudoCourseDetail> => {
   return { ...old, ...add }
@@ -48,9 +49,8 @@ const Planner = (): JSX.Element => {
   const previousClasses = useRef<PseudoCourseId[][]>([[]])
 
   const [, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
-
+  const impersonateRut = useParams()?.userRut
   const authState = useAuth()
-
   const planDigest = useMemo((): PlanDigest => {
     const digest: PlanDigest = {
       idToIndex: {},
@@ -182,7 +182,12 @@ const Planner = (): JSX.Element => {
         setPlannerStatus(PlannerStatus.READY)
         return
       }
-      const promise = authState?.user == null ? DefaultService.validateGuestPlan(validatablePlan) : authState?.isMod === true ? DefaultService.validatePlanForAnyUser(authState.student.rut, validatablePlan) : DefaultService.validatePlanForUser(validatablePlan)
+      console.log(impersonateRut, authState?.isMod, authState?.user)
+      const promise = authState?.user == null
+        ? DefaultService.validateGuestPlan(validatablePlan)
+        : (authState?.isMod === true && impersonateRut != null)
+            ? DefaultService.validatePlanForAnyUser(impersonateRut, validatablePlan)
+            : DefaultService.validatePlanForUser(validatablePlan)
       setValidationPromise(prev => {
         if (prev != null) {
           prev.cancel()
@@ -227,7 +232,7 @@ const Planner = (): JSX.Element => {
     } catch (err) {
       handleErrors(err, setPlannerStatus, setError)
     }
-  }, [authState?.isMod, authState?.user, getCourseDetails])
+  }, [authState?.isMod, impersonateRut, authState?.user, getCourseDetails])
 
   const savePlan = useCallback(async (planName: string): Promise<void> => {
     if (validatablePlan == null) {
@@ -338,7 +343,9 @@ const Planner = (): JSX.Element => {
       console.log('Getting Basic Plan...')
       let baseValidatablePlan
       if (referenceValidatablePlan === undefined || referenceValidatablePlan === null) {
-        baseValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : authState?.isMod === true ? await DefaultService.emptyPlanForAnyUser(authState.student?.rut) : await DefaultService.emptyPlanForUser()
+        baseValidatablePlan = authState?.user == null
+          ? await DefaultService.emptyGuestPlan()
+          : (authState?.isMod === true && impersonateRut != null) ? await DefaultService.emptyPlanForAnyUser(impersonateRut) : await DefaultService.emptyPlanForUser()
       } else {
         baseValidatablePlan = { ...referenceValidatablePlan, classes: [...referenceValidatablePlan.classes] }
         truncateAt = truncateAt ?? (authState?.student?.next_semester ?? 0)
@@ -369,7 +376,7 @@ const Planner = (): JSX.Element => {
     } catch (err) {
       handleErrors(err, setPlannerStatus, setError)
     }
-  }, [authState?.student?.next_semester, authState?.user, getCourseDetails, validate])
+  }, [authState?.student?.next_semester, impersonateRut, authState?.isMod, authState?.user, getCourseDetails, validate])
 
   const fetchData = useCallback(async (): Promise<void> => {
     try {
@@ -656,67 +663,75 @@ const Planner = (): JSX.Element => {
     }
   }, [validatablePlan, validate, loadNewPLan])
 
+  if (impersonateRut !== authState?.student?.rut && impersonateRut !== undefined && authState?.isMod === true) {
+    return <Navigate to="/mod/users"/>
+  }
   return (
-    <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
-      <DebugGraph validatablePlan={validatablePlan} />
-      <ReceivePaste validatablePlan={validatablePlan} getDefaultPlan={getDefaultPlan} />
-      <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
-      <LegendModal open={isLegendModalOpen} onClose={closeLegendModal}/>
-      <SavePlanModal isOpen={isSavePlanModalOpen} onClose={closeSavePlanModal} savePlan={savePlan}/>
-      <AlertModal title={popUpAlert.title} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}>{popUpAlert.desc}</AlertModal>
-      {(plannerStatus === PlannerStatus.LOADING || plannerStatus === PlannerStatus.CHANGING_CURRICULUM) &&
-        <div className="absolute w-screen h-full z-50 bg-white flex flex-col justify-center items-center">
-          <Spinner message='Cargando planificación...' />
-        </div>
+    <>
+      {authState?.isMod === true &&
+        <ModBanner/>
       }
+      <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
+        <DebugGraph validatablePlan={validatablePlan} />
+        <ReceivePaste validatablePlan={validatablePlan} getDefaultPlan={getDefaultPlan} />
+        <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
+        <LegendModal open={isLegendModalOpen} onClose={closeLegendModal}/>
+        <SavePlanModal isOpen={isSavePlanModalOpen} onClose={closeSavePlanModal} savePlan={savePlan}/>
+        <AlertModal title={popUpAlert.title} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}>{popUpAlert.desc}</AlertModal>
+        {(plannerStatus === PlannerStatus.LOADING || plannerStatus === PlannerStatus.CHANGING_CURRICULUM) &&
+          <div className="absolute w-screen h-full z-50 bg-white flex flex-col justify-center items-center">
+            <Spinner message='Cargando planificación...' />
+          </div>
+        }
 
-      {plannerStatus === 'ERROR'
-        ? (<div className={'w-full h-full flex flex-col justify-center items-center'}>
-            <p className={'text-2xl font-semibold mb-4'}>Error al cargar plan</p>
-            <p className={'text-sm font-normal'}>{error}</p>
-            <a href="https://github.com/open-source-uc/planner/issues?q=is%3Aopen+is%3Aissue+label%3Abug" className={'text-blue-700 underline text-sm'} rel="noreferrer" target="_blank">Reportar error</a>
-          </div>)
-        : <div className={'flex w-full p-3 pb-0'}>
-            <div className={'flex flex-col overflow-auto flex-grow'}>
-              <CurriculumSelector
-                planName={planName}
-                curriculumData={curriculumData}
-                curriculumSpec={validatablePlan?.curriculum ?? { cyear: null, major: null, minor: null, title: null }}
-                selectMajor={checkMinorForNewMajor}
-                selectMinor={selectMinor}
-                selectTitle={selectTitle}
-                selectYear={checkMajorAndMinorForNewYear}
-              />
-              <ControlTopBar
-                reset={reset}
-                openSavePlanModal={openSavePlanModal}
-                openLegendModal={openLegendModal}
-                isMod={authState?.isMod === true}
-              />
-              <DndProvider backend={HTML5Backend}>
-                <PlanBoard
-                  classesGrid={validatablePlan?.classes ?? []}
-                  planDigest={planDigest}
-                  classesDetails={courseDetails}
-                  moveCourse={moveCourse}
-                  openModal={openModal}
-                  authState={authState}
-                  addCourse={openModalForExtraClass}
-                  remCourse={remCourse}
-                  validationDigest={validationDigest}
+        {plannerStatus === 'ERROR'
+          ? (<div className={'w-full h-full flex flex-col justify-center items-center'}>
+              <p className={'text-2xl font-semibold mb-4'}>Error al cargar plan</p>
+              <p className={'text-sm font-normal'}>{error}</p>
+              <a href="https://github.com/open-source-uc/planner/issues?q=is%3Aopen+is%3Aissue+label%3Abug" className={'text-blue-700 underline text-sm'} rel="noreferrer" target="_blank">Reportar error</a>
+            </div>)
+          : <div className={'flex w-full p-3 pb-0'}>
+              <div className={'flex flex-col overflow-auto flex-grow'}>
+                <CurriculumSelector
+                  planName={planName}
+                  curriculumData={curriculumData}
+                  curriculumSpec={validatablePlan?.curriculum ?? { cyear: null, major: null, minor: null, title: null }}
+                  selectMajor={checkMinorForNewMajor}
+                  selectMinor={selectMinor}
+                  selectTitle={selectTitle}
+                  selectYear={checkMajorAndMinorForNewYear}
                 />
-              </DndProvider>
-            </div>
-          <ErrorTray
-            setValidatablePlan={setValidatablePlan}
-            getCourseDetails={getCourseDetails}
-            diagnostics={validationResult?.diagnostics ?? []}
-            validating={plannerStatus === 'VALIDATING'}
-            courseDetails={courseDetails}
-          />
-        </div>
-      }
-    </div>
+                <ControlTopBar
+                  reset={reset}
+                  openSavePlanModal={openSavePlanModal}
+                  openLegendModal={openLegendModal}
+                  isMod={authState?.isMod === true}
+                />
+                <DndProvider backend={HTML5Backend}>
+                  <PlanBoard
+                    classesGrid={validatablePlan?.classes ?? []}
+                    planDigest={planDigest}
+                    classesDetails={courseDetails}
+                    moveCourse={moveCourse}
+                    openModal={openModal}
+                    authState={authState}
+                    addCourse={openModalForExtraClass}
+                    remCourse={remCourse}
+                    validationDigest={validationDigest}
+                  />
+                </DndProvider>
+              </div>
+            <ErrorTray
+              setValidatablePlan={setValidatablePlan}
+              getCourseDetails={getCourseDetails}
+              diagnostics={validationResult?.diagnostics ?? []}
+              validating={plannerStatus === 'VALIDATING'}
+              courseDetails={courseDetails}
+            />
+          </div>
+        }
+      </div>
+    </>
   )
 }
 
