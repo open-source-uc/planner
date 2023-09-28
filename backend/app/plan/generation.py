@@ -2,7 +2,7 @@ from collections import OrderedDict, defaultdict
 from collections.abc import Iterable
 
 from app import sync
-from app.plan.course import ConcreteId, EquivalenceId
+from app.plan.course import ConcreteId, EquivalenceId, pseudocourse_with_credits
 from app.plan.courseinfo import CourseDetails, CourseInfo, course_info
 from app.plan.plan import (
     PseudoCourse,
@@ -84,14 +84,14 @@ def _extract_active_fillers(
     to_pass: list[tuple[int, PseudoCourse]] = []
     for usable in g.usable.values():
         for inst in usable.instances:
-            if inst.filler is None or not inst.used:
+            if inst.filler is None or inst.flow == 0:
                 continue
 
             # Add this course
             to_pass.append(
                 (
                     inst.filler.order,
-                    inst.filler.course,
+                    pseudocourse_with_credits(inst.filler.course, inst.flow),
                 ),
             )
 

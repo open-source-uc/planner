@@ -1,7 +1,8 @@
+from app.plan.course import PseudoCourse
 from app.plan.courseinfo import course_info
 from app.plan.plan import ValidatablePlan
 from app.plan.validation.courses.validate import ValidationContext
-from app.plan.validation.curriculum.diagnose import diagnose_curriculum
+from app.plan.validation.curriculum.diagnose import diagnose_curriculum, find_swapouts
 from app.plan.validation.diagnostic import ValidationResult
 from app.plan.validation.user import validate_against_owner
 from app.sync import get_curriculum
@@ -33,3 +34,13 @@ async def diagnose_plan(
     diagnose_curriculum(courseinfo, curriculum, plan, user_ctx, out)
 
     return out
+
+
+async def list_swapouts(
+    plan: ValidatablePlan,
+    sem_idx: int,
+    class_idx: int,
+) -> list[list[PseudoCourse]]:
+    courseinfo = await course_info()
+    curriculum = await get_curriculum(plan.curriculum)
+    return find_swapouts(courseinfo, curriculum, plan, sem_idx, class_idx)
