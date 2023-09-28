@@ -29,6 +29,7 @@ function Navbar (): JSX.Element {
                 Inicio
               </Link>
             </li>
+            {!isMod &&
             <li>
               <Link
                 to="/planner/new"
@@ -41,6 +42,7 @@ function Navbar (): JSX.Element {
                 Planificar
               </Link>
             </li>
+            }
             {hideLogin
               ? null
               : loggedIn

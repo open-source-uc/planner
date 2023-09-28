@@ -15,9 +15,9 @@ async function fetchUserPlans (rut: string): Promise<LowDetailPlanView[]> {
 }
 
 const UserViewer = (): JSX.Element => {
-  const [userRut, setUserRut] = useState<string>('')
-  const [searchingPlanModalIsOpen, setSearchingPlanModalIsOpen] = useState<boolean>(true)
   const authState = useAuth()
+  const [userRut, setUserRut] = useState<string>(authState?.student?.rut ?? '')
+  const [searchingPlanModalIsOpen, setSearchingPlanModalIsOpen] = useState<boolean>(authState?.student?.rut === undefined)
 
   const { status, error, data } = useQuery({
     queryKey: ['userPlans', userRut],
@@ -58,13 +58,13 @@ const UserViewer = (): JSX.Element => {
               {status === 'success' && userRut !== '' &&
                 <div className="flex gap-4 items-center">
                   <h2 className="text-2xl font-medium leading-normal mb-2 text-gray-800 text-center">{authState?.student?.info.full_name}</h2>
-                  <Link to="/mod/planner/$userRut//new"
+                  <Link to="/planner//new"
                     params={{
                       userRut
                     }}>
                       <div className="hover-text">
-                          <button><PlusIcon className="w-8 h-8" title="Crear nueva malla"/></button>
-                          <span className="tooltip-text">Crear nueva malla</span>
+                          <button><PlusIcon className="w-8 h-8" title="Ver malla nueva"/></button>
+                          <span className="tooltip-text">Ver malla nueva</span>
                       </div>
                   </Link>
                 </div>
