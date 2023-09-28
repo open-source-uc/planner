@@ -182,7 +182,6 @@ const Planner = (): JSX.Element => {
         setPlannerStatus(PlannerStatus.READY)
         return
       }
-      console.log(impersonateRut, authState?.isMod, authState?.user)
       const promise = authState?.user == null
         ? DefaultService.validateGuestPlan(validatablePlan)
         : (authState?.isMod === true && impersonateRut != null)

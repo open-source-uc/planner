@@ -8,7 +8,7 @@ const SearchPlanByRutModal = ({ isOpen, onClose, searchPlans }: { isOpen: boolea
   const [studentRut, setStudentRut] = useState<string>('')
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [isUserNotFound, setIsUserNotFound] = useState<boolean>(false)
-  const isSaveButtonDisabled: boolean = studentRut === ''
+  const isSaveButtonDisabled: boolean = studentRut.length < 2
 
   const handleUserSearch = async (rut: string): Promise<void> => {
     setIsUserNotFound(false)
