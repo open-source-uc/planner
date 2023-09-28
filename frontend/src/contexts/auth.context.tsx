@@ -6,11 +6,15 @@ export interface UserData {
   token: string
 }
 
+interface Student extends StudentContext {
+  rut?: string
+}
 export interface AuthState {
   user: UserData | null
   isMod: boolean | null
   setUser: Dispatch<SetStateAction<UserData | null>> | null
-  student: StudentContext | null
+  student: Student | null
+  setStudent: Dispatch<SetStateAction<Student | null>> | null
 }
 
 interface Props {
@@ -26,7 +30,7 @@ export function AuthProvider ({ children, userData }: Props): JSX.Element {
   const [student, setStudent] = useState<StudentContext | null>(null)
 
   useEffect(() => {
-    if (user == null) {
+    if (user?.token == null) {
       console.log('not fetching student info: no token')
       return
     }
@@ -72,11 +76,11 @@ export function AuthProvider ({ children, userData }: Props): JSX.Element {
           setIsMod(() => true)
         }
       })
-  }, [user]
+  }, [user?.token]
   )
 
   return (
-    <AuthContext.Provider value={{ user, setUser, student, isMod }}>
+    <AuthContext.Provider value={{ user, setUser, student, setStudent, isMod }}>
       {children}
     </AuthContext.Provider>
   )

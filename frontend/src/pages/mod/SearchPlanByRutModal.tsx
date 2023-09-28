@@ -1,28 +1,34 @@
 import { memo, useRef, useState, Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { DefaultService } from '../../client'
-import { toast } from 'react-toastify'
-
-const SearchPlanByRutModal = ({ isOpen, onClose, searchPlans }: { isOpen: boolean, onClose: Function, searchUser: Function }): JSX.Element => {
+import { isApiError } from '../planner/utils/Types'
+const SearchPlanByRutModal = ({ isOpen, onClose, searchPlans }: { isOpen: boolean, onClose: Function, searchPlans: Function }): JSX.Element => {
   const planNameInput = useRef(null)
   const acceptButton = useRef<HTMLButtonElement>(null)
   const [studentRut, setStudentRut] = useState<string>('')
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [isUserNotFound, setIsUserNotFound] = useState<boolean>(false)
   const isSaveButtonDisabled: boolean = studentRut === ''
 
   const handleUserSearch = async (rut: string): Promise<void> => {
+    setIsUserNotFound(false)
+    setIsLoading(true)
     let formattedRut = rut
     if (formattedRut.charAt(formattedRut.length - 2) !== '-') {
       formattedRut = formattedRut.slice(0, -1) + '-' + formattedRut.slice(-1)
     }
     try {
       const stundetInfo = await DefaultService.getStudentInfoForAnyUser(formattedRut)
-      searchPlans(stundetInfo)
+      searchPlans(stundetInfo, studentRut)
+      setIsUserNotFound(false)
+      onClose()
     } catch (err) {
-      if ('status' in err && (err.status === 404 || err.status === 403)) {
-        toast.error(`No se encontró el estudiante, ${rut}`)
+      if (isApiError(err) && (err.status === 404 || err.status === 403)) {
+        setIsUserNotFound(true)
       }
       console.log(err)
     }
+    setIsLoading(false)
   }
 
   const handleKeyDown: React.EventHandler<React.KeyboardEvent<HTMLInputElement>> = e => {
@@ -30,7 +36,7 @@ const SearchPlanByRutModal = ({ isOpen, onClose, searchPlans }: { isOpen: boolea
       e.preventDefault()
       if (isSaveButtonDisabled) return
       try {
-        void handleUserSearch(studentRut); onClose()
+        void handleUserSearch(studentRut)
       } catch (err) {
         console.log(err)
       }
@@ -39,9 +45,15 @@ const SearchPlanByRutModal = ({ isOpen, onClose, searchPlans }: { isOpen: boolea
 
   const handleInputChange: React.EventHandler<React.ChangeEvent<HTMLInputElement>> = e => {
     const input = e.target.value
-    const cleanedInput = input.replace(/[^0-9kK-]/g, '')
-    setStudentRut(cleanedInput)
+    let cleanedInput = input.replace(/[^0-9kK]/g, '')
+    if (cleanedInput.length > 7) cleanedInput = cleanedInput.slice(0, -1) + '-' + cleanedInput.slice(-1)
+    if (cleanedInput.length < 11 && (e.target.value === '' || cleanedInput !== '')) setStudentRut(cleanedInput)
   }
+
+  const handleClick = (): void => {
+    void handleUserSearch(studentRut)
+  }
+
   return (
     <Transition.Root show={isOpen} as={Fragment}>
       <Dialog as="div" className="modal relative" initialFocus={planNameInput} onClose={() => onClose() }>
@@ -76,18 +88,25 @@ const SearchPlanByRutModal = ({ isOpen, onClose, searchPlans }: { isOpen: boolea
                          Rut del estudiante:
                       </Dialog.Title>
                       <div className="mt-2">
-                        <input className="grow rounded py-1 w-full my-2 sentry-mask" type="text" id="planName" value={studentRut} onChange={handleInputChange} onKeyDown={handleKeyDown}/>
+                        <input className={`grow rounded py-1 w-full my-2 sentry-mask ${isUserNotFound ? 'border-red-500' : ''}`} type="text" id="planName" value={studentRut} onChange={handleInputChange} onKeyDown={handleKeyDown}/>
                       </div>
+
+                      {isUserNotFound && (
+                        <div className="text-red-500 text-sm">Estudiante no encontrado.</div>
+                      )}
                     </div>
                   </div>
                 </div>
                 <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                  <button
+                {isLoading
+                  ? <div className="w-full text-center text-sm py-2 px-4">Buscando...</div>
+                  : <>
+                      <button
                     type="button"
                     ref={acceptButton}
                     disabled={isSaveButtonDisabled}
                     className='inline-flex w-full justify-center rounded-md text-sm btn shadow-sm sm:ml-3 sm:w-auto disabled:bg-gray-400'
-                    onClick={() => void handleUserSearch(studentRut)}
+                    onClick={handleClick}
                   >
                     Buscar
                   </button>
@@ -98,6 +117,7 @@ const SearchPlanByRutModal = ({ isOpen, onClose, searchPlans }: { isOpen: boolea
                   >
                     Cancelar
                   </button>
+                  </>}
                 </div>
               </Dialog.Panel>
             </Transition.Child>

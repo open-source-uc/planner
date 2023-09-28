@@ -182,7 +182,7 @@ const Planner = (): JSX.Element => {
         setPlannerStatus(PlannerStatus.READY)
         return
       }
-      const promise = authState?.user == null ? DefaultService.validateGuestPlan(validatablePlan) : DefaultService.validatePlanForUser(validatablePlan)
+      const promise = authState?.user == null ? DefaultService.validateGuestPlan(validatablePlan) : authState?.isMod === true ? DefaultService.validatePlanForAnyUser(authState.student.rut, validatablePlan) : DefaultService.validatePlanForUser(validatablePlan)
       setValidationPromise(prev => {
         if (prev != null) {
           prev.cancel()
@@ -227,7 +227,7 @@ const Planner = (): JSX.Element => {
     } catch (err) {
       handleErrors(err, setPlannerStatus, setError)
     }
-  }, [authState?.user, getCourseDetails])
+  }, [authState?.isMod, authState?.user, getCourseDetails])
 
   const savePlan = useCallback(async (planName: string): Promise<void> => {
     if (validatablePlan == null) {
@@ -307,7 +307,12 @@ const Planner = (): JSX.Element => {
   const getPlanById = useCallback(async (id: string): Promise<void> => {
     try {
       console.log('Getting Plan by Id...')
-      const response: PlanView = await DefaultService.readPlan(id)
+      let response: PlanView
+      if (authState?.isMod === true) {
+        response = await DefaultService.readAnyPlan(id)
+      } else {
+        response = await DefaultService.readPlan(id)
+      }
       previousClasses.current = response.validatable_plan.classes
       previousCurriculum.current = {
         major: response.validatable_plan.curriculum.major,
@@ -326,14 +331,14 @@ const Planner = (): JSX.Element => {
     } catch (err) {
       handleErrors(err, setPlannerStatus, setError)
     }
-  }, [getCourseDetails, validate])
+  }, [authState?.isMod, getCourseDetails, validate])
 
   const getDefaultPlan = useCallback(async (referenceValidatablePlan?: ValidatablePlan, truncateAt?: number): Promise<void> => {
     try {
       console.log('Getting Basic Plan...')
       let baseValidatablePlan
       if (referenceValidatablePlan === undefined || referenceValidatablePlan === null) {
-        baseValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
+        baseValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : authState?.isMod === true ? await DefaultService.emptyPlanForAnyUser(authState.student?.rut) : await DefaultService.emptyPlanForUser()
       } else {
         baseValidatablePlan = { ...referenceValidatablePlan, classes: [...referenceValidatablePlan.classes] }
         truncateAt = truncateAt ?? (authState?.student?.next_semester ?? 0)
@@ -686,6 +691,7 @@ const Planner = (): JSX.Element => {
                 reset={reset}
                 openSavePlanModal={openSavePlanModal}
                 openLegendModal={openLegendModal}
+                isMod={authState?.isMod === true}
               />
               <DndProvider backend={HTML5Backend}>
                 <PlanBoard

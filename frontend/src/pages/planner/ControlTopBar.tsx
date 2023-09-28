@@ -1,14 +1,14 @@
 interface ControlTopBarProps {
-  authState: any
+  isMod: boolean
   reset: Function
   openLegendModal: Function
   openSavePlanModal: Function
 }
 
-function ControlTopBar ({ authState, reset, openLegendModal, openSavePlanModal }: ControlTopBarProps): JSX.Element {
+function ControlTopBar ({ isMod, reset, openLegendModal, openSavePlanModal }: ControlTopBarProps): JSX.Element {
   return (
         <ul className="flex items-center  ml-3 mb-2 gap-6">
-          {authState?.user != null && (<>
+          {!isMod && (<>
           <li className='inline'><button onClick={() => openSavePlanModal() }>Guardar malla</button></li>
           </>)}
           <li className='inline'><button onClick={() => reset()}>Restablecer malla</button></li>

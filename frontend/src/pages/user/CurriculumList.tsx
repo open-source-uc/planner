@@ -31,6 +31,7 @@ const CurriculumList = (): JSX.Element => {
       }
     })
   }, [])
+
   async function handleDelete (id: string): Promise<void> {
     try {
       console.log('click', id)
