@@ -397,11 +397,11 @@ const Planner = (): JSX.Element => {
         major: response.validatable_plan.curriculum.major,
         minor: response.validatable_plan.curriculum.minor,
         title: response.validatable_plan.curriculum.title,
-        cyear: response.validatable_plan.curriculum.cyear.raw
+        cyear: response.validatable_plan.curriculum.cyear
       }
       await Promise.all([
         getCourseDetails(response.validatable_plan.classes.flat()),
-        loadCurriculumsData(response.validatable_plan.curriculum.cyear.raw, response.validatable_plan.curriculum.major),
+        loadCurriculumsData(response.validatable_plan.curriculum.cyear, response.validatable_plan.curriculum.major),
         validate(response.validatable_plan)
       ])
       setValidatablePlan(response.validatable_plan)
@@ -436,11 +436,11 @@ const Planner = (): JSX.Element => {
         major: response.curriculum.major,
         minor: response.curriculum.minor,
         title: response.curriculum.title,
-        cyear: response.curriculum.cyear.raw
+        cyear: response.curriculum.cyear
       }
       await Promise.all([
         getCourseDetails(response.classes.flat()),
-        loadCurriculumsData(response.curriculum.cyear.raw, response.curriculum.major),
+        loadCurriculumsData(response.curriculum.cyear, response.curriculum.major),
         validate(response)
       ])
       setValidatablePlan(response)
