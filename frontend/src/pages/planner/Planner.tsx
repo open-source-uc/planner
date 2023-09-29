@@ -591,7 +591,6 @@ const Planner = (): JSX.Element => {
 
   const checkMajorAndMinorForNewYear = useCallback(async (cyear: Cyear): Promise<void> => {
     const isValidMajor = await isMajorValid(cyear, validatablePlan?.curriculum.major)
-
     if (!isValidMajor) {
       setPopUpAlert({
         title: 'Major incompatible',
