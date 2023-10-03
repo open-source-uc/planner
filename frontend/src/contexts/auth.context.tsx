@@ -13,6 +13,7 @@ interface Student extends StudentContext {
 export interface AuthState {
   user: UserData | null
   isMod: boolean | null
+  isAdmin: boolean | null
   setUser: Dispatch<SetStateAction<UserData | null>> | null
   student: Student | null
   setStudent: Dispatch<SetStateAction<Student | null>> | null
@@ -28,6 +29,7 @@ const AuthContext = React.createContext<AuthState | null>(null)
 export function AuthProvider ({ children, userData }: Props): JSX.Element {
   const [user, setUser] = React.useState<UserData | null>(userData)
   const [isMod, setIsMod] = React.useState<boolean >(false)
+  const [isAdmin, setIsAdmin] = React.useState<boolean >(false)
   const [student, setStudent] = useState<Student | null>(null)
 
   useEffect(() => {
@@ -77,10 +79,30 @@ export function AuthProvider ({ children, userData }: Props): JSX.Element {
           setIsMod(true)
         }
       })
+    void DefaultService.checkAdmin().catch(err => {
+      if (err.status === 401) {
+        console.log('Token invalid or expired, loading re-login page...')
+        toast.error('Tu sesión ha expirado. Redireccionando a página de inicio de sesión..', {
+          toastId: 'ERROR401'
+        })
+      } else if (err.status === 403) {
+        console.log('El usuario no tiene permisos de admin')
+        setIsAdmin(() => false)
+      } else {
+        toast.error('Error al cargar información del usuario', {
+          toastId: 'ERROR401'
+        })
+      }
+    }).then(
+      response => {
+        if (response !== undefined && response.stat !== 200) {
+          setIsAdmin(true)
+        }
+      })
   }, [user?.token])
 
   return (
-    <AuthContext.Provider value={{ user, setUser, student, setStudent, isMod }}>
+    <AuthContext.Provider value={{ user, setUser, student, setStudent, isMod, isAdmin }}>
       {children}
     </AuthContext.Provider>
   )
