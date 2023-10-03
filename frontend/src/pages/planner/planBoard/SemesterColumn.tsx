@@ -106,7 +106,7 @@ const SemesterColumn = ({ classesDetails, authState, semester, coursesId = [], a
 
   return (
     <div className={'drop-shadow-xl w-[161px] shrink-0 bg-base-200 rounded-lg flex flex-col'}>
-      <div className={`border-2 ${border} rounded-lg mb-1`}>
+      <div className={`border-2 ${border} rounded-lg`}>
       {conditionPassed
         ? <><span className='line-through decoration-black/40'><h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2></span><div className="my-3 divider"></div></>
         : checkCurrent
