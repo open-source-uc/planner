@@ -13,6 +13,7 @@ import {
   ReactRouter,
   RootRoute, Route
 } from '@tanstack/react-router'
+import { isApiError } from './pages/planner/utils/Types'
 
 const rootRoute = new RootRoute({
   component: Layout
@@ -28,7 +29,9 @@ async function adminRoute (): Promise<void> {
   try {
     await DefaultService.checkAdmin()
   } catch (err) {
-    authError(err)
+    if (isApiError(err)) {
+      authError(err)
+    }
     throw err
   }
 }
@@ -37,14 +40,20 @@ async function modRoute (): Promise<void> {
   try {
     await DefaultService.checkMod()
   } catch (err) {
-    authError(err)
+    if (isApiError(err)) {
+      authError(err)
+    }
+    throw err
   }
 }
 async function authenticateRoute (): Promise<void> {
   try {
     await DefaultService.checkAuth()
   } catch (err) {
-    authError(err)
+    if (isApiError(err)) {
+      authError(err)
+    }
+    throw err
   }
 }
 function authError (err: ApiError): void {

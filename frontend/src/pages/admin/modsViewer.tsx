@@ -87,7 +87,7 @@ const ModsViewer = (): JSX.Element => {
 
               {status === 'error' && <div className="mx-auto my-auto"><p className="text-gray-500 text-center">{isApiError(error) && error.message}</p></div>}
 
-              {status === 'success' && data.length === 0 && <div className="mx-auto my-auto"><p className="text-gray-500 text-center">No existe ningun moderador, por favor anada uno con el buscador.</p></div>}
+              {status === 'success' && data.length === 0 && <div className="mx-auto my-auto"><p className="text-gray-500 text-center">No existe ningun usuario moderador.</p></div>}
 
               {(status === 'success' && data.length > 0 &&
               <div className='relative overflow-x-auto shadow-md sm:rounded-lg max-w-2xl mt-2'>
