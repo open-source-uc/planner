@@ -306,7 +306,7 @@ const Planner = (): JSX.Element => {
       }
       return updateClassesState(prev, dragIndex, drop)
     })
-  }, []) // moveCourse should not depend on `validatablePlan`, so that memoing does its work
+  }, [])
 
   const getPlanById = useCallback(async (id: string): Promise<void> => {
     try {

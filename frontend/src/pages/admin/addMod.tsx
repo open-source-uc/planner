@@ -35,6 +35,7 @@ const AddModByRutModal = ({ isOpen, onClose, addMod }: { isOpen: boolean, onClos
     }
     setIsLoading(false)
   }
+
   return (
     <TextInputModal
       title="Rut del usuario a agregar"

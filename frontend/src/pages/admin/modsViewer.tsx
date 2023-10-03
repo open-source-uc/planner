@@ -77,7 +77,7 @@ const ModsViewer = (): JSX.Element => {
 
   return (
     <div>
-      <AlertModal title={'Remover permisos de moderador'} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}>{'¿Estás seguro/a de que deseas eliminar esta malla? Esta accion es irreversible'}</AlertModal>
+      <AlertModal title={'Remover permisos de moderador'} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}>{'¿Estás seguro/a de que remover los permisos de moderador a este usuario?'}</AlertModal>
       <AddModByRutModal
           isOpen = {searchingPlanModalIsOpen}
           onClose = {() => { setSearchingPlanModalIsOpen(false) }}
@@ -122,7 +122,7 @@ const ModsViewer = (): JSX.Element => {
                             <td className='px-6 py-4 text-right'><div className='space-x-4 items-center'>
                               <button className='text-red-600'
                                   onClick={() => {
-                                    setPopUpAlert({ isOpen: false, rut: mod.user_rut })
+                                    setPopUpAlert({ isOpen: true, rut: mod.user_rut })
                                   }}>Remover</button>
                             </div></td>
                           </tr>
