@@ -6,6 +6,7 @@ import { Spinner } from '../../components/Spinner'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useAuth } from '../../contexts/auth.context'
 import { isApiError } from '../planner/utils/Types'
+import AlertModal from '../../components/AlertModal'
 
 async function addMod (rut: string): Promise<AccessLevelOverview> {
   if (rut === '') throw new Error('Rut no puede estar vacio')
@@ -36,6 +37,7 @@ function getDateString (date: string): string {
 const ModsViewer = (): JSX.Element => {
   const authState = useAuth()
   const [searchingPlanModalIsOpen, setSearchingPlanModalIsOpen] = useState<boolean>(authState?.student?.rut === null)
+  const [popUpAlert, setPopUpAlert] = useState({ isOpen: false, rut: '' })
 
   const queryClient = useQueryClient()
 
@@ -66,8 +68,16 @@ const ModsViewer = (): JSX.Element => {
     }
   })
 
+  function handlePopUpAlert (isCanceled: boolean): void {
+    if (!isCanceled) {
+      void removeModMutation.mutateAsync(popUpAlert.rut)
+    }
+    setPopUpAlert({ isOpen: false, rut: '' })
+  }
+
   return (
     <div>
+      <AlertModal title={'Remover permisos de moderador'} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}>{'¿Estás seguro/a de que deseas eliminar esta malla? Esta accion es irreversible'}</AlertModal>
       <AddModByRutModal
           isOpen = {searchingPlanModalIsOpen}
           onClose = {() => { setSearchingPlanModalIsOpen(false) }}
@@ -112,9 +122,7 @@ const ModsViewer = (): JSX.Element => {
                             <td className='px-6 py-4 text-right'><div className='space-x-4 items-center'>
                               <button className='text-red-600'
                                   onClick={() => {
-                                    void removeModMutation.mutateAsync(
-                                      mod.user_rut
-                                    )
+                                    setPopUpAlert({ isOpen: false, rut: mod.user_rut })
                                   }}>Remover</button>
                             </div></td>
                           </tr>
