@@ -7,11 +7,11 @@ const AddModByRutModal = ({ isOpen, onClose, addMod }: { isOpen: boolean, onClos
   const acceptButton = useRef<HTMLButtonElement>(null)
   const [studentRut, setStudentRut] = useState<string>('')
   const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [isUserNotFound, setIsUserNotFound] = useState<boolean>(false)
+  const [isRutInvalid, setIsRutInvalid] = useState<boolean>(false)
   const isSaveButtonDisabled: boolean = studentRut.length < 2
 
   const handleUserSearch = async (rut: string): Promise<void> => {
-    setIsUserNotFound(false)
+    setIsRutInvalid(false)
     setIsLoading(true)
     let formattedRut = rut
     if (formattedRut.charAt(formattedRut.length - 2) !== '-') {
@@ -19,13 +19,15 @@ const AddModByRutModal = ({ isOpen, onClose, addMod }: { isOpen: boolean, onClos
     }
     try {
       await addMod(formattedRut)
-      setIsUserNotFound(false)
+      setIsRutInvalid(false)
       onClose()
     } catch (err) {
-      if (isApiError(err) && (err.status === 404 || err.status === 403)) {
-        setIsUserNotFound(true)
+      if (isApiError(err)) {
+        if (err.status === 400) {
+          console.log(err.message)
+          setIsRutInvalid(true)
+        }
       }
-      console.log(err)
     }
     setIsLoading(false)
   }
@@ -87,11 +89,11 @@ const AddModByRutModal = ({ isOpen, onClose, addMod }: { isOpen: boolean, onClos
                          Rut del estudiante:
                       </Dialog.Title>
                       <div className="mt-2">
-                        <input className={`grow rounded py-1 w-full my-2 sentry-mask ${isUserNotFound ? 'border-red-500' : ''}`} type="text" id="planName" value={studentRut} onChange={handleInputChange} onKeyDown={handleKeyDown}/>
+                        <input className={`grow rounded py-1 w-full my-2 sentry-mask ${isRutInvalid ? 'border-red-500' : ''}`} type="text" id="planName" value={studentRut} onChange={handleInputChange} onKeyDown={handleKeyDown}/>
                       </div>
 
-                      {isUserNotFound && (
-                        <div className="text-red-500 text-sm">Estudiante no encontrado.</div>
+                      {isRutInvalid && (
+                        <div className="text-red-500 text-sm">Rut invalido.</div>
                       )}
                     </div>
                   </div>

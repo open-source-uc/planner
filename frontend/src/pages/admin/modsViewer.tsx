@@ -8,7 +8,7 @@ import { useAuth } from '../../contexts/auth.context'
 import { isApiError } from '../planner/utils/Types'
 
 async function addMod (rut: string): Promise<AccessLevelOverview> {
-  if (rut === '') return await Promise.resolve({})
+  if (rut === '') throw new Error('Rut no puede estar vacio')
   return await DefaultService.addMod(rut)
 }
 
@@ -46,8 +46,12 @@ const ModsViewer = (): JSX.Element => {
 
   const addModMutation = useMutation(addMod, {
     onSuccess: (newMod) => {
-      queryClient.setQueryData(['mods'], (old) =>
-        [...old, newMod]
+      if (data?.some((mod) => mod.user_rut === newMod.user_rut) === true) {
+        toast.warning(`El usuario ${newMod.user_rut} ya era moderador`)
+        return
+      }
+      queryClient.setQueryData(['mods'], (old: AccessLevelOverview[] | undefined) =>
+        [...old ?? [], newMod]
       )
       setSearchingPlanModalIsOpen(false)
     }
@@ -55,8 +59,8 @@ const ModsViewer = (): JSX.Element => {
 
   const removeModMutation = useMutation(removeMod, {
     onSuccess: (removedModRut) => {
-      queryClient.setQueryData(['mods'], (old) =>
-        old.filter((e) => e.user_rut !== removedModRut)
+      queryClient.setQueryData(['mods'], (old: AccessLevelOverview[] | undefined) =>
+        old?.filter((e) => e.user_rut !== removedModRut)
       )
       setSearchingPlanModalIsOpen(false)
     }
