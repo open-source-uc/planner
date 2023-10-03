@@ -246,7 +246,6 @@ const Planner = (): JSX.Element => {
       } catch (err) {
         handleErrors(err, setPlannerStatus, setError)
       }
-      setPlannerStatus(PlannerStatus.READY)
     } else {
       if (planName == null || planName === '') return
       setPlannerStatus(PlannerStatus.VALIDATING)
@@ -259,6 +258,7 @@ const Planner = (): JSX.Element => {
         handleErrors(err, setPlannerStatus, setError)
       }
     }
+    setIsSavePlanModalOpen(false)
     setPlannerStatus(PlannerStatus.READY)
   }, [planID, validatablePlan])
 

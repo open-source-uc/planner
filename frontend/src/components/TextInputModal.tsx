@@ -19,7 +19,7 @@ interface TextInputModalProps {
 }
 
 const TextInputModal: React.FC<TextInputModalProps> = ({ title, isOpen, handleAccept, onClose, acceptMessage, error, isLoading, isAcceptButtonDisabled, errorMsg, inputValue, handleInputChange }: TextInputModalProps) => {
-  const acceptButton = useRef<HTMLButtonElement>(null)
+  const searchText = useRef<HTMLInputElement>(null)
 
   const handleKeyDown: React.EventHandler<React.KeyboardEvent<HTMLInputElement>> = e => {
     if (e.key === 'Enter') {
@@ -38,7 +38,7 @@ const TextInputModal: React.FC<TextInputModalProps> = ({ title, isOpen, handleAc
   }
 
   return (
-    <GeneralModal isOpen={isOpen} onClose={close} initialFocus={acceptButton}>
+    <GeneralModal isOpen={isOpen} onClose={close} initialFocus={searchText}>
         <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:max-w-lg">
             <div className="bg-white pb-4 pt-5 sm:p-6 sm:pb-4">
                 <div className="sm:flex sm:items-start p-3">
@@ -47,7 +47,7 @@ const TextInputModal: React.FC<TextInputModalProps> = ({ title, isOpen, handleAc
                         {title}:
                     </Dialog.Title>
                     <div className="mt-2">
-                    <input className={`grow rounded py-1 w-full my-2 sentry-mask ${error ? 'border-red-500' : ''}`} type="text" id="planName" value={inputValue} onChange={handleInputChange} onKeyDown={handleKeyDown}/>
+                    <input className={`grow rounded py-1 w-full my-2 sentry-mask ${error ? 'border-red-500' : ''}`} type="text" id="planName" value={inputValue} ref={searchText} onChange={handleInputChange} onKeyDown={handleKeyDown}/>
                     </div>
 
                     {error && (
@@ -62,7 +62,6 @@ const TextInputModal: React.FC<TextInputModalProps> = ({ title, isOpen, handleAc
               : <>
                     <button
                 type="button"
-                ref={acceptButton}
                 disabled={isAcceptButtonDisabled}
                 className='inline-flex w-full justify-center rounded-md text-sm btn shadow-sm sm:ml-3 sm:w-auto disabled:bg-gray-400'
                 onClick={handleClick}
