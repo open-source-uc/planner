@@ -118,6 +118,11 @@ const UserViewerForMod = new Route({
   getParentRoute: () => rootRoute,
   path: '/mod/users',
   beforeLoad: modRoute,
+  validateSearch: (search: Record<string, unknown>): { studentRut: string } => {
+    return {
+      studentRut: typeof search?.studentRut === 'number' ? search.studentRut.toString() : typeof search?.studentRut === 'string' ? search.studentRut : ''
+    }
+  },
   component: UserViewer
 })
 
