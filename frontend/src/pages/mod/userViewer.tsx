@@ -56,7 +56,7 @@ const UserViewer = (): JSX.Element => {
     retry: false,
     queryFn: async () => await fetchUserPlans(studentInfo?.rut)
   })
-
+  const isStudentSearched = studentInfo?.rut === userRut
   return (
     <div>
       <SearchPlanByRutModal
@@ -75,9 +75,9 @@ const UserViewer = (): JSX.Element => {
                   <h2 className="text-3xl font-medium leading-normal mb-2 text-gray-800 text-center">Mallas del estudiante:</h2>
                   <button className="btn" onClick={() => {
                     setSearchingPlanModalIsOpen(true)
-                  }}>{userRut !== '' ? 'Cambiar Estudiante' : 'Buscar Estudiante'}</button>
+                  }}>{isStudentSearched ? 'Cambiar Estudiante' : 'Buscar Estudiante'}</button>
               </div>
-              {studentPlansStatus === 'success' && studentInfo?.rut === userRut &&
+              {studentPlansStatus === 'success' && isStudentSearched &&
                 <div className="flex gap-4 items-center">
                   <h2 className="text-2xl font-medium leading-normal mb-2 text-gray-800 text-center">{studentInfo?.info.full_name}</h2>
                   <Link to="/mod/planner/new/$userRut"
@@ -95,7 +95,7 @@ const UserViewer = (): JSX.Element => {
 
               {studentPlansStatus === 'error' && <div className="mx-auto my-auto"><p className="text-gray-500 text-center">{isApiError(studentPlansError) && studentPlansError.message}</p></div>}
 
-              {studentPlansStatus === 'success' && studentInfo?.rut !== userRut && <div className="mx-auto my-auto"><p className="text-gray-500 text-center">Ingresa el rut del estudiante para buscar sus mallas.</p></div>}
+              {studentPlansStatus === 'success' && !isStudentSearched && <div className="mx-auto my-auto"><p className="text-gray-500 text-center">Ingresa el rut del estudiante para buscar sus mallas.</p></div>}
 
               {(studentPlansStatus === 'success' && studentInfo?.rut === userRut) && (studentPlans.length === 0
                 ? <div className="mx-auto my-auto"><p className="text-gray-500 text-center">El usuario no tiene ninguna malla.</p></div>

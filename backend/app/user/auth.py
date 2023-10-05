@@ -103,6 +103,8 @@ def validar_rut(rut: str) -> bool:
     Verifica que el RUT sea válido segun su digito verificador.
     """
     aux = _normalize_rut(rut.replace("-", "")[:-1])
+    if "k" in aux or "K" in aux:
+        return False
     dv = rut[-1:]
     revertido = map(int, reversed(str(aux)))
     factors = cycle(range(2, 8))
