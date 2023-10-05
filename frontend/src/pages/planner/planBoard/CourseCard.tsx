@@ -7,7 +7,6 @@ import { ReactComponent as currentBlackIcon } from '../../../assets/currentBlack
 import ConditionalWrapper from '../utils/ConditionalWrapper'
 import deepEqual from 'fast-deep-equal'
 import { type PseudoCourseId, type PseudoCourseDetail } from '../utils/Types'
-
 interface DraggableCardProps {
   course: PseudoCourseId
   courseDetails: PseudoCourseDetail
@@ -53,7 +52,7 @@ const BlockInitials = (courseBlock: string): string => {
 }
 
 const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, toggleDrag, remCourse, courseBlock, openSelector, hasEquivalence, hasError, hasWarning }: DraggableCardProps): JSX.Element => {
-  const ref = useRef(null)
+  const ref = useRef<HTMLDivElement>(null)
   const callOpenSelector = (): void => openSelector(courseId)
   const callRemCourse = (): void => remCourse(courseId)
   const [{ isDragging = false }, drag] = useDrag(() => ({
