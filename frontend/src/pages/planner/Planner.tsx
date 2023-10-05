@@ -21,7 +21,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend'
 import { collectRequirements, handleErrors, PlannerStatus } from './utils/utils'
 import { updateCurriculum, isMinorValid, isMajorValid, loadCurriculumsData } from './utils/CurriculumUtils'
 import ReceivePaste from './utils/ReceivePaste'
-import ModBanner from './ModBanner'
+import Banner from '../../components/Banner'
 
 const reduceCourseDetails = (old: Record<string, PseudoCourseDetail>, add: Record<string, PseudoCourseDetail>): Record<string, PseudoCourseDetail> => {
   return { ...old, ...add }
@@ -667,7 +667,7 @@ const Planner = (): JSX.Element => {
   return (
     <>
       {authState?.isMod === true &&
-        <ModBanner/>
+        <Banner bannerType={'Warning'} text={'Estás en una visualización exclusiva para moderadores. Puedes ver e interactuar con los planes del estudiante, pero no puedes guardar los cambios realizados.'}/>
       }
       <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
         <DebugGraph validatablePlan={validatablePlan} />
