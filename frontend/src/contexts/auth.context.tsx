@@ -6,7 +6,7 @@ export interface UserData {
   token: string
 }
 
-interface Student extends StudentContext {
+export interface Student extends StudentContext {
   rut?: string
 }
 

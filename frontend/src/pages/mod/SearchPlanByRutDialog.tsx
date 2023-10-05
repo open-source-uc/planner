@@ -1,34 +1,9 @@
 import { memo, useState } from 'react'
-import { DefaultService } from '../../client'
-import { isApiError } from '../planner/utils/Types'
 import TextInputModal from '../../components/TextInputModal'
 
-const SearchPlanByRutModal = ({ isOpen, onClose, searchPlans }: { isOpen: boolean, onClose: Function, searchPlans: Function }): JSX.Element => {
-  const [studentRut, setStudentRut] = useState<string>('')
-  const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [isUserNotFound, setIsUserNotFound] = useState<boolean>(false)
+const SearchPlanByRutModal = ({ isOpen, status, error, studentInitialSearch, onClose, searchUser }: { isOpen: boolean, status: 'error' | 'success' | 'loading', error: unknown, studentInitialSearch: string, onClose: Function, searchUser: Function }): JSX.Element => {
+  const [studentRut, setStudentRut] = useState<string>(studentInitialSearch)
   const isSaveButtonDisabled: boolean = studentRut.length < 2
-
-  const handleUserSearch = async (rut: string): Promise<void> => {
-    setIsUserNotFound(false)
-    setIsLoading(true)
-    let formattedRut = rut
-    if (formattedRut.charAt(formattedRut.length - 2) !== '-') {
-      formattedRut = formattedRut.slice(0, -1) + '-' + formattedRut.slice(-1)
-    }
-    try {
-      const stundetInfo = await DefaultService.getStudentInfoForAnyUser(formattedRut)
-      searchPlans(stundetInfo, studentRut)
-      setIsUserNotFound(false)
-      onClose()
-    } catch (err) {
-      if (isApiError(err) && (err.status === 404 || err.status === 403)) {
-        setIsUserNotFound(true)
-      }
-      console.log(err)
-    }
-    setIsLoading(false)
-  }
 
   const handleInputChange: React.EventHandler<React.ChangeEvent<HTMLInputElement>> = e => {
     const input = e.target.value
@@ -41,13 +16,13 @@ const SearchPlanByRutModal = ({ isOpen, onClose, searchPlans }: { isOpen: boolea
     <TextInputModal
       title="Rut del estudiante"
       isOpen={isOpen}
-      handleAccept={handleUserSearch}
+      handleAccept={searchUser}
       handleInputChange={handleInputChange}
       onClose={onClose}
       acceptMessage="Buscar"
-      error={isUserNotFound}
+      error={status === 'error'}
       errorMsg="Estudiante no encontrado."
-      isLoading={isLoading}
+      isLoading={status === 'loading'}
       inputValue={studentRut}
       isAcceptButtonDisabled={isSaveButtonDisabled}
     />
