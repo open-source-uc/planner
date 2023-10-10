@@ -11,7 +11,7 @@ from typing import Annotated, Any, ClassVar, Literal
 from pydantic import BaseModel, Field
 
 
-class BaseExpr(BaseModel):
+class BaseExpr(BaseModel, frozen=True):
     """
     A logical expression.
     The requirements that a student must uphold in order to take a course is expressed
@@ -26,7 +26,8 @@ class BaseExpr(BaseModel):
         **kwargs: Any,  # noqa: ANN401 (kwargs are passed through)
     ) -> None:
         super().__init__(*args, **kwargs)
-        self.hash = self.compute_hash()
+        # Modify `hash` even though `self` is frozen, because `hash` is a derived property
+        self.hash = self.compute_hash() # type: ignore
 
     @abstractmethod
     def __str__(self) -> str:
@@ -37,7 +38,7 @@ class BaseExpr(BaseModel):
         pass
 
 
-class BaseOp(BaseExpr):
+class BaseOp(BaseExpr, frozen=True):
     """
     A logical connector between expressions.
     May be AND or OR.
@@ -75,7 +76,7 @@ class BaseOp(BaseExpr):
         return And(children=children) if neutral else Or(children=children)
 
 
-class And(BaseOp):
+class And(BaseOp, frozen=True):
     """
     Logical AND connector.
     Only satisfied if all of its children are satisfied.
@@ -85,7 +86,7 @@ class And(BaseOp):
     neutral: ClassVar[bool] = True
 
 
-class Or(BaseOp):
+class Or(BaseOp, frozen=True):
     """
     Logical OR connector.
     Only satisfied if at least one of its children is satisfied.
@@ -95,7 +96,7 @@ class Or(BaseOp):
     neutral: ClassVar[bool] = False
 
 
-class Const(BaseExpr):
+class Const(BaseExpr, frozen=True):
     """
     A constant, fixed value of True or False.
     """
@@ -111,7 +112,7 @@ class Const(BaseExpr):
         return h.digest()
 
 
-class MinCredits(BaseExpr):
+class MinCredits(BaseExpr, frozen=True):
     """
     A restriction that is only satisfied if the total amount of credits in the previous
     semesters is over a certain threshold.
@@ -130,7 +131,7 @@ class MinCredits(BaseExpr):
         return h.digest()
 
 
-class ReqLevel(BaseExpr):
+class ReqLevel(BaseExpr, frozen=True):
     """
     Express that this course requires a certain academic level.
     """
@@ -154,7 +155,7 @@ class ReqLevel(BaseExpr):
         return h.digest()
 
 
-class ReqSchool(BaseExpr):
+class ReqSchool(BaseExpr, frozen=True):
     """
     Express that this course requires the student to belong to a particular school.
     """
@@ -177,7 +178,7 @@ class ReqSchool(BaseExpr):
         return h.digest()
 
 
-class ReqProgram(BaseExpr):
+class ReqProgram(BaseExpr, frozen=True):
     """
     Express that this course requires the student to belong to a particular program.
     """
@@ -200,7 +201,7 @@ class ReqProgram(BaseExpr):
         return h.digest()
 
 
-class ReqCareer(BaseExpr):
+class ReqCareer(BaseExpr, frozen=True):
     """
     Express that this course requires the student to belong to a particular career.
     """
@@ -223,7 +224,7 @@ class ReqCareer(BaseExpr):
         return h.digest()
 
 
-class ReqCourse(BaseExpr):
+class ReqCourse(BaseExpr, frozen=True):
     """
     Require the student to have taken a course in the previous semesters.
     """
@@ -265,11 +266,11 @@ ReqCareer.update_forward_refs()
 ReqCourse.update_forward_refs()
 
 
-class AndClause(And):
+class AndClause(And, frozen=True):
     children: tuple[Atom, ...]
 
 
-class DnfExpr(Or):
+class DnfExpr(Or, frozen=True):
     children: tuple[AndClause, ...]
 
 
