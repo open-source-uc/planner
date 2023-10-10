@@ -270,7 +270,7 @@ async def login_cas(
 
     # Only allow impersonation if the user is a mod
     if impersonate_rut is not None:
-        if not _is_mod(rut):
+        if not await _is_mod(rut):
             raise HTTPException(status_code=403, detail="Insufficient privileges")
         rut = _normalize_rut(impersonate_rut)
 
