@@ -66,7 +66,7 @@ export function AuthProvider ({ children, userData }: Props): JSX.Element {
           toastId: 'ERROR401'
         })
       } else if (err.status === 403) {
-        console.log('El usuario no tiene permisos de mod')
+        console.log('El usuario no tiene permisos de moderación')
         setIsMod(() => false)
       } else {
         toast.error('Error al cargar información del usuario', {
