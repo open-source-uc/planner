@@ -68,7 +68,7 @@ function Navbar (): JSX.Element {
                         : ''
                     }`}
                   >
-                    Gestionar Mods
+                    Gestionar Moderadores
                   </Link>
                   }
                   {!isMod && !isAdmin && <Link
