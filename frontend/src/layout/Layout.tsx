@@ -2,7 +2,7 @@ import { Outlet } from '@tanstack/react-router'
 import Footer from './Footer'
 import Navbar from './Navbar'
 import { ToastContainer } from 'react-toastify'
-import Banner from './Banner'
+// import Banner from './Banner'
 
 function Layout (): JSX.Element {
   return (
@@ -21,7 +21,7 @@ function Layout (): JSX.Element {
         rtl={false}
         theme="light"
       />
-      <Banner />
+      {/* <Banner /> */}
       <Outlet />
     </div>
     <hr/>
