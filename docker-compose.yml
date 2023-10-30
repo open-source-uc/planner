@@ -40,9 +40,7 @@ services:
       - ./siding-mock-data:/siding-mock-data
     env_file:
       - ./backend/.env
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres?schema=public
-      PYTHON_ENV: production
+      - ./backend/.env.default
 
   db:
     image: postgres:15
