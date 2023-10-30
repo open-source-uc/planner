@@ -18,17 +18,22 @@ def generate_random_jwt_secret():
 
 
 class Settings(BaseSettings):
+    # NOTE: This class MUST contain production values as defaults.
+    # Why? This way we can control most production values through commits, instead
+    # of having to manually set them in the production server. The `.env` in production
+    # is reserved only for secrets.
+
     # Environment name. Used to select the correct environment variables.
     # Possible values: "development", "production".
     env: Literal["development", "staging", "production"] = Field(
-        "development",
+        "production",
         env="PYTHON_ENV",
     )
 
     # URL to the CAS verification server.
     # When a user arrives with a CAS token the backend verifies the token directly with
     # this server.
-    cas_server_url: AnyHttpUrl = Field("http://localhost:3004/")
+    cas_server_url: AnyHttpUrl = Field("https://sso.uc.cl/cas")
 
     # URL to the CAS login server.
     # The client's browser is redirected to this URL when they want to log in.
@@ -44,7 +49,7 @@ class Settings(BaseSettings):
     # authenticated JWT token.
     # In particular, the user browser is redirected to this `next` URL with the JWT
     # token as a query parameter.
-    planner_url: AnyHttpUrl = Field("http://localhost:3000")
+    planner_url: AnyHttpUrl = Field("https://mallastest.ing.uc.cl/")
 
     # This is the path used in case of prefix stripping (i.e. hosting in /api)
     # This is ignored in development mode for convenience
@@ -107,7 +112,7 @@ class Settings(BaseSettings):
     autosync_packedcourses: bool = True
 
     # URL for the Redis server.
-    redis_uri: RedisDsn = Field("redis://localhost:6379")
+    redis_uri: RedisDsn = Field("redis://redis:6379/0")
 
     # URL for buscacursos-dl, the current temporary catalogo and buscacursos scraper
     # that we use as a courseinfo source.
