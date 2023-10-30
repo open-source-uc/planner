@@ -4,6 +4,7 @@ networks:
   caddy:
   api:
 
+
 services:
   planner:
     build: ./frontend
@@ -39,6 +40,10 @@ services:
       - ./siding-mock-data:/siding-mock-data
     env_file:
       - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres?schema=public
+      PYTHON_ENV: production
+
   db:
     image: postgres:15
     container_name: planner-db
@@ -50,7 +55,7 @@ services:
     env_file:
       - ./database/.env
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
 
   redis:
     image: redis:7
@@ -62,7 +67,7 @@ services:
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      test: [ "CMD-SHELL", "redis-cli ping | grep -q PONG" ]
 
   cas_mock_server:
     # Run a local cas mock server container for developing purposes.
