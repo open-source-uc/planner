@@ -2,7 +2,8 @@ const Logout = (): JSX.Element => {
   // Clear token from local storage
   localStorage.removeItem('access-token')
 
-  const casURL: string = import.meta.env.VITE_CAS_SERVER_URL
+  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+  const casURL: string = import.meta.env.VITE_CAS_SERVER_URL || 'https://sso.uc.cl/cas/'
   console.assert(casURL, 'VITE_CAS_SERVER_URL environment variable not set during build')
 
   // Redirect to SSO logout URL

@@ -19,6 +19,7 @@ services:
       - api
     env_file:
       - ./frontend/.env
+      - ./frontend/.env.default
     volumes:
       - caddy_data:/data
       - caddy_config:/config
