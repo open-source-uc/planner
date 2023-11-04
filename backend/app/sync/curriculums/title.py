@@ -29,6 +29,7 @@ def translate_title(
     out: CurriculumStorage,
     spec: CurriculumSpec,
     meta: ProgramDetails,
+    siding_info: SidingInfo,
     siding: list[BloqueMalla],
     scrape: ScrapedProgram,
 ):
@@ -46,6 +47,7 @@ def translate_title(
         out,
         spec,
         meta.name,
+        siding_info,
         siding,
         scrape,
     )
@@ -160,7 +162,7 @@ def build_opi_equiv(
     spec: CurriculumSpec,
 ) -> EquivDetails:
     # Generar un codigo unico para esta equivalencia
-    opi_code = f"TITLE-{spec}-OPI"
+    opi_code = f"TITLE-{spec.cyear}-OPI"
 
     # Reusar la equivalencia de OPIs si se puede
     if opi_code in out.lists:

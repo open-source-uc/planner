@@ -272,20 +272,22 @@ def translate_siding(
             is_homogeneous = True
             main_code = raw_block.CodSigla
             # Assign a unique list code
-            # It contains a spec id, which is unique among all curriculum plans
-            list_code = f"{spec_id}-{main_code}"
+            # It contains a spec id, which differentiates this plan from others
             codes = [main_code]
             if raw_block.Equivalencias is not None:
                 # Add equivalences to the list
                 for curso in raw_block.Equivalencias.Cursos:
                     if curso.Sigla is not None and curso.Sigla != main_code:
                         codes.append(curso.Sigla)
+            list_code = (
+                f"{spec_id}-{main_code}"
+                if len(codes) == 1
+                else f"{spec_id}-EQUIV-{main_code}"
+            )
         elif raw_block.CodLista is not None and raw_block.CodSigla is None:
             # A list of courses, representing an abstract block
             is_homogeneous = False
-            # TODO: Remove program code from list IDs (to allow disjoint programs to
-            # share lists)
-            list_code = f"{spec_id}-{raw_block.CodLista}"
+            list_code = f"{spec_id}-LIST-{raw_block.CodLista}"
             cursos = siding.lists.get(raw_block.CodLista)
             if cursos is None:
                 raise Exception(f"unknown SIDING list code {raw_block.CodLista}")

@@ -172,6 +172,7 @@ async def collate_plans() -> CurriculumStorage:
                     out,
                     spec,
                     minor_meta,
+                    siding,
                     siding.plans[cyear].plans.get(minor_meta.code, []),
                     minor_scrape,
                 )
@@ -194,6 +195,7 @@ async def collate_plans() -> CurriculumStorage:
                 out,
                 spec,
                 title,
+                siding,
                 siding.plans[cyear].plans.get(title.code, []),
                 scrape,
             )
