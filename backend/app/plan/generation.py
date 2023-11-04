@@ -34,6 +34,7 @@ from app.plan.validation.curriculum.tree import (
     Curriculum,
     CurriculumSpec,
     FillerCourse,
+    Leaf,
     cyear_from_str,
 )
 from app.sync import get_curriculum
@@ -209,6 +210,13 @@ def _reselect_equivs(
 ):
     """
     Update the filler equivalences in `curriculum` to match choices in `reference`.
+
+    Context: When the user changes their curriculum spec (eg. changes major), we'd like
+    to keep as many choices that the user took as possible.
+    However, different curriculums may be very different, so it's hard to carry
+    information over to the new curriculum.
+    One thing that is relatively easy to carry over are equivalence choices: the
+    concrete course chosen for an equivalence.
     """
 
     # Collect equivalence choices by equivalence name
@@ -221,7 +229,7 @@ def _reselect_equivs(
             ):
                 ref_equiv = ref_course.equivalence
                 equiv_info = courseinfo.try_equiv(ref_equiv.code)
-                if equiv_info is not None:
+                if equiv_info is not None and len(equiv_info.courses) > 1:
                     by_name[equiv_info.name].append(ref_course)
 
     # Re-select filler equivalences in courses_to_pass if they match reference choices
@@ -229,16 +237,19 @@ def _reselect_equivs(
     for fillers in curriculum.fillers.values():
         for filler in fillers:
             equiv = filler.course
-            if isinstance(equiv, ConcreteId) and equiv.equivalence is not None:
-                equiv = equiv
-            if not isinstance(equiv, EquivalenceId):
+            if isinstance(equiv, ConcreteId):
+                equiv = equiv.equivalence
+            if equiv is None:
                 continue
 
             equiv_info = courseinfo.try_equiv(equiv.code)
             if equiv_info is None or equiv_info.name not in by_name:
                 continue
             for ref_choice in by_name[equiv_info.name]:
-                if ref_choice.code in equiv_info.courses:
+                if (
+                    ref_choice.code in equiv_info.courses
+                    and ref_choice.code != filler.course.code
+                ):
                     extra_fillers[ref_choice.code].append(
                         FillerCourse(
                             course=ref_choice.copy(update={"equivalence": equiv}),
@@ -431,6 +442,35 @@ def _try_add_course_group(
     return True
 
 
+def _assign_blocks(g: SolvedCurriculum, plan: ValidatablePlan):
+    """
+    If there are any courses in `g` with no assigned block, assign them their current
+    block.
+    """
+
+    rep_counter: defaultdict[str, int] = defaultdict(lambda: 0)
+    for sem in plan.classes:
+        for i, course in enumerate(sem):
+            instance_idx = rep_counter[course.code]
+            rep_counter[course.code] += 1
+            if isinstance(course, ConcreteId) and course.equivalence is None:
+                inst = g.usable[course.code].instances[instance_idx]
+                if "" in inst.layers:
+                    edges = inst.layers[""]
+                    if edges.active_edge is not None:
+                        active_block = edges.active_edge.block_path[-1]
+                        assert isinstance(active_block, Leaf)
+                        new_course = ConcreteId(
+                            code=course.code,
+                            failed=course.failed,
+                            equivalence=EquivalenceId(
+                                code=active_block.list_code,
+                                credits=edges.active_edge.flow,
+                            ),
+                        )
+                        sem[i] = new_course
+
+
 async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
     """
     Generate an empty plan with optional user context.
@@ -496,6 +536,7 @@ async def generate_recommended_plan(
     # Solve the curriculum to determine which courses have not been passed yet (and need
     # to be passed)
     g = solve_curriculum(courseinfo, passed.curriculum, curriculum, passed.classes)
+    g.forbid_recolor()
 
     # Flat list of all curriculum courses left to pass
     courses_to_pass, ignore_reqs = _compute_courses_to_pass(
@@ -577,6 +618,9 @@ async def generate_recommended_plan(
     print(f"  solve: {p(t2-t1)}")
     print(f"  coreq: {p(t21-t2)}")
     print(f"  insert: {p(t3-t21)}")
+
+    # Assign blocks to courses
+    _assign_blocks(g, plan)
 
     # Order courses by their color (ie. superblock assignment)
     repetition_counter: defaultdict[str, int] = defaultdict(lambda: 0)

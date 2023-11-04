@@ -2,7 +2,7 @@ from typing import Literal
 
 from unidecode import unidecode
 
-from app.plan.courseinfo import CourseDetails, CourseInfo
+from app.plan.courseinfo import CourseInfo
 from app.plan.validation.curriculum.tree import (
     Block,
     Combination,
@@ -99,12 +99,11 @@ def _identify_superblocks(spec: CurriculumSpec, block: Block):
 def _is_c2020_ofg(block: Block) -> bool:
     if isinstance(block, Combination):
         return any(_is_c2020_ofg(child) for child in block.children)
-    return "!L1" in block.codes
+    return block.list_code.endswith("L1")
 
 
 def _merge_c2020_ofgs(curriculum: Curriculum):
     # Junta los bloques de OFG de 10 creditos en un bloque grande de OFG
-    # El codigo de lista para los OFG es `!L1`
     for superblock in curriculum.root.children:
         if not isinstance(superblock, Combination):
             continue
@@ -127,6 +126,7 @@ def _merge_c2020_ofgs(curriculum: Curriculum):
                     name=l1_blocks[0].name,
                     superblock=l1_blocks[0].superblock,
                     cap=total_cap,
+                    list_code=l1_blocks[0].list_code,
                     codes=l1_blocks[0].codes,
                 ),
             )
@@ -160,8 +160,12 @@ def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum)
 
 
 def _ofg_classify(
-    info: CourseDetails,
+    courseinfo: CourseInfo,
+    code: str,
 ) -> Literal["limited"] | Literal["unlimited"] | Literal["science"]:
+    info = courseinfo.try_course(code)
+    if info is None:
+        return "unlimited"
     if info.code in C2020_OFG_SCIENCE_OPTS:
         return "science"
     if info.credits != 5:
@@ -173,27 +177,6 @@ def _ofg_classify(
     ):
         return "limited"
     return "unlimited"
-
-
-def _ofg_is_limited(courseinfo: CourseInfo, code: str):
-    info = courseinfo.try_course(code)
-    if info is None:
-        return True
-    return _ofg_classify(info) == "limited"
-
-
-def _ofg_is_unlimited(courseinfo: CourseInfo, code: str):
-    info = courseinfo.try_course(code)
-    if info is None:
-        return True
-    return _ofg_classify(info) == "unlimited"
-
-
-def _ofg_is_science(courseinfo: CourseInfo, code: str):
-    info = courseinfo.try_course(code)
-    if info is None:
-        return True
-    return _ofg_classify(info) == "science"
 
 
 def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
@@ -209,7 +192,7 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
     #
     # Se pueden tomar hasta 10 creditos de optativo de ciencias, que es una
     # lista separada que al parecer solo esta disponible en forma textual.
-    # Los ramos de esta lista no son parte de la lista `!L1` que brinda
+    # Los ramos de esta lista no son parte de la lista `L1` que brinda
     # SIDING, y tampoco sabemos si esta disponible en otra lista.
     # La lista L3 se ve prometedora, incluso incluye un curso "ING0001
     # Optativo En Ciencias" generico, pero no es exactamente igual al listado
@@ -233,18 +216,20 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                 unlimited: set[str] = set()
                 science: set[str] = set()
                 for code in block.codes:
-                    if _ofg_is_limited(courseinfo, code):
-                        limited.add(code)
-                    if _ofg_is_unlimited(courseinfo, code):
-                        unlimited.add(code)
-                    if _ofg_is_science(courseinfo, code):
-                        science.add(code)
+                    match _ofg_classify(courseinfo, code):
+                        case "unlimited":
+                            unlimited.add(code)
+                        case "limited":
+                            limited.add(code)
+                        case "science":
+                            science.add(code)
                 # Separar el bloque en 3
                 limited_block = Leaf(
                     debug_name=f"{block.debug_name} (máx. 10 creds. DPT y otros)",
                     name=None,
                     superblock=block.superblock,
                     cap=10,
+                    list_code=block.list_code,
                     codes=limited,
                 )
                 unlimited_block = Leaf(
@@ -252,6 +237,7 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                     name=None,
                     superblock=block.superblock,
                     cap=block.cap,
+                    list_code=block.list_code,
                     codes=unlimited,
                 )
                 science_block = Leaf(
@@ -259,6 +245,7 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                     name=None,
                     superblock=block.superblock,
                     cap=10,
+                    list_code=block.list_code,
                     codes=science,
                 )
                 block = Combination(
@@ -294,18 +281,20 @@ def _c2020_defer_general_ofg(curriculum: Curriculum):
     # Hacer que los ramos de relleno de OFG se prefieran sobre los ramos de relleno de
     # teologico, para que no se autogenere un teologico y se tome el curso teologico
     # como OFG
-    if "!L1" in curriculum.fillers:
-        for filler in curriculum.fillers["!L1"]:
-            filler.cost_offset -= 1
+    for filler_code, fillers in curriculum.fillers.items():
+        if filler_code.endswith("L1"):
+            for filler in fillers:
+                filler.cost_offset -= 1
 
 
 def _c2022_defer_free_area_ofg(curriculum: Curriculum):
     # Hacer que los ramos de relleno de area libre se prefieran sobre los ramos de
     # relleno de area restringida, para que no se autogenere un area restringida y se
     # tome el curso pasado como area libre
-    if "!C10351" in curriculum.fillers:
-        for filler in curriculum.fillers["!C10351"]:
-            filler.cost_offset -= 1
+    for filler_code, fillers in curriculum.fillers.items():
+        if filler_code.endswith("C10351"):
+            for filler in fillers:
+                filler.cost_offset -= 1
 
 
 def patch_major(
@@ -347,8 +336,11 @@ def translate_major(
     siding: SidingInfo,
     raw_blocks: list[BloqueMalla],
 ):
+    # Un identificador unico para este curriculum
+    spec_id = f"MAJOR-{spec}"
+
     # Traducir la malla de SIDING en un curriculum nativo pero incompleto
-    curr = translate_siding(courseinfo, out, siding, raw_blocks)
+    curr = translate_siding(courseinfo, out, spec_id, siding, raw_blocks)
 
     # Completar los detalles faltantes
     curr = patch_major(courseinfo, spec, curr)
@@ -357,7 +349,9 @@ def translate_major(
     out.set_major(spec, curr)
 
 
+# La malla de plan comun se construye a partir de la malla de este major (computacion)
 PLANCOMUN_BASE_MAJOR = "M245"
+# La malla de plan comun se construye filtrando estos bloques de la malla de algun major
 PLANCOMUN_SUPERBLOCKS = {"PlanComun", "FormacionGeneral"}
 
 

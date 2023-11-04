@@ -5,36 +5,27 @@ Implements logical expressions in the context of course requirements.
 
 from abc import abstractmethod
 from collections.abc import Callable
+from functools import cached_property
 from hashlib import blake2b as good_hash
-from typing import Annotated, Any, ClassVar, Literal
+from typing import Annotated, ClassVar, Literal
 
 from pydantic import BaseModel, Field
 
 
-class BaseExpr(BaseModel, frozen=True):
+class BaseExpr(BaseModel, frozen=True, keep_untouched=(cached_property,)):
     """
     A logical expression.
     The requirements that a student must uphold in order to take a course is expressed
     through a combination of expressions.
     """
 
-    hash: Annotated[bytes, Field(exclude=True)] = b""
-
-    def __init__(
-        self,
-        *args: Any,  # noqa: ANN401 (args are passed through)
-        **kwargs: Any,  # noqa: ANN401 (kwargs are passed through)
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        # Modify `hash` even though `self` is frozen, because `hash` is a derived property
-        self.hash = self.compute_hash() # type: ignore
-
     @abstractmethod
     def __str__(self) -> str:
         pass
 
+    @cached_property
     @abstractmethod
-    def compute_hash(self) -> bytes:
+    def hash(self) -> Annotated[bytes, Field(exclude=True)]:
         pass
 
 
@@ -59,7 +50,8 @@ class BaseOp(BaseExpr, frozen=True):
                 s += str(child)
         return s
 
-    def compute_hash(self) -> bytes:
+    @cached_property
+    def hash(self) -> bytes:
         h = good_hash(b"y" if self.neutral else b"o")
         for child in self.children:
             h.update(child.hash)
@@ -107,7 +99,8 @@ class Const(BaseExpr, frozen=True):
     def __str__(self) -> str:
         return str(self.value)
 
-    def compute_hash(self) -> bytes:
+    @cached_property
+    def hash(self) -> bytes:
         h = good_hash(b"one" if self.value else b"zero")
         return h.digest()
 
@@ -125,7 +118,8 @@ class MinCredits(BaseExpr, frozen=True):
     def __str__(self) -> str:
         return f"(Creditos >= {self.min_credits})"
 
-    def compute_hash(self) -> bytes:
+    @cached_property
+    def hash(self) -> bytes:
         h = good_hash(b"cred")
         h.update(self.min_credits.to_bytes(4))
         return h.digest()
@@ -148,7 +142,8 @@ class ReqLevel(BaseExpr, frozen=True):
         eq = "=" if self.equal else "!="
         return f"(Nivel {eq} {self.level})"
 
-    def compute_hash(self) -> bytes:
+    @cached_property
+    def hash(self) -> bytes:
         h = good_hash(b"level")
         h.update(self.level.encode("UTF-8"))
         h.update(b"==" if self.equal else b"!=")
@@ -171,7 +166,8 @@ class ReqSchool(BaseExpr, frozen=True):
         eq = "=" if self.equal else "!="
         return f"(Facultad {eq} {self.school})"
 
-    def compute_hash(self) -> bytes:
+    @cached_property
+    def hash(self) -> bytes:
         h = good_hash(b"school")
         h.update(self.school.encode("UTF-8"))
         h.update(b"==" if self.equal else b"!=")
@@ -194,7 +190,8 @@ class ReqProgram(BaseExpr, frozen=True):
         eq = "=" if self.equal else "!="
         return f"(Programa {eq} {self.program})"
 
-    def compute_hash(self) -> bytes:
+    @cached_property
+    def hash(self) -> bytes:
         h = good_hash(b"program")
         h.update(self.program.encode("UTF-8"))
         h.update(b"==" if self.equal else b"!=")
@@ -217,7 +214,8 @@ class ReqCareer(BaseExpr, frozen=True):
         eq = "=" if self.equal else "!="
         return f"(Carrera {eq} {self.career})"
 
-    def compute_hash(self) -> bytes:
+    @cached_property
+    def hash(self) -> bytes:
         h = good_hash(b"career")
         h.update(self.career.encode("UTF-8"))
         h.update(b"==" if self.equal else b"!=")
@@ -239,7 +237,8 @@ class ReqCourse(BaseExpr, frozen=True):
     def __str__(self) -> str:
         return f"{self.code}(c)" if self.coreq else self.code
 
-    def compute_hash(self) -> bytes:
+    @cached_property
+    def hash(self) -> bytes:
         h = good_hash(b"req")
         h.update(self.code.encode("UTF-8"))
         h.update(b"c" if self.coreq else b" ")

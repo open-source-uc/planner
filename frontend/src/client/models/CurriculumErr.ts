@@ -12,9 +12,9 @@
  * to show the user equivalence codes, each course is coupled with its name.
  */
 export type CurriculumErr = {
+    is_err?: boolean;
     kind?: 'curr';
     associated_to?: null;
-    is_err?: boolean;
     blocks: Array<Array<string>>;
     credits: number;
     fill_options: Array<Array<any>>;

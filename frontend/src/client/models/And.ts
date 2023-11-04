@@ -16,7 +16,6 @@ import type { ReqSchool } from './ReqSchool';
  * Only satisfied if all of its children are satisfied.
  */
 export type And = {
-    hash?: Blob;
     children: Array<(And | Or | Const | MinCredits | ReqLevel | ReqSchool | ReqProgram | ReqCareer | ReqCourse)>;
     expr?: 'and';
 };

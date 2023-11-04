@@ -44,15 +44,18 @@ class ListBuilder:
         storage: CurriculumStorage,
         spec: CurriculumSpec,
     ) -> None:
-        self.unique_id = f"{kind.superblock_id.upper()}-{spec}"
+        self.unique_id = f"{kind.layer_id.upper()}-{spec}"
         self.storage = storage
         self.last_idx = 0
         self.optative_idx = 0
         self.minimum_idx = 0
 
     def add_list(self, name: str, courses: list[str]) -> EquivDetails:
+        # TODO: Remove program code from list IDs (to allow disjoint programs to share
+        # lists), and do a best-effort search for SIDING codes corresponding to lists
+        # (to achieve future-proofness).
         self.last_idx += 1
-        lcode = f"#{self.unique_id}-{self.last_idx}"
+        lcode = f"{self.unique_id}-{self.last_idx}"
         equiv = EquivDetails(
             code=lcode,
             name=name,
@@ -201,11 +204,13 @@ def translate_block(
         code = block.options[0]
         info = courseinfo.try_course(code)
         assert info is not None
+        equiv = listbuilder.add_list(name, block.options)
         exh = Leaf(
             debug_name=name,
             name=name,
             superblock=kind.superblock_id,
             cap=info.credits or 1,
+            list_code=equiv.code,
             codes={code},
             layer=kind.layer_id,
         )
@@ -214,11 +219,15 @@ def translate_block(
             name=name,
             superblock=kind.superblock_id,
             cap=info.credits or 1,
+            list_code=equiv.code,
             codes={code},
         )
         fill = [
             FillerCourse(
-                course=ConcreteId(code=code),
+                course=ConcreteId(
+                    code=code,
+                    equivalence=EquivalenceId(code=equiv.code, credits=info.credits),
+                ),
                 order=kind.order_base + listbuilder.last_idx,
             ),
         ]
@@ -259,8 +268,6 @@ def translate_block(
 
         # Agregar esta equivalencia al plan
         equiv = listbuilder.add_list(name, available_options)
-        accept_codes = set(available_options)
-        accept_codes.add(equiv.code)
         exh = (
             None
             if block.complementary
@@ -270,7 +277,8 @@ def translate_block(
                     name=name,
                     superblock=kind.superblock_id,
                     cap=creds,
-                    codes=accept_codes,
+                    list_code=equiv.code,
+                    codes=set(available_options),
                     layer=kind.layer_id,
                 )
             )
@@ -283,7 +291,8 @@ def translate_block(
                 name=name,
                 superblock=kind.superblock_id,
                 cap=creds,
-                codes=accept_codes,
+                list_code=equiv.code,
+                codes=set(available_options),
             )
         )
         fill = [

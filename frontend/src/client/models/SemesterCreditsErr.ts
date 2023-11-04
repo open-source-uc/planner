@@ -7,9 +7,9 @@
  * of credits.
  */
 export type SemesterCreditsErr = {
+    is_err?: boolean;
     kind?: 'creditserr';
     associated_to: Array<number>;
-    is_err?: boolean;
     max_allowed: number;
     actual: number;
 };

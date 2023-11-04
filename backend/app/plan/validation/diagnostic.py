@@ -58,6 +58,7 @@ class MismatchedCyearErr(BaseModel):
     is_err: Literal[True] = Field(default=True, const=True)
     kind: Literal["cyear"] = Field(default="cyear", const=True)
     associated_to: None = None
+
     plan: Cyear
     user: str
 
@@ -72,6 +73,7 @@ class MismatchedCurriculumSelectionWarn(BaseModel):
     is_err: Literal[False] = Field(default=False, const=True)
     kind: Literal["currdecl"] = Field(default="currdecl", const=True)
     associated_to: None = None
+
     plan: CurriculumSpec
     user: CurriculumSpec
 
@@ -114,6 +116,7 @@ class SemestralityWarn(BaseModel):
     is_err: Literal[False] = Field(default=False, const=True)
     kind: Literal["sem"] = Field(default="sem", const=True)
     associated_to: list[ClassId]
+
     only_available_on: int
 
 
@@ -150,6 +153,7 @@ class SemesterCreditsWarn(BaseModel):
     is_err: Literal[False] = Field(default=False, const=True)
     kind: Literal["creditswarn"] = Field(default="creditswarn", const=True)
     associated_to: list[int]
+
     max_recommended: int
     actual: int
 
@@ -164,6 +168,7 @@ class SemesterCreditsErr(BaseModel):
     is_err: Literal[True] = Field(default=True, const=True)
     kind: Literal["creditserr"] = Field(default="creditserr", const=True)
     associated_to: list[int]
+
     max_allowed: int
     actual: int
 
@@ -183,6 +188,7 @@ class CurriculumErr(BaseModel):
     is_err: Literal[True] = Field(default=True, const=True)
     kind: Literal["curr"] = Field(default="curr", const=True)
     associated_to: None = None
+
     blocks: list[list[str]]
     credits: int
     fill_options: list[tuple[PseudoCourse, str]]
@@ -197,6 +203,7 @@ class UnassignedWarn(BaseModel):
     is_err: Literal[False] = Field(default=False, const=True)
     kind: Literal["useless"] = Field(default="useless", const=True)
     associated_to: None = None
+
     unassigned_credits: int
 
 
@@ -209,6 +216,7 @@ class NoMajorMinorWarn(BaseModel):
     is_err: Literal[False] = Field(default=False, const=True)
     kind: Literal["nomajor"] = Field(default="nomajor", const=True)
     associated_to: None = None
+
     plan: CurriculumSpec
 
 

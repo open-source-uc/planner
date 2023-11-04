@@ -7,9 +7,9 @@
  * amount of credits.
  */
 export type SemesterCreditsWarn = {
+    is_err?: boolean;
     kind?: 'creditswarn';
     associated_to: Array<number>;
-    is_err?: boolean;
     max_recommended: number;
     actual: number;
 };

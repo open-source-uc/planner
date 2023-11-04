@@ -84,6 +84,11 @@ class Leaf(BaseBlock):
     or through migrations.
     """
 
+    # The list code that identifies this leaf.
+    # Note that this ID might not be unique.
+    # For example, C2020 OFGs all share the same list code, but there are extra rules
+    # that are modeled using several leaves.
+    list_code: str
     # A set of course codes that comprise this leaf.
     # This should include the equivalence code!
     codes: set[str]
@@ -126,7 +131,7 @@ class Curriculum(BaseModel):
         the course (eg. the TTF010 example above would have a 10-credit multiplicity).
         This makes it so that by default each course only counts at most once.
         For equivalencies that have no associated credit count, the multiplicity is
-        infinite (eg. multiplicity["!L1"] = `None`).
+        infinite (eg. multiplicity["MAJOR-L1"] = `None`).
 
         Additionally, multiplicity specifies which courses should be equivalent in terms
         of credit count.

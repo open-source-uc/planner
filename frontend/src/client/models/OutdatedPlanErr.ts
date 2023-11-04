@@ -10,8 +10,8 @@
  * The semesters that are mismatched are included in `associated_to`.
  */
 export type OutdatedPlanErr = {
+    is_err?: boolean;
     kind?: 'outdated';
     associated_to: Array<number>;
-    is_err?: boolean;
 };
 

@@ -9,8 +9,8 @@ import type { ClassId } from './ClassId';
  * and are probably unavailable.
  */
 export type UnavailableCourseWarn = {
+    is_err?: boolean;
     kind?: 'unavail';
     associated_to: Array<ClassId>;
-    is_err?: boolean;
 };
 

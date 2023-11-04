@@ -10,8 +10,8 @@
  * This is the "smaller version" of `OutdatedPlanErr`.
  */
 export type OutdatedCurrentSemesterErr = {
+    is_err?: boolean;
     kind?: 'outdatedcurrent';
     associated_to: Array<number>;
-    is_err?: boolean;
 };
 

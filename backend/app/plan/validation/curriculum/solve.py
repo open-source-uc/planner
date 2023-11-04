@@ -55,6 +55,10 @@ Some extra details:
     For example, if node A connected to node B, B connected to node C, and there were no
     other connections to B, node B could be completely eliminated and replaced by a
     direct connection from A to C.
+
+Some interesting combinations in terms of solving:
+M233-N207-40095
+M175-N207-40095
 """
 
 import logging
@@ -82,15 +86,25 @@ from app.plan.validation.curriculum.tree import (
 # Infinite placeholder.
 # A huge value that still fits in a 64-bit integer.
 INFINITY: int = 10**18
-# Base cost of using a filler course. In contrast with a taken course, filler courses
-# are virtual courses that are not actually taken by the user. Instead, filler courses
-# serve as a "fallback" when a curriculum can't be filled with taken courses only.
-FILLER_COST = 10**2
-# Base cost of taking a course. This number should be large enough so that cost offsets
-# dont make it more profitable to take an extra course.
-# This value might be a little low for my liking, but a value of 20 starts showing
-# precision issues with the SCIP solver.
-TAKEN_COST = 10**1
+
+# Cost of using a single credit of a filler course.
+# Filler courses are courses that the student has not taken, but that they could take.
+# The cost of filler courses is higher than taken courses so that the solver prefers
+# already-taken courses before adding new courses.
+FILLER_COST = 10**4
+# Cost of using a single credit of an already-assigned course.
+# The idea behind assigning a cost to using courses is that the solve prefers to leave
+# as many courses as possible blank. This way the user can notice that some courses are
+# unnecessary.
+TAKEN_COST = 10**3
+# Cost of recoloring a single credit.
+# Recoloring is assigning a course to a different block than what it's currently
+# assigned to.
+# This value should be smaller than `TAKEN_COST` so that the solver prefers to recolor
+# before taking more courses.
+# However, it should be large enough that custom cost offsets are smaller do not
+# overcome the recoloring cost.
+RECOLOR_COST = 10**1
 
 
 IntExpr = int | lmip.LinearExpr
@@ -108,10 +122,19 @@ class BlockEdgeInfo:
         this edge.
         The first element is the root, the last element is the leaf and there is any
         number of elements in between.
+    - needs_recolor: Indicates whether putting flow through this edge requires changing
+        the course-block assignment.
+    - flow: The amount of credits assigned from this course to the given block.
+        This might be smaller than the amount of credits corresponding to the course, if
+        the block is already almost full.
+    - active_var: Internal boolean variable indicating whether the edge is active or
+        not.
+    - flow_var: Internal variable indicating how many credits are flowing through this
+        edge. May only be non-zero if the edge is active.
     """
 
     block_path: tuple[Block, ...]
-
+    needs_recolor: bool
     flow: int
 
     active_var: lmip.Variable
@@ -221,6 +244,14 @@ class SolvedCurriculum:
         assert inst.flow > 0
         return _explore_options_for(self, inst)
 
+    def forbid_recolor(self) -> bool:
+        """
+        Resolve the curriculum, this time respecting previous course-block assignments.
+        Returns `True` if forbidding recolor required adding a course.
+        """
+
+        return _resolve_with_fixed_colors(self)
+
     def dump_graphviz_pretty(self, curriculum: Curriculum) -> str:
         from app.plan.validation.curriculum.dump import GraphDumper
 
@@ -239,6 +270,7 @@ def _connect_course_instance(
     block_order: int,
     block_path: tuple[Block, ...],
     inst: UsableInstance,
+    needs_recolor: bool,
 ) -> lmip.Variable:
     """
     Connect the course instance `inst` to the graph node `connect_to`.
@@ -263,6 +295,7 @@ def _connect_course_instance(
     layer.block_edges.append(
         BlockEdgeInfo(
             block_path=block_path,
+            needs_recolor=needs_recolor,
             flow=0,
             active_var=active_var,
             flow_var=flow_var,
@@ -295,18 +328,22 @@ def _build_visit(
     if isinstance(block, Leaf):
         # A list of courses
         visit_state.flat_order += 1
-
         block_path = tuple(visit_state.stack)
-        for code in block.codes.intersection(g.usable_keys):
+
+        # Determine which codes can count towards this block
+        usable_codes = block.codes.intersection(g.usable_keys)
+        if block.list_code in g.usable_keys:
+            usable_codes.add(block.list_code)
+
+        # Visit the usable codes
+        for code in usable_codes:
             for inst in g.usable[code].instances:
-                if (
+                needs_recolor = (
                     block.layer == ""
                     and isinstance(inst.original_pseudocourse, ConcreteId)
                     and inst.original_pseudocourse.equivalence is not None
-                    and inst.original_pseudocourse.equivalence.code not in block.codes
-                ):
-                    # Skips instances with mismatching tagged equivalence
-                    continue
+                    and inst.original_pseudocourse.equivalence.code != block.list_code
+                )
                 child_flow = _connect_course_instance(
                     courseinfo,
                     g,
@@ -314,6 +351,7 @@ def _build_visit(
                     visit_state.flat_order,
                     block_path,
                     inst,
+                    needs_recolor,
                 )
                 in_flows.append(child_flow)
                 max_in_flow += inst.credits
@@ -485,7 +523,29 @@ def _build_problem(
     )
 
     # Apply multiplicity limits
-    # Each course can only be taken once (or, a certain number of times)
+    _enforce_multiplicity(g)
+
+    # Each course instance can only feed one block per layer
+    for usable in g.usable.values():
+        for inst in usable.instances:
+            for layer in inst.layers.values():
+                if len(layer.block_edges) <= 1:
+                    continue
+                g.model.Add(
+                    g.model.Sum([edge.active_var for edge in layer.block_edges]) <= 1,
+                )
+
+    # Minimize the amount of used course flow
+    _minimize_cost(g)
+
+    return g
+
+
+def _enforce_multiplicity(g: SolvedCurriculum):
+    """
+    Ensure that each course can only be taken once (or a certain amount of times
+    depending on the course).
+    """
     seen: set[str] = set()
     for code, usable in g.usable.items():
         if code in seen:
@@ -510,30 +570,32 @@ def _build_problem(
             g.model.Sum(vars) <= max_creds,
         )
 
-    # Each course instance can only feed one block per layer
-    for usable in g.usable.values():
-        for inst in usable.instances:
-            for layer in inst.layers.values():
-                if len(layer.block_edges) <= 1:
-                    continue
-                g.model.Add(
-                    g.model.Sum([edge.active_var for edge in layer.block_edges]) <= 1,
-                )
 
-    # Minimize the amount of used course flow
+def _minimize_cost(g: SolvedCurriculum):
+    """
+    Minimize the amount of used credits.
+    Not all credits are equal though, some credits represent more cost than others.
+    """
+
     costs: list[lmip.LinearExpr] = []
     for usable in g.usable.values():
         for inst in usable.instances:
+            # Consider the cost of using this instance
+            # The cost is higher if it is a filler, because it means adding an extra
+            # course
             cost_per_credit = (
                 TAKEN_COST
                 if inst.filler is None
                 else FILLER_COST + inst.filler.cost_offset
             )
             costs.append(cost_per_credit * inst.flow_var)
+            # Add extra cost for taking recolor-edges
+            for edges in inst.layers.values():
+                for edge in edges.block_edges:
+                    if edge.needs_recolor:
+                        costs.append(RECOLOR_COST * edge.flow_var)
 
     g.model.Minimize(g.model.Sum(costs))
-
-    return g
 
 
 def _tag_edge_flow(g: SolvedCurriculum):
@@ -585,6 +647,10 @@ _solver_status_to_name: dict[int, str] = {
 }
 
 
+SOLVE_PARAMETERS = lmip.MPSolverParameters()
+SOLVE_PARAMETERS.SetDoubleParam(lmip.MPSolverParameters.PRIMAL_TOLERANCE, 1e-3)
+
+
 def solve_curriculum(
     courseinfo: CourseInfo,
     spec: CurriculumSpec,
@@ -594,7 +660,7 @@ def solve_curriculum(
     # Take the curriculum blueprint, and produce a graph for this student
     g = _build_problem(courseinfo, curriculum, taken)
     # Solve the integer optimization problem
-    solve_status = g.model.Solve()
+    solve_status = g.model.Solve(SOLVE_PARAMETERS)
     if not (
         solve_status == lmip.Solver.OPTIMAL or solve_status == lmip.Solver.FEASIBLE
     ):
@@ -607,7 +673,7 @@ def solve_curriculum(
             tol = "infinite"
             for i in range(1, curriculum.root.cap + 1):
                 g = _build_problem(courseinfo, curriculum, taken, tolerance=i)
-                solve_status_2 = g.model.Solve()
+                solve_status_2 = g.model.Solve(SOLVE_PARAMETERS)
                 if (
                     solve_status_2 == lmip.Solver.OPTIMAL
                     or solve_status_2 == lmip.Solver.FEASIBLE
@@ -627,6 +693,54 @@ def solve_curriculum(
     _tag_superblocks(g)
 
     return g
+
+
+def _resolve_with_fixed_colors(g: SolvedCurriculum) -> bool:
+    """
+    Resolve the curriculum, this time inflexibly respecting the fixed assignments.
+    """
+
+    # Determine how many courses were taken
+    old_taken = 0
+    old_fillers = 0
+    for usable in g.usable.values():
+        for inst in usable.instances:
+            if inst.filler is None:
+                old_taken += inst.flow
+            else:
+                old_fillers += inst.flow
+    # Forbid edges that require reassignment (coloquially called recoloring)
+    for usable in g.usable.values():
+        for inst in usable.instances:
+            for edges in inst.layers.values():
+                for edge in edges.block_edges:
+                    if edge.needs_recolor:
+                        g.model.Add(lmip.LinearConstraint(edge.active_var, 0, 0))
+                        g.model.Add(lmip.LinearConstraint(edge.flow_var, 0, 0))
+    # Re-solve model
+    solve_status = g.model.Solve(SOLVE_PARAMETERS)
+    if not (
+        solve_status == lmip.Solver.OPTIMAL or solve_status == lmip.Solver.FEASIBLE
+    ):
+        raise Exception(
+            f"failed to re-solve curriculum: {_solver_status_to_name[solve_status]}",
+        )
+    # Extract solution
+    _tag_edge_flow(g)
+    # Determine new course superblocks
+    _tag_superblocks(g)
+    # Determine how many courses are taken now
+    new_taken = 0
+    new_fillers = 0
+    for usable in g.usable.values():
+        for inst in usable.instances:
+            if inst.filler is None:
+                new_taken += inst.flow
+            else:
+                new_fillers += inst.flow
+    # If more courses were taken, then we had to make sacrifices in order to forbid
+    # recoloring
+    return new_taken > old_taken or new_fillers > old_fillers
 
 
 def _explore_options_for(
@@ -664,7 +778,7 @@ def _explore_options_for(
                 inst.flow_var.SetUb(0)
 
         # Solve with these new restrictions
-        solve_status = g.model.Solve()
+        solve_status = g.model.Solve(SOLVE_PARAMETERS)
         if not (
             solve_status == lmip.Solver.OPTIMAL or solve_status == lmip.Solver.FEASIBLE
         ):
