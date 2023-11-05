@@ -442,10 +442,10 @@ def _try_add_course_group(
     return True
 
 
-def _assign_blocks(g: SolvedCurriculum, plan: ValidatablePlan):
+def _reassign_blocks(g: SolvedCurriculum, plan: ValidatablePlan):
     """
-    If there are any courses in `g` with no assigned block, assign them their current
-    block.
+    Reassign the equivalences attached to the courses in `plan` based on the block
+    assignments in `g`.
     """
 
     rep_counter: defaultdict[str, int] = defaultdict(lambda: 0)
@@ -453,22 +453,26 @@ def _assign_blocks(g: SolvedCurriculum, plan: ValidatablePlan):
         for i, course in enumerate(sem):
             instance_idx = rep_counter[course.code]
             rep_counter[course.code] += 1
-            if isinstance(course, ConcreteId) and course.equivalence is None:
-                inst = g.usable[course.code].instances[instance_idx]
-                if "" in inst.layers:
-                    edges = inst.layers[""]
-                    if edges.active_edge is not None:
-                        active_block = edges.active_edge.block_path[-1]
-                        assert isinstance(active_block, Leaf)
-                        new_course = ConcreteId(
-                            code=course.code,
-                            failed=course.failed,
-                            equivalence=EquivalenceId(
-                                code=active_block.list_code,
-                                credits=edges.active_edge.flow,
-                            ),
-                        )
-                        sem[i] = new_course
+            inst = g.usable[course.code].instances[instance_idx]
+            if isinstance(course, ConcreteId) and "" in inst.layers:
+                edges = inst.layers[""]
+                if edges.active_edge is not None:
+                    active_block = edges.active_edge.block_path[-1]
+                    assert isinstance(active_block, Leaf)
+                    credits = (
+                        course.equivalence.credits
+                        if course.equivalence is not None
+                        else edges.active_edge.flow
+                    )
+                    new_course = ConcreteId(
+                        code=course.code,
+                        failed=course.failed,
+                        equivalence=EquivalenceId(
+                            code=active_block.list_code,
+                            credits=credits,
+                        ),
+                    )
+                    sem[i] = new_course
 
 
 async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
@@ -536,7 +540,6 @@ async def generate_recommended_plan(
     # Solve the curriculum to determine which courses have not been passed yet (and need
     # to be passed)
     g = solve_curriculum(courseinfo, passed.curriculum, curriculum, passed.classes)
-    g.forbid_recolor()
 
     # Flat list of all curriculum courses left to pass
     courses_to_pass, ignore_reqs = _compute_courses_to_pass(
@@ -619,8 +622,8 @@ async def generate_recommended_plan(
     print(f"  coreq: {p(t21-t2)}")
     print(f"  insert: {p(t3-t21)}")
 
-    # Assign blocks to courses
-    _assign_blocks(g, plan)
+    # Assign blocks to courses based on the current solution
+    _reassign_blocks(g, plan)
 
     # Order courses by their color (ie. superblock assignment)
     repetition_counter: defaultdict[str, int] = defaultdict(lambda: 0)

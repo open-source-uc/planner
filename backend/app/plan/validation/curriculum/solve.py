@@ -338,11 +338,19 @@ def _build_visit(
         # Visit the usable codes
         for code in usable_codes:
             for inst in g.usable[code].instances:
+                # Courses with an assigned equivalence can just connect to the
+                # corresponding block at no extra cost
+                # However, connecting a course with no equivalence, or connecting a
+                # course to a block that does not correspond to their equivalence, has
+                # some small extra cost and requires permission from the user
                 needs_recolor = (
                     block.layer == ""
                     and isinstance(inst.original_pseudocourse, ConcreteId)
-                    and inst.original_pseudocourse.equivalence is not None
-                    and inst.original_pseudocourse.equivalence.code != block.list_code
+                    and (
+                        inst.original_pseudocourse.equivalence is None
+                        or inst.original_pseudocourse.equivalence.code
+                        != block.list_code
+                    )
                 )
                 child_flow = _connect_course_instance(
                     courseinfo,

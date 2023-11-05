@@ -72,6 +72,7 @@ def diagnose_curriculum(
 
     # Solve plan
     g = solve_curriculum(courseinfo, plan.curriculum, curriculum, plan.classes)
+    g.forbid_recolor()
 
     # Generate diagnostics
     _diagnose_blocks(courseinfo, out, g)
