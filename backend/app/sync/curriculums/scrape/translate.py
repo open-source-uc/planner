@@ -279,7 +279,7 @@ def translate_scrape(
     complementary_blocks: list[ScrapedBlock] = []
     for block in scrape.blocks:
         if block.complementary and block.creds is not None and block.creds > 0:
-            creditless_copy = block.copy()
+            creditless_copy = block.model_copy()
             creditless_copy.creds = 0
             complementary_blocks.append(creditless_copy)
             block.complementary = False

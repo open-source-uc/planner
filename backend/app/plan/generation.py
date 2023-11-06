@@ -172,13 +172,13 @@ def _find_hidden_requirements(
         def map(atom: Atom) -> Atom:
             if _is_satisfiable(passed, ready, atom):
                 # Already satisfiable, don't worry about it
-                return Const(value=True)
+                return Const(expr="const", value=True)
             if isinstance(atom, ReqCourse):
                 # We *could* satisfy this atom by adding a course
                 return atom
             # Not satisfiable by adding a course
             # Consider this impossible
-            return Const(value=False)
+            return Const(expr="const", value=False)
 
         missing.append(map_atoms(course.deps, map))
 
@@ -190,7 +190,7 @@ def _find_hidden_requirements(
     # Normalize the resulting expression to DNF:
     # (IIC1000 y IIC1001) o (IIC1000 y IIC1002) o (IIC2000 y IIC1002)
     # (ie. an OR of ANDs)
-    dnf = as_dnf(And(children=tuple(missing)))
+    dnf = as_dnf(And(expr="and", children=tuple(missing)))
     print(f"dnfized missing expression: {dnf}")
     options = [
         [atom.code for atom in clause.children if isinstance(atom, ReqCourse)]
@@ -251,7 +251,7 @@ def _reselect_equivs(
                 ):
                     extra_fillers[ref_choice.code].append(
                         FillerCourse(
-                            course=ref_choice.copy(update={"equivalence": equiv}),
+                            course=ref_choice.model_copy(update={"equivalence": equiv}),
                             order=filler.order,
                             cost_offset=filler.cost_offset - 1,
                         ),
@@ -539,7 +539,11 @@ async def generate_recommended_plan(
     )
     t2 = t()
 
-    plan_ctx = ValidationContext(courseinfo, passed.copy(deep=True), user_ctx=None)
+    plan_ctx = ValidationContext(
+        courseinfo,
+        passed.model_copy(deep=True),
+        user_ctx=None,
+    )
     for ignore in ignore_reqs:
         plan_ctx.by_code[ignore] = CourseInstance(code=ignore, sem=-(10**9), index=0)
     plan_ctx.append_semester()

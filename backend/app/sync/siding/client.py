@@ -8,7 +8,7 @@ from typing import Annotated, Any, Literal
 
 import httpx
 import zeep
-from pydantic import BaseModel, ConstrainedStr, Field, parse_obj_as
+from pydantic import BaseModel, Field, StringConstraints, TypeAdapter
 from zeep import AsyncClient
 from zeep.transports import AsyncTransport
 
@@ -34,7 +34,7 @@ class Major(BaseModel):
     Curriculum: StringArray | None
 
 
-Major.update_forward_refs()
+Major.model_rebuild()
 
 
 class Minor(BaseModel):
@@ -79,7 +79,7 @@ class ListaCursos(BaseModel):
 
 class Restriccion(BaseModel):
     Nombre: str | None
-    CreditoMin: str | None
+    CreditoMin: int | None
 
 
 class ListaRestricciones(BaseModel):
@@ -113,8 +113,7 @@ class BloqueMalla(BaseModel):
     Restricciones: ListaRestricciones | None
 
 
-class AcademicPeriod(ConstrainedStr):
-    regex = r"\d{4}-[1-3]"
+AcademicPeriod = Annotated[str, StringConstraints(pattern=r"\d{4}-[1-3]")]
 
 
 class InfoEstudiante(BaseModel):
@@ -296,8 +295,7 @@ async def get_majors() -> list[Major]:
     #     with open("log.txt", "a") as f:
     #         print(resp.content, file=f)
 
-    return parse_obj_as(
-        list[Major],
+    return TypeAdapter(list[Major]).validate_python(
         await client.call_endpoint("getListadoMajor", {}),
     )
 
@@ -306,8 +304,7 @@ async def get_minors() -> list[Minor]:
     """
     Obtain a global list of all minors.
     """
-    return parse_obj_as(
-        list[Minor],
+    return TypeAdapter(list[Minor]).validate_python(
         await client.call_endpoint("getListadoMinor", {}),
     )
 
@@ -316,8 +313,7 @@ async def get_titles() -> list[Titulo]:
     """
     Obtain a global list of all titles.
     """
-    return parse_obj_as(
-        list[Titulo],
+    return TypeAdapter(list[Titulo]).validate_python(
         await client.call_endpoint("getListadoTitulo", {}),
     )
 
@@ -326,8 +322,7 @@ async def get_minors_for_major(major_code: str) -> list[Minor]:
     """
     Obtain a list of minors that are a valid choice for each major.
     """
-    return parse_obj_as(
-        list[Minor],
+    return TypeAdapter(list[Minor]).validate_python(
         await client.call_endpoint("getMajorMinorAsociado", {"CodMajor": major_code}),
     )
 
@@ -336,11 +331,10 @@ async def get_courses_for_spec(study_spec: PlanEstudios) -> list[Curso]:
     """
     Get pretty much all the courses that are available to a certain study spec.
     """
-    return parse_obj_as(
-        list[Curso],
+    return TypeAdapter(list[Curso]).validate_python(
         await client.call_endpoint(
             "getConcentracionCursos",
-            study_spec.dict(),
+            study_spec.model_dump(),
         ),
     )
 
@@ -349,11 +343,10 @@ async def get_curriculum_for_spec(study_spec: PlanEstudios) -> list[BloqueMalla]
     """
     Get a list of curriculum blocks for the given spec.
     """
-    return parse_obj_as(
-        list[BloqueMalla],
+    return TypeAdapter(list[BloqueMalla]).validate_python(
         await client.call_endpoint(
             "getMallaSugerida",
-            study_spec.dict(),
+            study_spec.model_dump(),
         ),
     )
 
@@ -369,14 +362,13 @@ async def get_equivalencies(course_code: str, study_spec: PlanEstudios) -> list[
     For example, 'FIS1514' has 3 equivalencies, including 'ICE1514'.
     However, 'ICE1514' has zero equivalencies.
     """
-    return parse_obj_as(
-        list[Curso],
+    return TypeAdapter(list[Curso]).validate_python(
         await client.call_endpoint(
             "getCursoEquivalente",
             {
                 "Sigla": course_code,
             }
-            | study_spec.dict(),
+            | study_spec.model_dump(),
         ),
     )
 
@@ -388,14 +380,13 @@ async def get_requirements(course_code: str, study_spec: PlanEstudios) -> list[C
     represented as a logical expression and not as a list.
     These requirements are only a heuristic.
     """
-    return parse_obj_as(
-        list[Curso],
+    return TypeAdapter(list[Curso]).validate_python(
         await client.call_endpoint(
             "getRequisito",
             {
                 "Sigla": course_code,
             }
-            | study_spec.dict(),
+            | study_spec.model_dump(),
         ),
     )
 
@@ -409,14 +400,13 @@ async def get_restrictions(
     This is actually broken, Banner restrictions are represented as a logical
     expression and not as a list.
     """
-    return parse_obj_as(
-        list[Restriccion],
+    return TypeAdapter(list[Restriccion]).validate_python(
         await client.call_endpoint(
             "getRestriccion",
             {
                 "Sigla": course_code,
             }
-            | study_spec.dict(),
+            | study_spec.model_dump(),
         ),
     )
 
@@ -425,8 +415,7 @@ async def get_predefined_list(list_code: str) -> list[Curso]:
     """
     Get a global named list of courses.
     """
-    return parse_obj_as(
-        list[Curso],
+    return TypeAdapter(list[Curso]).validate_python(
         await client.call_endpoint("getListaPredefinida", {"CodLista": list_code}),
     )
 
@@ -436,8 +425,7 @@ async def get_student_info(rut: str) -> InfoEstudiante:
     Get the information associated with the given student, by RUT.
     The RUT must be in the format "011222333-K", the same format used by CAS.
     """
-    return parse_obj_as(
-        InfoEstudiante,
+    return InfoEstudiante.model_validate(
         await client.call_endpoint("getInfoEstudiante", {"rut": rut}),
     )
 
@@ -447,8 +435,7 @@ async def get_student_done_courses(rut: str) -> list[CursoHecho]:
     Get the information associated with the given student, by RUT.
     The RUT must be in the format "011222333-K", the same format used by CAS.
     """
-    return parse_obj_as(
-        list[CursoHecho],
+    return TypeAdapter(list[CursoHecho]).validate_python(
         await client.call_endpoint("getCursosHechos", {"rut": rut}),
     )
 

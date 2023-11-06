@@ -107,7 +107,7 @@ async def run_upstream_sync(
         await DbCachedCurriculum.prisma().create(
             {
                 "id": _CACHED_CURRICULUM_ID,
-                "curriculums": storage.json(),
+                "curriculums": storage.model_dump_json(),
             },
         )
 
@@ -208,7 +208,7 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
             raise Exception(
                 "curriculum cache not found in db (maybe startup script was not run?)",
             )
-        _curriculum_cache = CurriculumStorage.parse_raw(cached.curriculums)
+        _curriculum_cache = CurriculumStorage.model_validate_json(cached.curriculums)
     out = Curriculum.empty()
 
     # Fetch major (or common plan)

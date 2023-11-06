@@ -15,7 +15,7 @@ LIMIT_REACHED_ERROR = HTTPException(429, detail="Too many requests")
 # why we cannot use the async pool we create in app.redis
 # This plausibly has a performance impact,
 # but it is not clear how much.
-storage = limits.storage.RedisStorage(settings.redis_uri)
+storage = limits.storage.RedisStorage(str(settings.redis_uri))
 
 # Ping the Redis server to check if it is alive
 if not storage.check():

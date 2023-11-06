@@ -3,11 +3,10 @@ import traceback
 from collections.abc import Callable
 from typing import NoReturn
 
-import pydantic
 import requests
 from prisma.models import Course as DbCourse
 from prisma.types import CourseCreateWithoutRelationsInput
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 
 from app.plan.courseinfo import make_searchable_name
 from app.plan.validation.courses.logic import (
@@ -126,7 +125,7 @@ class BcParser:
             cred = int(rhs)
         except ValueError:
             self.bail("invalid minimum credits")
-        return MinCredits(min_credits=cred)
+        return MinCredits(expr="cred", min_credits=cred)
 
     def parse_restr(self) -> Expr:
         lhs = self.take(lambda c: c.isalnum() or c.isspace()).strip()
@@ -140,28 +139,28 @@ class BcParser:
         if lhs == "Nivel":
             return self.parse_property_eq(
                 "level",
-                lambda eq, x: ReqLevel(level=x, equal=eq),
+                lambda eq, x: ReqLevel(expr="lvl", level=x, equal=eq),
                 cmp,
                 rhs,
             )
         if lhs == "Escuela":
             return self.parse_property_eq(
                 "school",
-                lambda eq, x: ReqSchool(school=x, equal=eq),
+                lambda eq, x: ReqSchool(expr="school", school=x, equal=eq),
                 cmp,
                 rhs,
             )
         if lhs == "Programa":
             return self.parse_property_eq(
                 "program",
-                lambda eq, x: ReqProgram(program=x, equal=eq),
+                lambda eq, x: ReqProgram(expr="program", program=x, equal=eq),
                 cmp,
                 rhs,
             )
         if lhs == "Carrera":
             return self.parse_property_eq(
                 "career",
-                lambda eq, x: ReqCareer(career=x, equal=eq),
+                lambda eq, x: ReqCareer(expr="career", career=x, equal=eq),
                 cmp,
                 rhs,
             )
@@ -178,7 +177,7 @@ class BcParser:
             self.pop()
             self.ensure(self.pop(2) == "c)", "expected (c)")
             co = True
-        return ReqCourse(code=code, coreq=co)
+        return ReqCourse(expr="req", code=code, coreq=co)
 
     def parse_unit(self) -> Expr:
         self.trim()
@@ -209,7 +208,7 @@ class BcParser:
                 self.bail("expected the end of the expression or a connector")
         if len(inner) == 1:
             return inner[0]
-        return And(children=tuple(inner))
+        return And(expr="and", children=tuple(inner))
 
     def parse_orlist(self) -> Expr:
         inner: list[Expr] = []
@@ -225,7 +224,7 @@ class BcParser:
                 self.bail("expected the end of the expression or a connector")
         if len(inner) == 1:
             return inner[0]
-        return Or(children=tuple(inner))
+        return Or(expr="or", children=tuple(inner))
 
 
 def parse_reqs(reqs: str) -> Expr:
@@ -246,13 +245,13 @@ def parse_deps(c: BcCourse) -> Expr:
             deps = restr
         else:
             if c.conn == "y":
-                deps = And(children=(deps, restr))
+                deps = And(expr="and", children=(deps, restr))
             elif c.conn == "o":
-                deps = Or(children=(deps, restr))
+                deps = Or(expr="or", children=(deps, restr))
             else:
                 raise Exception(f"invalid req/restr connector {c.conn}")
     if deps is None:
-        deps = Const(value=True)
+        deps = Const(expr="const", value=True)
     return deps
 
 
@@ -305,7 +304,7 @@ def _translate_courses(data: BcData) -> list[CourseCreateWithoutRelationsInput]:
                     "name": name,
                     "searchable_name": make_searchable_name(name),
                     "credits": c.credits,
-                    "deps": deps.json(),
+                    "deps": deps.model_dump_json(),
                     "banner_equivs": equivs,
                     "banner_inv_equivs": [],
                     "canonical_equiv": code,
@@ -348,7 +347,7 @@ async def fetch_to_database():
     dl_url = settings.buscacursos_dl_url
     print(f"  downloading course data from {dl_url}...")
     # TODO: Use an async HTTP client
-    resp = requests.request("GET", dl_url)
+    resp = requests.request("GET", str(dl_url))
     resp.raise_for_status()
 
     # Decompress
@@ -357,7 +356,7 @@ async def fetch_to_database():
 
     # Parse JSON
     print("  parsing JSON...")
-    data = pydantic.parse_raw_as(BcData, resptext)
+    data = TypeAdapter(BcData).validate_json(resptext)
 
     # Translate buscacursos_dl data into the local format
     db_input = _translate_courses(data)

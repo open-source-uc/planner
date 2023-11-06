@@ -1,5 +1,6 @@
 import logging
 from collections import defaultdict
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 from unidecode import unidecode
@@ -90,9 +91,9 @@ class SidingInfo(BaseModel):
     minors: list[Minor]
     titles: list[Titulo]
     major_minor: dict[str, list[Minor]]
-    plans: defaultdict[Cyear, MallasPorCodigo] = Field(
-        default_factory=lambda: defaultdict(MallasPorCodigo),
-    )
+    plans: defaultdict[
+        Cyear, Annotated[MallasPorCodigo, Field(default_factory=MallasPorCodigo)],
+    ] = defaultdict(MallasPorCodigo)
     lists: dict[str, list[Curso]]
 
 
@@ -306,7 +307,8 @@ def translate_siding(
                 raise Exception(f"empty SIDING list {list_code}")
         else:
             raise Exception(
-                f"SIDING block is neither a course nor a list: {raw_block.json()}",
+                "SIDING block is neither a course nor a list:"
+                f" {raw_block.model_dump_json()}",
             )
         # Single-course lists are definitely homogeneous
         if len(codes) == 1:

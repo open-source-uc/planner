@@ -1,6 +1,7 @@
 from collections import defaultdict
 from collections.abc import Iterator
 from itertools import chain
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -20,20 +21,21 @@ class ProgramDetails(BaseModel):
 
 
 class ProgramOffer(BaseModel):
-    major: dict[str, ProgramDetails] = Field(default_factory=dict)
-    minor: dict[str, ProgramDetails] = Field(default_factory=dict)
-    title: dict[str, ProgramDetails] = Field(default_factory=dict)
-    major_minor: dict[str, list[str]] = Field(default_factory=dict)
+    major: dict[str, ProgramDetails] = {}
+    minor: dict[str, ProgramDetails] = {}
+    title: dict[str, ProgramDetails] = {}
+    major_minor: dict[str, list[str]] = {}
 
 
 class CurriculumStorage(BaseModel):
-    offer: defaultdict[Cyear, ProgramOffer] = Field(
-        default_factory=lambda: defaultdict(ProgramOffer),
-    )
-    majors: dict[str, Curriculum] = Field(default_factory=dict)
-    minors: dict[str, Curriculum] = Field(default_factory=dict)
-    titles: dict[str, Curriculum] = Field(default_factory=dict)
-    lists: dict[str, EquivDetails] = Field(default_factory=dict)
+    offer: defaultdict[
+        Cyear,
+        Annotated[ProgramOffer, Field(default_factory=ProgramOffer)],
+    ] = defaultdict(ProgramOffer)
+    majors: dict[str, Curriculum] = {}
+    minors: dict[str, Curriculum] = {}
+    titles: dict[str, Curriculum] = {}
+    lists: dict[str, EquivDetails] = {}
 
     def get_major(self, spec: CurriculumSpec) -> Curriculum | None:
         if x := _try_get(self.majors, spec):

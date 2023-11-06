@@ -5,7 +5,6 @@ Cache course info from the database in memory, for easy access.
 import logging
 from dataclasses import dataclass
 
-import pydantic
 from prisma.models import (
     CachedCourseInfo as DbPackedCourseInfo,
 )
@@ -14,13 +13,16 @@ from prisma.models import (
     Equivalence,
     EquivalenceCourse,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel, TypeAdapter
 from unidecode import unidecode
 
 from app.plan.course import EquivalenceId, PseudoCourse
 from app.plan.validation.courses.logic import Expr
 
 _CACHED_COURSES_ID: str = "cached-course-info"
+
+
+ExprModel = TypeAdapter(Expr)
 
 
 class CourseDetails(BaseModel):
@@ -57,7 +59,7 @@ class CourseDetails(BaseModel):
     @staticmethod
     def from_db(db: Course) -> "CourseDetails":
         # Parse and validate dep json
-        deps = pydantic.parse_raw_as(Expr, db.deps)
+        deps = ExprModel.validate_json(db.deps)
         return CourseDetails(
             code=db.code,
             name=db.name,
@@ -199,8 +201,7 @@ async def add_equivalence(equiv: EquivDetails):
         _course_info_cache.equivs[equiv.code] = equiv
 
 
-class PackedCourseDetailsJson(BaseModel):
-    __root__: dict[str, CourseDetails]
+CachedCourses = RootModel[dict[str, CourseDetails]]
 
 
 async def pack_course_details():
@@ -224,7 +225,7 @@ async def pack_course_details():
         DO UPDATE SET info = $2
         """,
         _CACHED_COURSES_ID,
-        PackedCourseDetailsJson(__root__=courses).json(),
+        CachedCourses(courses).model_dump_json(),
     )
 
 
@@ -252,10 +253,7 @@ async def course_info() -> CourseInfo:
             raise Exception(
                 "failed to fetch packed course database (did the prestart script run?)",
             )
-        courses: dict[str, CourseDetails] = pydantic.parse_raw_as(
-            dict[str, CourseDetails],
-            packed.info,
-        )
+        courses = TypeAdapter(dict[str, CourseDetails]).validate_json(packed.info)
 
         logging.info(f"  processed {len(courses)} courses")
 

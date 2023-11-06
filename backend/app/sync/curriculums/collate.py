@@ -8,6 +8,7 @@ from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from itertools import chain
+from pathlib import Path
 
 from pydantic import BaseModel
 
@@ -601,7 +602,9 @@ def _force_subcourses(courseinfo: CourseInfo, out: CurriculumStorage):
 
 
 def load_bypass(courseinfo: CourseInfo, scraped: ScrapedInfo, siding: SidingInfo):
-    return BypassInfo.parse_file("../static-curriculum-data/bypass.json")
+    return BypassInfo.model_validate_json(
+        Path("../static-curriculum-data/bypass.json").read_bytes(),
+    )
 
 
 def translate_bypass(
