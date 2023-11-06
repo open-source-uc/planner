@@ -52,6 +52,25 @@ const fixOutdatedPlan = (plan: ValidatablePlan, diag: OutdatedPlanErr | Outdated
   return { ...plan, classes: newClasses }
 }
 
+const reassignPlanCourses = (plan: ValidatablePlan, diag: RecolorWarn): ValidatablePlan => {
+  // Apply equivalence reassignments in `diag` to `plan`
+  const reassigned = { ...plan, classes: plan.classes.map(sem => [...sem]) }
+  diag.associated_to.forEach((classId, idx) => {
+    const newEquiv = diag.recolor_as[idx]
+    // Find where is the course
+    const coursePos = locateClassInPlan(plan.classes, classId)
+    if (coursePos != null) {
+      const course = reassigned.classes[coursePos.semester][coursePos.index]
+      if ('equivalence' in course) {
+        // Replace the equivalence
+        const newCourse = { ...course, equivalence: newEquiv }
+        reassigned.classes[coursePos.semester][coursePos.index] = newCourse
+      }
+    }
+  })
+  return reassigned
+}
+
 const addCourseAt = (plan: ValidatablePlan, code: string, onSem: number): ValidatablePlan => {
   const newClasses = [...plan.classes]
   while (newClasses.length <= onSem) newClasses.push([])
