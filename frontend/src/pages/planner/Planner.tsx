@@ -8,17 +8,17 @@ import SavePlanModal from './SavePlanModal'
 import CurriculumSelector from './CurriculumSelector'
 import AlertModal from '../../components/AlertModal'
 import { useParams } from '@tanstack/react-router'
-import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react'
-import { type CourseDetails, type Major, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise } from '../../client'
-import { type CourseId, type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type PlanDigest, type ValidationDigest, isApiError, isCancelError, isCourseRequirementErr, type Cyear } from './utils/Types'
-import { validateCourseMovement, updateClassesState, getCoursePos } from './utils/planBoardFunctions'
+import { useState, useEffect, useRef, useCallback, useReducer } from 'react'
+import { type CourseDetails, type Major, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise, type ClassId } from '../../client'
+import { type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, isApiError, isCancelError, isCourseRequirementErr, type Cyear } from './utils/Types'
+import { validateCourseMovement, updateClassesState } from './utils/planBoardFunctions'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import DebugGraph from '../../components/DebugGraph'
 import deepEqual from 'fast-deep-equal'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { collectRequirements } from './utils/utils'
+import { collectRequirements, locateClassInPlan } from './utils/utils'
 import ReceivePaste from './utils/ReceivePaste'
 
 enum PlannerStatus {
@@ -59,91 +59,6 @@ const Planner = (): JSX.Element => {
   const [, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
 
   const authState = useAuth()
-
-  const planDigest = useMemo((): PlanDigest => {
-    const digest: PlanDigest = {
-      idToIndex: {},
-      indexToId: []
-    }
-    if (validatablePlan != null) {
-      for (let i = 0; i < validatablePlan.classes.length; i++) {
-        const idx2id = []
-        for (let j = 0; j < validatablePlan.classes[i].length; j++) {
-          const c = validatablePlan.classes[i][j]
-          let reps = digest.idToIndex[c.code]
-          if (reps === undefined) {
-            reps = []
-            digest.idToIndex[c.code] = reps
-          }
-          idx2id.push({ code: c.code, instance: reps.length })
-          reps.push([i, j])
-        }
-        digest.indexToId.push(idx2id)
-      }
-    }
-    return digest
-  }, [validatablePlan])
-
-  // Calcular informacion util sobre la validacion cada vez que cambia
-  const validationDigest = useMemo((): ValidationDigest => {
-    const digest: ValidationDigest = {
-      courses: [],
-      semesters: [],
-      isOutdated: false
-    }
-    if (validatablePlan != null) {
-      // Initialize course information
-      digest.courses = validatablePlan.classes.map((semester, i) => {
-        return semester.map((course, j) => {
-          const { code, instance } = planDigest.indexToId[i][j]
-          const superblock = validationResult?.course_superblocks?.[code]?.[instance] ?? ''
-          return {
-            superblock,
-            errorIndices: [],
-            warningIndices: []
-          }
-        })
-      })
-      // Initialize semester information to an empty state
-      digest.semesters = validatablePlan.classes.map(() => {
-        return {
-          errorIndices: [],
-          warningIndices: []
-        }
-      })
-      if (validationResult != null) {
-        // Fill course and semester information with their associated errors
-        for (let k = 0; k < validationResult.diagnostics.length; k++) {
-          const diag = validationResult.diagnostics[k]
-          if (diag.kind === 'outdated' || diag.kind === 'outdatedcurrent') {
-            digest.isOutdated = true
-          }
-          if (diag.associated_to != null) {
-            for (const assoc of diag.associated_to) {
-              if (typeof assoc === 'number') {
-                // This error is associated to a semester
-                const semDigest = digest.semesters[assoc]
-                if (semDigest != null) {
-                  const diagIndices = diag.is_err ?? true ? semDigest.errorIndices : semDigest.warningIndices
-                  diagIndices.push(k)
-                }
-              } else {
-                // This error is associated to a course
-                const semAndIdx = planDigest.idToIndex[assoc.code]?.[assoc.instance] ?? null
-                if (semAndIdx != null) {
-                  const [sem, idx] = semAndIdx
-                  const courseDigest = digest.courses[sem][idx]
-                  const diagIndices = diag.is_err ?? true ? courseDigest.errorIndices : courseDigest.warningIndices
-                  diagIndices.push(k)
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    return digest
-  }, [validatablePlan, planDigest, validationResult])
 
   const handleErrors = useCallback((err: unknown): void => {
     if (isApiError(err)) {
@@ -317,13 +232,13 @@ const Planner = (): JSX.Element => {
     setIsModalOpen(true)
   }, []) // addCourse should not depend on `validatablePlan`, so that memoing does its work
 
-  const remCourse = useCallback((course: CourseId): void => {
+  const remCourse = useCallback((course: ClassId): void => {
     // its ok to use `setValidatablePlan`
     // its not ok to use `validatablePlan` directly
     setValidatablePlan(prev => {
       if (prev === null) return null
-      const remPos = getCoursePos(prev.classes, course)
-      if (remPos === null) {
+      const remPos = locateClassInPlan(prev.classes, course)
+      if (remPos == null) {
         toast.error('Index no encontrado')
         return prev
       }
@@ -338,11 +253,11 @@ const Planner = (): JSX.Element => {
     })
   }, []) // remCourse should not depend on `validatablePlan`, so that memoing does its work
 
-  const moveCourse = useCallback((drag: CourseId, drop: { semester: number, index: number }): void => {
+  const moveCourse = useCallback((drag: ClassId, drop: { semester: number, index: number }): void => {
     setValidatablePlan(prev => {
       if (prev === null) return prev
-      const dragIndex = getCoursePos(prev.classes, drag)
-      if (dragIndex === null) {
+      const dragIndex = locateClassInPlan(prev.classes, drag)
+      if (dragIndex == null) {
         toast.error('Index no encontrado')
         return prev
       }
@@ -804,13 +719,12 @@ const Planner = (): JSX.Element => {
               <DndProvider backend={HTML5Backend}>
                 <PlanBoard
                   classesGrid={validatablePlan?.classes ?? []}
-                  planDigest={planDigest}
+                  validationResult={validationResult}
                   classesDetails={courseDetails}
                   moveCourse={moveCourse}
                   openModal={openModal}
                   addCourse={openModalForExtraClass}
                   remCourse={remCourse}
-                  validationDigest={validationDigest}
                 />
               </DndProvider>
             </div>

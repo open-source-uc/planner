@@ -1,8 +1,9 @@
-import { type CurriculumErr, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../../client'
+import { type RecolorWarn, type CurriculumErr, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult, type ClassId } from '../../../client'
 import { type AuthState, useAuth } from '../../../contexts/auth.context'
 import { type PseudoCourseId } from './Types'
 import { validateCyear } from './planBoardFunctions'
 import { CourseName } from '../ErrorTray'
+import { locateClassInPlan } from './utils'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
 
@@ -59,35 +60,17 @@ const addCourseAt = (plan: ValidatablePlan, code: string, onSem: number): Valida
   return { ...plan, classes: newClasses }
 }
 
-const moveCourseByCode = (plan: ValidatablePlan, code: string, repIdx: number, toSem: number): ValidatablePlan => {
+const moveCourseByCode = (plan: ValidatablePlan, classId: ClassId, toSem: number): ValidatablePlan => {
   // Find the course within the plan
-  let semIdx = null
-  let courseIdx = null
-  let course = null
-  for (let i = 0; i < plan.classes.length; i++) {
-    const sem = plan.classes[i]
-    for (let j = 0; j < sem.length; j++) {
-      if (sem[j].code === code) {
-        if (repIdx === 0) {
-          semIdx = i
-          courseIdx = j
-          course = sem[j]
-          i = plan.classes.length
-          break
-        } else {
-          repIdx--
-        }
-      }
-    }
-  }
-  console.log(code, repIdx, semIdx, courseIdx, course)
-  if (semIdx == null || courseIdx == null || course == null) return plan
-  if (semIdx === toSem) return plan
+  const coursePos = locateClassInPlan(plan.classes, classId)
+  if (coursePos == null) return plan
+  if (coursePos.semester === toSem) return plan
 
   // Create a new plan with the moved course
+  const course = plan.classes[coursePos.semester][coursePos.index]
   const newClasses = [...plan.classes]
-  newClasses[semIdx] = [...newClasses[semIdx]]
-  newClasses[semIdx].splice(courseIdx, 1)
+  newClasses[coursePos.semester] = [...newClasses[coursePos.semester]]
+  newClasses[coursePos.semester].splice(coursePos.index, 1)
   while (newClasses.length <= toSem) newClasses.push([])
   newClasses[toSem] = [...newClasses[toSem]]
   newClasses[toSem].unshift(course)
@@ -169,7 +152,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: Aut
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
             console.log(diag.associated_to[0])
-            return moveCourseByCode(plan, diag.associated_to[0].code, diag.associated_to[0].instance, pushBackTo)
+            return moveCourseByCode(plan, diag.associated_to[0], pushBackTo)
           })
         }}>
           Atrasar <CourseName course={diag.associated_to[0]}/>
@@ -181,7 +164,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: Aut
         buttons.push(<button key={buttons.length} className="autofix" onClick={() => {
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
-            return moveCourseByCode(plan, code, 0, toSem)
+            return moveCourseByCode(plan, { code, instance: 0 }, toSem)
           })
         }}>
           Adelantar <CourseName course={reqCourses[code] ?? { code }}/>

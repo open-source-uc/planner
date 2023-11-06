@@ -1,22 +1,5 @@
-import { type Cyear, type CourseId, type CoursePos, type PseudoCourseId } from './Types'
+import { type Cyear, type CoursePos } from './Types'
 import { type ValidatablePlan } from '../../../client'
-
-export const getCoursePos = (prevCourses: PseudoCourseId[][], courseId: CourseId): CoursePos | null => {
-  const positions: CoursePos[] = []
-
-  prevCourses.forEach((sublist, semester) => {
-    sublist.forEach((value, index) => {
-      if (value.code === courseId.code) {
-        positions.push({ semester, index })
-      }
-    })
-  })
-  if (positions.length <= courseId.instance || courseId.instance < 0) {
-    return null
-  }
-
-  return positions[courseId.instance]
-}
 
 export const validateCourseMovement = (prev: ValidatablePlan, drag: CoursePos, drop: CoursePos): string | null => {
   const dragCourse = prev.classes[drag.semester][drag.index]

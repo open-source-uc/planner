@@ -1,14 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { type ClassId, type CourseRequirementErr, type CurriculumSpec, type ValidationResult } from '../../client'
-import { type PseudoCourseDetail, isCourseRequirementErr, isDiagWithAssociatedCourses } from './utils/Types'
+import { type ClassId, type CurriculumSpec } from '../../client'
+import { type PseudoCourseDetail, isCourseRequirementErr, isDiagWithAssociatedCourses, type RequirementExpr, type Diagnostic } from './utils/Types'
 import { Spinner } from '../../components/Spinner'
 import AutoFix from './utils/AutoFix'
 import { collectRequirements, getCourseName, getCourseNameWithCode } from './utils/utils'
 import { validateCyear } from './utils/planBoardFunctions'
 import { useConfetti } from '../../contexts/confetti.context'
 
-type Diagnostic = ValidationResult['diagnostics'][number]
-type RequirementExpr = CourseRequirementErr['missing']
 /**
  * This is what is displayed when there are no errors or warnings.
  */

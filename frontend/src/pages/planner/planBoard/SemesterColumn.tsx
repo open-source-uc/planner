@@ -1,26 +1,27 @@
 import { memo, useCallback, useRef, useState, Fragment } from 'react'
 import { useDrop, type DropTargetMonitor } from 'react-dnd'
 import { useAuth } from '../../../contexts/auth.context'
-import { type CourseValidationDigest, type PseudoCourseDetail, type CourseId, type PseudoCourseId, type SemesterValidationDigest } from '../utils/Types'
+import { type PseudoCourseDetail, type PseudoCourseId } from '../utils/Types'
 import DraggableCard from './CourseCard'
 import deepEqual from 'fast-deep-equal'
+import { type ClassId } from '../../../client'
+import { type SemesterValidationDigest } from '../utils/utils'
 
 interface SemesterColumnProps {
   classesDetails: Record<string, PseudoCourseDetail>
   semester: number
   addCourse: Function
-  coursesId?: Array<{ code: string, instance: number }>
   moveCourse: Function
   remCourse: Function
   openModal: Function
   classes?: PseudoCourseId[]
-  validationCourses?: CourseValidationDigest[]
-  validationSemester: SemesterValidationDigest | null
+  coursesId: ClassId[]
+  validation: SemesterValidationDigest | undefined
   isDragging: boolean
   activeIndex: number | null
   setActive: Function
 }
-const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, moveCourse, remCourse, openModal, classes = [], validationCourses = [], validationSemester, isDragging, activeIndex, setActive }: SemesterColumnProps): JSX.Element => {
+const SemesterColumn = ({ coursesId, validation, classesDetails, semester, addCourse, moveCourse, remCourse, openModal, classes = [], isDragging, activeIndex, setActive }: SemesterColumnProps): JSX.Element => {
   const [dragged, setDragged] = useState<number | null>(null)
   const authState = useAuth()
   const columnRef = useRef<HTMLDivElement>(null)
@@ -69,8 +70,8 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
   }))
 
   let border = 'border-transparent'
-  if (validationSemester != null && validationSemester.errorIndices.length > 0) border = 'border-solid border-red-300'
-  else if (validationSemester != null && validationSemester.warningIndices.length > 0) border = 'border-solid border-yellow-300'
+  if ((validation?.errors?.length ?? 0) > 0) border = 'border-solid border-red-300'
+  else if ((validation?.warnings?.length ?? 0) > 0) border = 'border-solid border-yellow-300'
 
   if (!conditionPassed && !checkCurrent) {
     drop(columnRef)
@@ -89,7 +90,7 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
     [activeIndex, dragged]
   )
 
-  const toggleDrag = useCallback((isStart: boolean, courseId: CourseId) => {
+  const toggleDrag = useCallback((isStart: boolean, courseId: ClassId) => {
     const index = coursesId.indexOf(courseId)
     if (isStart) {
       setDragged(index)
@@ -100,7 +101,7 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
     }
   }, [coursesId, semester, setActive])
 
-  const openSelectorSemester = useCallback((courseId: CourseId) => {
+  const openSelectorSemester = useCallback((courseId: ClassId) => {
     const index = coursesId.indexOf(courseId)
     openSelector(classes[index], semester, index)
   }, [coursesId, openSelector, classes, semester])
@@ -115,24 +116,26 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
       }
       <div ref={columnRef}>
         {classes.map((course: PseudoCourseId, index: number) => {
+          const classId = coursesId[index]
+          const courseValidation = validation?.courses?.[index]
           return (
             <Fragment key={index}>
               {(activeIndexHandler(index)) && <div key="placeholder" className="card mx-1 mb-3 bg-place-holder"/>}
               <div className={`${dragged === index ? 'dragged' : ''}`}>
                 <DraggableCard
-                  key={coursesId[index].code + String(coursesId[index].instance)}
+                  key={course.code + String(classId.instance)}
                   course={course}
                   courseDetails={classesDetails[('failed' in course ? course.failed : null) ?? course.code] }
-                  courseId={coursesId[index]}
+                  courseId={classId}
                   isPassed={conditionPassed}
                   isCurrent={checkCurrent}
                   toggleDrag={toggleDrag}
                   remCourse={remCourse}
-                  courseBlock={validationCourses[index]?.superblock ?? ''}
+                  courseBlock={courseValidation?.superblock ?? ''}
                   openSelector={openSelectorSemester}
                   hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
-                  hasError={validationCourses[index]?.errorIndices?.[0] != null}
-                  hasWarning={validationCourses[index]?.warningIndices?.[0] != null}
+                  hasError={(courseValidation?.errors?.length ?? 0) > 0}
+                  hasWarning={(courseValidation?.warnings?.length ?? 0) > 0}
                 />
               </div>
             </Fragment>
