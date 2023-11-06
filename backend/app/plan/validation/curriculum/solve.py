@@ -74,6 +74,7 @@ from app.plan.course import (
     pseudocourse_with_credits,
 )
 from app.plan.courseinfo import CourseInfo
+from app.plan.plan import ClassId
 from app.plan.validation.curriculum.tree import (
     Block,
     Curriculum,
@@ -251,6 +252,13 @@ class SolvedCurriculum:
         """
 
         return _resolve_with_fixed_colors(self)
+
+    def find_recolors(self) -> list[tuple[ClassId, EquivalenceId]]:
+        """
+        Reassign the equivalences attached to courses in `plan` in order to match the
+        block assignments in `self`.
+        """
+        return _find_recolors(self)
 
     def dump_graphviz_pretty(self, curriculum: Curriculum) -> str:
         from app.plan.validation.curriculum.dump import GraphDumper
@@ -701,6 +709,40 @@ def solve_curriculum(
     _tag_superblocks(g)
 
     return g
+
+
+def _find_recolors(g: SolvedCurriculum) -> list[tuple[ClassId, EquivalenceId]]:
+    """
+    Find the concrete courses that need to be recolored according to `g`.
+    """
+
+    recolors: list[tuple[ClassId, EquivalenceId]] = []
+    for usable in g.usable.values():
+        for inst in usable.instances:
+            course = inst.original_pseudocourse
+            if not isinstance(course, ConcreteId):
+                continue
+            if "" in inst.layers:
+                edges = inst.layers[""]
+                if edges.active_edge is not None and edges.active_edge.needs_recolor:
+                    active_block = edges.active_edge.block_path[-1]
+                    assert isinstance(active_block, Leaf)
+                    credits = (
+                        course.equivalence.credits
+                        if course.equivalence is not None
+                        else edges.active_edge.flow
+                    )
+                    new_equiv = EquivalenceId(
+                        code=active_block.list_code,
+                        credits=credits,
+                    )
+                    recolors.append(
+                        (
+                            ClassId(code=course.code, instance=inst.instance_idx),
+                            new_equiv,
+                        ),
+                    )
+    return recolors
 
 
 def _resolve_with_fixed_colors(g: SolvedCurriculum) -> bool:

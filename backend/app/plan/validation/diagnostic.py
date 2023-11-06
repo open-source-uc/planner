@@ -2,7 +2,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
-from app.plan.course import PseudoCourse
+from app.plan.course import EquivalenceId, PseudoCourse
 from app.plan.plan import ClassId, ValidatablePlan
 from app.plan.validation.courses.logic import Expr
 from app.plan.validation.curriculum.tree import CurriculumSpec, Cyear
@@ -42,7 +42,6 @@ class UnknownCourseErr(BaseModel):
     Indicates that some courses (`associated_to`) have unknown/invalid codes.
     """
 
-
     is_err: Literal[True] = Field(default=True, const=True)
     kind: Literal["unknown"] = Field(default="unknown", const=True)
     associated_to: list[ClassId]
@@ -53,7 +52,6 @@ class MismatchedCyearErr(BaseModel):
     Indicates that the plan is validating for a cyear (`plan`) that does not match the
     user's cyear (`user`).
     """
-
 
     is_err: Literal[True] = Field(default=True, const=True)
     kind: Literal["cyear"] = Field(default="cyear", const=True)
@@ -68,7 +66,6 @@ class MismatchedCurriculumSelectionWarn(BaseModel):
     Indicates that the plan selection of curriculum does not match the official
     curriculum declaration.
     """
-
 
     is_err: Literal[False] = Field(default=False, const=True)
     kind: Literal["currdecl"] = Field(default="currdecl", const=True)
@@ -137,7 +134,6 @@ class AmbiguousCourseErr(BaseModel):
     aren't.
     """
 
-
     is_err: Literal[True] = Field(default=True, const=True)
     kind: Literal["equiv"] = Field(default="equiv", const=True)
     associated_to: list[ClassId]
@@ -148,7 +144,6 @@ class SemesterCreditsWarn(BaseModel):
     Indicates that some semesters (`associated_to`) have more than the recommended
     amount of credits.
     """
-
 
     is_err: Literal[False] = Field(default=False, const=True)
     kind: Literal["creditswarn"] = Field(default="creditswarn", const=True)
@@ -164,13 +159,29 @@ class SemesterCreditsErr(BaseModel):
     of credits.
     """
 
-
     is_err: Literal[True] = Field(default=True, const=True)
     kind: Literal["creditserr"] = Field(default="creditserr", const=True)
     associated_to: list[int]
 
     max_allowed: int
     actual: int
+
+
+class RecolorWarn(BaseModel):
+    """
+    Indicates that reassigning the equivalences that are attached to the courses could
+    save some unnecessary classes.
+    Reassigning the attached equivalences is informally referred to as "recoloring".
+
+    `recolor_as` has the same length as `associated_to`, and indicated which
+    equivalence should be assigned to which course, respectively.
+    """
+
+    is_err: Literal[False] = Field(default=False, const=True)
+    kind: Literal["recolor"] = Field(default="recolor", const=True)
+    associated_to: list[ClassId]
+
+    recolor_as: list[EquivalenceId]
 
 
 class CurriculumErr(BaseModel):
@@ -183,7 +194,6 @@ class CurriculumErr(BaseModel):
     Because equivalences could be potentially unknown to the frontend and we don't want
     to show the user equivalence codes, each course is coupled with its name.
     """
-
 
     is_err: Literal[True] = Field(default=True, const=True)
     kind: Literal["curr"] = Field(default="curr", const=True)
@@ -232,6 +242,7 @@ Diagnostic = Annotated[
     | AmbiguousCourseErr
     | SemesterCreditsWarn
     | SemesterCreditsErr
+    | RecolorWarn
     | CurriculumErr
     | UnassignedWarn
     | NoMajorMinorWarn,

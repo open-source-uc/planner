@@ -42,6 +42,7 @@ const Planner = (): JSX.Element => {
   const [planID, setPlanID] = useState<string | undefined>(useParams()?.plannerId)
   const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null >(null)
   const [courseDetails, addCourseDetails] = useReducer(reduceCourseDetails, {})
+  const courseDetailsRef = useRef(courseDetails)
   const [curriculumData, setCurriculumData] = useState<CurriculumData | null>(null)
   const [modalData, setModalData] = useState<ModalData>()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -180,15 +181,21 @@ const Planner = (): JSX.Element => {
   }, [])
 
   const getCourseDetails = useCallback(async (courses: PseudoCourseId[]): Promise<void> => {
-    console.log('Getting Courses Details...')
     const pseudocourseCodes = new Set<string>()
     for (const courseid of courses) {
       const code = ('failed' in courseid ? courseid.failed : null) ?? courseid.code
-      // if (!(code in courseDetails)) {
-      pseudocourseCodes.add(code)
-      // }
+      if (!(code in courseDetailsRef.current)) {
+        pseudocourseCodes.add(code)
+      }
+      if ('equivalence' in courseid && courseid.equivalence != null) {
+        const equivCode = courseid.equivalence.code
+        if (!(equivCode in courseDetailsRef.current)) {
+          pseudocourseCodes.add(equivCode)
+        }
+      }
     }
     if (pseudocourseCodes.size === 0) return
+    console.log(`getting ${pseudocourseCodes.size} course details...`)
     try {
       const courseDetails = await DefaultService.getPseudocourseDetails(Array.from(pseudocourseCodes))
       const dict = courseDetails.reduce((acc: Record<string, PseudoCourseDetail>, curr: PseudoCourseDetail) => {

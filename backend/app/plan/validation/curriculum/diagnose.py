@@ -13,6 +13,7 @@ from app.plan.validation.curriculum.tree import Curriculum
 from app.plan.validation.diagnostic import (
     CurriculumErr,
     NoMajorMinorWarn,
+    RecolorWarn,
     UnassignedWarn,
     ValidationResult,
 )
@@ -59,6 +60,23 @@ def _diagnose_blocks(
             )
 
 
+def _check_and_forbid_recoloring(out: ValidationResult, g: SolvedCurriculum):
+    # Figure out how should we recolor the plan in order to save as many courses as
+    # possible
+    recolors = g.find_recolors()
+
+    # Force the fixed coloring, but if it degrades the performance of the plan then
+    # suggest the original recolored courses
+    if g.forbid_recolor():
+        # Reassigning equivalences can save us some courses
+        out.add(
+            RecolorWarn(
+                associated_to=[id for id, _equiv in recolors],
+                recolor_as=[equiv for _id, equiv in recolors],
+            ),
+        )
+
+
 def diagnose_curriculum(
     courseinfo: CourseInfo,
     curriculum: Curriculum,
@@ -72,7 +90,11 @@ def diagnose_curriculum(
 
     # Solve plan
     g = solve_curriculum(courseinfo, plan.curriculum, curriculum, plan.classes)
-    g.forbid_recolor()
+
+    # `g` may contain recolored courses
+    # If it does, generate a recoloring suggestion and forbid recoloring so that the
+    # rest of the diagnostic can take place without recolored courses
+    _check_and_forbid_recoloring(out, g)
 
     # Generate diagnostics
     _diagnose_blocks(courseinfo, out, g)

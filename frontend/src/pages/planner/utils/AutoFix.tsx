@@ -148,6 +148,18 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: Aut
       } else {
         return <></>
       }
+    case 'recolor': {
+      return (<button className="autofix" onClick={() => {
+        setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+          if (plan == null) return null
+          const planArreglado = reassignPlanCourses(plan, diag)
+          void getCourseDetails(planArreglado.classes.flat())
+          return planArreglado
+        })
+      }}>
+        Reasignar cursos
+      </button>)
+    }
     case 'req': {
       const buttons = []
       // Push back course itself

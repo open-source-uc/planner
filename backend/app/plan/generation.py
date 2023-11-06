@@ -34,7 +34,6 @@ from app.plan.validation.curriculum.tree import (
     Curriculum,
     CurriculumSpec,
     FillerCourse,
-    Leaf,
     cyear_from_str,
 )
 from app.sync import get_curriculum
@@ -443,36 +442,27 @@ def _try_add_course_group(
 
 
 def _reassign_blocks(g: SolvedCurriculum, plan: ValidatablePlan):
-    """
-    Reassign the equivalences attached to the courses in `plan` based on the block
-    assignments in `g`.
-    """
+    recolors_by_id: dict[str, dict[int, EquivalenceId]] = {}
+    for id, new_equiv in g.find_recolors():
+        recolors_by_id.setdefault(id.code, {})[id.instance] = new_equiv
 
     rep_counter: defaultdict[str, int] = defaultdict(lambda: 0)
     for sem in plan.classes:
         for i, course in enumerate(sem):
             instance_idx = rep_counter[course.code]
             rep_counter[course.code] += 1
-            inst = g.usable[course.code].instances[instance_idx]
-            if isinstance(course, ConcreteId) and "" in inst.layers:
-                edges = inst.layers[""]
-                if edges.active_edge is not None:
-                    active_block = edges.active_edge.block_path[-1]
-                    assert isinstance(active_block, Leaf)
-                    credits = (
-                        course.equivalence.credits
-                        if course.equivalence is not None
-                        else edges.active_edge.flow
-                    )
-                    new_course = ConcreteId(
-                        code=course.code,
-                        failed=course.failed,
-                        equivalence=EquivalenceId(
-                            code=active_block.list_code,
-                            credits=credits,
-                        ),
-                    )
-                    sem[i] = new_course
+
+            if (
+                isinstance(course, ConcreteId)
+                and course.code in recolors_by_id
+                and instance_idx in recolors_by_id[course.code]
+            ):
+                new_equiv = recolors_by_id[course.code][instance_idx]
+                sem[i] = ConcreteId(
+                    code=course.code,
+                    failed=course.failed,
+                    equivalence=new_equiv,
+                )
 
 
 async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
