@@ -26,8 +26,8 @@ class CourseRequirementErr(BaseModel):
         The modernized code is listed here.
     """
 
-    is_err: Literal[True] = True
-    kind: Literal["req"] = "req"
+    is_err: Literal[True] = Field(default=True, const=True)
+    kind: Literal["req"] = Field(default="req", const=True)
     associated_to: list[ClassId]
 
     missing: Expr
@@ -42,8 +42,8 @@ class UnknownCourseErr(BaseModel):
     Indicates that some courses (`associated_to`) have unknown/invalid codes.
     """
 
-    is_err: Literal[True] = True
-    kind: Literal["unknown"] = "unknown"
+    is_err: Literal[True] = Field(default=True, const=True)
+    kind: Literal["unknown"] = Field(default="unknown", const=True)
     associated_to: list[ClassId]
 
 
@@ -53,8 +53,8 @@ class MismatchedCyearErr(BaseModel):
     user's cyear (`user`).
     """
 
-    is_err: Literal[True] = True
-    kind: Literal["cyear"] = "cyear"
+    is_err: Literal[True] = Field(default=True, const=True)
+    kind: Literal["cyear"] = Field(default="cyear", const=True)
     associated_to: None = None
 
     plan: Cyear
@@ -67,8 +67,8 @@ class MismatchedCurriculumSelectionWarn(BaseModel):
     curriculum declaration.
     """
 
-    is_err: Literal[False] = False
-    kind: Literal["currdecl"] = "currdecl"
+    is_err: Literal[False] = Field(default=False, const=True)
+    kind: Literal["currdecl"] = Field(default="currdecl", const=True)
     associated_to: None = None
 
     plan: CurriculumSpec
@@ -84,8 +84,8 @@ class OutdatedPlanErr(BaseModel):
     The semesters that are mismatched are included in `associated_to`.
     """
 
-    is_err: Literal[True] = True
-    kind: Literal["outdated"] = "outdated"
+    is_err: Literal[True] = Field(default=True, const=True)
+    kind: Literal["outdated"] = Field(default="outdated", const=True)
     associated_to: list[int]
 
 
@@ -98,8 +98,8 @@ class OutdatedCurrentSemesterErr(BaseModel):
     This is the "smaller version" of `OutdatedPlanErr`.
     """
 
-    is_err: Literal[True] = True
-    kind: Literal["outdatedcurrent"] = "outdatedcurrent"
+    is_err: Literal[True] = Field(default=True, const=True)
+    kind: Literal["outdatedcurrent"] = Field(default="outdatedcurrent", const=True)
     associated_to: list[int]
 
 
@@ -110,8 +110,8 @@ class SemestralityWarn(BaseModel):
     Instead, they are usually only given in semesters with parity `only_available_on`.
     """
 
-    is_err: Literal[False] = False
-    kind: Literal["sem"] = "sem"
+    is_err: Literal[False] = Field(default=False, const=True)
+    kind: Literal["sem"] = Field(default="sem", const=True)
     associated_to: list[ClassId]
 
     only_available_on: int
@@ -123,8 +123,8 @@ class UnavailableCourseWarn(BaseModel):
     and are probably unavailable.
     """
 
-    is_err: Literal[False] = False
-    kind: Literal["unavail"] = "unavail"
+    is_err: Literal[False] = Field(default=False, const=True)
+    kind: Literal["unavail"] = Field(default="unavail", const=True)
     associated_to: list[ClassId]
 
 
@@ -134,8 +134,8 @@ class AmbiguousCourseErr(BaseModel):
     aren't.
     """
 
-    is_err: Literal[True] = True
-    kind: Literal["equiv"] = "equiv"
+    is_err: Literal[True] = Field(default=True, const=True)
+    kind: Literal["equiv"] = Field(default="equiv", const=True)
     associated_to: list[ClassId]
 
 
@@ -145,8 +145,8 @@ class SemesterCreditsWarn(BaseModel):
     amount of credits.
     """
 
-    is_err: Literal[False] = False
-    kind: Literal["creditswarn"] = "creditswarn"
+    is_err: Literal[False] = Field(default=False, const=True)
+    kind: Literal["creditswarn"] = Field(default="creditswarn", const=True)
     associated_to: list[int]
 
     max_recommended: int
@@ -159,8 +159,8 @@ class SemesterCreditsErr(BaseModel):
     of credits.
     """
 
-    is_err: Literal[True] = True
-    kind: Literal["creditserr"] = "creditserr"
+    is_err: Literal[True] = Field(default=True, const=True)
+    kind: Literal["creditserr"] = Field(default="creditserr", const=True)
     associated_to: list[int]
 
     max_allowed: int
@@ -177,8 +177,8 @@ class RecolorWarn(BaseModel):
     equivalence should be assigned to which course, respectively.
     """
 
-    is_err: Literal[False] = False
-    kind: Literal["recolor"] = "recolor"
+    is_err: Literal[False] = Field(default=False, const=True)
+    kind: Literal["recolor"] = Field(default="recolor", const=True)
     associated_to: list[ClassId]
 
     recolor_as: list[EquivalenceId]
@@ -195,8 +195,8 @@ class CurriculumErr(BaseModel):
     to show the user equivalence codes, each course is coupled with its name.
     """
 
-    is_err: Literal[True] = True
-    kind: Literal["curr"] = "curr"
+    is_err: Literal[True] = Field(default=True, const=True)
+    kind: Literal["curr"] = Field(default="curr", const=True)
     associated_to: None = None
 
     blocks: list[list[str]]
@@ -210,8 +210,8 @@ class UnassignedWarn(BaseModel):
     the curriculum.
     """
 
-    is_err: Literal[False] = False
-    kind: Literal["useless"] = "useless"
+    is_err: Literal[False] = Field(default=False, const=True)
+    kind: Literal["useless"] = Field(default="useless", const=True)
     associated_to: None = None
 
     unassigned_credits: int
@@ -223,8 +223,8 @@ class NoMajorMinorWarn(BaseModel):
     plan correctly.
     """
 
-    is_err: Literal[False] = False
-    kind: Literal["nomajor"] = "nomajor"
+    is_err: Literal[False] = Field(default=False, const=True)
+    kind: Literal["nomajor"] = Field(default="nomajor", const=True)
     associated_to: None = None
 
     plan: CurriculumSpec

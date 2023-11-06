@@ -8,7 +8,7 @@ from redis.asyncio import BlockingConnectionPool, Redis
 
 def init_redis_pool() -> BlockingConnectionPool:
     pool: BlockingConnectionPool = BlockingConnectionPool.from_url(  # type: ignore
-        str(settings.redis_uri),
+        settings.redis_uri,
         decode_responses=True,
         encoding="utf-8",
     )

@@ -55,7 +55,7 @@ class BypassLeaf(BypassBase):
 
 BypassNode = BypassCombination | BypassLeaf
 
-BypassCombination.model_rebuild()
+BypassCombination.update_forward_refs()
 
 
 class BypassEquivalentGroup(BaseModel):

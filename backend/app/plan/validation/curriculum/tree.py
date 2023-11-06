@@ -2,9 +2,12 @@
 Models a flow network in the context of curriculums.
 """
 
-from typing import Annotated, Literal
+import re
+from collections.abc import Callable, Generator
+from typing import Annotated, Any, Literal, Self
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field
+from pydantic.fields import ModelField
 
 from app.plan.course import PseudoCourse
 from app.plan.courseinfo import CourseInfo
@@ -102,7 +105,7 @@ class Leaf(BaseBlock):
 Block = Combination | Leaf
 
 
-Combination.model_rebuild()
+Combination.update_forward_refs()
 
 
 class Multiplicity(BaseModel):
@@ -197,9 +200,72 @@ def cyear_from_str(cyear: str) -> Cyear | None:
 LATEST_CYEAR: Cyear = "C2022"
 
 
-MajorCode = Annotated[str, StringConstraints(pattern=r"^M[0-9]{3}$")]
-MinorCode = Annotated[str, StringConstraints(pattern=r"^N[0-9]{3}$")]
-TitleCode = Annotated[str, StringConstraints(pattern=r"^4[0-9]{4}(?:-[0-9])?$")]
+class CurriculumCode(str):
+    """
+    A code for a major or a minor.
+    """
+
+    _pattern: re.Pattern[str]
+
+    def __new__(cls: type[Self], value: str) -> Self:
+        return super().__new__(cls, value)
+
+    @classmethod
+    def __get_validators__(
+        cls: type[Self],
+    ) -> Generator[Callable[..., Self], None, None]:
+        yield cls.validate
+
+    @classmethod
+    def validate(cls: type[Self], value: str, field: ModelField) -> Self:
+        assert cls._pattern is not None
+        if not isinstance(value, str):  # type: ignore
+            raise TypeError("string required")
+        value = value.strip().upper()
+        m = cls._pattern.fullmatch(value)
+        if m is None:
+            raise ValueError(f"Invalid {cls.__name__} code {value}")
+        return cls(value)
+
+    @classmethod
+    def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
+        raise NotImplementedError
+
+
+class MajorCode(CurriculumCode):
+    _pattern = re.compile(r"^M[0-9]{3}$")
+
+    @classmethod
+    def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
+        field_schema.update(
+            description="A major code, eg. `M072` for hydraulic engineering.",
+            pattern=cls._pattern.pattern,
+            examples=["M072", "M262", "M232"],
+        )
+
+
+class MinorCode(CurriculumCode):
+    _pattern = re.compile(r"^N[0-9]{3}$")
+
+    @classmethod
+    def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
+        field_schema.update(
+            description="A minor code, eg. `N204` for numerical analysis.",
+            pattern=cls._pattern.pattern,
+            examples=["N204", "N199", "N776"],
+        )
+
+
+class TitleCode(CurriculumCode):
+    _pattern = re.compile(r"^4[0-9]{4}(?:-[0-9])?$")
+
+    @classmethod
+    def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
+        field_schema.update(
+            description="A title code, eg. `40007` for a computer engineering.",
+            pattern=cls._pattern.pattern,
+            examples=["40008", "40023", "40096"],
+        )
 
 
 class CurriculumSpec(BaseModel, frozen=True):
@@ -227,13 +293,13 @@ class CurriculumSpec(BaseModel, frozen=True):
         return self.title is not None
 
     def with_major(self, major: MajorCode | None) -> "CurriculumSpec":
-        return self.model_copy(update={"major": major})
+        return self.copy(update={"major": major})
 
     def with_minor(self, minor: MinorCode | None) -> "CurriculumSpec":
-        return self.model_copy(update={"minor": minor})
+        return self.copy(update={"minor": minor})
 
     def with_title(self, title: TitleCode | None) -> "CurriculumSpec":
-        return self.model_copy(update={"title": title})
+        return self.copy(update={"title": title})
 
     def no_major(self) -> "CurriculumSpec":
         return self.with_major(None)

@@ -3,8 +3,7 @@ import warnings
 from pathlib import Path
 from typing import Literal
 
-from pydantic import AnyHttpUrl, Field, RedisDsn, SecretStr
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import AnyHttpUrl, BaseSettings, Field, RedisDsn, SecretStr
 
 
 def generate_random_jwt_secret():
@@ -23,7 +22,7 @@ class Settings(BaseSettings):
     # Possible values: "development", "production".
     env: Literal["development", "staging", "production"] = Field(
         "development",
-        alias="python_env",
+        env="PYTHON_ENV",
     )
 
     # URL to the CAS verification server.
@@ -127,8 +126,6 @@ class Settings(BaseSettings):
 
     # Where to store logs (only used in development)
     log_path: Path = Path("logs")
-
-    model_config = SettingsConfigDict(extra="ignore")
 
 
 # Load settings and allow global app access to them

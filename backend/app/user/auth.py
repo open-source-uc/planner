@@ -36,7 +36,7 @@ def _get_service_url(params: dict[str, str]) -> str:
     from app.routes.user import router as user_router
 
     callback_endpoint = "/api" + user_router.url_path_for("authenticate")
-    url = urljoin(str(settings.planner_url), callback_endpoint)
+    url = urljoin(settings.planner_url, callback_endpoint)
     if params:
         query_params = urlencode(params)
         url = f"{url}?{query_params}"
@@ -78,7 +78,7 @@ def _get_login_url(service_params: dict[str, str]) -> str:
 
     # Include the `next` parameter to indicate where to redirect after generating the
     # JWT token.
-    service_params["next"] = urljoin(str(settings.planner_url), "/")
+    service_params["next"] = urljoin(settings.planner_url, "/")
     # Generate the service URL, including the `next` parameter and any extra parameters
     service_url = _get_service_url(service_params)
 
@@ -87,7 +87,7 @@ def _get_login_url(service_params: dict[str, str]) -> str:
     cas_login_server = settings.cas_login_redirection_url or settings.cas_server_url
     # The login URL
     # Something like `https://sso.uc.cl/cas/login`
-    cas_login_url = urljoin(str(cas_login_server), "login")
+    cas_login_url = urljoin(cas_login_server, "login")
     # The URL parameters to include in the login request
     cas_login_params = urlencode({"service": service_url})
     return f"{cas_login_url}?{cas_login_params}"

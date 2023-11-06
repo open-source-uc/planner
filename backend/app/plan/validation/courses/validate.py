@@ -449,9 +449,7 @@ class ValidationContext:
         if isinstance(atom, ReqCourse):
             info = self.courseinfo.try_course(atom.code)
             if info is not None and info.canonical_equiv != atom.code:
-                return ReqCourse(
-                    expr="req", code=info.canonical_equiv, coreq=atom.coreq,
-                )
+                return ReqCourse(code=info.canonical_equiv, coreq=atom.coreq)
         return atom
 
 
@@ -539,7 +537,7 @@ def set_atoms_in_stone_if(
         truth = is_satisfied(ctx, cl, atom)
         if should_set_in_stone(atom, truth):
             # Fold this atom into its constant truth value
-            return Const(expr="const", value=truth)
+            return Const(value=truth)
         return atom
 
     return map_atoms(expr, mapping)

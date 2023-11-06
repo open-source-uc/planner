@@ -20,12 +20,12 @@ from app.plan.validation.courses.logic import (
     And,
     AndClause,
     Atom,
+    BaseOp,
     Const,
     DnfExpr,
     Expr,
     Operator,
     Or,
-    create_op,
 )
 
 T = TypeVar("T")
@@ -76,7 +76,7 @@ def as_dnf(expr: Expr) -> DnfExpr:
     # Fit into the `DnfExpr` format
     conjunctions: list[AndClause] = []
     if not isinstance(expr, Or):
-        expr = Or(expr="or", children=(expr,))
+        expr = Or(children=(expr,))
     for subexpr in expr.children:
         if isinstance(subexpr, And):
             subsubatoms: list[Atom] = []
@@ -84,16 +84,15 @@ def as_dnf(expr: Expr) -> DnfExpr:
                 if not isinstance(subsubatom, Atom):
                     raise Exception(f"dnf simplification failed: {expr}")
                 subsubatoms.append(subsubatom)
-            conjunctions.append(AndClause(expr="and", children=tuple(subsubatoms)))
+            conjunctions.append(AndClause(children=tuple(subsubatoms)))
         elif isinstance(subexpr, Or):
             # This can never happen, because it would be an Or within an Or and
             # there are simplification rules that take care of that
             raise Exception(f"dnf simplification failed: {expr}")
         else:
-            assert isinstance(subexpr, Atom)
-            conjunctions.append(AndClause(expr="and", children=(subexpr,)))
+            conjunctions.append(AndClause(children=(subexpr,)))
 
-    return DnfExpr(expr="or", children=tuple(conjunctions))
+    return DnfExpr(children=tuple(conjunctions))
 
 
 def apply_simplification(
@@ -131,7 +130,7 @@ def apply_simplification(
             # No change done, pass child through to new instance
             new_children.append(child)
     # Make sure that if no changes are made, the exact same object is returned
-    return create_op(expr.neutral, tuple(new_children)) if changed else expr
+    return BaseOp.create(expr.neutral, tuple(new_children)) if changed else expr
 
 
 def _dnfize_chilren_rule(ctx: None, op: Operator, new: list[Expr], child: Expr) -> bool:
@@ -179,7 +178,7 @@ def degen(expr: Operator) -> Expr:
     child.
     """
     if len(expr.children) == 0:
-        return Const(expr="const", value=expr.neutral)
+        return Const(value=expr.neutral)
     if len(expr.children) == 1:
         return expr.children[0]
     return expr
@@ -212,7 +211,7 @@ def _anihil_rule(
     if not anihilate[0] and isinstance(child, Const) and child.value != op.neutral:
         # This constant value destroys the entire operator clause
         new.clear()
-        new.append(Const(expr="const", value=not op.neutral))
+        new.append(Const(value=not op.neutral))
         anihilate[0] = True
     if anihilate[0]:
         return True
@@ -332,17 +331,17 @@ def factor(expr: Operator) -> Expr:
                     without_factor.append(grandchild)
             if has_factor:
                 # Strip the factor and add the expression to the inner clause
-                inner.append(degen(create_op(child.neutral, tuple(without_factor))))
+                inner.append(degen(BaseOp.create(child.neutral, tuple(without_factor))))
         if not has_factor:
             # Add the expression as-is to the outer clause
             outer.append(child)
     assert factor is not None
 
     # Merge inner and outer clauses with the factor
-    inner_clause = create_op(expr.neutral, tuple(inner))
-    with_factor = create_op(not expr.neutral, (factor, inner_clause))
+    inner_clause = BaseOp.create(expr.neutral, tuple(inner))
+    with_factor = BaseOp.create(not expr.neutral, (factor, inner_clause))
     outer.append(with_factor)
-    return degen(create_op(expr.neutral, tuple(outer)))
+    return degen(BaseOp.create(expr.neutral, tuple(outer)))
 
 
 def defactor(expr: Operator) -> Expr:
@@ -386,7 +385,7 @@ def defactor(expr: Operator) -> Expr:
     while True:
         # Add this combination
         new_children.append(
-            create_op(
+            BaseOp.create(
                 expr.neutral,
                 tuple(options[i][cur_choice[i]] for i in range(len(options))),
             ),
@@ -405,7 +404,7 @@ def defactor(expr: Operator) -> Expr:
             # (and therefore we already tried all options)
             break
 
-    return create_op(not expr.neutral, tuple(new_children))
+    return BaseOp.create(not expr.neutral, tuple(new_children))
 
 
 def defactor_and(expr: Operator) -> Expr:

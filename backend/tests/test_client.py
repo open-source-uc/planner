@@ -31,5 +31,5 @@ def test_academic_period():
     d = {
         "academic_period": "2021-1",
     }
-    apt = AcademicPeriodTest.model_validate(d)
+    apt = AcademicPeriodTest.parse_obj(d)
     assert str(apt.academic_period) == "2021-1"

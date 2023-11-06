@@ -62,17 +62,17 @@ def test_codes():
         "minor_code": "N123",
         "title_code": "40001",
     }
-    parsed_curriculum = CurriculumCodeTest.model_validate(d)
+    parsed_curriculum = CurriculumCodeTest.parse_obj(d)
     assert parsed_curriculum.major_code == MajorCode("M123")
     assert parsed_curriculum.minor_code == MinorCode("N123")
     assert parsed_curriculum.title_code == TitleCode("40001")
     # Test serialization to string
-    parsed_curriculum_dict = parsed_curriculum.model_dump()
+    parsed_curriculum_dict = parsed_curriculum.dict()
     assert parsed_curriculum_dict["major_code"] == "M123"
     assert parsed_curriculum_dict["minor_code"] == "N123"
     assert parsed_curriculum_dict["title_code"] == "40001"
     # Check wrong deserialization
     with pytest.raises(ValidationError):
-        CurriculumCodeTest.model_validate({"major_code": "M1234"})
-        CurriculumCodeTest.model_validate({"minor_code": "N1234"})
-        CurriculumCodeTest.model_validate({"title_code": "400011"})
+        CurriculumCodeTest.parse_obj({"major_code": "M1234"})
+        CurriculumCodeTest.parse_obj({"minor_code": "N1234"})
+        CurriculumCodeTest.parse_obj({"title_code": "400011"})
