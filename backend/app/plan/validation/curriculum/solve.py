@@ -761,15 +761,16 @@ def _resolve_with_fixed_colors(g: SolvedCurriculum) -> bool:
             for edges in inst.layers.values():
                 for edge in edges.block_edges:
                     if edge.needs_recolor:
-                        g.model.Add(lmip.LinearConstraint(edge.active_var, 0, 0))
-                        g.model.Add(lmip.LinearConstraint(edge.flow_var, 0, 0))
+                        edge.active_var.SetUb(0)
+                        edge.flow_var.SetUb(0)
     # Re-solve model
     solve_status = g.model.Solve(SOLVE_PARAMETERS)
     if not (
         solve_status == lmip.Solver.OPTIMAL or solve_status == lmip.Solver.FEASIBLE
     ):
         raise Exception(
-            f"failed to re-solve curriculum: {_solver_status_to_name[solve_status]}",
+            "failed to resolve with fixed colors:"
+            f" {_solver_status_to_name[solve_status]}",
         )
     # Extract solution
     _tag_edge_flow(g)

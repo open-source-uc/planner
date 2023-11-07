@@ -120,12 +120,17 @@ def diagnose_curriculum(
         out.add(UnassignedWarn(unassigned_credits=unassigned))
 
     # Tag each course with its associated superblock
-    superblocks = {}
-    for code, count in rep_counter.items():
-        superblocks[code] = ["" for _ in range(count)]
-        for rep_idx in range(count):
+    superblocks: dict[str, list[str]] = {}
+    for sem in plan.classes:
+        for course in sem:
+            code = course.code
+            if code not in superblocks:
+                superblocks[code] = []
+            superblock = ""
+            rep_idx = len(superblocks[code])
             if code in g.superblocks and rep_idx < len(g.superblocks[code]):
-                superblocks[code][rep_idx] = g.superblocks[code][rep_idx]
+                superblock = g.superblocks[code][rep_idx]
+            superblocks[code].append(superblock)
     out.course_superblocks = superblocks
 
 
