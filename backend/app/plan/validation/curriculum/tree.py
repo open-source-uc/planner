@@ -180,6 +180,19 @@ class Curriculum(BaseModel):
         # OFG equivalence.
         return Multiplicity(group={course_code}, credits=None)
 
+    def collect_equivalences(self) -> set[str]:
+        equivs: set[str] = set()
+        _collect_equiv_codes(self.root, equivs)
+        return equivs
+
+
+def _collect_equiv_codes(block: Block, equivs: set[str]):
+    if isinstance(block, Leaf):
+        equivs.add(block.list_code)
+    else:
+        for child in block.children:
+            _collect_equiv_codes(child, equivs)
+
 
 # A curriculum version, constrained to whatever curriculum versions we support.
 # Whenever any code depends on the version of the curriculum, it should use `match`

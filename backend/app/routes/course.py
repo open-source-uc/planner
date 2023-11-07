@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter
 from prisma.models import (
     Course as DbCourse,
 )
@@ -12,6 +12,8 @@ from app.plan.courseinfo import (
     course_info,
     make_searchable_name,
 )
+from app.plan.validation.curriculum.tree import CurriculumSpec
+from app.sync import get_curriculum
 
 router = APIRouter(prefix="/course")
 
@@ -102,18 +104,25 @@ async def search_course_codes(filter: CourseFilter):
 
 @router.get("/details", response_model=list[CourseDetails | EquivDetails | None])
 async def get_pseudocourse_details(
-    codes: list[str] = Query(),
+    codes: list[str],
+    plan: CurriculumSpec | None = None,
 ) -> list[CourseDetails | EquivDetails | None]:
     """
     For a list of course or equivalence codes, fetch a corresponding list of
     course/equivalence details.
     Returns null in the corresponding slot if the code is unknown.
 
-    Request example: `/api/courses?codes=IIC2233&codes=IIC2173`
+    Additionally, a curriculum spec can be specified. In this case, all equivalences in
+    the plan will be fetched and appended to the list.
     """
+
+    if plan is not None:
+        curriculum = await get_curriculum(plan)
+        codes.extend(curriculum.collect_equivalences())
 
     courseinfo = await course_info()
     courses: list[CourseDetails | EquivDetails | None] = [
         courseinfo.try_course(code) or courseinfo.try_equiv(code) for code in codes
     ]
+
     return courses
