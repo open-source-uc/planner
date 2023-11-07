@@ -46,7 +46,7 @@ const Planner = (): JSX.Element => {
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [popUpAlert, setPopUpAlert] = useState<{ title: string, major?: string, year?: Cyear, deleteMajor: boolean, desc: string, isOpen: boolean }>({ title: '', major: '', deleteMajor: false, desc: '', isOpen: false })
-  const [possibleBlocksList, setPossibleBlocksList] = useState<PossibleBlocksList>({})
+  const [, setPossibleBlocksList] = useState<PossibleBlocksList>({}) // TODO: Use the possibleBlocksList
 
   const previousCurriculum = useRef<{ major: string | undefined, minor: string | undefined, title: string | undefined, cyear?: Cyear }>({ major: '', minor: '', title: '' })
   const previousClasses = useRef<PseudoCourseId[][]>([[]])

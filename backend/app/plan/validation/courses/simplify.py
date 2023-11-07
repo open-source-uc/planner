@@ -87,7 +87,7 @@ def as_dnf(expr: Expr) -> DnfExpr:
                         raise Exception(f"dnf simplification failed: {expr}")
                     subsubatoms.append(subsubatom)
                 conjunctions.append(AndClause(children=tuple(subsubatoms)))
-            elif isinstance(subexpr, Or):
+            else:
                 # This can never happen, because it would be an Or within an Or and
                 # there are simplification rules that take care of that
                 raise Exception(f"dnf simplification failed: {expr}")
