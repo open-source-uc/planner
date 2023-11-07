@@ -429,12 +429,7 @@ def _add_usable_course(
         # For this to work correctly, fillers must be added after taken courses!
         # (This is an optimization)
         if any(
-            previous.original_pseudocourse == og_course
-            or (
-                isinstance(previous.original_pseudocourse, ConcreteId)
-                and previous.original_pseudocourse.equivalence is None
-            )
-            for previous in usable.instances
+            previous.original_pseudocourse == og_course for previous in usable.instances
         ):
             return
 
