@@ -118,6 +118,9 @@ const SemesterColumn = ({ coursesId, validation, classesDetails, semester, addCo
         {classes.map((course: PseudoCourseId, index: number) => {
           const classId = coursesId[index]
           const courseValidation = validation?.courses?.[index]
+          const equivDetails = 'equivalence' in course && course.equivalence != null ? classesDetails[course.equivalence.code] : null
+          const equivCourses = equivDetails != null && 'courses' in equivDetails ? equivDetails.courses : null
+          const hasEquivalence = course.is_concrete === false || (equivCourses?.length ?? 0) > 1
           return (
             <Fragment key={index}>
               {(activeIndexHandler(index)) && <div key="placeholder" className="card mx-1 mb-3 bg-place-holder"/>}
@@ -133,7 +136,7 @@ const SemesterColumn = ({ coursesId, validation, classesDetails, semester, addCo
                   remCourse={remCourse}
                   courseBlock={courseValidation?.superblock ?? ''}
                   openSelector={openSelectorSemester}
-                  hasEquivalence={course.is_concrete === false || ('equivalence' in course && course.equivalence != null)}
+                  hasEquivalence={hasEquivalence}
                   hasError={(courseValidation?.errors?.length ?? 0) > 0}
                   hasWarning={(courseValidation?.warnings?.length ?? 0) > 0}
                 />
