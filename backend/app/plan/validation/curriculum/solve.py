@@ -617,6 +617,7 @@ def _tag_edge_flow(g: SolvedCurriculum):
         for inst in usable.instances:
             inst.flow = round(inst.flow_var.SolutionValue())
             for layer in inst.layers.values():
+                layer.active_edge = None
                 for edge in layer.block_edges:
                     edge.flow = round(edge.flow_var.SolutionValue())
                     if edge.flow > 0:
