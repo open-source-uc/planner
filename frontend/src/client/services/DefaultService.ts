@@ -200,7 +200,7 @@ export class DefaultService {
         requestBody: Body_get_pseudocourse_details,
     ): CancelablePromise<Array<(CourseDetails | EquivDetails)>> {
         return __request(OpenAPI, {
-            method: 'GET',
+            method: 'POST',
             url: '/course/details',
             body: requestBody,
             mediaType: 'application/json',

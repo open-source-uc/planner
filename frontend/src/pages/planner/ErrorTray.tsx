@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { type ClassId, type CurriculumSpec } from '../../client'
-import { type PseudoCourseDetail, isCourseRequirementErr, isDiagWithAssociatedCourses, type RequirementExpr, type Diagnostic } from './utils/Types'
+import { type PseudoCourseDetail, isCourseRequirementErr, type RequirementExpr, type Diagnostic } from './utils/Types'
 import { Spinner } from '../../components/Spinner'
 import AutoFix from './utils/AutoFix'
 import { collectRequirements, getCourseName, getCourseNameWithCode } from './utils/utils'
@@ -24,7 +24,7 @@ const NoMessages = ({ open }: { open: boolean }): JSX.Element => {
 
 interface FormattedRequirementProps {
   expr: RequirementExpr
-  reqCourses: any
+  reqCourses: Record<string, PseudoCourseDetail | string>
 }
 
 export const FormattedRequirement: React.FC<FormattedRequirementProps> = ({ expr, reqCourses }) => {
@@ -38,7 +38,7 @@ export const FormattedRequirement: React.FC<FormattedRequirementProps> = ({ expr
               : <FormattedRequirement expr={subexpr} reqCourses={reqCourses} />
 
             return index !== expr.children.length - 1
-              ? <span>{subexprComponent} {expr.expr === 'and' ? 'y' : 'o'} </span>
+              ? <span key={index}>{subexprComponent} {expr.expr === 'and' ? 'y' : 'o'} </span>
               : subexprComponent
           })}
         </span>
@@ -56,27 +56,28 @@ export const FormattedRequirement: React.FC<FormattedRequirementProps> = ({ expr
     case 'career':
       return <span>Carrera {expr.equal ? '=' : '!='} {expr.career}</span>
     case 'req':
-      return <span><CourseName course={reqCourses[expr.code] ?? { code: expr.code }} />{expr.coreq ? ' (c)' : ''}</span>
+      return <span><CourseName course={reqCourses[expr.code] ?? expr.code } />{expr.coreq ? ' (c)' : ''}</span>
     case undefined:
       return <span>?</span>
   }
 }
 
-export const CourseName = ({ course }: { course: ClassId | PseudoCourseDetail }): JSX.Element => {
+export const CourseName = ({ course }: { course: string | ClassId | PseudoCourseDetail }): JSX.Element => {
   // This component version uses a ruby to show the course code
   // This is useful to disambiguate courses with the same name
   // (e.g. "Proyecto de Título")
   const name = getCourseName(course)
+  const code = typeof course === 'string' ? course : course.code
   if (name != null) {
     return (
-      <abbr title={course.code}>
+      <abbr title={code}>
         {name}
       </abbr>
     )
   } else {
     return (
       <span>
-        {course.code}
+        {code}
       </span>
     )
   }
@@ -107,7 +108,7 @@ const formatCurriculum = (curr: CurriculumSpec): string => {
 
 interface FormatMessageProps {
   diag: Diagnostic
-  reqCourses: any
+  reqCourses: Record<string, PseudoCourseDetail | string>
 }
 
 export const ValidationMessage: React.FC<FormatMessageProps> = ({ diag, reqCourses }) => {
@@ -211,7 +212,7 @@ interface ErrorTrayProps {
   getCourseDetails: Function
   diagnostics: Diagnostic[]
   validating: boolean
-  courseDetails: any
+  courseDetails: Record<string, PseudoCourseDetail>
 }
 
 /**
@@ -222,9 +223,7 @@ const ErrorTray = ({ setValidatablePlan, diagnostics, validating, courseDetails,
   const hasError = diagnostics.some(diag => diag.is_err)
 
   const messageList: JSX.Element[] = diagnostics.map((diag, index) => {
-    let diagWithAssociated = diag
-    const reqCourses: any = {}
-    if (isDiagWithAssociatedCourses(diag)) diagWithAssociated = { ...diag, associated_to: diag.associated_to.map((course: ClassId) => courseDetails[course.code] !== undefined ? { ...courseDetails[course.code], instance: course.instance } : { code: course.code }) }
+    const reqCourses: Record<string, PseudoCourseDetail | string> = {}
     if (isCourseRequirementErr(diag)) {
       const reqCodes = new Set<string>()
       collectRequirements(diag.modernized_missing, reqCodes)
@@ -232,7 +231,7 @@ const ErrorTray = ({ setValidatablePlan, diagnostics, validating, courseDetails,
         reqCourses[code] = courseDetails[code] ?? code
       }
     }
-    return Message({ setValidatablePlan, diag: diagWithAssociated, key: index, open: open || hasError, getCourseDetails, reqCourses })
+    return Message({ setValidatablePlan, diag, key: index, open: open || hasError, getCourseDetails, reqCourses })
   })
 
   // Determine when we get 0 messages to launch the confetti

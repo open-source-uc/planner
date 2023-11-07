@@ -102,7 +102,9 @@ async def search_course_codes(filter: CourseFilter):
     ]
 
 
-@router.get("/details", response_model=list[CourseDetails | EquivDetails | None])
+# Again, REST-FastAPI is broken. This should be GET, but the parameters are complex so
+# it has to be POST.
+@router.post("/details", response_model=list[CourseDetails | EquivDetails | None])
 async def get_pseudocourse_details(
     codes: list[str],
     plan: CurriculumSpec | None = None,
