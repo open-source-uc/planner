@@ -45,7 +45,7 @@ def _diagnose_blocks(
     satisfied_with_recoloring = True
     for usable in g.usable.values():
         for inst in usable.instances:
-            if inst.filler is None or inst.flow == 0:
+            if not inst.filler or not inst.flow:
                 continue
 
             options: list[list[PseudoCourse]] = g.find_swapouts(inst)
@@ -78,7 +78,7 @@ def _diagnose_blocks(
         satisfied_without_recoloring = True
         for usable in g.usable.values():
             for inst in usable.instances:
-                if inst.filler is not None and inst.flow != 0:
+                if inst.filler and inst.flow:
                     satisfied_without_recoloring = False
 
         # If the curriculum was satisfied when recoloring, but is now unsatisfied now

@@ -149,7 +149,7 @@ class SemesterCreditsDiag(BaseModel):
     """
 
     is_err: bool
-    kind: Literal["credits"] = Field(default="creditswarn", const=True)
+    kind: Literal["credits"] = Field(default="credits", const=True)
     associated_to: list[int]
 
     credit_limit: int
