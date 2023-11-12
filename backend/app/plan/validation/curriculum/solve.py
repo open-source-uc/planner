@@ -799,17 +799,19 @@ def _explore_options_for(
     # Place the variables that will need their upperbounds restored in here
     restore: list[tuple[lmip.Variable, float]] = []
 
-    insts = [og_inst]
+    insts: list[tuple[UsableInstance, int]] = [(og_inst, og_inst.flow)]
     while True:
         # If this option is a filler, include it in the options
-        if any(inst.filler for inst in insts):
+        # TODO: Fix calling _explore_options_for multiple times in a row (The model has
+        # been changed since the solution was last computed)
+        if any(inst.filler for inst, _flow in insts):
             opts.append(
                 [
                     pseudocourse_with_credits(
                         inst.filler.course,
-                        round(inst.flow_var.SolutionValue()),
+                        flow,
                     )
-                    for inst in insts
+                    for inst, flow in insts
                     if inst.filler
                 ],
             )
@@ -818,7 +820,7 @@ def _explore_options_for(
         # Note that not only the active instances are forbidden, but also all of the
         # instances associated to their courses
         # These prevents duplicate fillers from showing up in the suggestions
-        courses = {inst.code for inst in insts}
+        courses = {inst.code for inst, _flow in insts}
         for code in courses:
             for inst in g.usable[code].instances:
                 restore.append((inst.flow_var, inst.flow_var.Ub()))
@@ -836,8 +838,9 @@ def _explore_options_for(
         insts.clear()
         for usable in g.usable.values():
             for inst in usable.instances:
-                if round(inst.flow_var.SolutionValue()) > inst.flow:
-                    insts.append(inst)
+                flow = round(inst.flow_var.SolutionValue())
+                if flow > inst.flow:
+                    insts.append((inst, flow))
         assert insts
 
     # Re-enable the killed variables
