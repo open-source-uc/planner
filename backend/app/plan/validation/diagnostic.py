@@ -139,35 +139,24 @@ class AmbiguousCourseErr(BaseModel):
     associated_to: list[ClassId]
 
 
-class SemesterCreditsWarn(BaseModel):
+class SemesterCreditsDiag(BaseModel):
     """
-    Indicates that some semesters (`associated_to`) have more than the recommended
-    amount of credits.
+    Indicates that some semesters (`associated_to`) have more than the recommended or
+    allowed amount of credits.
+
+    If `is_err` is `True`, the hard limit was surpassed.
+    If `is_err` is `False`, only the soft limit was surpassed.
     """
 
-    is_err: Literal[False] = Field(default=False, const=True)
-    kind: Literal["creditswarn"] = Field(default="creditswarn", const=True)
+    is_err: bool
+    kind: Literal["credits"] = Field(default="creditswarn", const=True)
     associated_to: list[int]
 
-    max_recommended: int
+    credit_limit: int
     actual: int
 
 
-class SemesterCreditsErr(BaseModel):
-    """
-    Indicates that some semesters (`associated_to`) have more than the allowed amount
-    of credits.
-    """
-
-    is_err: Literal[True] = Field(default=True, const=True)
-    kind: Literal["creditserr"] = Field(default="creditserr", const=True)
-    associated_to: list[int]
-
-    max_allowed: int
-    actual: int
-
-
-class RecolorWarn(BaseModel):
+class RecolorDiag(BaseModel):
     """
     Indicates that reassigning the equivalences that are attached to the courses could
     save some unnecessary classes.
@@ -177,7 +166,7 @@ class RecolorWarn(BaseModel):
     equivalence should be assigned to which course, respectively.
     """
 
-    is_err: Literal[False] = Field(default=False, const=True)
+    is_err: bool
     kind: Literal["recolor"] = Field(default="recolor", const=True)
     associated_to: list[ClassId]
 
@@ -240,9 +229,8 @@ Diagnostic = Annotated[
     | SemestralityWarn
     | UnavailableCourseWarn
     | AmbiguousCourseErr
-    | SemesterCreditsWarn
-    | SemesterCreditsErr
-    | RecolorWarn
+    | SemesterCreditsDiag
+    | RecolorDiag
     | CurriculumErr
     | UnassignedWarn
     | NoMajorMinorWarn,

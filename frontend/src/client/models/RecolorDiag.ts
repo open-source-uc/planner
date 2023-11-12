@@ -13,8 +13,8 @@ import type { EquivalenceId } from './EquivalenceId';
  * `recolor_as` has the same length as `associated_to`, and indicated which
  * equivalence should be assigned to which course, respectively.
  */
-export type RecolorWarn = {
-    is_err?: boolean;
+export type RecolorDiag = {
+    is_err: boolean;
     kind?: 'recolor';
     associated_to: Array<ClassId>;
     recolor_as: Array<EquivalenceId>;

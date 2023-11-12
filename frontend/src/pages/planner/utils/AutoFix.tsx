@@ -1,4 +1,4 @@
-import { type RecolorWarn, type CurriculumErr, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult, type ClassId } from '../../../client'
+import { type RecolorDiag, type CurriculumErr, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult, type ClassId } from '../../../client'
 import { type AuthState, useAuth } from '../../../contexts/auth.context'
 import { type PseudoCourseId } from './Types'
 import { validateCyear } from './planBoardFunctions'
@@ -52,7 +52,7 @@ const fixOutdatedPlan = (plan: ValidatablePlan, diag: OutdatedPlanErr | Outdated
   return { ...plan, classes: newClasses }
 }
 
-const reassignPlanCourses = (plan: ValidatablePlan, diag: RecolorWarn): ValidatablePlan => {
+const reassignPlanCourses = (plan: ValidatablePlan, diag: RecolorDiag): ValidatablePlan => {
   // Apply equivalence reassignments in `diag` to `plan`
   const reassigned = { ...plan, classes: plan.classes.map(sem => [...sem]) }
   diag.associated_to.forEach((classId, idx) => {
@@ -233,8 +233,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: Aut
     case 'sem':
     case 'nomajor':
     case 'currdecl':
-    case 'creditserr':
-    case 'creditswarn':
+    case 'credits':
     case undefined:
       return <></>
   }

@@ -13,7 +13,7 @@ from app.plan.validation.curriculum.tree import Curriculum
 from app.plan.validation.diagnostic import (
     CurriculumErr,
     NoMajorMinorWarn,
-    RecolorWarn,
+    RecolorDiag,
     UnassignedWarn,
     ValidationResult,
 )
@@ -29,10 +29,20 @@ def _diagnose_blocks(
         info = courseinfo.try_any(filler)
         return (filler, "?" if info is None else info.name)
 
-    # TODO: If there are several alternatives to fill a gap in the curriculum, show all
-    # of them
+    # Remember which courses were recolored
+    # Note that courses are only recolored if doing so allows a better plan, so this
+    # list contains no unnecessary recolors
+    recolors = g.find_recolors()
 
     # Get any fillers in use
+    # Note that at this point recoloring *is* allowed
+    # This means that:
+    # - If there is a way to recolor the courses such that the curriculum is satisfied,
+    #   Planner will always recommend to recolor and will not complain about missing
+    #   courses.
+    # - If courses *are* missing anyway, Planner will assume that all courses can be
+    #   recolored arbitrarily.
+    satisfied_with_recoloring = True
     for usable in g.usable.values():
         for inst in usable.instances:
             if inst.filler is None or inst.flow == 0:
@@ -41,6 +51,7 @@ def _diagnose_blocks(
             options: list[list[PseudoCourse]] = g.find_swapouts(inst)
 
             # This filler is active, therefore something is missing
+            satisfied_with_recoloring = False
             out.add(
                 CurriculumErr(
                     blocks=[
@@ -59,18 +70,26 @@ def _diagnose_blocks(
                 ),
             )
 
-
-def _check_and_forbid_recoloring(out: ValidationResult, g: SolvedCurriculum):
-    # Figure out how should we recolor the plan in order to save as many courses as
-    # possible
-    recolors = g.find_recolors()
-
-    # Force the fixed coloring, but if it degrades the performance of the plan then
-    # suggest the original recolored courses
+    # Now, forbid recoloring and retry
     if g.forbid_recolor():
         # Reassigning equivalences can save us some courses
+
+        # Check is the curriculum went unsatisfied from the recolor ban
+        satisfied_without_recoloring = True
+        for usable in g.usable.values():
+            for inst in usable.instances:
+                if inst.filler is not None and inst.flow != 0:
+                    satisfied_without_recoloring = False
+
+        # If the curriculum was satisfied when recoloring, but is now unsatisfied now
+        # that no recoloring is allowed, block assignments (ie. colors) are a hard error
+        hard_error = satisfied_with_recoloring and not satisfied_without_recoloring
+
+        # Reassigning the equivalences can save us some courses or even fix the
+        # curriculum requirements
         out.add(
-            RecolorWarn(
+            RecolorDiag(
+                is_err=hard_error,
                 associated_to=[id for id, _equiv in recolors],
                 recolor_as=[equiv for _id, equiv in recolors],
             ),
@@ -90,11 +109,6 @@ def diagnose_curriculum(
 
     # Solve plan
     g = solve_curriculum(courseinfo, plan.curriculum, curriculum, plan.classes)
-
-    # `g` may contain recolored courses
-    # If it does, generate a recoloring suggestion and forbid recoloring so that the
-    # rest of the diagnostic can take place without recolored courses
-    _check_and_forbid_recoloring(out, g)
 
     # Generate diagnostics
     _diagnose_blocks(courseinfo, out, g)

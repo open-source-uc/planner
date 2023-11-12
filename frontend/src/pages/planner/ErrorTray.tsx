@@ -113,13 +113,13 @@ interface FormatMessageProps {
 
 export const ValidationMessage: React.FC<FormatMessageProps> = ({ diag, reqCourses }) => {
   switch (diag.kind) {
-    case 'creditserr':
-      return <span>Tienes {diag.actual} créditos en el semestre {diag.associated_to[0] + 1}, más de los {diag.max_allowed} que se permiten tomar en un semestre.</span>
-    case 'creditswarn':
-      return <span>Tienes {diag.actual} créditos en el semestre {diag.associated_to[0] + 1}, revisa que cumplas los requisitos para tomar más de {diag.max_recommended} créditos.</span>
-    case 'recolor': {
-      const n = diag.associated_to.length
-      return <span>Puedes reasignar {n} curso{n === 1 ? '' : 's'} para ahorrarte créditos.</span>
+    case 'credits': {
+      const sem: number = diag.associated_to[0]
+      if (diag.is_err) {
+        return <span>Tienes {diag.actual} créditos en el semestre {sem + 1}, más de los {diag.credit_limit} que se permiten tomar en un semestre.</span>
+      } else {
+        return <span>Tienes {diag.actual} créditos en el semestre {sem + 1}, revisa que cumplas los requisitos para tomar más de {diag.credit_limit} créditos.</span>
+      }
     }
     case 'curr': {
       const n = diag.blocks.length
@@ -150,6 +150,14 @@ export const ValidationMessage: React.FC<FormatMessageProps> = ({ diag, reqCours
       return <span>Esta malla no está actualizada con los cursos que has tomado.</span>
     case 'outdatedcurrent':
       return <span>Esta malla no está actualizada con los cursos que estás tomando.</span>
+    case 'recolor': {
+      const n = diag.associated_to.length
+      if (diag.is_err) {
+        return <span>Debes reasignar {n} curso{n === 1 ? '' : 's'} para satisfacer tu currículum.</span>
+      } else {
+        return <span>Puedes reasignar {n} curso{n === 1 ? '' : 's'} para ahorrarte créditos.</span>
+      }
+    }
     case 'req':
       return <span>Faltan requisitos para el curso <CourseName course={diag.associated_to[0]} />: <FormattedRequirement expr={diag.modernized_missing} reqCourses={reqCourses}/></span>
     case 'sem': {
