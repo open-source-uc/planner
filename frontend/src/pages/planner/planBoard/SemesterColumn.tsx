@@ -25,9 +25,9 @@ const SemesterColumn = ({ coursesId, validation, classesDetails, semester, addCo
   const [dragged, setDragged] = useState<number | null>(null)
   const authState = useAuth()
   const columnRef = useRef<HTMLDivElement>(null)
-  const conditionPassed = ((authState?.student) != null) && (semester < authState.student.current_semester)
-  const checkInClass = ((authState?.student) != null) && (authState.student.current_semester === authState.student.next_semester - 1)
-  const checkCurrent = (checkInClass && (semester === authState?.student?.current_semester))
+  const semesterIsInProgress = ((authState?.student) != null) && (authState.student.current_semester === authState.student.next_semester - 1)
+  const isPassed = ((authState?.student) != null) && (semester < authState.student.current_semester)
+  const isCurrent = (semesterIsInProgress && (semester === authState?.student?.current_semester))
 
   const openSelector = useCallback((course: PseudoCourseId, semester: number, index: number) => {
     if ('equivalence' in course) openModal(course.equivalence, semester, index)
@@ -73,7 +73,7 @@ const SemesterColumn = ({ coursesId, validation, classesDetails, semester, addCo
   if ((validation?.errors?.length ?? 0) > 0) border = 'border-solid border-red-300'
   else if ((validation?.warnings?.length ?? 0) > 0) border = 'border-solid border-yellow-300'
 
-  if (!conditionPassed && !checkCurrent) {
+  if (!isPassed && !isCurrent) {
     drop(columnRef)
   }
   const activeIndexHandler = useCallback(
@@ -108,9 +108,9 @@ const SemesterColumn = ({ coursesId, validation, classesDetails, semester, addCo
 
   return (
     <div className={`drop-shadow-xl w-[161px] shrink-0 bg-base-200 rounded-lg flex flex-col border-2 ${border} `}>
-      {conditionPassed
+      {isPassed
         ? <><span className='line-through decoration-black/40'><h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2></span><div className="my-3 divider"></div></>
-        : checkCurrent
+        : isCurrent
           ? <div className='flex flex-col text-center'><h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2><p className='text-xs'>En curso</p><div className="my-1 divider"></div></div>
           : <><h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2><div className="my-3 divider"></div></>
       }
@@ -120,7 +120,7 @@ const SemesterColumn = ({ coursesId, validation, classesDetails, semester, addCo
           const courseValidation = validation?.courses?.[index]
           const equivDetails = 'equivalence' in course && course.equivalence != null ? classesDetails[course.equivalence.code] : null
           const equivCourses = equivDetails != null && 'courses' in equivDetails ? equivDetails.courses : null
-          const hasEquivalence = course.is_concrete === false || (equivCourses?.length ?? 0) > 1
+          const showEquivalence = !isPassed && (course.is_concrete === false || (equivCourses?.length ?? 0) > 1)
           return (
             <Fragment key={index}>
               {(activeIndexHandler(index)) && <div key="placeholder" className="card mx-1 mb-3 bg-place-holder"/>}
@@ -130,13 +130,13 @@ const SemesterColumn = ({ coursesId, validation, classesDetails, semester, addCo
                   course={course}
                   courseDetails={classesDetails[('failed' in course ? course.failed : null) ?? course.code] }
                   courseId={classId}
-                  isPassed={conditionPassed}
-                  isCurrent={checkCurrent}
+                  isPassed={isPassed}
+                  isCurrent={isCurrent}
                   toggleDrag={toggleDrag}
                   remCourse={remCourse}
                   courseBlock={courseValidation?.superblock ?? ''}
                   openSelector={openSelectorSemester}
-                  hasEquivalence={hasEquivalence}
+                  showEquivalence={showEquivalence}
                   hasError={(courseValidation?.errors?.length ?? 0) > 0}
                   hasWarning={(courseValidation?.warnings?.length ?? 0) > 0}
                 />
@@ -145,7 +145,7 @@ const SemesterColumn = ({ coursesId, validation, classesDetails, semester, addCo
           )
         })}
       </div>
-      {(conditionPassed || checkCurrent)
+      {(isPassed || isCurrent)
         ? null
         : <div ref={dropEnd} className={'w-full px-1 flex flex-grow min-h-[90px]'}>
             {!isDragging && <div className="w-full h-10 bg-block- card">
