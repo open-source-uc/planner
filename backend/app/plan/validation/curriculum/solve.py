@@ -88,25 +88,28 @@ from app.plan.validation.curriculum.tree import (
 # A huge value that still fits in a 64-bit integer.
 INFINITY: int = 10**18
 
-# Cost of using a single credit of a filler course.
-# Filler courses are courses that the student has not taken, but that they could take.
-# The cost of filler courses is higher than taken courses so that the solver prefers
-# already-taken courses before adding new courses.
-FILLER_COST = 10**4
-# Cost of using a single credit of an already-assigned course.
-# The idea behind assigning a cost to using courses is that the solve prefers to leave
-# as many courses as possible blank. This way the user can notice that some courses are
-# unnecessary.
-TAKEN_COST = 10**3
-# Cost of recoloring a single credit.
-# Recoloring is assigning a course to a different block than what it's currently
-# assigned to.
-# This value should be smaller than `TAKEN_COST` so that the solver prefers to recolor
-# before taking more courses.
-# However, it should be large enough that custom cost offsets are smaller do not
-# overcome the recoloring cost.
-RECOLOR_COST = 10**1
+# Cost of planning an extra course.
+# This is the highest relative cost, in the sense that we want to avoid planning extra
+# courses as much as possible.
+COST_PER_PLANNED_CREDIT = 10**4
+# Cost of using a course that is already passed.
+# This cost is much lower than the cost of planned courses, because there is nothing to
+# do about courses that were already passed (it's sunken cost).
+# This only has a cost in order to accurately show unused past courses.
+COST_PER_ACTIVE_PAST_CREDIT = 10**1
+# Cost of recoloring a course.
+# This cost is the lowest so that the solver prefers to use the user preference of
+# colors, but only if it doesn't hinder other priorities.
+COST_PER_RECOLORED_CREDIT = 10**0
 
+# Note about the relationship between these values:
+# These costs are not used as-is. In order to determine the final priorities, the solver
+# sorts all courses and then adds a bias to each cost depending on the position of each
+# course within the sorted list.
+# Therefore, the final cost of an active past credit might be much higer than
+# `COST_PER_ACTIVE_PAST_CREDIT`.
+# Therefore, the cost of a planned credit must be high enough so that the solver always
+# prefers avoiding a single future planned course over saving many active past courses.
 
 IntExpr = int | lmip.LinearExpr
 
@@ -170,22 +173,24 @@ class UsableInstance:
     - instance_idx: The instance index of this course.
         Instance indices start from zero, and go up for each course with the same code.
         Instance indices for filler courses continue from the taken instance indices.
-    - flat_order: The order of this course within the plan.
-        Used for prioritization.
-        The `flat_order` values of filler courses continues after taken courses.
+    - semester_and_index: The semester and index of the course. Only present for
+        non-fillers (ie. taken or planned courses).
     - original_pseudocourse: The original `PseudoCourse` instance that gave birth to
         this `UsableInstance`.
         Should not be used to identify the instance.
         In particular, do not use `original_pseudocourse.code`, since this would ignore
         all course equivalencies!
+    - cost_per_credit: The cost per credit of using this instance. Calculated from the
+        type of course (filler, planned, past or future).
     """
 
     code: str
     credits: int
     filler: FillerCourse | None
     instance_idx: int
-    flat_order: int
+    semester_and_index: tuple[int, int] | None
     original_pseudocourse: PseudoCourse
+    cost_per_credit: int
 
     flow: int
     flow_var: lmip.Variable
@@ -396,7 +401,7 @@ def _add_usable_course(
     courseinfo: CourseInfo,
     curriculum: Curriculum,
     g: SolvedCurriculum,
-    flat_order: int,
+    semester_and_index: tuple[int, int] | None,
     credit_cap: int,
     to_add: PseudoCourse | FillerCourse,
 ):
@@ -453,10 +458,11 @@ def _add_usable_course(
             credits=credits,
             filler=filler,
             instance_idx=inst_idx,
-            flat_order=flat_order,
+            semester_and_index=semester_and_index,
             original_pseudocourse=og_course,
             flow=0,
             flow_var=g.model.NumVar(0, credits, ""),
+            cost_per_credit=0,  # Calculated later
         ),
     )
     usable.total += credits
@@ -464,7 +470,7 @@ def _add_usable_course(
 
 def _fill_usable(
     courseinfo: CourseInfo,
-    taken: list[list[PseudoCourse]],
+    plan: list[list[PseudoCourse]],
     curriculum: Curriculum,
     g: SolvedCurriculum,
 ):
@@ -473,41 +479,39 @@ def _fill_usable(
     Basically, recognize which courses can be used to fill the curriculum slots.
     """
 
-    flat_order = 0
     filler_cap: dict[str, int] = {
         code: sum(courseinfo.get_credits(filler.course) or 0 for filler in fillers)
         for code, fillers in curriculum.fillers.items()
     }
-    for sem in taken:
-        for c in sorted(sem, key=lambda c: c.code):
+    for sem_i, sem in enumerate(plan):
+        for idx, c in enumerate(sorted(sem, key=lambda c: c.code)):
             if courseinfo.try_any(c) is None:
                 continue
             _add_usable_course(
                 courseinfo,
                 curriculum,
                 g,
-                flat_order,
+                (sem_i, idx),
                 filler_cap[c.code] if c.code in filler_cap else INFINITY,
                 c,
             )
-            flat_order += 1
     for code, fillers in curriculum.fillers.items():
         for filler in fillers:
             _add_usable_course(
                 courseinfo,
                 curriculum,
                 g,
-                flat_order,
+                None,
                 filler_cap[code],
                 filler,
             )
-            flat_order += 1
 
 
 def _build_problem(
     courseinfo: CourseInfo,
     curriculum: Curriculum,
-    taken_semesters: list[list[PseudoCourse]],
+    plan_semesters: list[list[PseudoCourse]],
+    plan_boundary: int,
     *,
     tolerance: int = 0,
 ) -> SolvedCurriculum:
@@ -519,7 +523,7 @@ def _build_problem(
     g = SolvedCurriculum()
 
     # Fill in credit pool from approved courses and filler credits
-    _fill_usable(courseinfo, taken_semesters, curriculum, g)
+    _fill_usable(courseinfo, plan_semesters, curriculum, g)
 
     # Build curriculum graph from the curriculum tree
     root_flow = _build_visit(courseinfo, g, VisitState(), curriculum.root)
@@ -545,6 +549,9 @@ def _build_problem(
                 g.model.Add(
                     g.model.Sum([edge.active_var for edge in layer.block_edges]) <= 1,
                 )
+
+    # Sort all courses to determine the cost of each course
+    _prioritize_courses(g, plan_boundary)
 
     # Minimize the amount of used course flow
     _minimize_cost(g)
@@ -582,6 +589,30 @@ def _enforce_multiplicity(g: SolvedCurriculum):
         )
 
 
+def _get_course_priority(inst: UsableInstance) -> tuple[int, int, int]:
+    if inst.filler:
+        return (1, inst.filler.cost_offset, inst.filler.order)
+    assert inst.semester_and_index
+    sem, idx = inst.semester_and_index
+    return (0, sem, idx)
+
+
+def _prioritize_courses(g: SolvedCurriculum, plan_boundary: int):
+    # Sort all courses by type first (filler or planned), then cost offset, then flat
+    # order
+    sorted_instances: list[UsableInstance] = sorted(
+        (inst for usable in g.usable.values() for inst in usable.instances),
+        key=_get_course_priority,
+    )
+    for index, inst in enumerate(sorted_instances):
+        inst.cost_per_credit = COST_PER_PLANNED_CREDIT
+        if inst.semester_and_index:
+            sem, _idx = inst.semester_and_index
+            if sem < plan_boundary:
+                inst.cost_per_credit = COST_PER_ACTIVE_PAST_CREDIT
+        inst.cost_per_credit += index
+
+
 def _minimize_cost(g: SolvedCurriculum):
     """
     Minimize the amount of used credits.
@@ -594,17 +625,12 @@ def _minimize_cost(g: SolvedCurriculum):
             # Consider the cost of using this instance
             # The cost is higher if it is a filler, because it means adding an extra
             # course
-            cost_per_credit = (
-                TAKEN_COST
-                if inst.filler is None
-                else FILLER_COST + inst.filler.cost_offset
-            )
-            costs.append(cost_per_credit * inst.flow_var)
+            costs.append(inst.cost_per_credit * inst.flow_var)
             # Add extra cost for taking recolor-edges
             for edges in inst.layers.values():
                 for edge in edges.block_edges:
                     if edge.needs_recolor:
-                        costs.append(RECOLOR_COST * edge.flow_var)
+                        costs.append(COST_PER_RECOLORED_CREDIT * edge.flow_var)
 
     g.model.Minimize(g.model.Sum(costs))
 
@@ -660,17 +686,29 @@ _solver_status_to_name: dict[int, str] = {
 
 
 SOLVE_PARAMETERS = lmip.MPSolverParameters()
-SOLVE_PARAMETERS.SetDoubleParam(lmip.MPSolverParameters.PRIMAL_TOLERANCE, 1e-3)
+# NOTE: SCIP has a known issue where it fails to find the optimal solution sometimes,
+# and the primal tolerance must set to some custom small value to fix it.
+# This doesn't seem to be necessary for now, but further experimentation would not hurt.
+# https://stackoverflow.com/questions/65244692/non-optimal-result-from-mip-program-in-google-or-tools/65244914#65244914
+# SOLVE_PARAMETERS.SetDoubleParam(lmip.MPSolverParameters.PRIMAL_TOLERANCE, 1e-3)
 
 
 def solve_curriculum(
     courseinfo: CourseInfo,
     spec: CurriculumSpec,
     curriculum: Curriculum,
-    taken: list[list[PseudoCourse]],
+    plan: list[list[PseudoCourse]],
+    plan_boundary: int = 0,
 ) -> SolvedCurriculum:
+    """
+    Solve the given plan against the given curriculum.
+
+    Optionally accepts a plan boundary, that specifies the number of semesters that
+    should be considered as passed and immutable.
+    """
+
     # Take the curriculum blueprint, and produce a graph for this student
-    g = _build_problem(courseinfo, curriculum, taken)
+    g = _build_problem(courseinfo, curriculum, plan, plan_boundary)
     # Solve the integer optimization problem
     solve_status = g.model.Solve(SOLVE_PARAMETERS)
     if not (
@@ -684,7 +722,13 @@ def solve_curriculum(
             logging.debug("searching for minimum relaxation to make it feasible...")
             tol = "infinite"
             for i in range(1, curriculum.root.cap + 1):
-                g = _build_problem(courseinfo, curriculum, taken, tolerance=i)
+                g = _build_problem(
+                    courseinfo,
+                    curriculum,
+                    plan,
+                    plan_boundary,
+                    tolerance=i,
+                )
                 solve_status_2 = g.model.Solve(SOLVE_PARAMETERS)
                 if (
                     solve_status_2 == lmip.Solver.OPTIMAL

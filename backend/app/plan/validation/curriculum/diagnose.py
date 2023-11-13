@@ -108,7 +108,13 @@ def diagnose_curriculum(
         out.add(NoMajorMinorWarn(plan=plan.curriculum))
 
     # Solve plan
-    g = solve_curriculum(courseinfo, plan.curriculum, curriculum, plan.classes)
+    g = solve_curriculum(
+        courseinfo,
+        plan.curriculum,
+        curriculum,
+        plan.classes,
+        user_ctx.current_semester if user_ctx else 0,
+    )
 
     # Generate diagnostics
     _diagnose_blocks(courseinfo, out, g)
