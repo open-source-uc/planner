@@ -88,8 +88,12 @@ from app.plan.validation.curriculum.tree import (
 # A huge value that still fits in a 64-bit integer.
 INFINITY: int = 10**18
 
-# Cost of planning an extra course.
-# This is the highest relative cost, in the sense that we want to avoid planning extra
+# Cost of adding an extra course to the plan.
+# This has the highest relative cost, since we want to avoid as much as possible telling
+# the user they need to add more courses.
+COST_PER_FILLER_CREDIT = 10**5
+# Cost of planning a course.
+# This has a high relative cost, in the sense that we want to avoid planning extra
 # courses as much as possible.
 COST_PER_PLANNED_CREDIT = 10**4
 # Cost of using a course that is already passed.
@@ -100,7 +104,7 @@ COST_PER_ACTIVE_PAST_CREDIT = 10**1
 # Cost of recoloring a course.
 # This cost is the lowest so that the solver prefers to use the user preference of
 # colors, but only if it doesn't hinder other priorities.
-COST_PER_RECOLORED_CREDIT = 10**0
+COST_PER_RECOLORED_CREDIT = 10**1
 
 # Note about the relationship between these values:
 # These costs are not used as-is. In order to determine the final priorities, the solver
@@ -289,8 +293,6 @@ def _connect_course_instance(
     Connect the course instance `inst` to the graph node `connect_to`.
     Creates a minimal amount of nodes and edges to model the connection in the graph.
     """
-
-    # TODO: Per-edge cost
 
     # Indicates whether the course counts towards the block
     active_var = g.model.BoolVar("")
@@ -605,11 +607,16 @@ def _prioritize_courses(g: SolvedCurriculum, plan_boundary: int):
         key=_get_course_priority,
     )
     for index, inst in enumerate(sorted_instances):
-        inst.cost_per_credit = COST_PER_PLANNED_CREDIT
         if inst.semester_and_index:
             sem, _idx = inst.semester_and_index
             if sem < plan_boundary:
                 inst.cost_per_credit = COST_PER_ACTIVE_PAST_CREDIT
+            else:
+                # NOTE: Using wildly different costs for planned courses and filler
+                # courses speeds up the optimizer 6x (!)
+                inst.cost_per_credit = COST_PER_PLANNED_CREDIT
+        else:
+            inst.cost_per_credit = COST_PER_FILLER_CREDIT
         inst.cost_per_credit += index
 
 
@@ -846,8 +853,6 @@ def _explore_options_for(
     insts: list[tuple[UsableInstance, int]] = [(og_inst, og_inst.flow)]
     while True:
         # If this option is a filler, include it in the options
-        # TODO: Fix calling _explore_options_for multiple times in a row (The model has
-        # been changed since the solution was last computed)
         if any(inst.filler for inst, _flow in insts):
             opts.append(
                 [
