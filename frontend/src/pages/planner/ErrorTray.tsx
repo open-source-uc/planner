@@ -147,9 +147,11 @@ export const ValidationMessage: React.FC<FormatMessageProps> = ({ diag, reqCours
       return <span>Debes seleccionar {missing} para validar correctamente tu plan.</span>
     }
     case 'outdated':
-      return <span>Esta malla no está actualizada con los cursos que has tomado.</span>
-    case 'outdatedcurrent':
-      return <span>Esta malla no está actualizada con los cursos que estás tomando.</span>
+      if (diag.is_current === true) {
+        return <span>Esta malla no está actualizada con los cursos que estás tomando.</span>
+      } else {
+        return <span>Esta malla no está actualizada con los cursos que has tomado.</span>
+      }
     case 'recolor': {
       const n = diag.associated_to.length
       if (diag.is_err) {

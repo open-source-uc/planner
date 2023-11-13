@@ -2,7 +2,12 @@ from collections import OrderedDict, defaultdict
 from collections.abc import Iterable
 
 from app import sync
-from app.plan.course import ConcreteId, EquivalenceId, pseudocourse_with_credits
+from app.plan.course import (
+    ConcreteId,
+    EquivalenceId,
+    pseudocourse_with_credits,
+    pseudocourse_with_equivalence,
+)
 from app.plan.courseinfo import CourseDetails, CourseInfo, course_info
 from app.plan.plan import (
     PseudoCourse,
@@ -458,11 +463,7 @@ def _reassign_blocks(g: SolvedCurriculum, plan: ValidatablePlan):
                 and instance_idx in recolors_by_id[course.code]
             ):
                 new_equiv = recolors_by_id[course.code][instance_idx]
-                sem[i] = ConcreteId(
-                    code=course.code,
-                    failed=course.failed,
-                    equivalence=new_equiv,
-                )
+                sem[i] = pseudocourse_with_equivalence(course, new_equiv)
 
 
 async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
@@ -515,6 +516,8 @@ async def generate_recommended_plan(
     """
     Take a base plan that the user has already passed, and recommend a plan that should
     lead to the user getting the title in whatever major-minor-career they chose.
+
+    NOTE: This function modifies `passed`.
     """
     from time import monotonic as t
 

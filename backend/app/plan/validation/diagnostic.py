@@ -82,25 +82,19 @@ class OutdatedPlanErr(BaseModel):
     Afterwards, when they take different courses than they planned, their plan becomes
     outdated.
     The semesters that are mismatched are included in `associated_to`.
+    Each mismatched semester contains an associated entry in `replace_with` with the
+    courses that should replace this semester.
+    If `is_current` is true, then the only outdated semester is the current semester,
+    which may be a special case if the user is trying out changes to their current
+    semester.
     """
 
     is_err: Literal[True] = Field(default=True, const=True)
     kind: Literal["outdated"] = Field(default="outdated", const=True)
     associated_to: list[int]
 
-
-class OutdatedCurrentSemesterErr(BaseModel):
-    """
-    Indicates that the current semester in the plan does not reflect the courses that
-    the user is currently taken.
-    This could be because the user is experimenting with modifying their current
-    semester (ie. removing courses that they don't expect to pass).
-    This is the "smaller version" of `OutdatedPlanErr`.
-    """
-
-    is_err: Literal[True] = Field(default=True, const=True)
-    kind: Literal["outdatedcurrent"] = Field(default="outdatedcurrent", const=True)
-    associated_to: list[int]
+    replace_with: list[list[PseudoCourse]]
+    is_current: bool
 
 
 class SemestralityWarn(BaseModel):
@@ -225,7 +219,6 @@ Diagnostic = Annotated[
     | MismatchedCyearErr
     | MismatchedCurriculumSelectionWarn
     | OutdatedPlanErr
-    | OutdatedCurrentSemesterErr
     | SemestralityWarn
     | UnavailableCourseWarn
     | AmbiguousCourseErr

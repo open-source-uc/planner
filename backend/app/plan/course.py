@@ -52,3 +52,21 @@ def pseudocourse_with_credits(pseudocourse: PseudoCourse, credits: int) -> Pseud
             ),
         )
     return pseudocourse
+
+
+def pseudocourse_with_equivalence(
+    pseudocourse: PseudoCourse,
+    equiv: EquivalenceId | None,
+) -> PseudoCourse:
+    """
+    Create a copy of `pseudocourse` attached to the given equivalence.
+    Only creates a copy if the target equivalence is different from the current
+    equivalence.
+    """
+    if isinstance(pseudocourse, ConcreteId) and pseudocourse.equivalence != equiv:
+        return ConcreteId(
+            code=pseudocourse.code,
+            equivalence=equiv,
+            failed=pseudocourse.failed,
+        )
+    return pseudocourse

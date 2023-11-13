@@ -1,4 +1,4 @@
-import { type RecolorDiag, type CurriculumErr, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult, type ClassId } from '../../../client'
+import { type RecolorDiag, type CurriculumErr, type MismatchedCyearErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult, type ClassId } from '../../../client'
 import { type AuthState, useAuth } from '../../../contexts/auth.context'
 import { type PseudoCourseId } from './Types'
 import { validateCyear } from './planBoardFunctions'
@@ -39,12 +39,12 @@ const fixIncorrectCyear = (plan: ValidatablePlan, diag: MismatchedCyearErr): Val
   }
 }
 
-const fixOutdatedPlan = (plan: ValidatablePlan, diag: OutdatedPlanErr | OutdatedCurrentSemesterErr, auth: AuthState | null): ValidatablePlan => {
-  if (auth == null) return plan
+const fixOutdatedPlan = (plan: ValidatablePlan, diag: OutdatedPlanErr): ValidatablePlan => {
   // Update all outdated semesters
   const newClasses = [...plan.classes]
-  for (const semIdx of diag.associated_to) {
-    const passedSem = auth.student?.passed_courses?.[semIdx]
+  for (let i = 0; i < diag.associated_to.length; i++) {
+    const semIdx = diag.associated_to[i]
+    const passedSem = diag.replace_with[i]
     if (passedSem != null) {
       newClasses[semIdx] = passedSem
     }
@@ -107,8 +107,6 @@ interface AutoFixProps {
  * Get the quick fixed for some diagnostic, if any.
  */
 const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: AutoFixProps): JSX.Element => {
-  // FIXME: TODO: Los cursos añadidos a traves del autofix les faltan los CourseDetails.
-  // No me manejo bien con la implementación del frontend, lo dejo en mejores manos.
   const auth = useAuth()
   switch (diag.kind) {
     case 'curr': {
@@ -136,20 +134,17 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: Aut
       } else {
         return <></>
       }
-    case 'outdated':
-    case 'outdatedcurrent':
-      if (auth != null) {
-        return <button className="autofix" onClick={() => {
-          setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
-            if (plan == null) return null
-            const planArreglado = fixOutdatedPlan(plan, diag, auth)
-            void getCourseDetails(planArreglado.classes.flat())
-            return planArreglado
-          })
-        }}>Actualizar semestres {diag.associated_to.map(s => s + 1).join(', ')}</button>
-      } else {
-        return <></>
-      }
+    case 'outdated': {
+      const n = diag.associated_to.length
+      return <button className="autofix" onClick={() => {
+        setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+          if (plan == null) return null
+          const planArreglado = fixOutdatedPlan(plan, diag)
+          void getCourseDetails(planArreglado.classes.flat())
+          return planArreglado
+        })
+      }}>Actualizar semestre{n === 1 ? '' : 's'} {diag.associated_to.map(s => s + 1).join(', ')}</button>
+    }
     case 'recolor': {
       return (<button className="autofix" onClick={() => {
         setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
