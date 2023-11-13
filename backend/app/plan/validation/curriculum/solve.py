@@ -486,7 +486,7 @@ def _fill_usable(
         for code, fillers in curriculum.fillers.items()
     }
     for sem_i, sem in enumerate(plan):
-        for idx, c in enumerate(sorted(sem, key=lambda c: c.code)):
+        for idx, c in enumerate(sem):
             if courseinfo.try_any(c) is None:
                 continue
             _add_usable_course(
