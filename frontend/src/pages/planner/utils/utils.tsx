@@ -212,7 +212,7 @@ export const getValidationDigest = (classes: PseudoCourseId[][] | null, validati
     })
     // Fill course and semester information with their associated errors
     for (const diag of validationResult.diagnostics) {
-      if (diag.kind === 'outdated' || diag.kind === 'outdatedcurrent') {
+      if (diag.kind === 'outdated') {
         digest.isOutdated = true
       }
       if (diag.associated_to != null) {
