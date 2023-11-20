@@ -21,7 +21,7 @@ function Layout (): JSX.Element {
         rtl={false}
         theme="light"
       />
-      {/* <Banner /> */}
+      <Banner />
       <Outlet />
     </div>
     <hr/>
