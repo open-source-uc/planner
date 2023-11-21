@@ -337,7 +337,7 @@ def translate_major(
     raw_blocks: list[BloqueMalla],
 ):
     # Un identificador que identifique a los majors únicamente
-    spec_id = f"MAJOR-{spec.cyear}"
+    spec_id = "MAJOR"
 
     # Traducir la malla de SIDING en un curriculum nativo pero incompleto
     curr = translate_siding(courseinfo, out, spec_id, siding, raw_blocks)

@@ -52,7 +52,7 @@ class ListBuilder:
         siding_info: SidingInfo,
         siding: list[BloqueMalla],
     ) -> None:
-        self.id_prefix = f"{kind.layer_id.upper()}-{spec.cyear}"
+        self.id_prefix = kind.layer_id.upper()
         self.unique_prefix = f"{self.id_prefix}-{spec}"
         self.storage = storage
         self.added_lists = 0
@@ -155,6 +155,7 @@ class ListBuilder:
             # Use a synthetic code instead
             # The synthetic codes are built from a prefix unique to this curriculum
             # spec and a sequence number
+            # These will probably break in the future :(
             self.sequential_id += 1
             lcode = f"{self.unique_prefix}-{self.sequential_id}"
 
