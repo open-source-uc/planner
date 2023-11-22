@@ -72,6 +72,7 @@ from app.plan.course import (
     EquivalenceId,
     PseudoCourse,
     pseudocourse_with_credits,
+    pseudocourse_with_equivalence,
 )
 from app.plan.courseinfo import CourseInfo
 from app.plan.plan import ClassId
@@ -268,6 +269,14 @@ class SolvedCurriculum:
         block assignments in `self`.
         """
         return _find_recolors(self)
+
+    def execute_recolors(self, plan: list[list[PseudoCourse]]):
+        """
+        Reassign the equivalences of courses in `plan`, using the assignments in `self`.
+        Assumes that `self` was solved on `plan`.
+        Modifies `plan`.
+        """
+        return _reassign_blocks(self, plan)
 
     def dump_graphviz_pretty(self, curriculum: Curriculum) -> str:
         from app.plan.validation.curriculum.dump import GraphDumper
@@ -712,6 +721,8 @@ def solve_curriculum(
 
     Optionally accepts a plan boundary, that specifies the number of semesters that
     should be considered as passed and immutable.
+
+    This function does **not** modify `plan`.
     """
 
     # Take the curriculum blueprint, and produce a graph for this student
@@ -756,6 +767,29 @@ def solve_curriculum(
     _tag_superblocks(g)
 
     return g
+
+
+def _reassign_blocks(g: SolvedCurriculum, plan: list[list[PseudoCourse]]):
+    """
+    Reassign the equivalences of courses in `plan`, using the assignments in `g`.
+    """
+    recolors_by_id: dict[str, dict[int, EquivalenceId]] = {}
+    for id, new_equiv in g.find_recolors():
+        recolors_by_id.setdefault(id.code, {})[id.instance] = new_equiv
+
+    rep_counter: defaultdict[str, int] = defaultdict(lambda: 0)
+    for sem in plan:
+        for i, course in enumerate(sem):
+            instance_idx = rep_counter[course.code]
+            rep_counter[course.code] += 1
+
+            if (
+                isinstance(course, ConcreteId)
+                and course.code in recolors_by_id
+                and instance_idx in recolors_by_id[course.code]
+            ):
+                new_equiv = recolors_by_id[course.code][instance_idx]
+                sem[i] = pseudocourse_with_equivalence(course, new_equiv)
 
 
 def _find_recolors(g: SolvedCurriculum) -> list[tuple[ClassId, EquivalenceId]]:

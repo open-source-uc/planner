@@ -162,7 +162,7 @@ def build_opi_equiv(
     spec: CurriculumSpec,
 ) -> EquivDetails:
     # Generar un codigo unico para esta equivalencia
-    opi_code = f"TITLE-{spec.cyear}-OPI"
+    opi_code = "TITLE-OPI"
 
     # Reusar la equivalencia de OPIs si se puede
     if opi_code in out.lists:

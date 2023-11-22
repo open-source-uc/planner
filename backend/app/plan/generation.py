@@ -6,10 +6,10 @@ from app.plan.course import (
     ConcreteId,
     EquivalenceId,
     pseudocourse_with_credits,
-    pseudocourse_with_equivalence,
 )
 from app.plan.courseinfo import CourseDetails, CourseInfo, course_info
 from app.plan.plan import (
+    CURRENT_PLAN_VERSION,
     PseudoCourse,
     ValidatablePlan,
 )
@@ -446,26 +446,6 @@ def _try_add_course_group(
     return True
 
 
-def _reassign_blocks(g: SolvedCurriculum, plan: ValidatablePlan):
-    recolors_by_id: dict[str, dict[int, EquivalenceId]] = {}
-    for id, new_equiv in g.find_recolors():
-        recolors_by_id.setdefault(id.code, {})[id.instance] = new_equiv
-
-    rep_counter: defaultdict[str, int] = defaultdict(lambda: 0)
-    for sem in plan.classes:
-        for i, course in enumerate(sem):
-            instance_idx = rep_counter[course.code]
-            rep_counter[course.code] += 1
-
-            if (
-                isinstance(course, ConcreteId)
-                and course.code in recolors_by_id
-                and instance_idx in recolors_by_id[course.code]
-            ):
-                new_equiv = recolors_by_id[course.code][instance_idx]
-                sem[i] = pseudocourse_with_equivalence(course, new_equiv)
-
-
 async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
     """
     Generate an empty plan with optional user context.
@@ -499,7 +479,7 @@ async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
             title=student.info.reported_title,
         )
     return ValidatablePlan(
-        version="0.0.1",
+        version=CURRENT_PLAN_VERSION,
         classes=classes,
         level="Pregrado",
         school="Ingenieria",
@@ -622,7 +602,7 @@ async def generate_recommended_plan(
     print(f"  insert: {p(t3-t21)}")
 
     # Assign blocks to courses based on the current solution
-    _reassign_blocks(g, plan)
+    g.execute_recolors(plan.classes)
 
     # Order courses by their color (ie. superblock assignment)
     repetition_counter: defaultdict[str, int] = defaultdict(lambda: 0)
