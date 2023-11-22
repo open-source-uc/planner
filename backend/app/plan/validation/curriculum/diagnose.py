@@ -2,9 +2,9 @@ from collections import defaultdict
 
 from fastapi import HTTPException
 
-from app.plan.course import PseudoCourse
+from app.plan.course import EquivalenceId, PseudoCourse
 from app.plan.courseinfo import CourseInfo
-from app.plan.plan import ValidatablePlan
+from app.plan.plan import ClassId, ValidatablePlan
 from app.plan.validation.curriculum.solve import (
     SolvedCurriculum,
     solve_curriculum,
@@ -13,11 +13,64 @@ from app.plan.validation.curriculum.tree import Curriculum
 from app.plan.validation.diagnostic import (
     CurriculumErr,
     NoMajorMinorWarn,
-    RecolorDiag,
+    RecolorWarn,
     UnassignedWarn,
     ValidationResult,
 )
 from app.user.info import StudentContext
+
+
+def _check_missing_fillers(
+    out: ValidationResult,
+    g: SolvedCurriculum,
+    panacea_recolors: list[tuple[ClassId, EquivalenceId]] | None,
+) -> bool:
+    """
+    Check if `g` indicates that fillers should be added, and if so add a `CurriculumErr`
+    to `out`.
+    Note that `g` might be allowing or forbiding recolors, this function does not care.
+
+    `panacea_recolors` is an optional argument that is passed on directly to any
+    generated `CurriculumErr`.
+    It indicates that recoloring in this way will solve all curriculum colors.
+
+    Returns whether the curriculum is satisfied (ie. if there are no fillers missing).
+    """
+
+    satisfied = True
+
+    for usable in g.usable.values():
+        for inst in usable.instances:
+            if not inst.filler or not inst.flow:
+                continue
+
+            options: list[list[PseudoCourse]] = g.find_swapouts(inst)
+
+            # This filler is active, therefore something is missing
+            satisfied = False
+            out.add(
+                CurriculumErr(
+                    blocks=[
+                        [
+                            block.name
+                            for block in layer.active_edge.block_path
+                            if block.name is not None
+                        ]
+                        for layer in inst.layers.values()
+                        if layer.active_edge is not None
+                    ],
+                    credits=inst.flow,
+                    fill_options=[filler for option in options for filler in option],
+                    panacea_recolor_courses=[id for id, _ in panacea_recolors]
+                    if panacea_recolors
+                    else None,
+                    panacea_recolor_blocks=[equiv for _, equiv in panacea_recolors]
+                    if panacea_recolors
+                    else None,
+                ),
+            )
+
+    return satisfied
 
 
 def _diagnose_blocks(
@@ -25,10 +78,6 @@ def _diagnose_blocks(
     out: ValidationResult,
     g: SolvedCurriculum,
 ):
-    def fetch_name(filler: PseudoCourse):
-        info = courseinfo.try_any(filler)
-        return (filler, "?" if info is None else info.name)
-
     # Remember which courses were recolored
     # Note that courses are only recolored if doing so allows a better plan, so this
     # list contains no unnecessary recolors
@@ -42,58 +91,43 @@ def _diagnose_blocks(
     #   courses.
     # - If courses *are* missing anyway, Planner will assume that all courses can be
     #   recolored arbitrarily.
-    satisfied_with_recoloring = True
-    for usable in g.usable.values():
-        for inst in usable.instances:
-            if not inst.filler or not inst.flow:
-                continue
+    satisfied_with_recoloring = _check_missing_fillers(out, g, None)
 
-            options: list[list[PseudoCourse]] = g.find_swapouts(inst)
+    if satisfied_with_recoloring:
+        # There are enough courses to satisfy the curriculum, but they might not be
+        # the correct colors
+        # Now, forbid recoloring and retry
+        if g.forbid_recolor():
+            # Reassigning equivalences can save us some courses
 
-            # This filler is active, therefore something is missing
-            satisfied_with_recoloring = False
-            out.add(
-                CurriculumErr(
-                    blocks=[
-                        [
-                            block.name
-                            for block in layer.active_edge.block_path
-                            if block.name is not None
-                        ]
-                        for layer in inst.layers.values()
-                        if layer.active_edge is not None
-                    ],
-                    credits=inst.flow,
-                    fill_options=[
-                        fetch_name(filler) for option in options for filler in option
-                    ],
-                ),
-            )
-
-    # Now, forbid recoloring and retry
-    if g.forbid_recolor():
-        # Reassigning equivalences can save us some courses
-
-        # Check is the curriculum went unsatisfied from the recolor ban
-        satisfied_without_recoloring = True
-        for usable in g.usable.values():
-            for inst in usable.instances:
-                if inst.filler and inst.flow:
-                    satisfied_without_recoloring = False
-
-        # If the curriculum was satisfied when recoloring, but is now unsatisfied now
-        # that no recoloring is allowed, block assignments (ie. colors) are a hard error
-        hard_error = satisfied_with_recoloring and not satisfied_without_recoloring
-
-        # Reassigning the equivalences can save us some courses or even fix the
-        # curriculum requirements
-        out.add(
-            RecolorDiag(
-                is_err=hard_error,
-                associated_to=[id for id, _equiv in recolors],
-                recolor_as=[equiv for _id, equiv in recolors],
-            ),
-        )
+            # The user might prefer to keep these colors and add more courses (ie. if
+            # they are in the middle of changing their curriculum), but they might also
+            # want to just change the colors and solve the problem.
+            # Give them both options
+            satisfied_without_recoloring = _check_missing_fillers(out, g, recolors)
+            if satisfied_without_recoloring:
+                # All is OK, but remember that `forbid_recolor` returned true!
+                # Therefore, we could save some courses by recoloring
+                # Let the user know that
+                out.add(
+                    RecolorWarn(
+                        associated_to=[id for id, _equiv in recolors],
+                        recolor_as=[equiv for _id, equiv in recolors],
+                    ),
+                )
+            else:
+                # The curriculum is satisfied with recoloring, but not without it
+                # An error was emitted inside of `_check_missing_fillers`, so there's
+                # nothing to do here
+                pass
+        else:
+            # All is OK!
+            pass
+    else:
+        # There are not even enough courses to satisfy the curriculum _with
+        # recoloring_.
+        # Let the user solve that issue first, then worry about the right colors.
+        pass
 
 
 def diagnose_curriculum(

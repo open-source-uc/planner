@@ -35,7 +35,7 @@ export type { NoMajorMinorWarn } from './models/NoMajorMinorWarn';
 export type { Or } from './models/Or';
 export type { OutdatedPlanErr } from './models/OutdatedPlanErr';
 export type { PlanView } from './models/PlanView';
-export type { RecolorDiag } from './models/RecolorDiag';
+export type { RecolorWarn } from './models/RecolorWarn';
 export type { ReqCareer } from './models/ReqCareer';
 export type { ReqCourse } from './models/ReqCourse';
 export type { ReqLevel } from './models/ReqLevel';

@@ -1,6 +1,6 @@
-import { type RecolorDiag, type CurriculumErr, type MismatchedCyearErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult, type ClassId } from '../../../client'
+import { type CurriculumErr, type MismatchedCyearErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult, type ClassId, type EquivalenceId } from '../../../client'
 import { type AuthState, useAuth } from '../../../contexts/auth.context'
-import { type PseudoCourseId } from './Types'
+import { type PseudoCourseDetail, type PseudoCourseId } from './Types'
 import { validateCyear } from './planBoardFunctions'
 import { CourseName } from '../ErrorTray'
 import { locateClassInPlan } from './utils'
@@ -52,11 +52,11 @@ const fixOutdatedPlan = (plan: ValidatablePlan, diag: OutdatedPlanErr): Validata
   return { ...plan, classes: newClasses }
 }
 
-const reassignPlanCourses = (plan: ValidatablePlan, diag: RecolorDiag): ValidatablePlan => {
+const reassignPlanCourses = (plan: ValidatablePlan, courses: ClassId[], recolors: EquivalenceId[]): ValidatablePlan => {
   // Apply equivalence reassignments in `diag` to `plan`
   const reassigned = { ...plan, classes: plan.classes.map(sem => [...sem]) }
-  diag.associated_to.forEach((classId, idx) => {
-    const newEquiv = diag.recolor_as[idx]
+  courses.forEach((classId, idx) => {
+    const newEquiv = recolors[idx]
     // Find where is the course
     const coursePos = locateClassInPlan(plan.classes, classId)
     if (coursePos != null) {
@@ -98,6 +98,7 @@ const moveCourseByCode = (plan: ValidatablePlan, classId: ClassId, toSem: number
 
 interface AutoFixProps {
   diag: Diagnostic
+  courseDetails: Record<string, PseudoCourseDetail>
   setValidatablePlan: Function
   getCourseDetails: Function
   reqCourses: any
@@ -106,21 +107,42 @@ interface AutoFixProps {
 /**
  * Get the quick fixed for some diagnostic, if any.
  */
-const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: AutoFixProps): JSX.Element => {
+const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses, courseDetails }: AutoFixProps): JSX.Element => {
   const auth = useAuth()
   switch (diag.kind) {
     case 'curr': {
-      const buttons = diag.fill_options.map(([fillWith, fillWithName], i) => (
-        <button key={i} className="autofix" onClick={() => {
-          setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
-            if (plan == null) return null
-            const planArreglado = fixMissingCurriculumCourse(plan, diag, fillWith, auth)
-            void getCourseDetails(planArreglado.classes.flat())
-            return planArreglado
-          })
-        }}>
-          Agregar {fillWithName}
-        </button>))
+      const buttons = []
+      const recolorCourses = diag.panacea_recolor_courses
+      const recolorBlocks = diag.panacea_recolor_blocks
+      if (recolorCourses != null && recolorBlocks != null) {
+        buttons.push(
+          <button key="recolor" className="autofix" onClick={() => {
+            setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+              if (plan == null) return null
+              const planArreglado = reassignPlanCourses(plan, recolorCourses, recolorBlocks)
+              void getCourseDetails(planArreglado.classes.flat())
+              return planArreglado
+            })
+          }}>
+            Reasignar cursos
+          </button>
+        )
+      }
+      diag.fill_options.forEach((fillWith, i) => {
+        const button = (
+          <button key={i} className="autofix" onClick={() => {
+            setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+              if (plan == null) return null
+              const planArreglado = fixMissingCurriculumCourse(plan, diag, fillWith, auth)
+              void getCourseDetails(planArreglado.classes.flat())
+              return planArreglado
+            })
+          }}>
+            Agregar {courseDetails[fillWith.code]?.name ?? '?'}
+          </button>
+        )
+        buttons.push(button)
+      })
       return <>{buttons}</>
     }
     case 'cyear':
@@ -149,7 +171,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: Aut
       return (<button className="autofix" onClick={() => {
         setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
           if (plan == null) return null
-          const planArreglado = reassignPlanCourses(plan, diag)
+          const planArreglado = reassignPlanCourses(plan, diag.associated_to, diag.recolor_as)
           void getCourseDetails(planArreglado.classes.flat())
           return planArreglado
         })

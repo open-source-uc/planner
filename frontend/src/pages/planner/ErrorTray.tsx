@@ -123,7 +123,12 @@ export const ValidationMessage: React.FC<FormatMessageProps> = ({ diag, reqCours
     }
     case 'curr': {
       const n = diag.blocks.length
-      return <span>Faltan {diag.credits} créditos {n === 1 ? 'para el bloque' : 'entre los bloques'} {diag.blocks.map(path => path.join(' -> ')).join(', ')}.</span>
+      const blocks = diag.blocks.map(path => path.join(' -> ')).join(', ')
+      if (diag.panacea_recolor_courses != null) {
+        return <span>Necesitas reasignar {diag.credits} créditos {n === 1 ? 'para el bloque' : 'para los bloques'} {blocks}. También puedes agregar redundantemente los créditos que faltan.</span>
+      } else {
+        return <span>Faltan {diag.credits} créditos {n === 1 ? 'para el bloque' : 'para los bloques'} {blocks}.</span>
+      }
     }
     case 'currdecl':
       return <span>El curriculum elegido ({formatCurriculum(diag.plan)}) es distinto al que tienes declarado oficialmente ({formatCurriculum(diag.user)}).</span>
@@ -154,11 +159,7 @@ export const ValidationMessage: React.FC<FormatMessageProps> = ({ diag, reqCours
       }
     case 'recolor': {
       const n = diag.associated_to.length
-      if (diag.is_err) {
-        return <span>Debes reasignar {n} curso{n === 1 ? '' : 's'} para satisfacer tu currículum.</span>
-      } else {
-        return <span>Puedes reasignar {n} curso{n === 1 ? '' : 's'} para ahorrarte créditos.</span>
-      }
+      return <span>Puedes reasignar {n} curso{n === 1 ? '' : 's'} para ahorrarte créditos.</span>
     }
     case 'req':
       return <span>Faltan requisitos para el curso <CourseName course={diag.associated_to[0]} />: <FormattedRequirement expr={diag.modernized_missing} reqCourses={reqCourses}/></span>
@@ -189,6 +190,7 @@ export const ValidationMessage: React.FC<FormatMessageProps> = ({ diag, reqCours
 
 interface MessageProps {
   setValidatablePlan: any
+  courseDetails: Record<string, PseudoCourseDetail>
   getCourseDetails: Function
   diag: Diagnostic
   key: number
@@ -199,7 +201,7 @@ interface MessageProps {
 /**
  * A single error/warning message.
  */
-const Message = ({ setValidatablePlan, getCourseDetails, reqCourses, diag, key, open }: MessageProps): JSX.Element => {
+const Message = ({ setValidatablePlan, getCourseDetails, reqCourses, diag, key, open, courseDetails }: MessageProps): JSX.Element => {
   const w = !(diag.is_err ?? true)
 
   return (
@@ -211,7 +213,7 @@ const Message = ({ setValidatablePlan, getCourseDetails, reqCourses, diag, key, 
         <span className={'font-semibold '}>{`${w ? 'Advertencia' : 'Error'}: `}</span>
         <ValidationMessage diag={diag} reqCourses={reqCourses}/>
       </div>
-      <AutoFix setValidatablePlan={setValidatablePlan} getCourseDetails={getCourseDetails} reqCourses={reqCourses} diag={diag}/>
+      <AutoFix setValidatablePlan={setValidatablePlan} courseDetails={courseDetails} getCourseDetails={getCourseDetails} reqCourses={reqCourses} diag={diag}/>
     </div>
   </div>
   )
@@ -241,7 +243,7 @@ const ErrorTray = ({ setValidatablePlan, diagnostics, validating, courseDetails,
         reqCourses[code] = courseDetails[code] ?? code
       }
     }
-    return Message({ setValidatablePlan, diag, key: index, open: open || hasError, getCourseDetails, reqCourses })
+    return Message({ setValidatablePlan, diag, key: index, open: open || hasError, getCourseDetails, reqCourses, courseDetails })
   })
 
   // Determine when we get 0 messages to launch the confetti

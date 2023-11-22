@@ -150,7 +150,7 @@ class SemesterCreditsDiag(BaseModel):
     actual: int
 
 
-class RecolorDiag(BaseModel):
+class RecolorWarn(BaseModel):
     """
     Indicates that reassigning the equivalences that are attached to the courses could
     save some unnecessary classes.
@@ -160,7 +160,7 @@ class RecolorDiag(BaseModel):
     equivalence should be assigned to which course, respectively.
     """
 
-    is_err: bool
+    is_err: Literal[False] = Field(default=False, const=True)
     kind: Literal["recolor"] = Field(default="recolor", const=True)
     associated_to: list[ClassId]
 
@@ -184,7 +184,9 @@ class CurriculumErr(BaseModel):
 
     blocks: list[list[str]]
     credits: int
-    fill_options: list[tuple[PseudoCourse, str]]
+    fill_options: list[PseudoCourse]
+    panacea_recolor_courses: list[ClassId] | None
+    panacea_recolor_blocks: list[EquivalenceId] | None
 
 
 class UnassignedWarn(BaseModel):
@@ -223,7 +225,7 @@ Diagnostic = Annotated[
     | UnavailableCourseWarn
     | AmbiguousCourseErr
     | SemesterCreditsDiag
-    | RecolorDiag
+    | RecolorWarn
     | CurriculumErr
     | UnassignedWarn
     | NoMajorMinorWarn,
