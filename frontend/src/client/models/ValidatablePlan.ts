@@ -16,7 +16,7 @@ import type { EquivalenceId } from './EquivalenceId';
  * allowing guests to simulate any plans they want to try out.
  */
 export type ValidatablePlan = {
-    version: '0.0.1';
+    version: '0.0.2';
     classes: Array<Array<(ConcreteId | EquivalenceId)>>;
     level?: string;
     school?: string;
