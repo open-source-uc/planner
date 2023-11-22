@@ -228,7 +228,7 @@ export const getValidationDigest = (classes: PseudoCourseId[][] | null, validati
             // This error is associated to a course
             const coursePos = planDigest.idToIndex[assoc.code]?.[assoc.instance] ?? null
             if (coursePos != null) {
-              const courseDigest = digest.semesters[coursePos.semester]?.courses?.[coursePos.semester]
+              const courseDigest = digest.semesters[coursePos.semester]?.courses?.[coursePos.index]
               if (courseDigest != null) {
                 const diagIndices = diag.is_err ?? true ? courseDigest.errors : courseDigest.warnings
                 diagIndices.push(diag)
