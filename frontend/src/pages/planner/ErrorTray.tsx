@@ -169,7 +169,7 @@ export const ValidationMessage: React.FC<FormatMessageProps> = ({ diag, reqCours
     }
     case 'unavail': {
       const s = diag.associated_to.length !== 1
-      return <span>{s ? 'Los' : 'El'} curso{s ? 's' : ''} {listCourses(diag.associated_to)} no se ha{s ? 'n' : ''} dictado en mucho tiempo y posiblemente no se siga{s ? 'n' : ''} dictando.</span>
+      return <span>No hay registros que alguna vez se haya{s ? 'n' : ''} dictado {s ? 'los' : 'el'} curso{s ? 's' : ''} {listCourses(diag.associated_to)}: es posible que no se siga{s ? 'n' : ''} dictando.</span>
     }
     case 'unknown': {
       const s = diag.associated_to.length !== 1 ? 's' : ''
