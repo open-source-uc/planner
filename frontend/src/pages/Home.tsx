@@ -19,7 +19,8 @@ const Home = (): JSX.Element => {
   const [disclaimerIsOpen, setDisclaimerIsOpen] = useState(true)
 
   const loggedIn = authState?.user != null
-
+  const isMod = authState?.isMod === true
+  const isAdmin = authState?.isAdmin === true
   return (
     <div className="bg-gradient-to-b from-blue-500 h-full">
       <AlertModal
@@ -77,13 +78,22 @@ const Home = (): JSX.Element => {
           </Link>
               )
             : (loggedIn
-                ? (
-              <Link to="/user">
-                <button className="rounded-lg py-2 px-4 bg-blue-800 text-white">
-                  Mis mallas
-                </button>
-              </Link>
-                  )
+                ? <>{isMod && <Link to="/mod/users">
+                    <button className="rounded-lg py-2 px-4 bg-blue-800 text-white">
+                      Buscar Mallas de estudiantes
+                    </button>
+                  </Link>}
+                  {isAdmin && <Link to="/admin/mods">
+                    <button className="rounded-lg py-2 px-4 bg-blue-800 text-white">
+                      Gestionar Moderadores
+                    </button>
+                  </Link>}
+                  {!isMod && !isAdmin && <Link to="/user">
+                      <button className="rounded-lg py-2 px-4 bg-blue-800 text-white">
+                        Mis mallas
+                      </button>
+                    </Link>
+                  }</>
                 : (<>
               <a href="/api/user/login">
                 <button className="rounded-lg py-2 px-4 bg-blue-800 text-white">

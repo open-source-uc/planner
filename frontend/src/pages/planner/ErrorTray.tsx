@@ -4,7 +4,7 @@ import { type PseudoCourseDetail, isCourseRequirementErr, type RequirementExpr, 
 import { Spinner } from '../../components/Spinner'
 import AutoFix from './utils/AutoFix'
 import { collectRequirements, getCourseName, getCourseNameWithCode } from './utils/utils'
-import { validateCyear } from './utils/planBoardFunctions'
+import { validateCyear } from './utils/PlanBoardFunctions'
 import { useConfetti } from '../../contexts/confetti.context'
 
 /**

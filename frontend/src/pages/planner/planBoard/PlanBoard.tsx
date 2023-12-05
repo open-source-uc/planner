@@ -8,6 +8,7 @@ import { getClassId, getValidationDigest } from '../utils/utils'
 
 interface PlanBoardProps {
   classesGrid: PseudoCourseId[][]
+  authState: any
   validationResult: ValidationResult | null
   classesDetails: Record<string, PseudoCourseDetail>
   moveCourse: Function
@@ -24,7 +25,7 @@ const hStrength = createHorizontalStrength(300)
  * Displays several semesters, as well as several classes per semester.
  */
 
-const PlanBoard = ({ classesGrid = [], validationResult, classesDetails, moveCourse, openModal, addCourse, remCourse }: PlanBoardProps): JSX.Element => {
+const PlanBoard = ({ classesGrid = [], authState, validationResult, classesDetails, moveCourse, openModal, addCourse, remCourse }: PlanBoardProps): JSX.Element => {
   const [active, setActive] = useState<{ semester: number, index: number } | null>(null)
   const boardRef = useRef(null)
   useDndScrolling(boardRef, { horizontalStrength: hStrength, verticalStrength: vStrength })
@@ -43,6 +44,7 @@ const PlanBoard = ({ classesGrid = [], validationResult, classesDetails, moveCou
               coursesId={classes.map((_, index) => getClassId(classesGrid, { semester, index }))}
               validation={validationDigest?.semesters?.[semester]}
               classesDetails={classesDetails}
+              authState={authState}
               isDragging={active !== null}
               activeIndex={(active !== null && active.semester === semester) ? active.index : null}
               setActive={setActive}
@@ -57,6 +59,7 @@ const PlanBoard = ({ classesGrid = [], validationResult, classesDetails, moveCou
             remCourse={remCourse}
             openModal={openModal}
             classesDetails={classesDetails}
+            authState={authState}
             coursesId={[]}
             validation={undefined}
             isDragging={active !== null}

@@ -2,33 +2,26 @@ import { Spinner } from '../../components/Spinner'
 import ErrorTray from './ErrorTray'
 import PlanBoard from './planBoard/PlanBoard'
 import ControlTopBar from './ControlTopBar'
-import CourseSelectorDialog from './CourseSelectorDialog'
-import LegendModal from './LegendModal'
-import SavePlanModal from './SavePlanModal'
+import CourseSelectorDialog from './dialogs/CourseSelectorDialog'
+import LegendModal from './dialogs/LegendModal'
+import SavePlanModal from './dialogs/SavePlanModal'
 import CurriculumSelector from './CurriculumSelector'
 import AlertModal from '../../components/AlertModal'
-import { useParams } from '@tanstack/react-router'
+import { Navigate, useParams } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { type CourseDetails, type Major, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise, type ClassId, type CurriculumSpec } from '../../client'
-import { type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, isApiError, isCancelError, isCourseRequirementErr, type Cyear, type PossibleBlocksList } from './utils/Types'
-import { validateCourseMovement, updateClassesState } from './utils/planBoardFunctions'
+import { type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, isCourseRequirementErr, type Cyear, type PossibleBlocksList } from './utils/Types'
+import { validateCourseMovement, updateClassesState } from './utils/PlanBoardFunctions'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import DebugGraph from '../../components/DebugGraph'
 import deepEqual from 'fast-deep-equal'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { collectRequirements, locateClassInPlan } from './utils/utils'
+import { collectRequirements, handleErrors, PlannerStatus, locateClassInPlan } from './utils/utils'
+import { updateCurriculum, isMinorValid, isMajorValid, loadCurriculumsData } from './utils/CurriculumUtils'
 import ReceivePaste from './utils/ReceivePaste'
-
-enum PlannerStatus {
-  LOADING = 'LOADING',
-  CHANGING_CURRICULUM = 'CHANGING_CURRICULUM',
-  VALIDATING = 'VALIDATING',
-  SAVING = 'SAVING',
-  ERROR = 'ERROR',
-  READY = 'READY',
-}
+import ModBanner from './ModBanner'
 
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
@@ -55,43 +48,8 @@ const Planner = (): JSX.Element => {
   const courseDetails = useRef<Record<string, PseudoCourseDetail>>({})
 
   const [, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
-
+  const impersonateRut = useParams()?.userRut
   const authState = useAuth()
-
-  const handleErrors = useCallback((err: unknown): void => {
-    if (isApiError(err)) {
-      console.error(err)
-      switch (err.status) {
-        case 401:
-          console.log('token invalid or expired, loading re-login page')
-          toast.error('Tu session a expirado. Redireccionando a pagina de inicio de sesion...', {
-            toastId: 'ERROR401'
-          })
-          break
-        case 403:
-          toast.warn('No tienes permisos para realizar esa accion')
-          break
-        case 404:
-          setError('El planner al que estas intentando acceder no existe o no es de tu propiedad')
-          break
-        case 429:
-          toast.error('Se alcanzó el límite de actividad, espera y vuelve a intentarlo')
-          return
-        case 500:
-          setError(err.message)
-          break
-        default:
-          console.log(err.status)
-          setError('Error desconocido')
-          break
-      }
-      setPlannerStatus(PlannerStatus.ERROR)
-    } else if (!isCancelError(err)) {
-      setError('Error desconocido')
-      console.error(err)
-      setPlannerStatus(PlannerStatus.ERROR)
-    }
-  }, [])
 
   const addCourseDetails = useCallback((details: PseudoCourseDetail[]) => {
     for (const detail of details) {
@@ -126,9 +84,9 @@ const Planner = (): JSX.Element => {
       }
       addCourseDetails(newDetails)
     } catch (err) {
-      handleErrors(err)
+      handleErrors(err, setPlannerStatus, setError)
     }
-  }, [handleErrors, addCourseDetails])
+  }, [addCourseDetails])
 
   const validate = useCallback(async (validatablePlan: ValidatablePlan): Promise<void> => {
     try {
@@ -150,7 +108,11 @@ const Planner = (): JSX.Element => {
         setPlannerStatus(PlannerStatus.READY)
         return
       }
-      const promise = authState?.user == null ? DefaultService.validateGuestPlan(validatablePlan) : DefaultService.validatePlanForUser(validatablePlan)
+      const promise = authState?.user == null
+        ? DefaultService.validateGuestPlan(validatablePlan)
+        : (authState?.isMod === true && impersonateRut != null)
+            ? DefaultService.validatePlanForAnyUser(impersonateRut, validatablePlan)
+            : DefaultService.validatePlanForUser(validatablePlan)
       setValidationPromise(prev => {
         if (prev != null) {
           prev.cancel()
@@ -193,9 +155,9 @@ const Planner = (): JSX.Element => {
       setPlannerStatus(PlannerStatus.READY)
       previousClasses.current = validatablePlan.classes
     } catch (err) {
-      handleErrors(err)
+      handleErrors(err, setPlannerStatus, setError)
     }
-  }, [authState?.user, getCourseDetails, handleErrors])
+  }, [authState?.isMod, impersonateRut, authState?.user, getCourseDetails])
 
   const savePlan = useCallback(async (planName: string): Promise<void> => {
     if (validatablePlan == null) {
@@ -208,9 +170,8 @@ const Planner = (): JSX.Element => {
         await DefaultService.updatePlan(planID, validatablePlan)
         toast.success('Plan actualizado exitosamente.')
       } catch (err) {
-        handleErrors(err)
+        handleErrors(err, setPlannerStatus, setError)
       }
-      setPlannerStatus(PlannerStatus.READY)
     } else {
       if (planName == null || planName === '') return
       setPlannerStatus(PlannerStatus.VALIDATING)
@@ -220,11 +181,12 @@ const Planner = (): JSX.Element => {
         setPlanName(res.name)
         toast.success('Plan guardado exitosamente')
       } catch (err) {
-        handleErrors(err)
+        handleErrors(err, setPlannerStatus, setError)
       }
     }
+    setIsSavePlanModalOpen(false)
     setPlannerStatus(PlannerStatus.READY)
-  }, [handleErrors, planID, validatablePlan])
+  }, [planID, validatablePlan])
 
   const openModalForExtraClass = useCallback((semIdx: number): void => {
     setModalData({
@@ -236,8 +198,6 @@ const Planner = (): JSX.Element => {
   }, []) // addCourse should not depend on `validatablePlan`, so that memoing does its work
 
   const remCourse = useCallback((course: ClassId): void => {
-    // its ok to use `setValidatablePlan`
-    // its not ok to use `validatablePlan` directly
     setValidatablePlan(prev => {
       if (prev === null) return null
       const remPos = locateClassInPlan(prev.classes, course)
@@ -272,61 +232,27 @@ const Planner = (): JSX.Element => {
       }
       return updateClassesState(prev, dragIndex, drop)
     })
-  }, []) // moveCourse should not depend on `validatablePlan`, so that memoing does its work
-
-  const loadCurriculumsData = useCallback(async (cYear: string, cMajor?: string): Promise<void> => {
-    function listToRecord<T> (list: Array<T & { code: string }>): Record<string, T> {
-      const dict: Record<string, T> = {}
-      for (const item of list) {
-        dict[item.code] = item
-      }
-      return dict
-    }
-
-    const { majors, minors, titles } = await (async () => {
-      // if (curriculumData != null && curriculumData.ofCyear === cYear) {
-      //  if (curriculumData.ofMajor === cMajor) {
-      //    return curriculumData
-      //  } else {
-      //    return {
-      //      majors: curriculumData.majors,
-      //      minors: listToRecord(await DefaultService.getMinors(cYear, cMajor)),
-      //      titles: curriculumData.titles
-      //    }
-      //  }
-      // } else {
-      const response = await DefaultService.getOffer(cYear, cMajor)
-      return {
-        majors: listToRecord(response.majors),
-        minors: listToRecord(response.minors),
-        titles: listToRecord(response.titles)
-      }
-      // }
-    })()
-
-    setCurriculumData({
-      majors,
-      minors,
-      titles,
-      ofMajor: cMajor,
-      ofCyear: cYear
-    })
   }, [])
 
   const initializePlan = useCallback(async (validatablePlan: ValidatablePlan) => {
     await Promise.all([
       getCourseDetails(validatablePlan.classes.flat(), validatablePlan.curriculum),
-      loadCurriculumsData(validatablePlan.curriculum.cyear, validatablePlan.curriculum.major),
+      loadCurriculumsData(validatablePlan.curriculum.cyear, setCurriculumData, validatablePlan.curriculum.major),
       validate(validatablePlan)
     ])
     setValidatablePlan(validatablePlan)
     console.log('data loaded')
-  }, [getCourseDetails, loadCurriculumsData, validate])
+  }, [getCourseDetails, validate])
 
   const getPlanById = useCallback(async (id: string): Promise<void> => {
     try {
       console.log('Getting Plan by Id...')
-      const response: PlanView = await DefaultService.readPlan(id)
+      let response: PlanView
+      if (authState?.isMod === true) {
+        response = await DefaultService.readAnyPlan(id)
+      } else {
+        response = await DefaultService.readPlan(id)
+      }
       previousClasses.current = response.validatable_plan.classes
       previousCurriculum.current = {
         major: response.validatable_plan.curriculum.major,
@@ -337,16 +263,18 @@ const Planner = (): JSX.Element => {
       setPlanName(response.name)
       await initializePlan(response.validatable_plan)
     } catch (err) {
-      handleErrors(err)
+      handleErrors(err, setPlannerStatus, setError)
     }
-  }, [handleErrors, initializePlan])
+  }, [authState?.isMod, initializePlan])
 
   const getDefaultPlan = useCallback(async (referenceValidatablePlan?: ValidatablePlan, truncateAt?: number): Promise<void> => {
     try {
       console.log('Getting Basic Plan...')
       let baseValidatablePlan
       if (referenceValidatablePlan === undefined || referenceValidatablePlan === null) {
-        baseValidatablePlan = authState?.user == null ? await DefaultService.emptyGuestPlan() : await DefaultService.emptyPlanForUser()
+        baseValidatablePlan = authState?.user == null
+          ? await DefaultService.emptyGuestPlan()
+          : (authState?.isMod === true && impersonateRut != null) ? await DefaultService.emptyPlanForAnyUser(impersonateRut) : await DefaultService.emptyPlanForUser()
       } else {
         baseValidatablePlan = { ...referenceValidatablePlan, classes: [...referenceValidatablePlan.classes] }
         truncateAt = truncateAt ?? (authState?.student?.next_semester ?? 0)
@@ -369,9 +297,9 @@ const Planner = (): JSX.Element => {
       }
       await initializePlan(response)
     } catch (err) {
-      handleErrors(err)
+      handleErrors(err, setPlannerStatus, setError)
     }
-  }, [authState?.student?.next_semester, authState?.user, handleErrors, initializePlan])
+  }, [authState?.student?.next_semester, impersonateRut, authState?.isMod, authState?.user, initializePlan])
 
   const fetchData = useCallback(async (): Promise<void> => {
     try {
@@ -467,15 +395,7 @@ const Planner = (): JSX.Element => {
                 }
               )
             } else {
-              // To-DO: handle when credis exced necesary
-              // General logic: if there are not other courses with the same code then it dosnt matters
-              // If there are other course with the same code, and exact same credits that this card exceed, delete the other
-
-              // On other way, one should decresed credits of other course with the same code
-              // Problem In this part: if i exceed by 5 and have a course of 4 and 10, what do i do
-              // option 1: delete the course with 4 and decresed the one of 10 by 1
-              // option 2: decresed the one of 10 to 5
-
+              // handle when credis exced necesary
               // Partial solution: just consume anything we find
               const semester = newValidatablePlan.classes[modalData.semester]
               let extra = selection.credits - oldEquivalence.credits
@@ -516,7 +436,7 @@ const Planner = (): JSX.Element => {
     } else {
       setIsModalOpen(false)
     }
-  }, [setValidatablePlan, setIsModalOpen, modalData, addCourseDetails])
+  }, [addCourseDetails, modalData])
 
   const openLegendModal = useCallback((): void => {
     setIsLegendModalOpen(true)
@@ -559,37 +479,8 @@ const Planner = (): JSX.Element => {
     })
   }, [setValidatablePlan, authState])
 
-  // this sensitivity list shouldn't contain frequently-changing attributes
-  const selectMajor = useCallback((majorCode: string | undefined, isMinorValid: boolean): void => {
-    setValidatablePlan((prev) => {
-      if (prev == null || prev.curriculum.major === majorCode) return prev
-      const newCurriculum = { ...prev.curriculum, major: majorCode }
-      if (!isMinorValid) {
-        newCurriculum.minor = undefined
-      }
-      return { ...prev, curriculum: newCurriculum }
-    })
-  }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
-
-  const selectMinor = useCallback((minorCode: string | undefined): void => {
-    setValidatablePlan((prev) => {
-      if (prev == null || prev.curriculum.minor === minorCode) return prev
-      const newCurriculum = { ...prev.curriculum, minor: minorCode }
-      return { ...prev, curriculum: newCurriculum }
-    })
-  }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
-
-  const selectTitle = useCallback((titleCode: string | undefined): void => {
-    setValidatablePlan((prev) => {
-      if (prev == null || prev.curriculum.title === titleCode) return prev
-      const newCurriculum = { ...prev.curriculum, title: titleCode }
-      return { ...prev, curriculum: newCurriculum }
-    })
-  }, [setValidatablePlan]) // this sensitivity list shouldn't contain frequently-changing attributes
-
   const checkMinorForNewMajor = useCallback(async (major: Major): Promise<void> => {
-    const newMinors = await DefaultService.getMinors(major.cyear, major.code)
-    const isValidMinor = validatablePlan?.curriculum.minor === null || validatablePlan?.curriculum.minor === undefined || newMinors.some(m => m.code === validatablePlan?.curriculum.minor)
+    const isValidMinor = await isMinorValid(major.cyear, major.code, validatablePlan?.curriculum.minor)
     if (!isValidMinor) {
       setPopUpAlert({
         title: 'Minor incompatible',
@@ -599,14 +490,34 @@ const Planner = (): JSX.Element => {
         isOpen: true
       })
     } else {
-      selectMajor(major.code, true)
+      setValidatablePlan(prev => {
+        return updateCurriculum(prev, 'major', major.code, true)
+      })
     }
-  }, [validatablePlan?.curriculum, setPopUpAlert, selectMajor]) // this sensitivity list shouldn't contain frequently-changing attributes
+  }, [validatablePlan?.curriculum, setPopUpAlert]) // this sensitivity list shouldn't contain frequently-changing attributes
+
+  const handlePopUpAlert = useCallback(async (isCanceled: boolean): Promise<void> => {
+    setPopUpAlert(prev => {
+      if (!isCanceled) {
+        if ('major' in prev) {
+          setValidatablePlan(prevPlan => {
+            return updateCurriculum(prevPlan, 'major', prev.major, false)
+          })
+        }
+        if ('year' in prev && prev.year !== undefined) {
+          if (prev.deleteMajor) {
+            selectYear(prev.year, false, false)
+          } else {
+            selectYear(prev.year, true, false)
+          }
+        }
+      }
+      return { ...prev, isOpen: false }
+    })
+  }, [selectYear])
 
   const checkMajorAndMinorForNewYear = useCallback(async (cyear: Cyear): Promise<void> => {
-    const newMajors = await DefaultService.getMajors(cyear)
-    const isValidMajor = validatablePlan?.curriculum.major === null || validatablePlan?.curriculum.major === undefined || newMajors.some(m => m.code === validatablePlan?.curriculum.major)
-
+    const isValidMajor = await isMajorValid(cyear, validatablePlan?.curriculum.major)
     if (!isValidMajor) {
       setPopUpAlert({
         title: 'Major incompatible',
@@ -616,11 +527,8 @@ const Planner = (): JSX.Element => {
         isOpen: true
       })
     } else {
-      let isValidMinor = true
-      if (validatablePlan?.curriculum.major !== null && validatablePlan?.curriculum.major !== undefined) {
-        const newMinors = await DefaultService.getMinors(cyear, validatablePlan.curriculum.major)
-        isValidMinor = validatablePlan?.curriculum.minor === null || validatablePlan?.curriculum.minor === undefined || newMinors.some(m => m.code === validatablePlan?.curriculum.minor)
-      } if (!isValidMinor) {
+      const isValidMinor = await isMinorValid(cyear, validatablePlan?.curriculum.major, validatablePlan?.curriculum.minor)
+      if (!isValidMinor) {
         setPopUpAlert({
           title: 'Minor incompatible',
           desc: 'Advertencia: La selección del nuevo año no es compatible con el minor actual. Continuar con esta selección requerirá eliminar el minor actual. ¿Desea continuar y eliminar su minor?',
@@ -634,21 +542,17 @@ const Planner = (): JSX.Element => {
     }
   }, [validatablePlan?.curriculum, setPopUpAlert, selectYear])
 
-  const handlePopUpAlert = useCallback(async (isCanceled: boolean): Promise<void> => {
-    setPopUpAlert(prev => {
-      if (!isCanceled) {
-        if ('major' in prev) selectMajor(prev.major, false)
-        if ('year' in prev && prev.year !== undefined) {
-          if (prev.deleteMajor) {
-            selectYear(prev.year, false, false)
-          } else {
-            selectYear(prev.year, true, false)
-          }
-        }
-      }
-      return { ...prev, isOpen: false }
+  const selectMinor = useCallback((minorCode: string | undefined): void => {
+    setValidatablePlan(prev => {
+      return updateCurriculum(prev, 'minor', minorCode, true)
     })
-  }, [setPopUpAlert, selectMajor, selectYear])
+  }, []) // this sensitivity list shouldn't contain frequently-changing attributes
+
+  const selectTitle = useCallback((titleCode: string | undefined): void => {
+    setValidatablePlan(prev => {
+      return updateCurriculum(prev, 'title', titleCode, true)
+    })
+  }, [])
 
   useEffect(() => {
     setPlannerStatus(PlannerStatus.LOADING)
@@ -678,70 +582,80 @@ const Planner = (): JSX.Element => {
           return PlannerStatus.VALIDATING
         })
         validate(validatablePlan).catch(err => {
-          handleErrors(err)
+          handleErrors(err, setPlannerStatus, setError)
         })
       }
     }
-  }, [handleErrors, validatablePlan, validate, loadNewPLan])
+  }, [validatablePlan, validate, loadNewPLan])
 
+  if (impersonateRut !== authState?.student?.rut && impersonateRut !== undefined && authState?.isMod === true) {
+    return <Navigate to="/mod/users"/>
+  }
   return (
-    <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
-      <DebugGraph validatablePlan={validatablePlan} />
-      <ReceivePaste validatablePlan={validatablePlan} getDefaultPlan={getDefaultPlan} />
-      <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
-      <LegendModal open={isLegendModalOpen} onClose={closeLegendModal}/>
-      <SavePlanModal isOpen={isSavePlanModalOpen} onClose={closeSavePlanModal} savePlan={savePlan}/>
-      <AlertModal title={popUpAlert.title} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}>{popUpAlert.desc}</AlertModal>
-      {(plannerStatus === PlannerStatus.LOADING || plannerStatus === PlannerStatus.CHANGING_CURRICULUM) &&
-        <div className="absolute w-screen h-full z-50 bg-white flex flex-col justify-center items-center">
-          <Spinner message='Cargando planificación...' />
-        </div>
+    <>
+      {authState?.isMod === true &&
+        <ModBanner/>
       }
+      <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
+        <DebugGraph validatablePlan={validatablePlan} />
+        <ReceivePaste validatablePlan={validatablePlan} getDefaultPlan={getDefaultPlan} />
+        <CourseSelectorDialog equivalence={modalData?.equivalence} open={isModalOpen} onClose={closeModal}/>
+        <LegendModal open={isLegendModalOpen} onClose={closeLegendModal}/>
+        <SavePlanModal isOpen={isSavePlanModalOpen} onClose={closeSavePlanModal} savePlan={savePlan}/>
+        <AlertModal title={popUpAlert.title} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}>{popUpAlert.desc}</AlertModal>
+        {(plannerStatus === PlannerStatus.LOADING || plannerStatus === PlannerStatus.CHANGING_CURRICULUM) &&
+          <div className="absolute w-screen h-full z-50 bg-white flex flex-col justify-center items-center">
+            <Spinner message='Cargando planificación...' />
+          </div>
+        }
 
-      {plannerStatus === 'ERROR'
-        ? (<div className={'w-full h-full flex flex-col justify-center items-center'}>
-            <p className={'text-2xl font-semibold mb-4'}>Error al cargar plan</p>
-            <p className={'text-sm font-normal'}>{error}</p>
-            <a href="https://github.com/open-source-uc/planner/issues?q=is%3Aopen+is%3Aissue+label%3Abug" className={'text-blue-700 underline text-sm'} rel="noreferrer" target="_blank">Reportar error</a>
-          </div>)
-        : <div className={'flex w-full p-3 pb-0'}>
-            <div className={'flex flex-col overflow-auto flex-grow'}>
-              <CurriculumSelector
-                planName={planName}
-                curriculumData={curriculumData}
-                curriculumSpec={validatablePlan?.curriculum ?? { cyear: null, major: null, minor: null, title: null }}
-                selectMajor={checkMinorForNewMajor}
-                selectMinor={selectMinor}
-                selectTitle={selectTitle}
-                selectYear={checkMajorAndMinorForNewYear}
-              />
-              <ControlTopBar
-                reset={reset}
-                openSavePlanModal={openSavePlanModal}
-                openLegendModal={openLegendModal}
-              />
-              <DndProvider backend={HTML5Backend}>
-                <PlanBoard
-                  classesGrid={validatablePlan?.classes ?? []}
-                  validationResult={validationResult}
-                  classesDetails={courseDetails.current}
-                  moveCourse={moveCourse}
-                  openModal={openModal}
-                  addCourse={openModalForExtraClass}
-                  remCourse={remCourse}
+        {plannerStatus === 'ERROR'
+          ? (<div className={'w-full h-full flex flex-col justify-center items-center'}>
+              <p className={'text-2xl font-semibold mb-4'}>Error al cargar plan</p>
+              <p className={'text-sm font-normal'}>{error}</p>
+              <a href="https://github.com/open-source-uc/planner/issues?q=is%3Aopen+is%3Aissue+label%3Abug" className={'text-blue-700 underline text-sm'} rel="noreferrer" target="_blank">Reportar error</a>
+            </div>)
+          : <div className={'flex w-full p-3 pb-0'}>
+              <div className={'flex flex-col overflow-auto flex-grow'}>
+                <CurriculumSelector
+                  planName={planName}
+                  curriculumData={curriculumData}
+                  curriculumSpec={validatablePlan?.curriculum ?? { cyear: null, major: null, minor: null, title: null }}
+                  selectMajor={checkMinorForNewMajor}
+                  selectMinor={selectMinor}
+                  selectTitle={selectTitle}
+                  selectYear={checkMajorAndMinorForNewYear}
                 />
-              </DndProvider>
-            </div>
-          <ErrorTray
-            setValidatablePlan={setValidatablePlan}
-            getCourseDetails={getCourseDetails}
-            diagnostics={validationResult?.diagnostics ?? []}
-            validating={plannerStatus === 'VALIDATING'}
-            courseDetails={courseDetails.current}
-          />
-        </div>
-      }
-    </div>
+                <ControlTopBar
+                  reset={reset}
+                  openSavePlanModal={openSavePlanModal}
+                  openLegendModal={openLegendModal}
+                  isMod={authState?.isMod === true}
+                />
+                <DndProvider backend={HTML5Backend}>
+                  <PlanBoard
+                    classesGrid={validatablePlan?.classes ?? []}
+                    validationResult={validationResult}
+                    classesDetails={courseDetails.current}
+                    moveCourse={moveCourse}
+                    openModal={openModal}
+                    authState={authState}
+                    addCourse={openModalForExtraClass}
+                    remCourse={remCourse}
+                    />
+                </DndProvider>
+              </div>
+            <ErrorTray
+              setValidatablePlan={setValidatablePlan}
+              getCourseDetails={getCourseDetails}
+              diagnostics={validationResult?.diagnostics ?? []}
+              validating={plannerStatus === 'VALIDATING'}
+              courseDetails={courseDetails.current}
+            />
+          </div>
+        }
+      </div>
+    </>
   )
 }
 

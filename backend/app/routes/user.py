@@ -8,7 +8,7 @@ from app.user.auth import (
     require_mod_auth,
 )
 from app.user.info import StudentContext
-from app.user.key import AdminKey, ModKey, UserKey
+from app.user.key import AdminKey, ModKey, Rut, UserKey
 
 router = APIRouter(prefix="/user")
 
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/user")
 async def authenticate(
     next: str | None = None,
     ticket: str | None = None,
-    impersonate_rut: str | None = None,
+    impersonate_rut: Rut | None = None,
 ):
     """
     Redirect the browser to this page to initiate authentication.
@@ -60,3 +60,16 @@ async def get_student_info(user: UserKey = Depends(require_authentication)):
     This forwards a request to the SIDING service.
     """
     return await sync.get_student_data(user)
+
+
+@router.get("/info_for_any_user", response_model=StudentContext)
+async def get_student_info_for_any_user(
+    user_rut: Rut,
+    mod: ModKey = Depends(require_mod_auth),
+):
+    """
+    Same functionality as `get_student_info`, but works for any user identified by
+    their RUT with `user_rut`.
+    Moderator access is required.
+    """
+    return await sync.get_student_data(mod.as_any_user(user_rut))

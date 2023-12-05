@@ -1,9 +1,10 @@
-import { useState, useEffect, Fragment, memo, useRef, useCallback } from 'react'
-import { Dialog, Transition, Switch } from '@headlessui/react'
-import { DefaultService, type EquivDetails, type CourseOverview, type CourseDetails, type CancelablePromise } from '../../client'
-import { Spinner } from '../../components/Spinner'
-import { Info } from '../../components/Info'
-import { type PseudoCourseDetail, isCancelError } from './utils/Types'
+import { useState, useEffect, memo, useRef, useCallback } from 'react'
+import { Dialog, Switch } from '@headlessui/react'
+import { DefaultService, type EquivDetails, type CourseOverview, type CourseDetails, type CancelablePromise } from '../../../client'
+import { Spinner } from '../../../components/Spinner'
+import { Info } from '../../../components/Info'
+import { type PseudoCourseDetail, isCancelError } from '../utils/Types'
+import GeneralModal from '../../../components/GeneralModal'
 
 // TODO: fetch school list from backend
 // Existen escuelas en buscacursos que no tienen cursos: 'Acad Inter de Filosofía'
@@ -25,6 +26,7 @@ interface Filter {
 
 const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: EquivDetails, open: boolean, onClose: Function }): JSX.Element => {
   const acceptButton = useRef<HTMLButtonElement>(null)
+  const creditsInputRef = useRef<HTMLSelectElement>(null)
   const [loadedCourses, setLoadedCourses] = useState<Record<string, CourseOverview>>({})
   const [filteredCodes, setFilteredCodes] = useState<string[]>([])
   const [loadingCoursesData, setLoadingCoursesData] = useState(false)
@@ -36,6 +38,8 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     available: true,
     on_semester: 0
   }))
+  const [nameForm, setNameForm] = useState<string>('')
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [, setPromiseInstance] = useState<CancelablePromise<any> | null>(null)
 
@@ -48,6 +52,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       available: true,
       on_semester: 0
     })
+    setNameForm('')
     setPromiseInstance(prev => {
       if (prev != null) {
         prev.cancel()
@@ -101,7 +106,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     school: '',
     available: true,
     on_semester: 0
-  }, loadedCourses?: CourseOverview): Promise<void> => {
+  }, loadedCourses?: Record<string, CourseOverview>): Promise<void> => {
     setLoadingCoursesData(true)
     const crd = filterProp.credits === '' ? undefined : parseInt(filterProp.credits)
     const onlyAvaible = filterProp.available ? filterProp.available : undefined
@@ -176,17 +181,6 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     }
   }
 
-  const handleKeyDownFilter: React.EventHandler<React.KeyboardEvent<HTMLInputElement>> = e => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      try {
-        void handleSearch(equivalence, filter)
-      } catch (err) {
-        console.log(err)
-      }
-    }
-  }
-
   const handleKeyDownSelection: React.KeyboardEventHandler<HTMLInputElement> = e => {
     if (e.key === 'Enter') {
       e.preventDefault()
@@ -201,6 +195,20 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
     }
   }
 
+  const handleKeyDownSwitch: React.KeyboardEventHandler<HTMLButtonElement> = e => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      setFilter(prev => { return { ...filter, available: !prev.available } })
+    }
+  }
+
+  const handleKeyDownName: React.KeyboardEventHandler<HTMLInputElement> = e => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      creditsInputRef.current?.focus()
+    }
+  }
+
   useEffect(() => {
     const showCoursesCount = Object.keys(loadedCourses).filter(key => filteredCodes.includes(key)).length
     if (showCoursesCount < coursesBatchSize && filteredCodes.length > 0) {
@@ -209,36 +217,29 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
   }, [filteredCodes, loadedCourses])
 
   useEffect(() => {
-    if (open && equivalence !== undefined) {
-      void handleSearch(equivalence)
+    if (open) {
+      void handleSearch(equivalence, filter)
     }
-  }, [open, handleSearch, equivalence])
+  }, [open, handleSearch, equivalence, filter])
+
+  useEffect(() => {
+    // The text input should not update the filter inmediately, but after the user stops typing
+    if (open && nameForm !== filter.name) {
+      if (debounceTimerRef?.current !== null) {
+        clearTimeout(debounceTimerRef.current)
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        setFilter({ ...filter, name: nameForm })
+      }, 500)
+    }
+  }, [open, nameForm, filter])
 
   return (
-    <Transition.Root show={open} as={Fragment}>
-    <Dialog as="div" className="modal relative" onClose={() => { setSelectedCourse(undefined); close(); onClose() }}>
-      <Transition.Child
-        as={Fragment}
-        enter="ease-out duration-200"
-        enterFrom="opacity-0"
-        enterTo="opacity-100"
-        leave="ease-in duration-100"
-        leaveFrom="opacity-100"
-        leaveTo="opacity-0"
-      >
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
-      </Transition.Child>
-      <div className="fixed inset-0 overflow-y-auto">
-        <div className="flex items-center min-h-screen justify-center p-4 text-center">
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-200"
-            enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            enterTo="opacity-100 translate-y-0 sm:scale-100"
-            leave="ease-in duration-100"
-            leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-            leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-          >
+    <GeneralModal
+      isOpen={open}
+      onClose={close}
+      initialFocus={acceptButton}
+    >
           <Dialog.Panel className="w-11/12 px-5 py-6 bg-slate-100 border-slate-300 overflow-hidden max-w-4xl transform  rounded-2xl border-2 text-left align-middle shadow-xl transition-all">
             <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900  mb-3">
               {equivalence !== undefined ? equivalence.name : 'Curso Extra'}
@@ -250,14 +251,8 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                   checked={filter.available}
                   onChange={(e: boolean) => {
                     setFilter({ ...filter, available: e })
-                    void handleSearch(equivalence, {
-                      name: '',
-                      credits: '',
-                      school: '',
-                      available: e,
-                      on_semester: 0
-                    })
                   }}
+                  onKeyDown={handleKeyDownSwitch}
                   id="availableFilter"
                   className={`${
                     filter.available ? 'darkBlue' : 'bg-gray-200'
@@ -277,11 +272,11 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
               <div className="grid border-2 p-4 py-3 rounded bg-slate-100 border-slate-500 border-solid gap-2 grid-cols-12">
                 <div className="col-span-9 flex">
                   <label className="mr-3 my-auto" htmlFor="nameFilter">Nombre o Sigla: </label>
-                  <input className="grow rounded py-1" type="text" id="nameFilter" value={filter.name} onChange={e => { setFilter({ ...filter, name: e.target.value }) }} onKeyDown={handleKeyDownFilter}/>
+                  <input className="grow rounded py-1" type="text" id="nameFilter" value={nameForm} onChange={e => { setNameForm(e.target.value) }} onKeyDown={handleKeyDownName}/>
                 </div>
                 <div className="col-span-3 flex">
                   <label className="mr-3 my-auto" htmlFor="creditsFilter">Creditos: </label>
-                  <select className="grow rounded py-1" id="creditsFilter" value={filter.credits} onChange={e => { setFilter({ ...filter, credits: e.target.value }) }}>
+                  <select className="grow rounded py-1" id="creditsFilter" value={filter.credits} ref={creditsInputRef} onChange={e => { setFilter({ ...filter, credits: e.target.value }) }}>
                     <option value={''}>-</option>
                     <option value={'5'}>5</option>
                     <option value={'10'}>10</option>
@@ -292,7 +287,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
 
                 <div className="col-span-8 flex">
                   <label className="mr-3 my-auto" htmlFor="schoolFilter">Escuela: </label>
-                  <select className="grow rounded py-1" id="schoolFilter" value={filter.school} onChange={e => { setFilter({ ...filter, school: e.target.value }) }} >
+                  <select className="grow rounded py-1" id="schoolFilter" value={filter.school} onChange={e => { setFilter({ ...filter, school: e.target.value }) }}>
                     <option value=''>-- Todas --</option>
                     {schoolOptions.map(school => <option key={school} value={school}>{school}</option>)}
                   </select>
@@ -316,6 +311,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                     className={`${
                       filter.available ? 'darkBlue' : 'bg-gray-200'
                     } mr-2 relative inline-flex h-6 w-11 items-center rounded-full`}
+                    onKeyDown={handleKeyDownSwitch}
                   >
                     <span className="sr-only">Ocultar cursos no disponibles</span>
                     <span
@@ -326,32 +322,14 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                   </Switch>
                   <Info message="Un curso no disponible es aquel que no se ha dictado recientemente, generalmente porque ya no se ofrece o porque es nuevo y aún no se ha impartido."/>
                 </div>
-                <div className='flex justify-end col-span-4 col-end-13'>
+                <div className='flex justify-end col-span-3 col-end-13'>
                   <button
-                    className="btn mr-2"
+                    className="btn"
                     onClick={() => {
                       resetFilters()
-                      if (equivalence !== undefined) {
-                        void handleSearch(
-                          equivalence,
-                          {
-                            name: '',
-                            credits: '',
-                            school: '',
-                            available: true,
-                            on_semester: 0
-                          })
-                      }
                     }}>
                       Limpiar Filtros
                   </button>
-                  <button className="btn" onClick={() => {
-                    try {
-                      void handleSearch(equivalence, filter)
-                    } catch (err) {
-                      console.log(err)
-                    }
-                  }}>Buscar</button>
                 </div>
               </div>
                 }
@@ -436,11 +414,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                 </div>
               </div>
             </Dialog.Panel>
-          </Transition.Child>
-        </div>
-      </div>
-    </Dialog>
-    </Transition.Root>
+          </GeneralModal>
   )
 }
 

@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from app.plan.plan import ValidatablePlan
 from app.plan.storable import StorablePlan, migrate_plan
-from app.user.key import ModKey, UserKey
+from app.user.key import ModKey, Rut, UserKey
 
 MAX_PLANS_PER_USER = 50
 
@@ -33,7 +33,7 @@ class PlanView(BaseModel):
     updated_at: datetime
     name: str
     is_favorite: bool
-    user_rut: str
+    user_rut: Rut
     validatable_plan: ValidatablePlan
 
     @staticmethod
@@ -44,7 +44,7 @@ class PlanView(BaseModel):
             updated_at=db.updated_at,
             name=db.name,
             is_favorite=db.is_favorite,
-            user_rut=db.user_rut,
+            user_rut=Rut(db.user_rut),
             validatable_plan=await migrate_plan(
                 pydantic.parse_raw_as(
                     StorablePlan,

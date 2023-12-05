@@ -31,6 +31,7 @@ from app.sync.siding.client import (
     StringArray,
 )
 from app.user.info import StudentInfo
+from app.user.key import Rut
 
 
 def _decode_curriculum_versions(input: StringArray | None) -> list[str]:
@@ -138,7 +139,7 @@ async def load_siding_offer_to_database():
                 )
 
 
-async def fetch_student_info(rut: str) -> StudentInfo:
+async def fetch_student_info(rut: Rut) -> StudentInfo:
     """
     MUST BE CALLED WITH AUTHORIZATION
 
@@ -170,7 +171,7 @@ async def fetch_student_info(rut: str) -> StudentInfo:
 
 
 async def fetch_student_previous_courses(
-    rut: str,
+    rut: Rut,
     info: StudentInfo,
 ) -> tuple[list[list[PseudoCourse]], bool]:
     """
