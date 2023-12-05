@@ -1,12 +1,12 @@
 
-import selectorEmpty from '../../assets/instructions/selector_empty.jpg'
-import selectorFull from '../../assets/instructions/selector_full.jpg'
-import selectorDropdown from '../../assets/instructions/selector_dropdown.jpg'
-import selectorIncompatibility from '../../assets/instructions/selector_incompatibility.jpg'
-import selectorDelete from '../../assets/instructions/selector_delete.jpg'
-import editIcon from '../../assets/editBlack.svg'
-import courseSelector from '../../assets/instructions/courseSelector.jpg'
-import courseSelectorNoFilter from '../../assets/instructions/courseSelector_nofilter.jpg'
+import selectorEmpty from '../../../assets/instructions/selector_empty.jpg'
+import selectorFull from '../../../assets/instructions/selector_full.jpg'
+import selectorDropdown from '../../../assets/instructions/selector_dropdown.jpg'
+import selectorIncompatibility from '../../../assets/instructions/selector_incompatibility.jpg'
+import selectorDelete from '../../../assets/instructions/selector_delete.jpg'
+import editIcon from '../../../assets/editBlack.svg'
+import courseSelector from '../../../assets/instructions/courseSelector.jpg'
+import courseSelectorNoFilter from '../../../assets/instructions/courseSelector_nofilter.jpg'
 
 const Text = ({ text }: { text: string }): JSX.Element => {
   return (

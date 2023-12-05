@@ -4,7 +4,7 @@ import { type PseudoCourseDetail, isCourseRequirementErr, isDiagWithAssociatedCo
 import { Spinner } from '../../components/Spinner'
 import AutoFix from './utils/AutoFix'
 import { collectRequirements, getCourseName, getCourseNameWithCode } from './utils/utils'
-import { validateCyear } from './utils/planBoardFunctions'
+import { validateCyear } from './utils/PlanBoardFunctions'
 import { useConfetti } from '../../contexts/confetti.context'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
