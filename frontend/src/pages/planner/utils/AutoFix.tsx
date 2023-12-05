@@ -1,7 +1,7 @@
 import { type CurriculumErr, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../../client'
 import { type AuthState, useAuth } from '../../../contexts/auth.context'
 import { type PseudoCourseId } from './Types'
-import { validateCyear } from './planBoardFunctions'
+import { validateCyear } from './PlanBoardFunctions'
 import { CourseName } from '../ErrorTray'
 
 type Diagnostic = ValidationResult['diagnostics'][number]

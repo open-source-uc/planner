@@ -70,7 +70,7 @@ const CurriculumList = (): JSX.Element => {
                     </Link>
                 </div>
 
-                { loading && <div className="mt-5"><Spinner message="Cargando planificacones..." /></div> }
+                { loading && <div className="mt-5"><Spinner message="Cargando planificaciones..." /></div> }
 
                 { !loading && plans.length === 0 && <div className="mx-auto my-auto"><p className="text-gray-500 text-center">Todavía no tienes ninguna malla. Puedes partir <Link to="/planner/new" className='underline'>creando una nueva.</Link></p></div>}
 

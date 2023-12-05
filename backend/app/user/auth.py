@@ -13,7 +13,7 @@ from prisma.models import AccessLevel as DbAccessLevel
 from pydantic import BaseModel
 
 from app.settings import settings
-from app.user.key import AdminKey, ModKey, UserKey
+from app.user.key import AdminKey, ModKey, Rut, UserKey
 
 cas_client_store: CASClientV3 | None = None
 
@@ -93,21 +93,17 @@ def _get_login_url(service_params: dict[str, str]) -> str:
     return f"{cas_login_url}?{cas_login_params}"
 
 
-def _normalize_rut(rut: str) -> str:
-    return rut.replace(".", "").strip().lstrip("0")
-
-
-async def _is_admin(rut: str):
+async def _is_admin(rut: Rut):
     """
     Checks if user with given RUT is an admin.
     """
     admin = settings.admin_rut.get_secret_value()
     if admin == "":
         return False
-    return rut == admin
+    return rut == Rut(admin)
 
 
-async def _is_mod(rut: str):
+async def _is_mod(rut: Rut):
     """
     Checks if user with given RUT is a mod.
     """
@@ -117,7 +113,7 @@ async def _is_mod(rut: str):
     return level.is_mod
 
 
-async def generate_token(rut: str, expire_delta: float | None = None):
+async def generate_token(rut: Rut, expire_delta: float | None = None):
     """
     Generate a signed token (one that is unforgeable) with the given rut and
     expiration time.
@@ -154,9 +150,11 @@ def decode_token(token: str) -> UserKey:
         raise HTTPException(status_code=401, detail="Invalid token") from None
     if not isinstance(payload["rut"], str):
         raise HTTPException(status_code=401, detail="Invalid token")
+    try:
+        rut = Rut(payload["rut"])
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail="Invalid token") from e
 
-    rut = payload["rut"]
-    rut = _normalize_rut(rut)
     return UserKey(rut)
 
 
@@ -208,7 +206,7 @@ async def require_admin_auth(
 async def login_cas(
     next: str | None = None,
     ticket: str | None = None,
-    impersonate_rut: str | None = None,
+    impersonate_rut: Rut | None = None,
 ):
     """
     Login endpoint.
@@ -266,13 +264,19 @@ async def login_cas(
             status_code=500,
             detail="RUT is missing from CAS attributes",
         )
-    rut = _normalize_rut(rut)
+    try:
+        rut = Rut(rut)
+    except ValueError:
+        return HTTPException(
+            status_code=500,
+            detail="Received invalid RUT from CAS",
+        )
 
     # Only allow impersonation if the user is a mod
     if impersonate_rut is not None:
-        if not _is_mod(rut):
+        if not await _is_mod(rut):
             raise HTTPException(status_code=403, detail="Insufficient privileges")
-        rut = _normalize_rut(impersonate_rut)
+        rut = impersonate_rut
 
     # CAS token was validated, generate JWT token
     token = await generate_token(rut)

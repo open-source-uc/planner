@@ -14,6 +14,7 @@ from zeep.transports import AsyncTransport
 
 from app.plan.validation.curriculum.tree import MajorCode, MinorCode, TitleCode
 from app.settings import settings
+from app.user.key import Rut
 
 
 class StringArrayInner(BaseModel):
@@ -431,7 +432,7 @@ async def get_predefined_list(list_code: str) -> list[Curso]:
     )
 
 
-async def get_student_info(rut: str) -> InfoEstudiante:
+async def get_student_info(rut: Rut) -> InfoEstudiante:
     """
     Get the information associated with the given student, by RUT.
     The RUT must be in the format "011222333-K", the same format used by CAS.
@@ -442,7 +443,7 @@ async def get_student_info(rut: str) -> InfoEstudiante:
     )
 
 
-async def get_student_done_courses(rut: str) -> list[CursoHecho]:
+async def get_student_done_courses(rut: Rut) -> list[CursoHecho]:
     """
     Get the information associated with the given student, by RUT.
     The RUT must be in the format "011222333-K", the same format used by CAS.
