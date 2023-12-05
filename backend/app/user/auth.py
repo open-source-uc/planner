@@ -231,7 +231,7 @@ async def login_cas(
     if ticket is None:
         # User wants to authenticate
         # Redirect to authentication page
-        params = {}
+        params: dict[str, str] = {}
         if impersonate_rut is not None:
             params["impersonate_rut"] = impersonate_rut
         cas_login_url = _get_login_url(params)
