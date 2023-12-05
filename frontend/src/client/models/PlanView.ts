@@ -16,6 +16,9 @@ export type PlanView = {
     updated_at: string;
     name: string;
     is_favorite: boolean;
+    /**
+     * A RUT, like 12345678-K. No dots, no leading zeroes, uppercase K.
+     */
     user_rut: string;
     validatable_plan: ValidatablePlan;
 };

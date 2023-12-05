@@ -51,9 +51,6 @@ class Settings(BaseSettings):
     root_path: str = "/api"
 
     # Admin RUT as string. This user will always be the only admin.
-    # TODO: Maybe use the username instead of the RUT, because RUTs can have zeros in
-    # front of them and this can be confusing.
-    # Alternatively, remove leading zeros before matching admin RUTs.
     admin_rut: SecretStr = Field("")
 
     # JWT secret hex string. If this secret is leaked, anyone can forge JWT tokens for

@@ -27,6 +27,7 @@ from app.user.auth import (
     require_authentication,
     require_mod_auth,
 )
+from app.user.key import Rut
 
 router = APIRouter(prefix="/plan")
 
@@ -46,7 +47,7 @@ async def empty_plan_for_user(user: UserKey = Depends(require_authentication)):
 
 @router.get("/empty_for_any", response_model=ValidatablePlan)
 async def empty_plan_for_any_user(
-    user_rut: str,
+    user_rut: Rut,
     mod: ModKey = Depends(require_mod_auth),
 ):
     """
@@ -94,7 +95,7 @@ async def validate_plan_for_user(
 @router.post("/validate_for_any", response_model=ValidationResult)
 async def validate_plan_for_any_user(
     plan: ValidatablePlan,
-    user_rut: str,
+    user_rut: Rut,
     mod: ModKey = Depends(require_mod_auth),
 ) -> ValidationResult:
     """
@@ -174,7 +175,7 @@ async def save_plan(
 async def save_any_plan(
     name: str,
     plan: ValidatablePlan,
-    user_rut: str,
+    user_rut: Rut,
     mod: ModKey = Depends(require_mod_auth),
 ) -> PlanView:
     """
@@ -202,7 +203,7 @@ async def read_plans(
 
 @router.get("/storage/any", response_model=list[LowDetailPlanView])
 async def read_any_plans(
-    user_rut: str,
+    user_rut: Rut,
     mod: ModKey = Depends(require_mod_auth),
 ) -> list[LowDetailPlanView]:
     """

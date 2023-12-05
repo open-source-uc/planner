@@ -1,4 +1,61 @@
+import re
+from collections.abc import Callable, Generator
 from dataclasses import dataclass
+from itertools import cycle
+from typing import Any, Self
+
+from pydantic.fields import ModelField
+
+
+class Rut(str):
+    """
+    A code for a major or a minor.
+    """
+
+    _pattern = re.compile(r"^(\d{1,16})-([0-9K])$")
+
+    def __new__(cls: type[Self], value: str) -> Self:
+        return super().__new__(cls, value)
+
+    @classmethod
+    def __get_validators__(
+        cls: type[Self],
+    ) -> Generator[Callable[..., Self], None, None]:
+        yield cls.validate
+
+    @classmethod
+    def validate(cls: type[Self], value: str, field: ModelField) -> Self:
+        if not isinstance(value, str):  # type: ignore
+            raise TypeError("string required")
+        value = value.replace(".", "").strip().lstrip("0").upper()
+        m = cls._pattern.fullmatch(value)
+        if m is None:
+            raise ValueError(f"Invalid RUT {value}")
+        return cls(value)
+
+    @classmethod
+    def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
+        field_schema.update(
+            description=(
+                "A RUT, like 12345678-K. No dots, no leading zeroes, uppercase K."
+            ),
+            pattern=cls._pattern.pattern,
+            examples=["12345678-5", "10000111-K"],
+        )
+
+    def validate_dv(self) -> bool:
+        """
+        Verifica que el RUT sea un RUT chileno válido segun su digito verificador.
+        """
+        m = Rut._pattern.fullmatch(self)
+        assert m is not None
+        stem, dv = m.groups()
+        revertido = map(int, reversed(stem))
+        factors = cycle(range(2, 8))
+        s = sum(d * f for d, f in zip(revertido, factors, strict=False))
+        res = (-s) % 11
+        dv_num = 10 if dv == "K" else int(dv)
+        return res == dv_num
 
 
 @dataclass
@@ -15,7 +72,7 @@ class UserKey:
     >> UserKey(rut='12345678-9')
     """
 
-    rut: str
+    rut: Rut
 
 
 class ModKey(UserKey):
@@ -32,7 +89,7 @@ class ModKey(UserKey):
     >> ModKey(rut='12345678-9')
     """
 
-    def as_any_user(self, user_rut: str) -> UserKey:
+    def as_any_user(self, user_rut: Rut) -> UserKey:
         """
         Moderators can access the resources of any user.
         """
