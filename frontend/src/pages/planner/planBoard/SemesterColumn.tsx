@@ -4,7 +4,7 @@ import { type PseudoCourseDetail, type PseudoCourseId } from '../utils/Types'
 import DraggableCard from './CourseCard'
 import deepEqual from 'fast-deep-equal'
 import { type ClassId } from '../../../client'
-import { type SemesterValidationDigest } from '../utils/utils'
+import { type SemesterValidationDigest } from '../utils/PlanBoardFunctions'
 
 interface SemesterColumnProps {
   classesDetails: Record<string, PseudoCourseDetail>

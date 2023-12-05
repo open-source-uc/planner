@@ -4,7 +4,7 @@ import { type PseudoCourseId, type PseudoCourseDetail } from '../utils/Types'
 import { useDndScrolling, createVerticalStrength, createHorizontalStrength } from 'react-dnd-scrolling'
 import 'react-toastify/dist/ReactToastify.css'
 import { type ValidationResult } from '../../../client'
-import { getClassId, getValidationDigest } from '../utils/utils'
+import { getClassId, getValidationDigest } from '../utils/PlanBoardFunctions'
 
 interface PlanBoardProps {
   classesGrid: PseudoCourseId[][]
