@@ -45,6 +45,7 @@ from app.sync.curriculums.storage import CurriculumStorage
 from app.sync.siding import translate as siding_translate
 from app.user.auth import UserKey
 from app.user.info import StudentContext
+from app.user.key import Rut
 
 if TYPE_CHECKING:
     from prisma.types import (
@@ -235,7 +236,7 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
 
 
 # TODO: Move this to redis
-_student_context_cache: OrderedDict[str, tuple[StudentContext, float]] = OrderedDict()
+_student_context_cache: OrderedDict[Rut, tuple[StudentContext, float]] = OrderedDict()
 
 
 async def get_student_data(user: UserKey) -> StudentContext:
