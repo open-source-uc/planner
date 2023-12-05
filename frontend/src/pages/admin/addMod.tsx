@@ -27,7 +27,7 @@ const AddModByRutModal = ({ isOpen, onClose, addMod }: { isOpen: boolean, onClos
       onClose()
     } catch (err) {
       if (isApiError(err)) {
-        if (err.status === 400) {
+        if (err.status === 400 || err.status === 422) {
           console.log(err.message)
           setIsRutInvalid(true)
         }
