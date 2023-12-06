@@ -1,14 +1,16 @@
-import { memo, useCallback, useRef, useState, Fragment } from 'react'
+import { memo, useCallback, useRef, useState, Fragment, type ReactNode } from 'react'
 import { useDrop, type DropTargetMonitor } from 'react-dnd'
 import { type PseudoCourseDetail, type PseudoCourseId } from '../utils/Types'
 import DraggableCard from './CourseCard'
 import deepEqual from 'fast-deep-equal'
 import { type ClassId } from '../../../client'
 import { type SemesterValidationDigest } from '../utils/PlanBoardFunctions'
+import { type AuthState } from '../../../contexts/auth.context'
+import ConditionalWrapper from '../utils/ConditionalWrapper'
 
 interface SemesterColumnProps {
   classesDetails: Record<string, PseudoCourseDetail>
-  authState: any
+  authState: AuthState | null
   semester: number
   addCourse: Function
   moveCourse: Function
@@ -27,6 +29,16 @@ const SemesterColumn = ({ coursesId, validation, classesDetails, authState, seme
   const semesterIsInProgress = ((authState?.student) != null) && (authState.student.current_semester === authState.student.next_semester - 1)
   const isPassed = ((authState?.student) != null) && (semester < authState.student.current_semester)
   const isCurrent = (semesterIsInProgress && (semester === authState?.student?.current_semester))
+  const totalCredits = classes.map(course => {
+    const details = classesDetails[course.code]
+    if ('credits' in course) {
+      return course.credits
+    } else if (details != null && 'credits' in details) {
+      return details.credits
+    } else {
+      return 0
+    }
+  }).reduce((sum, creds) => sum + creds, 0)
 
   const openSelector = useCallback((course: PseudoCourseId, semester: number, index: number) => {
     if ('equivalence' in course) openModal(course.equivalence, semester, index)
@@ -108,12 +120,20 @@ const SemesterColumn = ({ coursesId, validation, classesDetails, authState, seme
   return (
     <div className={'drop-shadow-xl w-[161px] shrink-0 bg-base-200 rounded-lg flex flex-col'}>
       <div className={`border-2 ${border} rounded-lg`}>
-      {isPassed
-        ? <><span className='line-through decoration-black/40'><h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2></span><div className="my-3 divider"></div></>
-        : isCurrent
-          ? <div className='flex flex-col text-center'><h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2><p className='text-xs'>En curso</p><div className="my-1 divider"></div></div>
-          : <><h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2><div className="my-3 divider"></div></>
-      }
+      <div className='flex flex-col text-center'>
+        <ConditionalWrapper condition={isPassed} wrapper={(children: ReactNode) => <span className='line-through decoration-black/40'>{children}</span>}>
+          <h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2>
+        </ConditionalWrapper>
+        {isCurrent
+          ? <>
+          <p className='text-xs'>En curso</p>
+          <div className="my-1 divider"></div>
+        </>
+          : <>
+          <p className="text-[0.6rem] opacity-75">{totalCredits} créd.</p>
+          <div className="my-1 divider"></div>
+        </>}
+      </div>
       <div ref={columnRef}>
         {classes.map((course: PseudoCourseId, index: number) => {
           const classId = coursesId[index]
