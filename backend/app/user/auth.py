@@ -113,6 +113,13 @@ async def _is_mod(rut: Rut):
     return level.is_mod
 
 
+async def allow_force_login(user: UserKey) -> bool:
+    """
+    Whether to allow a user to log in, even if they are not a valid engineering student.
+    """
+    return await _is_admin(user.rut) or await _is_mod(user.rut)
+
+
 async def generate_token(rut: Rut, expire_delta: float | None = None):
     """
     Generate a signed token (one that is unforgeable) with the given rut and
@@ -287,6 +294,7 @@ async def login_cas(
 
 class AccessLevelOverview(BaseModel):
     # attributes from db
+    name: str = ""
     user_rut: str
     is_mod: bool
     created_at: datetime
