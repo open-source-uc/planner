@@ -140,7 +140,7 @@ const SemesterColumn = ({ coursesId, validation, classesDetails, authState, seme
           const courseValidation = validation?.courses?.[index]
           const equivDetails = 'equivalence' in course && course.equivalence != null ? classesDetails[course.equivalence.code] : null
           const equivCourses = equivDetails != null && 'courses' in equivDetails ? equivDetails.courses : null
-          const showEquivalence = !isPassed && (course.is_concrete === false || (equivCourses?.length ?? 0) > 1)
+          const showEquivalence = !isPassed && !isCurrent && (course.is_concrete === false || (equivCourses?.length ?? 0) > 1)
           return (
             <Fragment key={index}>
               {(activeIndexHandler(index)) && <div key="placeholder" className="card mx-1 mb-3 bg-place-holder"/>}
