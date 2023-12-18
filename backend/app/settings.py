@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     # URL to the CAS verification server.
     # When a user arrives with a CAS token the backend verifies the token directly with
     # this server.
-    cas_server_url: AnyHttpUrl = Field("https://sso.uc.cl/cas")
+    cas_server_url: AnyHttpUrl = Field("https://sso.uc.cl/cas/")
 
     # URL to the CAS login server.
     # The client's browser is redirected to this URL when they want to log in.
@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     # authenticated JWT token.
     # In particular, the user browser is redirected to this `next` URL with the JWT
     # token as a query parameter.
-    planner_url: AnyHttpUrl = Field("https://mallastest.ing.uc.cl/")
+    planner_url: AnyHttpUrl = Field("https://mallas.ing.uc.cl")
 
     # This is the path used in case of prefix stripping (i.e. hosting in /api)
     # This is ignored in development mode for convenience
