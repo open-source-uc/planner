@@ -7,7 +7,7 @@ import svgr from 'vite-plugin-svgr'
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const backendUrl = env.BACKEND_API_URL || "http://api:8000"
+  const backendUrl = env.BACKEND_API_URL
   if (typeof backendUrl !== 'string') {
     throw new Error('BACKEND_API_URL environment variable not set during build')
   }
