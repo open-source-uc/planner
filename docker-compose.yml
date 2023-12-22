@@ -18,8 +18,8 @@ services:
     depends_on:
       - api
     env_file:
-      - ./frontend/.env
       - ./frontend/.env.default
+      - ./frontend/.env
     volumes:
       - caddy_data:/data
       - caddy_config:/config
@@ -40,8 +40,8 @@ services:
     volumes:
       - ./siding-mock-data:/siding-mock-data
     env_file:
-      - ./backend/.env
       - ./backend/.env.default
+      - ./backend/.env
 
   db:
     image: postgres:15
