@@ -2,7 +2,6 @@ const Logout = (): JSX.Element => {
   // Clear token from local storage
   localStorage.removeItem('access-token')
 
-  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
   const casURL: string = import.meta.env.VITE_CAS_SERVER_URL
   console.assert(casURL, 'VITE_CAS_SERVER_URL environment variable not set during build')
 
