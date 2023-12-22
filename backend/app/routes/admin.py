@@ -10,6 +10,7 @@ from app.user.auth import (
     AdminKey,
     require_admin_auth,
 )
+from app.user.key import Rut
 
 router = APIRouter(prefix="/admin")
 
@@ -49,7 +50,7 @@ async def view_mods(user: AdminKey = Depends(require_admin_auth)):
         named_mods.append(AccessLevelOverview(**dict(mod)))
         try:
             print(f"fetching user data for user {mod.user_rut} from SIDING...")
-            data = await siding_translate.fetch_student_info(mod.user_rut)
+            data = await siding_translate.fetch_student_info(Rut(mod.user_rut))
             named_mods[-1].name = data.full_name
         except ValueError as err:
             # TODO: Refactor ValueError to use a custom exception
@@ -62,10 +63,13 @@ async def view_mods(user: AdminKey = Depends(require_admin_auth)):
 
 
 @router.post("/mod")
-async def add_mod(rut: str, user: AdminKey = Depends(require_admin_auth)):
+async def add_mod(rut: Rut, user: AdminKey = Depends(require_admin_auth)):
     """
     Give mod access to a user with the specified RUT.
     """
+    if not rut.validate_dv():
+        raise HTTPException(status_code=400, detail="RUT chileno no válido")
+
     return await DbAccessLevel.prisma().upsert(
         where={
             "user_rut": rut,
@@ -83,7 +87,7 @@ async def add_mod(rut: str, user: AdminKey = Depends(require_admin_auth)):
 
 
 @router.delete("/mod")
-async def remove_mod(rut: str, user: AdminKey = Depends(require_admin_auth)):
+async def remove_mod(rut: Rut, user: AdminKey = Depends(require_admin_auth)):
     """
     Remove mod access from a user with the specified RUT.
     """

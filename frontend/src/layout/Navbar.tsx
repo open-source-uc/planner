@@ -7,6 +7,8 @@ function Navbar (): JSX.Element {
   const authState = useAuth()
   const router = useRouter()
   const loggedIn = authState?.user != null
+  const isMod = authState?.isMod === true
+  const isAdmin = authState?.isAdmin === true
   return (
     <nav className="bg-gray border-slate-200 px-2 sm:px-4 py-2.5 rounded border">
       <div className="container flex flex-wrap items-center justify-between mx-auto">
@@ -28,6 +30,7 @@ function Navbar (): JSX.Element {
                 Inicio
               </Link>
             </li>
+            {!isMod && !isAdmin &&
             <li>
               <Link
                 to="/planner/new"
@@ -40,13 +43,35 @@ function Navbar (): JSX.Element {
                 Planificar
               </Link>
             </li>
+            }
             {hideLogin
               ? null
               : loggedIn
                 ? (
               <>
                 <li>
-                  <Link
+                  {isMod && <Link
+                    to="/mod/users"
+                    className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${
+                      router.state.currentLocation.pathname === '/mod/users'
+                        ? 'text-white bg-blue-700 md:bg-transparent md:text-blue-700'
+                        : ''
+                    }`}
+                  >
+                    Buscar mallas
+                  </Link>
+                  }{isAdmin && <Link
+                    to="/admin/mods"
+                    className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${
+                      router.state.currentLocation.pathname === '/admin/mods'
+                        ? 'text-white bg-blue-700 md:bg-transparent md:text-blue-700'
+                        : ''
+                    }`}
+                  >
+                    Gestionar Moderadores
+                  </Link>
+                  }
+                  {!isMod && !isAdmin && <Link
                     to="/user"
                     className={`block py-2 pl-3 pr-40 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 ${
                       router.state.currentLocation.pathname === '/user'
@@ -55,7 +80,7 @@ function Navbar (): JSX.Element {
                     }`}
                   >
                     Mis mallas
-                  </Link>
+                  </Link>}
                 </li>
                 <li>
                   <Link

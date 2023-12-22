@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css'
 
 interface PlanBoardProps {
   classesGrid: PseudoCourseId[][]
+  authState: any
   planDigest: PlanDigest
   classesDetails: Record<string, PseudoCourseDetail>
   moveCourse: Function
@@ -23,7 +24,7 @@ const hStrength = createHorizontalStrength(300)
  * Displays several semesters, as well as several classes per semester.
  */
 
-const PlanBoard = ({ classesGrid = [], planDigest, classesDetails, moveCourse, openModal, addCourse, remCourse, validationDigest }: PlanBoardProps): JSX.Element => {
+const PlanBoard = ({ classesGrid = [], authState, planDigest, classesDetails, moveCourse, openModal, addCourse, remCourse, validationDigest }: PlanBoardProps): JSX.Element => {
   const [active, setActive] = useState<{ semester: number, index: number } | null>(null)
   const boardRef = useRef(null)
   useDndScrolling(boardRef, { horizontalStrength: hStrength, verticalStrength: vStrength })
@@ -40,6 +41,7 @@ const PlanBoard = ({ classesGrid = [], planDigest, classesDetails, moveCourse, o
               openModal={openModal}
               classes={classes}
               classesDetails={classesDetails}
+              authState={authState}
               validationCourses={validationDigest.courses[semester]}
               validationSemester={validationDigest.semesters[semester]}
               isDragging={active !== null}
@@ -56,6 +58,7 @@ const PlanBoard = ({ classesGrid = [], planDigest, classesDetails, moveCourse, o
             remCourse={remCourse}
             openModal={openModal}
             classesDetails={classesDetails}
+            authState={authState}
             validationSemester={null}
             isDragging={active !== null}
             activeIndex={(active !== null && active.semester === classesGrid.length + off) ? active.index : null}

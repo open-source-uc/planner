@@ -1,12 +1,12 @@
 import { memo, useCallback, useRef, useState, Fragment } from 'react'
 import { useDrop, type DropTargetMonitor } from 'react-dnd'
-import { useAuth } from '../../../contexts/auth.context'
 import { type CourseValidationDigest, type PseudoCourseDetail, type CourseId, type PseudoCourseId, type SemesterValidationDigest } from '../utils/Types'
 import DraggableCard from './CourseCard'
 import deepEqual from 'fast-deep-equal'
 
 interface SemesterColumnProps {
   classesDetails: Record<string, PseudoCourseDetail>
+  authState: any
   semester: number
   addCourse: Function
   coursesId?: Array<{ code: string, instance: number }>
@@ -20,9 +20,8 @@ interface SemesterColumnProps {
   activeIndex: number | null
   setActive: Function
 }
-const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, moveCourse, remCourse, openModal, classes = [], validationCourses = [], validationSemester, isDragging, activeIndex, setActive }: SemesterColumnProps): JSX.Element => {
+const SemesterColumn = ({ classesDetails, authState, semester, coursesId = [], addCourse, moveCourse, remCourse, openModal, classes = [], validationCourses = [], validationSemester, isDragging, activeIndex, setActive }: SemesterColumnProps): JSX.Element => {
   const [dragged, setDragged] = useState<number | null>(null)
-  const authState = useAuth()
   const columnRef = useRef<HTMLDivElement>(null)
   const conditionPassed = ((authState?.student) != null) && (semester < authState.student.current_semester)
   const checkInClass = ((authState?.student) != null) && (authState.student.current_semester === authState.student.next_semester - 1)
@@ -106,7 +105,8 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
   }, [coursesId, openSelector, classes, semester])
 
   return (
-    <div className={`drop-shadow-xl w-[161px] shrink-0 bg-base-200 rounded-lg flex flex-col border-2 ${border} `}>
+    <div className={'drop-shadow-xl w-[161px] shrink-0 bg-base-200 rounded-lg flex flex-col'}>
+      <div className={`border-2 ${border} rounded-lg`}>
       {conditionPassed
         ? <><span className='line-through decoration-black/40'><h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2></span><div className="my-3 divider"></div></>
         : checkCurrent
@@ -138,6 +138,7 @@ const SemesterColumn = ({ classesDetails, semester, coursesId = [], addCourse, m
             </Fragment>
           )
         })}
+      </div>
       </div>
       {(conditionPassed || checkCurrent)
         ? null
