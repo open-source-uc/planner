@@ -5,6 +5,7 @@ from pydantic import BaseModel, validator
 from app.plan.course import PseudoCourse
 from app.plan.validation.curriculum.tree import CurriculumSpec
 
+CURRENT_PLAN_VERSION = "0.0.2"
 MAX_SEMESTERS = 20
 MAX_CLASSES = 200
 
@@ -27,7 +28,7 @@ class ValidatablePlan(BaseModel):
 
     # The version of the plan.
     # We will probably use this if we move to a `StorablePlan`/`ValidatablePlan` divide.
-    version: Literal["0.0.1"]
+    version: Literal["0.0.2"]
     # Classes per semester.
     classes: list[list[PseudoCourse]]
     # Academic level of the student

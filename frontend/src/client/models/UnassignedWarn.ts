@@ -7,9 +7,9 @@
  * the curriculum.
  */
 export type UnassignedWarn = {
+    is_err?: boolean;
     kind?: 'useless';
     associated_to?: null;
-    is_err?: boolean;
     unassigned_credits: number;
 };
 

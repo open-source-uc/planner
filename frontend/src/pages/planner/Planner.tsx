@@ -9,9 +9,9 @@ import CurriculumSelector from './CurriculumSelector'
 import AlertModal from '../../components/AlertModal'
 import { useParams, Navigate, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer, Fragment } from 'react'
-import { type CourseDetails, type Major, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise } from '../../client'
-import { type CourseId, type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type PlanDigest, type ValidationDigest, type Cyear } from './utils/Types'
-import { validateCourseMovement, updateClassesState, getCoursePos } from './utils/PlanBoardFunctions'
+import { type CourseDetails, type Major, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise, type ClassId, type CurriculumSpec } from '../../client'
+import { type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type Cyear, type PossibleBlocksList } from './utils/Types'
+import { validateCourseMovement, updateClassesState, locateClassInPlan } from './utils/PlanBoardFunctions'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import DebugGraph from '../../components/DebugGraph'
@@ -24,10 +24,6 @@ import ReceivePaste from './utils/ReceivePaste'
 import Banner from '../../components/Banner'
 import useContextMenu from '../../utils/useContextMenu'
 import useDummyModal from '../../utils/useDummyModal'
-
-const reduceCourseDetails = (old: Record<string, PseudoCourseDetail>, add: Record<string, PseudoCourseDetail>): Record<string, PseudoCourseDetail> => {
-  return { ...old, ...add }
-}
 
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
@@ -44,133 +40,60 @@ const Planner = (): JSX.Element => {
   const [modalData, setModalData] = useState<ModalData>()
   const [, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
 
-  const [courseDetails, addCourseDetails] = useReducer(reduceCourseDetails, {})
-
   const { clicked } = useContextMenu()
 
   const { isModalOpen: isLegendModalOpen, openModal: openLegendModal, closeModal: closeLegendModal } = useDummyModal()
   const { isModalOpen: isSavePlanModalOpen, openModal: openSavePlanModal, closeModal: closeSavePlanModal } = useDummyModal()
+  const [, setPossibleBlocksList] = useState<PossibleBlocksList>({}) // TODO: Use the possibleBlocksList
 
   const previousCurriculum = useRef<{ major: string | undefined, minor: string | undefined, title: string | undefined, cyear?: Cyear }>({ major: '', minor: '', title: '' })
   const previousClasses = useRef<PseudoCourseId[][]>([[]])
 
   const planID = useParams()?.plannerId
+  // NOTE: Course rendering kind of depends on course details, but in practice courses should always have their course details available before their first render
+  const courseDetails = useRef<Record<string, PseudoCourseDetail>>({})
+
   const impersonateRut = useParams()?.userRut
 
   const authState = useAuth()
-
   const navigate = useNavigate()
 
-  const planDigest = useMemo((): PlanDigest => {
-    const digest: PlanDigest = {
-      idToIndex: {},
-      indexToId: []
+  const addCourseDetails = useCallback((details: PseudoCourseDetail[]) => {
+    for (const detail of details) {
+      courseDetails.current[detail.code] = detail
     }
-    if (validatablePlan != null) {
-      for (let i = 0; i < validatablePlan.classes.length; i++) {
-        const idx2id = []
-        for (let j = 0; j < validatablePlan.classes[i].length; j++) {
-          const c = validatablePlan.classes[i][j]
-          let reps = digest.idToIndex[c.code]
-          if (reps === undefined) {
-            reps = []
-            digest.idToIndex[c.code] = reps
-          }
-          idx2id.push({ code: c.code, instance: reps.length })
-          reps.push([i, j])
-        }
-        digest.indexToId.push(idx2id)
-      }
-    }
-    return digest
-  }, [validatablePlan])
+  }, [courseDetails])
 
-  // Calcular informacion util sobre la validacion cada vez que cambia
-  const validationDigest = useMemo((): ValidationDigest => {
-    const digest: ValidationDigest = {
-      courses: [],
-      semesters: [],
-      isOutdated: false
-    }
-    if (validatablePlan != null) {
-      // Initialize course information
-      digest.courses = validatablePlan.classes.map((semester, i) => {
-        return semester.map((course, j) => {
-          const { code, instance } = planDigest.indexToId[i][j]
-          const superblock = validationResult?.course_superblocks?.[code]?.[instance] ?? ''
-          return {
-            superblock,
-            errorIndices: [],
-            warningIndices: []
-          }
-        })
-      })
-      // Initialize semester information to an empty state
-      digest.semesters = validatablePlan.classes.map(() => {
-        return {
-          errorIndices: [],
-          warningIndices: []
-        }
-      })
-      if (validationResult != null) {
-        // Fill course and semester information with their associated errors
-        for (let k = 0; k < validationResult.diagnostics.length; k++) {
-          const diag = validationResult.diagnostics[k]
-          if (diag.kind === 'outdated' || diag.kind === 'outdatedcurrent') {
-            digest.isOutdated = true
-          }
-          if (diag.associated_to != null) {
-            for (const assoc of diag.associated_to) {
-              if (typeof assoc === 'number') {
-                // This error is associated to a semester
-                const semDigest = digest.semesters[assoc]
-                if (semDigest != null) {
-                  const diagIndices = diag.is_err ?? true ? semDigest.errorIndices : semDigest.warningIndices
-                  diagIndices.push(k)
-                }
-              } else {
-                // This error is associated to a course
-                const semAndIdx = planDigest.idToIndex[assoc.code]?.[assoc.instance] ?? null
-                if (semAndIdx != null) {
-                  const [sem, idx] = semAndIdx
-                  const courseDigest = digest.courses[sem][idx]
-                  const diagIndices = diag.is_err ?? true ? courseDigest.errorIndices : courseDigest.warningIndices
-                  diagIndices.push(k)
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    return digest
-  }, [validatablePlan, planDigest, validationResult])
-
-  const getCourseDetails = useCallback(async (courses: PseudoCourseId[]): Promise<void> => {
-    console.log('Getting Courses Details...')
+  const getCourseDetails = useCallback(async (courses: PseudoCourseId[], fetchAll: CurriculumSpec | undefined = undefined): Promise<void> => {
     const pseudocourseCodes = new Set<string>()
     for (const courseid of courses) {
       const code = ('failed' in courseid ? courseid.failed : null) ?? courseid.code
-      // if (!(code in courseDetails)) {
-      pseudocourseCodes.add(code)
-      // }
+      if (!(code in courseDetails.current)) {
+        pseudocourseCodes.add(code)
+      }
     }
-    if (pseudocourseCodes.size === 0) return
+    if (pseudocourseCodes.size === 0 && fetchAll == null) return
+    console.log(`getting ${pseudocourseCodes.size} course details...`)
     try {
-      const courseDetails = await DefaultService.getPseudocourseDetails(Array.from(pseudocourseCodes))
-      const dict = courseDetails.reduce((acc: Record<string, PseudoCourseDetail>, curr: PseudoCourseDetail) => {
-        if (curr == null) {
-          // If there is an unknown code, ignore it instead of crashing
-          return acc
+      const newDetails = await DefaultService.getPseudocourseDetails({ codes: Array.from(pseudocourseCodes), plan: fetchAll })
+      if (fetchAll != null) {
+        // Process all equivalences
+        const blocksList: Record<string, EquivDetails[]> = {}
+        for (const detail of newDetails) {
+          if ('courses' in detail) {
+            for (const course of detail.courses) {
+              if (!(course in blocksList)) blocksList[course] = []
+              blocksList[course].push(detail)
+            }
+          }
         }
-        acc[curr.code] = curr
-        return acc
-      }, {})
-      addCourseDetails(dict)
+        setPossibleBlocksList(blocksList)
+      }
+      addCourseDetails(newDetails)
     } catch (err) {
       handleErrors(err, setPlannerStatus, setError)
     }
-  }, [])
+  }, [addCourseDetails])
 
   const validate = useCallback(async (validatablePlan: ValidatablePlan): Promise<void> => {
     try {
@@ -236,11 +159,11 @@ const Planner = (): JSX.Element => {
     setPlannerStatus(PlannerStatus.READY)
   }, [planID, navigate, closeSavePlanModal, validatablePlan])
 
-  const remCourse = useCallback((course: CourseId): void => {
+  const remCourse = useCallback((course: ClassId): void => {
     setValidatablePlan(prev => {
       if (prev === null) return null
-      const remPos = getCoursePos(prev.classes, course)
-      if (remPos === null) {
+      const remPos = locateClassInPlan(prev.classes, course)
+      if (remPos == null) {
         toast.error('Index no encontrado')
         return prev
       }
@@ -255,11 +178,11 @@ const Planner = (): JSX.Element => {
     })
   }, []) // remCourse should not depend on `validatablePlan`, so that memoing does its work
 
-  const moveCourse = useCallback((drag: CourseId, drop: { semester: number, index: number }): void => {
+  const moveCourse = useCallback((drag: ClassId, drop: { semester: number, index: number }): void => {
     setValidatablePlan(prev => {
       if (prev === null) return prev
-      const dragIndex = getCoursePos(prev.classes, drag)
-      if (dragIndex === null) {
+      const dragIndex = locateClassInPlan(prev.classes, drag)
+      if (dragIndex == null) {
         toast.error('Index no encontrado')
         return prev
       }
@@ -272,6 +195,16 @@ const Planner = (): JSX.Element => {
       return updateClassesState(prev, dragIndex, drop)
     })
   }, [])
+
+  const initializePlan = useCallback(async (validatablePlan: ValidatablePlan) => {
+    await Promise.all([
+      getCourseDetails(validatablePlan.classes.flat(), validatablePlan.curriculum),
+      loadCurriculumsData(validatablePlan.curriculum.cyear, setCurriculumData, validatablePlan.curriculum.major),
+      validate(validatablePlan)
+    ])
+    setValidatablePlan(validatablePlan)
+    console.log('data loaded')
+  }, [getCourseDetails, validate])
 
   const getPlanById = useCallback(async (id: string): Promise<void> => {
     try {
@@ -289,18 +222,12 @@ const Planner = (): JSX.Element => {
         title: response.validatable_plan.curriculum.title,
         cyear: response.validatable_plan.curriculum.cyear
       }
-      await Promise.all([
-        getCourseDetails(response.validatable_plan.classes.flat()),
-        loadCurriculumsData(response.validatable_plan.curriculum.cyear, setCurriculumData, response.validatable_plan.curriculum.major),
-        validate(response.validatable_plan)
-      ])
-      setValidatablePlan(response.validatable_plan)
       setPlanName(response.name)
-      console.log('data loaded')
+      await initializePlan(response.validatable_plan)
     } catch (err) {
       handleErrors(err, setPlannerStatus, setError)
     }
-  }, [authState?.isMod, getCourseDetails, validate])
+  }, [authState?.isMod, initializePlan])
 
   const getDefaultPlan = useCallback(async (referenceValidatablePlan?: ValidatablePlan, truncateAt?: number): Promise<void> => {
     try {
@@ -330,17 +257,11 @@ const Planner = (): JSX.Element => {
         title: response.curriculum.title,
         cyear: response.curriculum.cyear
       }
-      await Promise.all([
-        getCourseDetails(response.classes.flat()),
-        loadCurriculumsData(response.curriculum.cyear, setCurriculumData, response.curriculum.major),
-        validate(response)
-      ])
-      setValidatablePlan(response)
-      console.log('data loaded')
+      await initializePlan(response)
     } catch (err) {
       handleErrors(err, setPlannerStatus, setError)
     }
-  }, [authState?.student?.next_semester, impersonateRut, authState?.isMod, authState?.user, getCourseDetails, validate])
+  }, [authState?.student?.next_semester, impersonateRut, authState?.isMod, authState?.user, initializePlan])
 
   const fetchData = useCallback(async (): Promise<void> => {
     try {
@@ -379,28 +300,31 @@ const Planner = (): JSX.Element => {
     if ('courses' in equivalence) {
       setModalData({ equivalence, selector: false, semester, index })
     } else {
-      const response = (await DefaultService.getPseudocourseDetails([equivalence.code]))[0]
+      const response = (
+        courseDetails.current[equivalence.code] ??
+        (await DefaultService.getPseudocourseDetails({ codes: [equivalence.code] }))[0]
+      )
       if (!('courses' in response)) {
         throw new Error('expected equivalence details')
       }
       setModalData({ equivalence: response, selector: false, semester, index })
     }
     setIsModalOpen(true)
-  }, [])
+  }, [courseDetails])
 
   const closeModal = useCallback(async (selection?: CourseDetails): Promise<void> => {
     if (selection == null || modalData === undefined) {
       setIsModalOpen(false)
       return
     }
-    addCourseDetails({ [selection.code]: selection })
+    addCourseDetails([selection])
     setValidatablePlan(prev => {
       if (prev === null) return prev
       return handleSelectEquivalence(selection, prev, modalData)
     })
     setPlannerStatus(PlannerStatus.VALIDATING)
     setIsModalOpen(false)
-  }, [modalData])
+  }, [addCourseDetails, modalData])
 
   const reset = useCallback((): void => {
     setPlannerStatus(PlannerStatus.LOADING)
@@ -589,15 +513,14 @@ const Planner = (): JSX.Element => {
                 <DndProvider backend={HTML5Backend}>
                   <PlanBoard
                     classesGrid={validatablePlan?.classes ?? []}
-                    planDigest={planDigest}
-                    classesDetails={courseDetails}
+                    validationResult={validationResult}
+                    classesDetails={courseDetails.current}
                     moveCourse={moveCourse}
                     openModal={openModal}
                     authState={authState}
                     addCourse={openModalForExtraClass}
                     remCourse={remCourse}
-                    validationDigest={validationDigest}
-                  />
+                    />
                 </DndProvider>
               </div>
             <ErrorTray
@@ -605,7 +528,7 @@ const Planner = (): JSX.Element => {
               getCourseDetails={getCourseDetails}
               diagnostics={validationResult?.diagnostics ?? []}
               validating={plannerStatus === 'VALIDATING'}
-              courseDetails={courseDetails}
+              courseDetails={courseDetails.current}
             />
           </div>
         }
