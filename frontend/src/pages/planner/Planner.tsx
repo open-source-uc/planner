@@ -8,10 +8,10 @@ import SavePlanModal from './dialogs/SavePlanModal'
 import CurriculumSelector from './CurriculumSelector'
 import AlertModal from '../../components/AlertModal'
 import { useParams, Navigate, useNavigate } from '@tanstack/react-router'
-import { useState, useEffect, useRef, useCallback, useMemo, useReducer, Fragment } from 'react'
+import { useState, useEffect, useRef, useCallback, Fragment } from 'react'
 import { type CourseDetails, type Major, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise, type ClassId, type CurriculumSpec } from '../../client'
 import { type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type Cyear, type PossibleBlocksList } from './utils/Types'
-import { validateCourseMovement, updateClassesState, locateClassInPlan } from './utils/PlanBoardFunctions'
+import { validateCourseMovement, updateClassesState, locateClassInPlan, findClassInPlan } from './utils/PlanBoardFunctions'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import DebugGraph from '../../components/DebugGraph'
@@ -24,7 +24,7 @@ import ReceivePaste from './utils/ReceivePaste'
 import Banner from '../../components/Banner'
 import useContextMenu from '../../utils/useContextMenu'
 import useDummyModal from '../../utils/useDummyModal'
-
+import CoursesContextMenu from './utils/CoursesContextMenu'
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
@@ -40,11 +40,11 @@ const Planner = (): JSX.Element => {
   const [modalData, setModalData] = useState<ModalData>()
   const [, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
 
-  const { clicked } = useContextMenu()
+  const { clicked, courseInfo, points, handleContextMenu } = useContextMenu()
 
   const { isModalOpen: isLegendModalOpen, openModal: openLegendModal, closeModal: closeLegendModal } = useDummyModal()
   const { isModalOpen: isSavePlanModalOpen, openModal: openSavePlanModal, closeModal: closeSavePlanModal } = useDummyModal()
-  const [, setPossibleBlocksList] = useState<PossibleBlocksList>({}) // TODO: Use the possibleBlocksList
+  const [possibleBlocksList, setPossibleBlocksList] = useState<PossibleBlocksList>({}) // TODO: Use the possibleBlocksList
 
   const previousCurriculum = useRef<{ major: string | undefined, minor: string | undefined, title: string | undefined, cyear?: Cyear }>({ major: '', minor: '', title: '' })
   const previousClasses = useRef<PseudoCourseId[][]>([[]])
@@ -466,13 +466,16 @@ const Planner = (): JSX.Element => {
         <Banner bannerType={'Warning'} text={'Estás en una visualización exclusiva para moderadores. Puedes ver e interactuar con los planes del estudiante, pero no puedes guardar los cambios realizados.'}/>
       }
       {clicked && (
-        <div>
-          <ul>
-            <li>Edit</li>
-            <li>Copy</li>
-            <li>Delete</li>
-          </ul>
-        </div>
+        // the context menu for the courses, it will be shown when the user right clicks on a course, it can show the info and change block options
+        <CoursesContextMenu
+          posibleBlocks={possibleBlocksList[courseInfo.code] ?? []}
+          points={points}
+          isEquivalence={courseInfo.isEquivalence}
+          courseInfo={findClassInPlan(validatablePlan?.classes ?? [], courseInfo)}
+          coursePos={locateClassInPlan(validatablePlan?.classes ?? [], courseInfo)}
+          openEquivModal={openModal}
+          forceBlockChange={(a) => { console.log(a) }}
+        />
       )}
       <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
         <DebugGraph validatablePlan={validatablePlan} />
@@ -520,6 +523,7 @@ const Planner = (): JSX.Element => {
                     authState={authState}
                     addCourse={openModalForExtraClass}
                     remCourse={remCourse}
+                    handleContextMenu={handleContextMenu}
                     />
                 </DndProvider>
               </div>

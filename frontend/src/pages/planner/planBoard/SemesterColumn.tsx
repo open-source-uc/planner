@@ -1,4 +1,4 @@
-import { memo, useCallback, useRef, useState, Fragment, type ReactNode } from 'react'
+import { memo, useCallback, useRef, useState, Fragment, type ReactNode, type MouseEventHandler } from 'react'
 import { useDrop, type DropTargetMonitor } from 'react-dnd'
 import { type PseudoCourseDetail, type PseudoCourseId } from '../utils/Types'
 import DraggableCard from './CourseCard'
@@ -22,8 +22,9 @@ interface SemesterColumnProps {
   isDragging: boolean
   activeIndex: number | null
   setActive: Function
+  handleContextMenu: MouseEventHandler<HTMLDivElement>
 }
-const SemesterColumn = ({ coursesId, validation, classesDetails, authState, semester, addCourse, moveCourse, remCourse, openModal, classes = [], isDragging, activeIndex, setActive }: SemesterColumnProps): JSX.Element => {
+const SemesterColumn = ({ coursesId, validation, classesDetails, authState, semester, addCourse, moveCourse, remCourse, openModal, classes = [], isDragging, activeIndex, setActive, handleContextMenu }: SemesterColumnProps): JSX.Element => {
   const [dragged, setDragged] = useState<number | null>(null)
   const columnRef = useRef<HTMLDivElement>(null)
   const semesterIsInProgress = ((authState?.student) != null) && (authState.student.current_semester === authState.student.next_semester - 1)
@@ -159,6 +160,7 @@ const SemesterColumn = ({ coursesId, validation, classesDetails, authState, seme
                   showEquivalence={showEquivalence}
                   hasError={(courseValidation?.errors?.length ?? 0) > 0}
                   hasWarning={(courseValidation?.warnings?.length ?? 0) > 0}
+                  handleContextMenu={handleContextMenu}
                 />
               </div>
             </Fragment>

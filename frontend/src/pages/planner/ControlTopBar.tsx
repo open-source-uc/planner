@@ -7,7 +7,7 @@ interface ControlTopBarProps {
 
 function ControlTopBar ({ isMod, reset, openLegendModal, openSavePlanModal }: ControlTopBarProps): JSX.Element {
   return (
-    <ul className="flex items-center  ml-3 mb-2 gap-6">
+    <ul className="flex items-center  ml-3 mb-1 gap-6">
       {!isMod && (<>
       <li className='inline'><button onClick={() => openSavePlanModal() }>Guardar malla</button></li>
       </>)}
