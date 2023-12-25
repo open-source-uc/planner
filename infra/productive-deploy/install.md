@@ -6,21 +6,25 @@ Estas instrucciones están pensadas para configurar por primera vez la máquina 
 
 ### General
 
-acá poner los puntos de forma general (sin entrar en detalle de los comandos)
+1. Actualizar paquetes de la máquina (`dnf update`).
+2. Instalar git.
+3. Clonar el **repositorio de producción** del proyecto nuevo planner (`git clone`).
+4. Generar los archivos `.env` en las carpetas backend, frontend y database a partir de los templates.
+5. Agregar a la máquina el archivo `update.sh`, dar permisos de ejecución con el comando `chmod` y crear _cronjob_ que lo ejecute recurrentemente.
 
 ### Detalles
 
-acá poner los puntos con más detalles (e.g. decir que dnf update se usa para rocky linux)
-
-1. Actualizar paquetes de la máquina: `sudo dnf update`
-2. Instalar git.
-   - Nota: en la siguiente sección ("Informacion de los archivos") se muestra como _ansible_ instalará el resto de dependencias necesarias.
-3. Clonar el repositorio de producción del proyecto nuevo planner: `git clone https://github.com/<nombre organizacion>/planner`
-4. Copiar archivos `.env.production.template` en todos los servicios y rellenar a mano para generar los archivos `.env`.
+1. Actualizar paquetes de la máquina. Para el caso de Rocky Linux se puede usar `sudo dnf check-update` y `sudo dnf update`.
+2. Instalar git. En la siguiente sección [Informacion de los archivos](informacion-de-los-archivos) se muestra como _ansible_ instalará el resto de dependencias necesarias, tales como Docker.
+3. Clonar el **repositorio de producción** del proyecto nuevo planner usando `git clone`. Este repositorio se encontrará en Github controlado exclusivamente por la **Subdirección de Desarrollo** (más detalles en la sección [Flujo 2: Actualizaciones recurrentes](flujo-2:-actualizaciones-recurrentes)). El comando debería quedar como: `git clone https://github.com/<nombre organizacion>/planner`.
+4. Para generar los archivos `.env` en las carpetas backend, frontend y database a partir de los templates, se deben copiar los archivos `.env.production.template` en todos los servicios y rellenar a mano para generar los archivos `.env`.
+   En particular,
    - Generar `backend/.env` a partir de `backend/.env.production.template`.
    - Generar `frontend/.env` a partir de `frontend/.env.production.template`.
    - Generar `database/.env` a partir de `database/.env.production.template`.
-5. Agregar a la maquina el archivo `update.sh`, dar permisos de ejecución con el comando `chmod` y crear _cronjob_ que lo ejecute recurrentemente.
+5. Para permitir las actualizaciones recurrentes del proyecto, es necesario agregar a la maquina el archivo `update.sh`, luego darle permisos de ejecución con el comando `chmod +x update.sh`, y luego crear el _cronjob_ que lo ejecute recurrentemente con el comando `crontab -e`. Se recomienda una frecuencia no tan baja, para que las actualizaciones ocurran de forma más inmediata.
+
+   Es importante mencionar que la ejecución de este archivo no será demandante computacionalmente, ya que solamente tomará acciones si es que hubo algún cambio en el **repositorio de producción**. O sea, si el archivo se ejecuta cada 3 horas, pero el código del proyecto no cambia en 5 días, cada una de las ejecuciones del archivo no tendrá impacto debido a que el código no tuvo cambios.
 
 ## Información de los archivos
 
