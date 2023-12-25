@@ -341,7 +341,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                     <th className="w-96">Nombre</th>
                     <th className="w-8">Crd</th>
                     <th className="w-52">Escuela</th>
-                    <th className="w-8"></th>
+                    <th className="w-8">Info</th>
                   </tr>
                 </thead>
                 <tbody onScroll={handleScroll} className="bg-white relative rounded-b block flex-col items-center justify-between overflow-y-scroll h-72 w-full">
@@ -374,7 +374,9 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                           <div className='w-96'>{course.name}</div>
                           <div className='w-8'>{course.credits}</div>
                           <div className='w-52'>{course.school}</div>
-                          <div className="w-8"></div>
+                          <a className="w-8" href={`https://catalogo.uc.cl/index.php?tmpl=component&option=com_catalogo&view=programa&sigla=${course.code}`} rel="noreferrer" target="_blank">
+                            <Info message='Abrir Programa'/>
+                          </a>
                         </label>
                         </td>
                       </tr>

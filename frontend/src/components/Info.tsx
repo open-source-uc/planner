@@ -1,5 +1,5 @@
 interface InfoProps {
-  message: string
+  message?: string
 }
 
 export function Info ({ message }: InfoProps): JSX.Element {
@@ -9,11 +9,12 @@ export function Info ({ message }: InfoProps): JSX.Element {
       <line x1="11" y1="9" x2="11" y2="17" stroke="black" strokeOpacity="0.5" strokeWidth="2"/>
       <line x1="12" y1="6" x2="10" y2="6" stroke="black" strokeOpacity="0.5" strokeWidth="2"/>
     </svg>
-    <span className={'relative z-10  transition-all  scale-0 group-hover:scale-100'}>
-      <div className="absolute left-2.5 top-1 w-4 h-4 bg-gray-800 rotate-45 rounded" />
-      <span className={'absolute left-4 -top-1  w-48 z-10 rounded bg-gray-800 p-2 text-xs text-white'}>
-        {message}
+    {message !== undefined && <span className={'relative z-10  transition-all  scale-0 group-hover:scale-100'}>
+        <div className="absolute left-2.5 top-1 w-4 h-4 bg-gray-800 rotate-45 rounded" />
+        <span className={'absolute left-4 -top-1  w-48 z-10 rounded bg-gray-800 p-2 text-xs text-white'}>
+          {message}
+        </span>
       </span>
-    </span>
+    }
     </div>
 }
