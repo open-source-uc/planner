@@ -49,6 +49,15 @@ export const updateClassesState = (prev: ValidatablePlan, drag: CoursePos, drop:
   return { ...prev, classes: newClasses }
 }
 
+export const changeCourseBlock = (prev: ValidatablePlan, coursePos: CoursePos, block: string): ValidatablePlan => {
+  const newClasses = [...prev.classes]
+  const course = { ...newClasses[coursePos.semester][coursePos.index] }
+  if ('credits' in course) return prev // This should never happen
+  course.equivalence = { is_concrete: false, code: block, credits: 10 }
+  newClasses[coursePos.semester][coursePos.index] = course
+  return { ...prev, classes: newClasses }
+}
+
 // Ensure that an array stays in sync with a union of string literals
 // https://stackoverflow.com/a/70694878/5884836
 type ValueOf<T> = T[keyof T]

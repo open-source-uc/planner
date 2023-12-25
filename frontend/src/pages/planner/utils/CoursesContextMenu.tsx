@@ -16,7 +16,7 @@ const CoursesContextMenu = ({ posibleBlocks, points, isEquivalence, courseInfo, 
   const [showBlocks, setShowBlocks] = useState(false)
 
   return (
-    <div className="z-50 absolute w-40 bg-slate-100 border-slate-300 border-2 rounded-md box-border" style={{ top: points.y, left: points.x }}>
+    <div className="z-50 absolute w-40 bg-slate-100 border-slate-300 border-2  box-border" style={{ top: points.y, left: points.x }}>
     <ul className="box-border m-0 list-none font-medium text-sm text-gray-900 ">
       {courseInfo?.is_concrete === true && (
       <a
@@ -46,14 +46,14 @@ const CoursesContextMenu = ({ posibleBlocks, points, isEquivalence, courseInfo, 
         >
           Ver bloques posibles
           {showBlocks && (
-            <div className="w-44 absolute top-0 left-full bg-slate-100 border-slate-300 border-2  rounded-md shadow-md">
+            <div className="w-44 absolute top-0 left-full bg-slate-100 border-slate-300 border-2  shadow-md">
               {posibleBlocks.map((block, index) => (
                 <button
                   key={index}
-                  className={`block w-full p-2 text-left hover:bg-slate-200 ${courseInfo !== undefined && 'equivalence' in courseInfo && block.code === courseInfo.equivalence?.code ? 'bg-slate-200' : ''}`}
+                  className={`block w-full p-2 text-left hover:bg-slate-300 ${courseInfo !== undefined && 'equivalence' in courseInfo && block.code === courseInfo.equivalence?.code ? 'bg-slate-200' : ''}`}
                   onClick={() => {
                     if (courseInfo !== undefined && 'equivalence' in courseInfo && block.code === courseInfo.equivalence?.code) return
-                    forceBlockChange(block.code)
+                    forceBlockChange(block.code, coursePos)
                   }}
                 >
                   {block.name}

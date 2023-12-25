@@ -10,8 +10,8 @@ import AlertModal from '../../components/AlertModal'
 import { useParams, Navigate, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, Fragment } from 'react'
 import { type CourseDetails, type Major, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise, type ClassId, type CurriculumSpec } from '../../client'
-import { type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type Cyear, type PossibleBlocksList } from './utils/Types'
-import { validateCourseMovement, updateClassesState, locateClassInPlan, findClassInPlan } from './utils/PlanBoardFunctions'
+import { type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type Cyear, type PossibleBlocksList, type CoursePos } from './utils/Types'
+import { validateCourseMovement, updateClassesState, locateClassInPlan, findClassInPlan, changeCourseBlock } from './utils/PlanBoardFunctions'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import DebugGraph from '../../components/DebugGraph'
@@ -193,6 +193,14 @@ const Planner = (): JSX.Element => {
         return prev
       }
       return updateClassesState(prev, dragIndex, drop)
+    })
+  }, [])
+
+  const forceBlockChange = useCallback((newBlock: string, coursePos: CoursePos): void => {
+    setValidatablePlan(prev => {
+      if (prev == null) return prev
+      const newPlan = changeCourseBlock(prev, coursePos, newBlock)
+      return newPlan
     })
   }, [])
 
@@ -474,7 +482,7 @@ const Planner = (): JSX.Element => {
           courseInfo={findClassInPlan(validatablePlan?.classes ?? [], courseInfo)}
           coursePos={locateClassInPlan(validatablePlan?.classes ?? [], courseInfo)}
           openEquivModal={openModal}
-          forceBlockChange={(a) => { console.log(a) }}
+          forceBlockChange={forceBlockChange}
         />
       )}
       <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
