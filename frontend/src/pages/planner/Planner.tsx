@@ -44,7 +44,8 @@ const Planner = (): JSX.Element => {
 
   const { isModalOpen: isLegendModalOpen, openModal: openLegendModal, closeModal: closeLegendModal } = useDummyModal()
   const { isModalOpen: isSavePlanModalOpen, openModal: openSavePlanModal, closeModal: closeSavePlanModal } = useDummyModal()
-  const [possibleBlocksList, setPossibleBlocksList] = useState<PossibleBlocksList>({}) // TODO: Use the possibleBlocksList
+
+  const [possibleBlocksList, setPossibleBlocksList] = useState<PossibleBlocksList>({})
 
   const previousCurriculum = useRef<{ major: string | undefined, minor: string | undefined, title: string | undefined, cyear?: Cyear }>({ major: '', minor: '', title: '' })
   const previousClasses = useRef<PseudoCourseId[][]>([[]])

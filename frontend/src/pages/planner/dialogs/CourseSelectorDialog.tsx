@@ -240,7 +240,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       onClose={close}
       initialFocus={acceptButton}
     >
-          <Dialog.Panel className="w-11/12 px-5 py-6 bg-slate-100 border-slate-300 overflow-hidden max-w-4xl transform  rounded-2xl border-2 text-left align-middle shadow-xl transition-all">
+          <Dialog.Panel className="w-11/12 px-5 py-6 bg-slate-100 border-slate-300 max-w-4xl transform  rounded-2xl border-2 text-left align-middle shadow-xl transition-all">
             <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900  mb-3">
               {equivalence !== undefined ? equivalence.name : 'Curso Extra'}
             </Dialog.Title>
@@ -374,8 +374,8 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                           <div className='w-96'>{course.name}</div>
                           <div className='w-8'>{course.credits}</div>
                           <div className='w-52'>{course.school}</div>
-                          <a className="w-8" href={`https://catalogo.uc.cl/index.php?tmpl=component&option=com_catalogo&view=programa&sigla=${course.code}`} rel="noreferrer" target="_blank">
-                            <Info message='Abrir Programa'/>
+                          <a className="w-8 " href={`https://catalogo.uc.cl/index.php?tmpl=component&option=com_catalogo&view=programa&sigla=${course.code}`} rel="noreferrer" target="_blank">
+                            <Info message='Ver Programa'/>
                           </a>
                         </label>
                         </td>
