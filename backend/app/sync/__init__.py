@@ -43,8 +43,8 @@ from app.sync import buscacursos_dl
 from app.sync.curriculums.collate import collate_plans
 from app.sync.curriculums.storage import CurriculumStorage
 from app.sync.siding import translate as siding_translate
-from app.user.auth import UserKey
-from app.user.info import StudentContext
+from app.user.auth import UserKey, allow_force_login
+from app.user.info import StudentContext, StudentInfo
 from app.user.key import Rut
 
 if TYPE_CHECKING:
@@ -260,14 +260,23 @@ async def get_student_data(user: UserKey) -> StudentContext:
             user.rut,
             info,
         )
-    except ValueError as err:
-        # TODO: Refactor ValueError to use a custom exception
-        if "Not a valid" in str(err):
+    except siding_translate.InvalidStudentError as err:
+        if await allow_force_login(user):
+            # Allow moderators and admins to login anyway, even with incomplete info
+            info = StudentInfo(
+                full_name=str(user.rut),
+                cyear="?",
+                is_cyear_supported=False,
+                reported_major=None,
+                reported_minor=None,
+                reported_title=None,
+            )
+            passed, in_course = [], False
+        else:
             raise HTTPException(
                 403,
                 "User is not a valid engineering student.",
             ) from err
-        raise ValueError from err
 
     ctx = StudentContext(
         info=info,

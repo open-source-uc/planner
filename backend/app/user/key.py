@@ -9,13 +9,13 @@ from pydantic.fields import ModelField
 
 class Rut(str):
     """
-    A code for a major or a minor.
+    A RUT, like 12345678-K. No dots, no leading zeroes, uppercase K.
     """
 
     _pattern = re.compile(r"^(\d{1,16})-([0-9K])$")
 
     def __new__(cls: type[Self], value: str) -> Self:
-        return super().__new__(cls, value)
+        return super().__new__(cls, cls.validate_str(value))
 
     @classmethod
     def __get_validators__(
@@ -25,13 +25,17 @@ class Rut(str):
 
     @classmethod
     def validate(cls: type[Self], value: str, field: ModelField) -> Self:
+        return cls(cls.validate_str(value))
+
+    @classmethod
+    def validate_str(cls: type[Self], value: str) -> str:
         if not isinstance(value, str):  # type: ignore
             raise TypeError("string required")
         value = value.replace(".", "").strip().lstrip("0").upper()
         m = cls._pattern.fullmatch(value)
         if m is None:
             raise ValueError(f"Invalid RUT {value}")
-        return cls(value)
+        return value
 
     @classmethod
     def __modify_schema__(cls: type[Self], field_schema: dict[str, Any]) -> None:
