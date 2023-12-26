@@ -1,10 +1,9 @@
 import { memo, useCallback, useRef, useState, Fragment, type ReactNode, type MouseEventHandler } from 'react'
 import { useDrop, type DropTargetMonitor } from 'react-dnd'
-import { type PseudoCourseDetail, type PseudoCourseId } from '../utils/Types'
+import { type PseudoCourseDetail, type PseudoCourseId, type SemesterValidationDigest } from '../utils/Types'
 import DraggableCard from './CourseCard'
 import deepEqual from 'fast-deep-equal'
 import { type ClassId } from '../../../client'
-import { type SemesterValidationDigest } from '../utils/PlanBoardFunctions'
 import { type AuthState } from '../../../contexts/auth.context'
 import ConditionalWrapper from '../utils/ConditionalWrapper'
 
