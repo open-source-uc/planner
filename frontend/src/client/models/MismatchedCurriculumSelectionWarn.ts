@@ -9,9 +9,9 @@ import type { CurriculumSpec } from './CurriculumSpec';
  * curriculum declaration.
  */
 export type MismatchedCurriculumSelectionWarn = {
+    is_err?: boolean;
     kind?: 'currdecl';
     associated_to?: null;
-    is_err?: boolean;
     plan: CurriculumSpec;
     user: CurriculumSpec;
 };

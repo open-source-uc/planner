@@ -7,6 +7,7 @@ from prisma.types import PlanCreateInput
 from pydantic import BaseModel
 
 from app.plan.plan import ValidatablePlan
+from app.plan.storable import StorablePlan, migrate_plan
 from app.user.key import ModKey, Rut, UserKey
 
 MAX_PLANS_PER_USER = 50
@@ -36,7 +37,7 @@ class PlanView(BaseModel):
     validatable_plan: ValidatablePlan
 
     @staticmethod
-    def from_db(db: DbPlan) -> "PlanView":
+    async def from_db(db: DbPlan) -> "PlanView":
         return PlanView(
             id=db.id,
             created_at=db.created_at,
@@ -44,9 +45,11 @@ class PlanView(BaseModel):
             name=db.name,
             is_favorite=db.is_favorite,
             user_rut=Rut(db.user_rut),
-            validatable_plan=pydantic.parse_raw_as(
-                ValidatablePlan,
-                db.validatable_plan,
+            validatable_plan=await migrate_plan(
+                pydantic.parse_raw_as(
+                    StorablePlan,
+                    db.validatable_plan,
+                ),
             ),
         )
 
@@ -105,7 +108,7 @@ async def store_plan(plan_name: str, user: UserKey, plan: ValidatablePlan) -> Pl
     plan_data = PlanCreateInput(**data)  # type: ignore
     stored_plan = await DbPlan.prisma().create(data=plan_data)
 
-    return PlanView.from_db(stored_plan)
+    return await PlanView.from_db(stored_plan)
 
 
 async def get_plan_details(
@@ -114,7 +117,7 @@ async def get_plan_details(
     mod_access: bool = False,
 ) -> PlanView:
     plan = await authorize_plan_access(user, plan_id, mod_access)
-    return PlanView.from_db(plan)
+    return await PlanView.from_db(plan)
 
 
 async def get_user_plans(user: UserKey) -> list[LowDetailPlanView]:
@@ -142,7 +145,7 @@ async def modify_validatable_plan(
     # Must be true because access was authorized
     assert updated_plan is not None
 
-    return PlanView.from_db(updated_plan)
+    return await PlanView.from_db(updated_plan)
 
 
 async def modify_plan_metadata(
@@ -170,7 +173,7 @@ async def modify_plan_metadata(
     )
 
 
-async def _rename_plan(plan_id: str, new_name: str):
+async def _rename_plan(plan_id: str, new_name: str) -> PlanView:
     updated_plan = await DbPlan.prisma().update(
         where={
             "id": plan_id,
@@ -183,10 +186,10 @@ async def _rename_plan(plan_id: str, new_name: str):
     # Must be true because access was authorized
     assert updated_plan is not None
 
-    return PlanView.from_db(updated_plan)
+    return await PlanView.from_db(updated_plan)
 
 
-async def _set_favorite_plan(user: UserKey, plan_id: str, favorite: bool):
+async def _set_favorite_plan(user: UserKey, plan_id: str, favorite: bool) -> PlanView:
     # NOTE: with the current algorithm there cannot be more than one favorite plan
     # per user originated by this method. But there is no validation of uniqueness in
     # the DB.
@@ -197,7 +200,7 @@ async def _set_favorite_plan(user: UserKey, plan_id: str, favorite: bool):
 
     if plan.is_favorite == favorite:
         # nothing to be done
-        return PlanView.from_db(plan)
+        return await PlanView.from_db(plan)
 
     await DbPlan.prisma().query_raw("BEGIN")
     await DbPlan.prisma().query_raw(
@@ -222,7 +225,7 @@ async def _set_favorite_plan(user: UserKey, plan_id: str, favorite: bool):
     # Must be true because access was authorized
     assert updated_plan is not None
 
-    return PlanView.from_db(updated_plan)
+    return await PlanView.from_db(updated_plan)
 
 
 async def remove_plan(
@@ -236,4 +239,4 @@ async def remove_plan(
     # Must be true because access was authorized
     assert deleted_plan is not None
 
-    return PlanView.from_db(deleted_plan)
+    return await PlanView.from_db(deleted_plan)

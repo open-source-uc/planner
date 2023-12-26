@@ -2,9 +2,9 @@ from collections import defaultdict
 
 from fastapi import HTTPException
 
-from app.plan.course import PseudoCourse
+from app.plan.course import EquivalenceId, PseudoCourse
 from app.plan.courseinfo import CourseInfo
-from app.plan.plan import ValidatablePlan
+from app.plan.plan import ClassId, ValidatablePlan
 from app.plan.validation.curriculum.solve import (
     SolvedCurriculum,
     solve_curriculum,
@@ -13,33 +13,41 @@ from app.plan.validation.curriculum.tree import Curriculum
 from app.plan.validation.diagnostic import (
     CurriculumErr,
     NoMajorMinorWarn,
+    RecolorWarn,
     UnassignedWarn,
     ValidationResult,
 )
 from app.user.info import StudentContext
 
 
-def _diagnose_blocks(
-    courseinfo: CourseInfo,
+def _check_missing_fillers(
     out: ValidationResult,
     g: SolvedCurriculum,
-):
-    def fetch_name(filler: PseudoCourse):
-        info = courseinfo.try_any(filler)
-        return (filler, "?" if info is None else info.name)
+    panacea_recolors: list[tuple[ClassId, EquivalenceId]] | None,
+) -> bool:
+    """
+    Check if `g` indicates that fillers should be added, and if so add a `CurriculumErr`
+    to `out`.
+    Note that `g` might be allowing or forbiding recolors, this function does not care.
 
-    # TODO: If there are several alternatives to fill a gap in the curriculum, show all
-    # of them
+    `panacea_recolors` is an optional argument that is passed on directly to any
+    generated `CurriculumErr`.
+    It indicates that recoloring in this way will solve all curriculum colors.
 
-    # Get any fillers in use
+    Returns whether the curriculum is satisfied (ie. if there are no fillers missing).
+    """
+
+    satisfied = True
+
     for usable in g.usable.values():
         for inst in usable.instances:
-            if inst.filler is None or inst.flow == 0:
+            if not inst.filler or not inst.flow:
                 continue
 
             options: list[list[PseudoCourse]] = g.find_swapouts(inst)
 
             # This filler is active, therefore something is missing
+            satisfied = False
             out.add(
                 CurriculumErr(
                     blocks=[
@@ -52,11 +60,74 @@ def _diagnose_blocks(
                         if layer.active_edge is not None
                     ],
                     credits=inst.flow,
-                    fill_options=[
-                        fetch_name(filler) for option in options for filler in option
-                    ],
+                    fill_options=[filler for option in options for filler in option],
+                    panacea_recolor_courses=[id for id, _ in panacea_recolors]
+                    if panacea_recolors
+                    else None,
+                    panacea_recolor_blocks=[equiv for _, equiv in panacea_recolors]
+                    if panacea_recolors
+                    else None,
                 ),
             )
+
+    return satisfied
+
+
+def _diagnose_blocks(
+    courseinfo: CourseInfo,
+    out: ValidationResult,
+    g: SolvedCurriculum,
+):
+    # Remember which courses were recolored
+    # Note that courses are only recolored if doing so allows a better plan, so this
+    # list contains no unnecessary recolors
+    recolors = g.find_recolors()
+
+    # Get any fillers in use
+    # Note that at this point recoloring *is* allowed
+    # This means that:
+    # - If there is a way to recolor the courses such that the curriculum is satisfied,
+    #   Planner will always recommend to recolor and will not complain about missing
+    #   courses.
+    # - If courses *are* missing anyway, Planner will assume that all courses can be
+    #   recolored arbitrarily.
+    satisfied_with_recoloring = _check_missing_fillers(out, g, None)
+
+    if satisfied_with_recoloring:
+        # There are enough courses to satisfy the curriculum, but they might not be
+        # the correct colors
+        # Now, forbid recoloring and retry
+        if g.forbid_recolor():
+            # Reassigning equivalences can save us some courses
+
+            # The user might prefer to keep these colors and add more courses (ie. if
+            # they are in the middle of changing their curriculum), but they might also
+            # want to just change the colors and solve the problem.
+            # Give them both options
+            satisfied_without_recoloring = _check_missing_fillers(out, g, recolors)
+            if satisfied_without_recoloring:
+                # All is OK, but remember that `forbid_recolor` returned true!
+                # Therefore, we could save some courses by recoloring
+                # Let the user know that
+                out.add(
+                    RecolorWarn(
+                        associated_to=[id for id, _equiv in recolors],
+                        recolor_as=[equiv for _id, equiv in recolors],
+                    ),
+                )
+            else:
+                # The curriculum is satisfied with recoloring, but not without it
+                # An error was emitted inside of `_check_missing_fillers`, so there's
+                # nothing to do here
+                pass
+        else:
+            # All is OK!
+            pass
+    else:
+        # There are not even enough courses to satisfy the curriculum _with
+        # recoloring_.
+        # Let the user solve that issue first, then worry about the right colors.
+        pass
 
 
 def diagnose_curriculum(
@@ -71,7 +142,13 @@ def diagnose_curriculum(
         out.add(NoMajorMinorWarn(plan=plan.curriculum))
 
     # Solve plan
-    g = solve_curriculum(courseinfo, plan.curriculum, curriculum, plan.classes)
+    g = solve_curriculum(
+        courseinfo,
+        plan.curriculum,
+        curriculum,
+        plan.classes,
+        user_ctx.current_semester if user_ctx else 0,
+    )
 
     # Generate diagnostics
     _diagnose_blocks(courseinfo, out, g)
@@ -97,12 +174,17 @@ def diagnose_curriculum(
         out.add(UnassignedWarn(unassigned_credits=unassigned))
 
     # Tag each course with its associated superblock
-    superblocks = {}
-    for code, count in rep_counter.items():
-        superblocks[code] = ["" for _ in range(count)]
-        for rep_idx in range(count):
+    superblocks: dict[str, list[str]] = {}
+    for sem in plan.classes:
+        for course in sem:
+            code = course.code
+            if code not in superblocks:
+                superblocks[code] = []
+            superblock = ""
+            rep_idx = len(superblocks[code])
             if code in g.superblocks and rep_idx < len(g.superblocks[code]):
-                superblocks[code][rep_idx] = g.superblocks[code][rep_idx]
+                superblock = g.superblocks[code][rep_idx]
+            superblocks[code].append(superblock)
     out.course_superblocks = superblocks
 
 

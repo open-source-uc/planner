@@ -79,7 +79,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       if (coursesCodes.length === 0) return
       setLoadingCoursesData(true)
 
-      const promise = DefaultService.getPseudocourseDetails(coursesCodes)
+      const promise = DefaultService.getPseudocourseDetails({ codes: coursesCodes })
       setPromiseInstance(promise)
       const response = await promise
       setPromiseInstance(null)

@@ -2,9 +2,14 @@ from collections import OrderedDict, defaultdict
 from collections.abc import Iterable
 
 from app import sync
-from app.plan.course import ConcreteId, EquivalenceId, pseudocourse_with_credits
+from app.plan.course import (
+    ConcreteId,
+    EquivalenceId,
+    pseudocourse_with_credits,
+)
 from app.plan.courseinfo import CourseDetails, CourseInfo, course_info
 from app.plan.plan import (
+    CURRENT_PLAN_VERSION,
     PseudoCourse,
     ValidatablePlan,
 )
@@ -209,6 +214,13 @@ def _reselect_equivs(
 ):
     """
     Update the filler equivalences in `curriculum` to match choices in `reference`.
+
+    Context: When the user changes their curriculum spec (eg. changes major), we'd like
+    to keep as many choices that the user took as possible.
+    However, different curriculums may be very different, so it's hard to carry
+    information over to the new curriculum.
+    One thing that is relatively easy to carry over are equivalence choices: the
+    concrete course chosen for an equivalence.
     """
 
     # Collect equivalence choices by equivalence name
@@ -221,7 +233,7 @@ def _reselect_equivs(
             ):
                 ref_equiv = ref_course.equivalence
                 equiv_info = courseinfo.try_equiv(ref_equiv.code)
-                if equiv_info is not None:
+                if equiv_info is not None and len(equiv_info.courses) > 1:
                     by_name[equiv_info.name].append(ref_course)
 
     # Re-select filler equivalences in courses_to_pass if they match reference choices
@@ -229,16 +241,19 @@ def _reselect_equivs(
     for fillers in curriculum.fillers.values():
         for filler in fillers:
             equiv = filler.course
-            if isinstance(equiv, ConcreteId) and equiv.equivalence is not None:
-                equiv = equiv
-            if not isinstance(equiv, EquivalenceId):
+            if isinstance(equiv, ConcreteId):
+                equiv = equiv.equivalence
+            if equiv is None:
                 continue
 
             equiv_info = courseinfo.try_equiv(equiv.code)
             if equiv_info is None or equiv_info.name not in by_name:
                 continue
             for ref_choice in by_name[equiv_info.name]:
-                if ref_choice.code in equiv_info.courses:
+                if (
+                    ref_choice.code in equiv_info.courses
+                    and ref_choice.code != filler.course.code
+                ):
                     extra_fillers[ref_choice.code].append(
                         FillerCourse(
                             course=ref_choice.copy(update={"equivalence": equiv}),
@@ -464,7 +479,7 @@ async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
             title=student.info.reported_title,
         )
     return ValidatablePlan(
-        version="0.0.1",
+        version=CURRENT_PLAN_VERSION,
         classes=classes,
         level="Pregrado",
         school="Ingenieria",
@@ -481,6 +496,8 @@ async def generate_recommended_plan(
     """
     Take a base plan that the user has already passed, and recommend a plan that should
     lead to the user getting the title in whatever major-minor-career they chose.
+
+    NOTE: This function modifies `passed`.
     """
     from time import monotonic as t
 
@@ -495,7 +512,13 @@ async def generate_recommended_plan(
 
     # Solve the curriculum to determine which courses have not been passed yet (and need
     # to be passed)
-    g = solve_curriculum(courseinfo, passed.curriculum, curriculum, passed.classes)
+    g = solve_curriculum(
+        courseinfo,
+        passed.curriculum,
+        curriculum,
+        passed.classes,
+        len(passed.classes),
+    )
 
     # Flat list of all curriculum courses left to pass
     courses_to_pass, ignore_reqs = _compute_courses_to_pass(
@@ -577,6 +600,9 @@ async def generate_recommended_plan(
     print(f"  solve: {p(t2-t1)}")
     print(f"  coreq: {p(t21-t2)}")
     print(f"  insert: {p(t3-t21)}")
+
+    # Assign blocks to courses based on the current solution
+    g.execute_recolors(plan.classes)
 
     # Order courses by their color (ie. superblock assignment)
     repetition_counter: defaultdict[str, int] = defaultdict(lambda: 0)

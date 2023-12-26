@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Annotated, Literal
 import sentry_sdk
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.params import Depends
 from fastapi.routing import APIRoute
 from pydantic import BaseModel, Field
@@ -84,6 +85,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*", "sentry-trace", "baggage"],
 )
+
+# Enable compression for large responses
+# Lots of JSON in responses, so this saves a lot of space
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 @app.on_event("startup")  # type: ignore

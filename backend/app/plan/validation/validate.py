@@ -24,7 +24,7 @@ async def diagnose_plan(
 
     # Validate against user context, if there is any context
     if user_ctx is not None:
-        validate_against_owner(plan, user_ctx, out)
+        validate_against_owner(courseinfo, curriculum, plan, user_ctx, out)
 
     # Ensure course requirements are met
     course_ctx = ValidationContext(courseinfo, plan, user_ctx)

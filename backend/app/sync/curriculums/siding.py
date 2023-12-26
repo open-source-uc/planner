@@ -244,6 +244,7 @@ async def _fetch_siding_lists(courseinfo: CourseInfo, siding: SidingInfo):
 def translate_siding(
     courseinfo: CourseInfo,
     out: CurriculumStorage,
+    spec_id: str,
     siding: SidingInfo,
     raw_blocks: list[BloqueMalla],
 ) -> Curriculum:
@@ -266,63 +267,74 @@ def translate_siding(
     # Group into superblocks
     superblocks: dict[str, list[Block]] = {}
     for raw_block in raw_blocks:
-        if raw_block.CodSigla is not None and raw_block.Equivalencias is None:
-            # Concrete course
-            code = raw_block.CodSigla
-            recommended = ConcreteId(code=code)
-            codes = [code]
-        else:
-            # Equivalence
-            is_homogeneous = False
-            if raw_block.CodLista is not None:
-                # List equivalence
-                code = f"!{raw_block.CodLista}"
-                cursos = siding.lists.get(raw_block.CodLista)
-                if cursos is None:
-                    raise Exception(f"unknown SIDING list code {raw_block.CodLista}")
-                codes: list[str] = []
-                for curso in cursos:
-                    if curso.Sigla is None:
-                        continue
-                    if courseinfo.try_course(curso.Sigla) is None:
-                        log.warning(
-                            f"unknown course {curso.Sigla}"
-                            f" in SIDING list {raw_block.CodLista}",
-                        )
-                        continue
-                    codes.append(curso.Sigla)
-            elif raw_block.CodSigla is not None and raw_block.Equivalencias is not None:
-                code = f"?{raw_block.CodSigla}"
-                codes = [raw_block.CodSigla]
+        if raw_block.CodSigla is not None and raw_block.CodLista is None:
+            # A concrete course, which may have equivalences
+            is_homogeneous = True
+            main_code = raw_block.CodSigla
+            # Assign a unique list code
+            # It contains a spec id, which differentiates this plan from others
+            codes = [main_code]
+            if raw_block.Equivalencias is not None:
+                # Add equivalences to the list
                 for curso in raw_block.Equivalencias.Cursos:
-                    if curso.Sigla is not None:
+                    if curso.Sigla is not None and curso.Sigla != main_code:
                         codes.append(curso.Sigla)
-                is_homogeneous = True
-            else:
-                raise Exception(
-                    f"invalid raw SIDING block: {raw_block.json()}",
-                )
-            if len(codes) == 1:
-                # Just a single course
-                code = codes[0]
-                recommended = ConcreteId(code=code)
-            else:
-                # Add equivalence to global list of equivalences
-                if code not in out.lists:
-                    out.lists[code] = EquivDetails(
-                        code=code,
-                        name=raw_block.Nombre,
-                        is_homogeneous=is_homogeneous,
-                        is_unessential=False,
-                        courses=codes,
+            list_code = (
+                f"{spec_id}-{main_code}"
+                if len(codes) == 1
+                else f"{spec_id}-EQUIV-{main_code}"
+            )
+        elif raw_block.CodLista is not None and raw_block.CodSigla is None:
+            # A list of courses, representing an abstract block
+            is_homogeneous = False
+            list_code = f"{spec_id}-LIST-{raw_block.CodLista}"
+            cursos = siding.lists.get(raw_block.CodLista)
+            if cursos is None:
+                raise Exception(f"unknown SIDING list code {raw_block.CodLista}")
+            codes: list[str] = []
+            for curso in cursos:
+                if curso.Sigla is None:
+                    continue
+                if courseinfo.try_course(curso.Sigla) is None:
+                    log.warning(
+                        f"unknown course {curso.Sigla}"
+                        f" in SIDING list {raw_block.CodLista}",
                     )
-                # Accept the equivalence code itself
-                codes.append(code)
-                # Create filler course
-                recommended = EquivalenceId(code=code, credits=raw_block.Creditos)
+                    continue
+                codes.append(curso.Sigla)
+            if not codes:
+                raise Exception(f"empty SIDING list {list_code}")
+        else:
+            raise Exception(
+                f"SIDING block is neither a course nor a list: {raw_block.json()}",
+            )
+        # Single-course lists are definitely homogeneous
+        if len(codes) == 1:
+            is_homogeneous = True
         # 0-credit courses get a single ghost credit
         creds = 1 if raw_block.Creditos == 0 else raw_block.Creditos
+        # Create the recommended filler course<
+        # If the list is homogeneous, recommend a concrete course
+        recommended = EquivalenceId(code=list_code, credits=creds)
+        if is_homogeneous:
+            # Use the first course as a concrete representative course
+            main_code = codes[0]
+            recommended = ConcreteId(code=main_code, equivalence=recommended)
+        # Extract the ordering of this course
         recommended_order = raw_block.SemestreBloque * 10 + raw_block.OrdenSemestre
+        # Add the equivalence to the global list of equivalences
+        out.lists[list_code] = EquivDetails(
+            code=list_code,
+            name=raw_block.Nombre,
+            is_homogeneous=is_homogeneous,
+            is_unessential=False,
+            courses=codes,
+        )
+        # Add the recommended course to the list of fillers
+        curriculum.fillers.setdefault(recommended.code, []).append(
+            FillerCourse(course=recommended, order=recommended_order),
+        )
+        # Add the block to the curriculum tree
         superblock = superblocks.setdefault(raw_block.BloqueAcademico or "", [])
         superblock.append(
             Leaf(
@@ -331,10 +343,8 @@ def translate_siding(
                 superblock=raw_block.BloqueAcademico or "",
                 cap=creds,
                 codes=set(codes),
+                list_code=list_code,
             ),
-        )
-        curriculum.fillers.setdefault(recommended.code, []).append(
-            FillerCourse(course=recommended, order=recommended_order),
         )
 
     # Transform into a somewhat valid curriculum

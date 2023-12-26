@@ -13,6 +13,7 @@ from app.plan.validation.curriculum.tree import (
     Leaf,
 )
 from app.sync.curriculums.scrape.common import ScrapedBlock, ScrapedProgram
+from app.sync.curriculums.siding import SidingInfo
 from app.sync.curriculums.storage import CurriculumStorage
 from app.sync.siding.client import BloqueMalla
 
@@ -29,30 +30,150 @@ class ProgramType(BaseModel):
 
 class ListBuilder:
     """
-    Create an arbitrary amount of unique list codes.
+    Create lists, finding an appropiate code that corresponds from the SIDING lists, or
+    a custom code otherwise.
     """
 
-    unique_id: str
+    id_prefix: str
+    unique_prefix: str
     storage: CurriculumStorage
-    last_idx: int
+    added_lists: int
+    sequential_id: int
     optative_idx: int
     minimum_idx: int
+    siding_lists: dict[str, list[str]]
+    siding_list_assignment: dict[str, set[str]]
 
     def __init__(
         self,
         kind: ProgramType,
         storage: CurriculumStorage,
         spec: CurriculumSpec,
+        siding_info: SidingInfo,
+        siding: list[BloqueMalla],
     ) -> None:
-        self.unique_id = f"{kind.superblock_id.upper()}-{spec}"
+        self.id_prefix = kind.layer_id.upper()
+        self.unique_prefix = f"{self.id_prefix}-{spec}"
         self.storage = storage
-        self.last_idx = 0
+        self.added_lists = 0
+        self.sequential_id = 0
         self.optative_idx = 0
         self.minimum_idx = 0
 
+        # Find all lists from SIDING, to find matching codes
+        self.siding_lists = {}
+        for bloque in siding:
+            if bloque.CodSigla is not None:
+                equivalents: list[str] = [bloque.CodSigla]
+                if bloque.Equivalencias is not None:
+                    for equivalent in bloque.Equivalencias.Cursos:
+                        if equivalent.Sigla is not None:
+                            equivalents.append(equivalent.Sigla)
+                if len(equivalents) > 1:
+                    self.siding_lists[f"EQUIV-{bloque.CodSigla}"] = equivalents
+            if bloque.CodLista is not None:
+                siding_list = siding_info.lists.get(bloque.CodLista)
+                courses_in_list: list[str] = []
+                if siding_list is not None:
+                    for course in siding_list:
+                        if course.Sigla is not None:
+                            courses_in_list.append(course.Sigla)
+                if len(courses_in_list) > 0:
+                    self.siding_lists[f"LIST-{bloque.CodLista}"] = courses_in_list
+        self.siding_list_assignment = {}
+
+        # Warn if there is no SIDING info
+        # TODO: All of these warnings will require manual migration once SIDING adds
+        # these plans
+        # Alternatively, we could just kill all old plans for these minors/titles
+        if len(self.siding_lists) == 0:
+            log.warn("no SIDING info available for %s, using unique list IDs", spec)
+
     def add_list(self, name: str, courses: list[str]) -> EquivDetails:
-        self.last_idx += 1
-        lcode = f"#{self.unique_id}-{self.last_idx}"
+        # Find the best match from the SIDING list, if possible
+        best_list_codes = sorted(
+            self.siding_lists,
+            key=lambda lcode: self.rate_siding_list(lcode, courses),
+        )
+        if len(courses) == 1:
+            # Single-course lists are special
+            # There may not be a SIDING code attached to them
+            if best_list_codes and self.siding_lists[best_list_codes[0]] == courses:
+                # Okay, use this code
+                pass
+            else:
+                # There is no exact match, synthesize a list with one course
+                best_list_codes = []
+        else:
+            # If a list code is already assigned to a different set of courses, use the
+            # next best list code
+            while (
+                best_list_codes
+                and best_list_codes[0] in self.siding_list_assignment
+                and self.siding_list_assignment[best_list_codes[0]] != set(courses)
+            ):
+                # The best siding code was used, try with the next best
+                cannot_use = best_list_codes.pop(0)
+
+                # Warn that the best code could not be used
+                next_to_try = best_list_codes[0] if best_list_codes else None
+                log.warn(
+                    "best siding code for %s in spec %s (%s courses) is"
+                    " %s (%s missing courses, %s extra courses)"
+                    ", but it was already used%s",
+                    name,
+                    self.unique_prefix,
+                    len(courses),
+                    cannot_use,
+                    len(set(courses).difference(self.siding_lists[cannot_use])),
+                    len(set(self.siding_lists[cannot_use]).difference(courses)),
+                    f", trying with {next_to_try} next" if next_to_try else "",
+                )
+
+        if len(best_list_codes) > 0:
+            # Use the SIDING code
+            best_list_code = best_list_codes[0]
+            lcode = f"{self.id_prefix}-{best_list_code}"
+            self.siding_list_assignment[best_list_code] = set(courses)
+
+            missing = set(courses).difference(self.siding_lists[best_list_code])
+            if missing:
+                log.warn(
+                    "siding list %s that was assigned to %s in spec %s (%s courses)"
+                    " is missing %s and has %s extra courses",
+                    best_list_code,
+                    name,
+                    self.unique_prefix,
+                    len(courses),
+                    len(missing),
+                    len(set(self.siding_lists[best_list_code]).difference(courses)),
+                )
+        elif len(courses) == 1:
+            # Synthesize a single-course list
+            lcode = f"{self.id_prefix}-{courses[0]}"
+        else:
+            # Use a synthetic code instead
+            # The synthetic codes are built from a prefix unique to this curriculum
+            # spec and a sequence number
+            # These will probably break in the future :(
+            self.sequential_id += 1
+            lcode = f"{self.unique_prefix}-{self.sequential_id}"
+
+            if len(self.siding_lists) > 0:
+                log.warn(
+                    "no siding list codes available for courses %s in spec %s"
+                    ", so we're using synthetic ID %s",
+                    courses,
+                    self.unique_prefix,
+                    lcode,
+                )
+            else:
+                # There are no SIDING lists, so all equivalences will produce this
+                # warning, even though we already warned about the absence of SIDING
+                # lists
+                # Just spare the noise
+                pass
+
         equiv = EquivDetails(
             code=lcode,
             name=name,
@@ -60,8 +181,31 @@ class ListBuilder:
             is_unessential=False,
             courses=courses,
         )
+        if lcode in self.storage.lists and equiv != self.storage.lists[lcode]:
+            log.warn(
+                "duplicated lists with code %s: (%s) vs (%s)",
+                lcode,
+                equiv,
+                self.storage.lists[lcode],
+            )
         self.storage.lists[lcode] = equiv
+        self.added_lists += 1
         return equiv
+
+    def rate_siding_list(self, siding_code: str, equiv_courses: list[str]) -> int:
+        """
+        Rate how good is a particular siding list code for a set of courses.
+        Lower scores are better.
+
+        Calculated as K * |courses - siding| - |siding - courses|.
+        That is, missing courses in the SIDING list weight K times more than extra
+        courses in the SIDING list.
+        """
+        siding_set = set(self.siding_lists[siding_code])
+        equiv_set = set(equiv_courses)
+        return 3 * len(equiv_set.difference(siding_set)) + len(
+            siding_set.difference(equiv_set),
+        )
 
     def next_optative(self) -> int:
         self.optative_idx += 1
@@ -78,6 +222,7 @@ def translate_scrape(
     out: CurriculumStorage,
     spec: CurriculumSpec,
     name: str,
+    siding_info: SidingInfo,
     siding: list[BloqueMalla],
     scrape: ScrapedProgram,
 ) -> Curriculum:
@@ -142,7 +287,7 @@ def translate_scrape(
     scrape.blocks.extend(complementary_blocks)
 
     # Convertir bloque por bloque
-    listbuilder = ListBuilder(kind, out, spec)
+    listbuilder = ListBuilder(kind, out, spec, siding_info, siding)
     for block in scrape.blocks:
         exh, exc, fills = translate_block(
             courseinfo,
@@ -201,11 +346,13 @@ def translate_block(
         code = block.options[0]
         info = courseinfo.try_course(code)
         assert info is not None
+        equiv = listbuilder.add_list(name, block.options)
         exh = Leaf(
             debug_name=name,
             name=name,
             superblock=kind.superblock_id,
             cap=info.credits or 1,
+            list_code=equiv.code,
             codes={code},
             layer=kind.layer_id,
         )
@@ -214,12 +361,16 @@ def translate_block(
             name=name,
             superblock=kind.superblock_id,
             cap=info.credits or 1,
+            list_code=equiv.code,
             codes={code},
         )
         fill = [
             FillerCourse(
-                course=ConcreteId(code=code),
-                order=kind.order_base + listbuilder.last_idx,
+                course=ConcreteId(
+                    code=code,
+                    equivalence=EquivalenceId(code=equiv.code, credits=info.credits),
+                ),
+                order=kind.order_base + listbuilder.added_lists,
             ),
         ]
     else:
@@ -259,8 +410,6 @@ def translate_block(
 
         # Agregar esta equivalencia al plan
         equiv = listbuilder.add_list(name, available_options)
-        accept_codes = set(available_options)
-        accept_codes.add(equiv.code)
         exh = (
             None
             if block.complementary
@@ -270,7 +419,8 @@ def translate_block(
                     name=name,
                     superblock=kind.superblock_id,
                     cap=creds,
-                    codes=accept_codes,
+                    list_code=equiv.code,
+                    codes=set(available_options),
                     layer=kind.layer_id,
                 )
             )
@@ -283,13 +433,14 @@ def translate_block(
                 name=name,
                 superblock=kind.superblock_id,
                 cap=creds,
-                codes=accept_codes,
+                list_code=equiv.code,
+                codes=set(available_options),
             )
         )
         fill = [
             FillerCourse(
                 course=EquivalenceId(code=equiv.code, credits=filler_creds),
-                order=kind.order_base + listbuilder.last_idx,
+                order=kind.order_base + listbuilder.added_lists,
                 cost_offset=cost_offset,
             )
             for _ in range(_ceil_div(creds, filler_creds))

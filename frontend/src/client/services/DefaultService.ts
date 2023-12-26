@@ -3,6 +3,7 @@
 /* eslint-disable */
 import type { AccessLevelOverview } from '../models/AccessLevelOverview';
 import type { Body_generate_plan } from '../models/Body_generate_plan';
+import type { Body_get_pseudocourse_details } from '../models/Body_get_pseudocourse_details';
 import type { ConcreteId } from '../models/ConcreteId';
 import type { CourseDetails } from '../models/CourseDetails';
 import type { CourseFilter } from '../models/CourseFilter';
@@ -189,20 +190,20 @@ export class DefaultService {
      * course/equivalence details.
      * Returns null in the corresponding slot if the code is unknown.
      *
-     * Request example: `/api/courses?codes=IIC2233&codes=IIC2173`
-     * @param codes
+     * Additionally, a curriculum spec can be specified. In this case, all equivalences in
+     * the plan will be fetched and appended to the list.
+     * @param requestBody
      * @returns any Successful Response
      * @throws ApiError
      */
     public static getPseudocourseDetails(
-        codes: Array<string>,
+        requestBody: Body_get_pseudocourse_details,
     ): CancelablePromise<Array<(CourseDetails | EquivDetails)>> {
         return __request(OpenAPI, {
-            method: 'GET',
+            method: 'POST',
             url: '/course/details',
-            query: {
-                'codes': codes,
-            },
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: `Validation Error`,
             },
