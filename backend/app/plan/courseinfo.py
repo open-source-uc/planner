@@ -211,7 +211,7 @@ async def pack_course_details():
     print("packing course database...")
     all_courses = await Course.prisma().find_many()
     print("  loading courses to memory...")
-    courses = {}
+    courses: dict[str, CourseDetails] = {}
     for course in all_courses:
         # Create course object
         courses[course.code] = CourseDetails.from_db(course)
