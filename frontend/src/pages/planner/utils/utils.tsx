@@ -180,27 +180,8 @@ export const handleSelectEquivalence = (selection: CourseDetails, prev: Validata
           }
         )
       } else {
-        // handle when credis exced necesary
-        // Partial solution: just consume anything we find
-        const semesterClasses = newValidatablePlan.classes[semester]
-        let extra = selection.credits - oldEquivalence.credits
-        for (let i = semesterClasses.length; i-- > 0;) {
-          const equiv = semesterClasses[i]
-          if ('credits' in equiv && equiv.code === oldEquivalence.code) {
-            if (equiv.credits <= extra) {
-              // Consume this equivalence entirely
-              semesterClasses.splice(index, 1)
-              extra -= equiv.credits
-            } else {
-              // Consume part of this equivalence
-              equiv.credits -= extra
-              extra = 0
-            }
-          }
-        }
-
+        consumeCreditsOnEquivalenceSelection(newValidatablePlan.classes, oldEquivalence.code, selection.credits - oldEquivalence.credits)
         // Increase the credits of the equivalence
-        // We might not have found all the missing credits, but that's ok
         newValidatablePlan.classes[semester].splice(index, 1,
           {
             is_concrete: true,
@@ -249,5 +230,24 @@ export const handleErrors = (err: unknown, setPlannerStatus: Function, setError:
     setError('Error desconocido')
     console.error(err)
     setPlannerStatus(PlannerStatus.ERROR)
+  }
+}
+
+export const consumeCreditsOnEquivalenceSelection = (newClasses: Array<Array<ConcreteId | EquivalenceId>>, block: string, creditsConsumedBySelection: number): void => {
+  for (const semesterIndex of newClasses.keys()) {
+    for (const courseIndex of newClasses[semesterIndex].keys()) {
+      const course = newClasses[semesterIndex][courseIndex]
+      if (course.code === block && course.is_concrete === false && 'credits' in course) {
+        if (course.credits <= creditsConsumedBySelection) {
+          newClasses[semesterIndex].splice(courseIndex, 1)
+          creditsConsumedBySelection -= course.credits
+        } else {
+          course.credits -= creditsConsumedBySelection
+          creditsConsumedBySelection = 0
+          break
+        }
+      }
+    }
+    if (creditsConsumedBySelection === 0) break
   }
 }

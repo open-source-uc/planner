@@ -197,10 +197,10 @@ const Planner = (): JSX.Element => {
     })
   }, [])
 
-  const forceBlockChange = useCallback((newBlock: string, coursePos: CoursePos): void => {
+  const forceBlockChange = useCallback((newBlock: string, coursePos: CoursePos, courseCredits: number): void => {
     setValidatablePlan(prev => {
       if (prev == null) return prev
-      const newPlan = changeCourseBlock(prev, coursePos, newBlock)
+      const newPlan = changeCourseBlock(prev, coursePos, courseCredits, newBlock)
       return newPlan
     })
   }, [])
@@ -479,7 +479,8 @@ const Planner = (): JSX.Element => {
         <CoursesContextMenu
           posibleBlocks={possibleBlocksList[courseInfo.code] ?? []}
           points={points}
-          isEquivalence={courseInfo.isEquivalence}
+          hasEquivalence={courseInfo.isEquivalence}
+          courseCredits={courseInfo.credits}
           courseInfo={findClassInPlan(validatablePlan?.classes ?? [], courseInfo)}
           coursePos={locateClassInPlan(validatablePlan?.classes ?? [], courseInfo)}
           openEquivModal={openModal}

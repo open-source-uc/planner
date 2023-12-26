@@ -79,6 +79,7 @@ const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, t
       data-course-code={courseId.code}
       data-course-instance={courseId.instance}
       data-course-hasEquiv={hasEquivalence}
+      data-course-credits={courseDetails !== undefined && 'credits' in courseDetails ? courseDetails.credits : ('credits' in course) ? course.credits : 0}
       ref={ref}
       draggable={true}
       className={`${isDragging ? 'opacity-0 z-0' : 'mb-3'} mx-1 ${(isPassed || isCurrent) ? 'cursor-not-allowed opacity-50' : 'cursor-grab'} `}

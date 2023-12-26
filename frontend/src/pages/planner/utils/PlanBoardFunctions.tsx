@@ -1,5 +1,26 @@
-import { type Cyear, type CoursePos, type PseudoCourseId, type Diagnostic } from './Types'
+import { type Cyear, type CoursePos, type PseudoCourseId, type Diagnostic, type ValidationDigest, type PlanDigest } from './Types'
 import { type ValidatablePlan, type ClassId, type ValidationResult } from '../../../client'
+import { consumeCreditsOnEquivalenceSelection } from './utils'
+
+// Ensure that an array stays in sync with a union of string literals
+// https://stackoverflow.com/a/70694878/5884836
+type ValueOf<T> = T[keyof T]
+type NonEmptyArray<T> = [T, ...T[]]
+type MustInclude<T, U extends T[]> = [T] extends [ValueOf<U>] ? U : never
+
+function stringUnionToArray<T> () {
+  return <U extends NonEmptyArray<T>>(...elements: MustInclude<T, U>) => elements
+}
+export const VALID_CYEARS = stringUnionToArray<Cyear>()('C2020', 'C2022')
+
+export const validateCyear = (raw: string): Cyear | null => {
+  for (const cyear of VALID_CYEARS) {
+    if (raw === cyear) {
+      return cyear
+    }
+  }
+  return null
+}
 
 export const validateCourseMovement = (prev: ValidatablePlan, drag: CoursePos, drop: CoursePos): string | null => {
   const dragCourse = prev.classes[drag.semester][drag.index]
@@ -49,32 +70,16 @@ export const updateClassesState = (prev: ValidatablePlan, drag: CoursePos, drop:
   return { ...prev, classes: newClasses }
 }
 
-export const changeCourseBlock = (prev: ValidatablePlan, coursePos: CoursePos, block: string): ValidatablePlan => {
+export const changeCourseBlock = (prev: ValidatablePlan, coursePos: CoursePos, courseCredits: number, newBlock: string): ValidatablePlan => {
   const newClasses = [...prev.classes]
   const course = { ...newClasses[coursePos.semester][coursePos.index] }
   if ('credits' in course) return prev // This should never happen
-  course.equivalence = { is_concrete: false, code: block, credits: 10 }
+  // check if the new block eliminate a not concrete course
+  consumeCreditsOnEquivalenceSelection(newClasses, newBlock, courseCredits)
+
+  course.equivalence = { is_concrete: false, code: newBlock, credits: courseCredits }
   newClasses[coursePos.semester][coursePos.index] = course
   return { ...prev, classes: newClasses }
-}
-
-// Ensure that an array stays in sync with a union of string literals
-// https://stackoverflow.com/a/70694878/5884836
-type ValueOf<T> = T[keyof T]
-type NonEmptyArray<T> = [T, ...T[]]
-type MustInclude<T, U extends T[]> = [T] extends [ValueOf<U>] ? U : never
-function stringUnionToArray<T> () {
-  return <U extends NonEmptyArray<T>>(...elements: MustInclude<T, U>) => elements
-}
-export const VALID_CYEARS = stringUnionToArray<Cyear>()('C2020', 'C2022')
-
-export const validateCyear = (raw: string): Cyear | null => {
-  for (const cyear of VALID_CYEARS) {
-    if (raw === cyear) {
-      return cyear
-    }
-  }
-  return null
 }
 
 /**
@@ -154,13 +159,6 @@ export const getCourseWarnings = (plan: PseudoCourseId[][], validation: Validati
   return digest.semesters[coursePos.semester]?.courses?.[coursePos.index]?.warnings ?? []
 }
 
-interface PlanDigest {
-  // Maps `(code, course instance index)` to `(semester, index within semester)`
-  idToIndex: Record<string, CoursePos[]>
-  // Maps `(semester, index within semester)` to `(code, course instance index)`
-  indexToId: ClassId[][]
-}
-
 const planDigestCache = new WeakMap<PseudoCourseId[][], PlanDigest>()
 
 const getPlanDigest = (classes: PseudoCourseId[][]): PlanDigest => {
@@ -187,31 +185,6 @@ const getPlanDigest = (classes: PseudoCourseId[][]): PlanDigest => {
     planDigestCache.set(classes, digest)
   }
   return digest
-}
-
-export interface CourseValidationDigest {
-  // Contains the superblock string
-  // The empty string if no superblock is found
-  superblock: string
-  // Contains the errors associated with this course.
-  errors: Diagnostic[]
-  // Contains the warnings associated with this course.
-  warnings: Diagnostic[]
-}
-export interface SemesterValidationDigest {
-  // Contains the errors associated with this semester.
-  errors: Diagnostic[]
-  // Contains the warnings associated with this semester.
-  warnings: Diagnostic[]
-  // The validation digest for each course
-  courses: CourseValidationDigest[]
-}
-export interface ValidationDigest {
-  // Information associated to each semester.
-  semesters: SemesterValidationDigest[]
-  // If `true`, the plan is outdated with respect to the courses that the user has taken.
-  // This is computed from the presence of "outdated" diagnostics.
-  isOutdated: boolean
 }
 
 const validationDigestCache = new WeakMap<ValidationResult, [PseudoCourseId[][], ValidationDigest]>()

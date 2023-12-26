@@ -4,7 +4,7 @@ interface useContextMenuReturn {
   clicked: boolean
   points: { x: number, y: number }
   handleContextMenu: MouseEventHandler
-  courseInfo: { code: string, instance: number, isEquivalence: boolean, hasMoreBlocks: boolean }
+  courseInfo: { code: string, instance: number, credits: number, isEquivalence: boolean }
 }
 
 const useContextMenu = (): useContextMenuReturn => {
@@ -18,7 +18,7 @@ const useContextMenu = (): useContextMenuReturn => {
     code: '',
     instance: 0,
     isEquivalence: false,
-    hasMoreBlocks: false
+    credits: 0
   })
   const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>): void => {
     console.log(e)
@@ -31,13 +31,14 @@ const useContextMenu = (): useContextMenuReturn => {
     const courseCode = e.currentTarget.getAttribute('data-course-code')
     const courseInstance = e.currentTarget.getAttribute('data-course-instance')
     const courseIsEquiv = e.currentTarget.getAttribute('data-course-hasEquiv')
+    const courseCredits = e.currentTarget.getAttribute('data-course-credits')
 
-    if (courseCode != null && courseInstance != null) {
+    if (courseCode != null && courseInstance != null && courseIsEquiv != null && courseCredits != null) {
       setCourseInfo({
         code: courseCode,
         instance: parseInt(courseInstance),
         isEquivalence: courseIsEquiv === 'true',
-        hasMoreBlocks: false
+        credits: parseInt(courseCredits)
       })
     }
     console.log('Right Click', courseCode, courseInstance, e.pageX, e.pageY)

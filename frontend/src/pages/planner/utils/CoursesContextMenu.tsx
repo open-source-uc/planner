@@ -5,14 +5,15 @@ import { type EquivDetails } from '../../../client'
 interface CoursesContextMenuProps {
   posibleBlocks: EquivDetails[]
   points: { x: number, y: number }
-  isEquivalence: boolean
+  hasEquivalence: boolean
+  courseCredits: number
   coursePos?: CoursePos
   courseInfo?: PseudoCourseId
   openEquivModal: Function
   forceBlockChange: Function
 }
 
-const CoursesContextMenu = ({ posibleBlocks, points, isEquivalence, courseInfo, coursePos, openEquivModal, forceBlockChange }: CoursesContextMenuProps): JSX.Element => {
+const CoursesContextMenu = ({ posibleBlocks, points, hasEquivalence, courseCredits, courseInfo, coursePos, openEquivModal, forceBlockChange }: CoursesContextMenuProps): JSX.Element => {
   const [showBlocks, setShowBlocks] = useState(false)
 
   return (
@@ -24,7 +25,7 @@ const CoursesContextMenu = ({ posibleBlocks, points, isEquivalence, courseInfo, 
         href={`https://catalogo.uc.cl/index.php?tmpl=component&option=com_catalogo&view=programa&sigla=${courseInfo.code}`} rel="noreferrer" target="_blank"
       >Mas información</a>
       )}
-      {isEquivalence && (
+      {hasEquivalence && (
         <button
           className="p-2 w-full text-left hover:cursor-pointer hover:bg-slate-200 border-t-2 border-slate-300"
           onClick={() => {
@@ -53,7 +54,7 @@ const CoursesContextMenu = ({ posibleBlocks, points, isEquivalence, courseInfo, 
                   className={`block w-full p-2 text-left hover:bg-slate-300 ${courseInfo !== undefined && 'equivalence' in courseInfo && block.code === courseInfo.equivalence?.code ? 'bg-slate-200' : ''}`}
                   onClick={() => {
                     if (courseInfo !== undefined && 'equivalence' in courseInfo && block.code === courseInfo.equivalence?.code) return
-                    forceBlockChange(block.code, coursePos)
+                    forceBlockChange(block.code, coursePos, courseCredits)
                   }}
                 >
                   {block.name}
