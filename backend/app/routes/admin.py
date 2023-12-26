@@ -52,13 +52,11 @@ async def view_mods(user: AdminKey = Depends(require_admin_auth)):
             print(f"fetching user data for user {mod.user_rut} from SIDING...")
             data = await siding_translate.fetch_student_info(Rut(mod.user_rut))
             named_mods[-1].name = data.full_name
-        except ValueError as err:
-            # TODO: Refactor ValueError to use a custom exception
-            if "Not a valid" in str(err):
-                # Error: "User is not a valid engineering student."
-                # Ignore if couldn't get the name to at least show the RUT, which
-                # is more important.
-                pass
+        except siding_translate.InvalidStudentError:
+            # Error: "User is not a valid engineering student."
+            # Ignore if couldn't get the name to at least show the RUT, which
+            # is more important.
+            pass
     return named_mods
 
 

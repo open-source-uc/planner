@@ -9,8 +9,8 @@ import type { ClassId } from './ClassId';
  * aren't.
  */
 export type AmbiguousCourseErr = {
+    is_err?: boolean;
     kind?: 'equiv';
     associated_to: Array<ClassId>;
-    is_err?: boolean;
 };
 

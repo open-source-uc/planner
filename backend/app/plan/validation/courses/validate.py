@@ -23,8 +23,7 @@ from app.plan.validation.courses.simplify import simplify
 from app.plan.validation.diagnostic import (
     AmbiguousCourseErr,
     CourseRequirementErr,
-    SemesterCreditsErr,
-    SemesterCreditsWarn,
+    SemesterCreditsDiag,
     SemestralityWarn,
     UnavailableCourseWarn,
     UnknownCourseErr,
@@ -277,17 +276,19 @@ class ValidationContext:
                 sem_credits += self.courseinfo.get_credits(course) or 0
             if sem_credits > CREDIT_HARD_MAX:
                 out.add(
-                    SemesterCreditsErr(
+                    SemesterCreditsDiag(
+                        is_err=True,
                         associated_to=[sem_i],
-                        max_allowed=CREDIT_HARD_MAX,
+                        credit_limit=CREDIT_HARD_MAX,
                         actual=sem_credits,
                     ),
                 )
             elif sem_credits > CREDIT_SOFT_MAX:
                 out.add(
-                    SemesterCreditsWarn(
+                    SemesterCreditsDiag(
+                        is_err=False,
                         associated_to=[sem_i],
-                        max_recommended=CREDIT_SOFT_MAX,
+                        credit_limit=CREDIT_SOFT_MAX,
                         actual=sem_credits,
                     ),
                 )

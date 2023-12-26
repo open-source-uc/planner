@@ -9,9 +9,9 @@ import type { CurriculumSpec } from './CurriculumSpec';
  * plan correctly.
  */
 export type NoMajorMinorWarn = {
+    is_err?: boolean;
     kind?: 'nomajor';
     associated_to?: null;
-    is_err?: boolean;
     plan: CurriculumSpec;
 };
 

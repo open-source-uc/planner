@@ -816,60 +816,60 @@ class MPSolverParameters:
         doc="The membership flag",
     )
     __repr__ = _swig_repr
-    RELATIVE_MIP_GAP = _pywraplp.MPSolverParameters_RELATIVE_MIP_GAP
+    RELATIVE_MIP_GAP: int = _pywraplp.MPSolverParameters_RELATIVE_MIP_GAP
     r""" Limit for relative MIP gap."""
-    PRIMAL_TOLERANCE = _pywraplp.MPSolverParameters_PRIMAL_TOLERANCE
+    PRIMAL_TOLERANCE: int = _pywraplp.MPSolverParameters_PRIMAL_TOLERANCE
     r"""
     Advanced usage: tolerance for primal feasibility of basic solutions.
 
     This does not control the integer feasibility tolerance of integer
     solutions for MIP or the tolerance used during presolve.
     """
-    DUAL_TOLERANCE = _pywraplp.MPSolverParameters_DUAL_TOLERANCE
+    DUAL_TOLERANCE: int = _pywraplp.MPSolverParameters_DUAL_TOLERANCE
     r""" Advanced usage: tolerance for dual feasibility of basic solutions."""
-    PRESOLVE = _pywraplp.MPSolverParameters_PRESOLVE
+    PRESOLVE: int = _pywraplp.MPSolverParameters_PRESOLVE
     r""" Advanced usage: presolve mode."""
-    LP_ALGORITHM = _pywraplp.MPSolverParameters_LP_ALGORITHM
+    LP_ALGORITHM: int = _pywraplp.MPSolverParameters_LP_ALGORITHM
     r""" Algorithm to solve linear programs."""
-    INCREMENTALITY = _pywraplp.MPSolverParameters_INCREMENTALITY
+    INCREMENTALITY: int = _pywraplp.MPSolverParameters_INCREMENTALITY
     r""" Advanced usage: incrementality from one solve to the next."""
-    SCALING = _pywraplp.MPSolverParameters_SCALING
+    SCALING: int = _pywraplp.MPSolverParameters_SCALING
     r""" Advanced usage: enable or disable matrix scaling."""
-    PRESOLVE_OFF = _pywraplp.MPSolverParameters_PRESOLVE_OFF
+    PRESOLVE_OFF: int = _pywraplp.MPSolverParameters_PRESOLVE_OFF
     r""" Presolve is off."""
-    PRESOLVE_ON = _pywraplp.MPSolverParameters_PRESOLVE_ON
+    PRESOLVE_ON: int = _pywraplp.MPSolverParameters_PRESOLVE_ON
     r""" Presolve is on."""
-    DUAL = _pywraplp.MPSolverParameters_DUAL
+    DUAL: int = _pywraplp.MPSolverParameters_DUAL
     r""" Dual simplex."""
-    PRIMAL = _pywraplp.MPSolverParameters_PRIMAL
+    PRIMAL: int = _pywraplp.MPSolverParameters_PRIMAL
     r""" Primal simplex."""
-    BARRIER = _pywraplp.MPSolverParameters_BARRIER
+    BARRIER: int = _pywraplp.MPSolverParameters_BARRIER
     r""" Barrier algorithm."""
-    INCREMENTALITY_OFF = _pywraplp.MPSolverParameters_INCREMENTALITY_OFF
+    INCREMENTALITY_OFF: int = _pywraplp.MPSolverParameters_INCREMENTALITY_OFF
     r""" Start solve from scratch."""
-    INCREMENTALITY_ON = _pywraplp.MPSolverParameters_INCREMENTALITY_ON
+    INCREMENTALITY_ON: int = _pywraplp.MPSolverParameters_INCREMENTALITY_ON
     r"""
     Reuse results from previous solve as much as the underlying solver
     allows.
     """
-    SCALING_OFF = _pywraplp.MPSolverParameters_SCALING_OFF
+    SCALING_OFF: int = _pywraplp.MPSolverParameters_SCALING_OFF
     r""" Scaling is off."""
-    SCALING_ON = _pywraplp.MPSolverParameters_SCALING_ON
+    SCALING_ON: int = _pywraplp.MPSolverParameters_SCALING_ON
     r""" Scaling is on."""
 
     def __init__(self) -> None:
         r"""The constructor sets all parameters to their default value."""
         _pywraplp.MPSolverParameters_swiginit(self, _pywraplp.new_MPSolverParameters())
-    def SetDoubleParam(self, param, value):
+    def SetDoubleParam(self, param: int, value: float) -> None:
         r"""Sets a double parameter to a specific value."""
         return _pywraplp.MPSolverParameters_SetDoubleParam(self, param, value)
-    def SetIntegerParam(self, param, value):
+    def SetIntegerParam(self, param: int, value: int) -> None:
         r"""Sets a integer parameter to a specific value."""
         return _pywraplp.MPSolverParameters_SetIntegerParam(self, param, value)
-    def GetDoubleParam(self, param):
+    def GetDoubleParam(self, param: int) -> None:
         r"""Returns the value of a double parameter."""
         return _pywraplp.MPSolverParameters_GetDoubleParam(self, param)
-    def GetIntegerParam(self, param):
+    def GetIntegerParam(self, param: int) -> None:
         r"""Returns the value of an integer parameter."""
         return _pywraplp.MPSolverParameters_GetIntegerParam(self, param)
     __swig_destroy__ = _pywraplp.delete_MPSolverParameters

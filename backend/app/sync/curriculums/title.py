@@ -29,6 +29,7 @@ def translate_title(
     out: CurriculumStorage,
     spec: CurriculumSpec,
     meta: ProgramDetails,
+    siding_info: SidingInfo,
     siding: list[BloqueMalla],
     scrape: ScrapedProgram,
 ):
@@ -46,6 +47,7 @@ def translate_title(
         out,
         spec,
         meta.name,
+        siding_info,
         siding,
         scrape,
     )
@@ -57,9 +59,7 @@ def translate_title(
     out.set_title(spec, curr)
 
 
-OPI_CODE = "#OPI"
 OPI_NAME = "Optativos de Ingeniería (OPI)"
-OPI_BLOCK_CODE = f"courses:{OPI_CODE}"
 OPI_EXTRAS = [
     "GOB3001",
     "GOB3004",
@@ -94,11 +94,11 @@ def add_opi_to_title(
     assert exclusive_block.children
 
     # Conseguir la equivalencia de OPIs
-    opi_equiv = build_opi_equiv(courseinfo, out)
+    opi_equiv = build_opi_equiv(courseinfo, out, spec)
 
     # Meter los codigos en un diccionario
-    opi_set: set[str] = {OPI_CODE}
-    ipre_set: set[str] = {OPI_CODE}
+    opi_set: set[str] = set()
+    ipre_set: set[str] = set()
     for code in opi_equiv.courses:
         info = courseinfo.try_course(code)
         if info is None:
@@ -127,6 +127,7 @@ def add_opi_to_title(
                     name=None,
                     superblock="Titulo",
                     cap=TITLE_EXCLUSIVE_CREDITS,
+                    list_code=opi_equiv.code,
                     codes=opi_set,
                     # cost=1,  # Preferir los ramos normales por un poquito
                 ),
@@ -135,6 +136,7 @@ def add_opi_to_title(
                     name=None,
                     superblock="Titulo",
                     cap=20,
+                    list_code=opi_equiv.code,
                     codes=ipre_set,
                     # cost=1,  # Preferir los ramos normales por un poquito
                 ),
@@ -143,9 +145,9 @@ def add_opi_to_title(
     )
 
     # Agregar los OPIs en cursos de 10 creditos, hasta completar los 130
-    curr.fillers.setdefault(OPI_CODE, []).extend(
+    curr.fillers.setdefault(opi_equiv.code, []).extend(
         FillerCourse(
-            course=EquivalenceId(code=OPI_CODE, credits=10),
+            course=EquivalenceId(code=opi_equiv.code, credits=10),
             order=3000,  # Colocarlos al final
             cost_offset=1,  # Preferir otros ramos antes
         )
@@ -154,16 +156,23 @@ def add_opi_to_title(
     )
 
 
-def build_opi_equiv(courseinfo: CourseInfo, out: CurriculumStorage) -> EquivDetails:
+def build_opi_equiv(
+    courseinfo: CourseInfo,
+    out: CurriculumStorage,
+    spec: CurriculumSpec,
+) -> EquivDetails:
+    # Generar un codigo unico para esta equivalencia
+    opi_code = "TITLE-OPI"
+
     # Reusar la equivalencia de OPIs si se puede
-    if OPI_CODE in out.lists:
-        return out.lists[OPI_CODE]
+    if opi_code in out.lists:
+        return out.lists[opi_code]
 
     # Sino, recolectar los cursos que calzan con los requisitos
     opis = [course.code for course in courseinfo.courses.values() if is_opi(course)]
     opis.extend(OPI_EXTRAS)
     opi_equiv = EquivDetails(
-        code=OPI_CODE,
+        code=opi_code,
         name=OPI_NAME,
         is_homogeneous=False,
         is_unessential=True,
@@ -171,7 +180,7 @@ def build_opi_equiv(courseinfo: CourseInfo, out: CurriculumStorage) -> EquivDeta
     )
 
     # Almacenar la equivalencia para reusarla en otros planes
-    out.lists[OPI_CODE] = opi_equiv
+    out.lists[opi_code] = opi_equiv
     return opi_equiv
 
 

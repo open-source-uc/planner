@@ -42,7 +42,7 @@ export const getCourseNameWithCode = (course: ClassId | PseudoCourseDetail): str
 /**
  * Show the name of a course if it is loaded.
  */
-export const getCourseName = (course: ClassId | PseudoCourseDetail): string | undefined => {
+export const getCourseName = (course: string | ClassId | PseudoCourseDetail): string | undefined => {
   //   if str, return unchanged
   if (typeof course === 'string') {
     return course

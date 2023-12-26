@@ -18,7 +18,7 @@ interface DraggableCardProps {
   remCourse: Function
   courseBlock: string
   openSelector: Function
-  hasEquivalence?: boolean
+  showEquivalence?: boolean
   hasError: boolean
   hasWarning: boolean
 }
@@ -29,7 +29,7 @@ interface CardProps {
   remCourse: Function
   courseBlock: string
   openSelector: Function
-  hasEquivalence?: boolean
+  showEquivalence?: boolean
   hasError: boolean
   hasWarning: boolean
   isPassed: boolean
@@ -52,7 +52,7 @@ const BlockInitials = (courseBlock: string): string => {
   return ''
 }
 
-const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, toggleDrag, remCourse, courseBlock, openSelector, hasEquivalence, hasError, hasWarning }: DraggableCardProps): JSX.Element => {
+const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, toggleDrag, remCourse, courseBlock, openSelector, showEquivalence: hasEquivalence, hasError, hasWarning }: DraggableCardProps): JSX.Element => {
   const ref = useRef(null)
   const callOpenSelector = (): void => openSelector(courseId)
   const callRemCourse = (): void => remCourse(courseId)
@@ -81,7 +81,7 @@ const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, t
             course={course}
             credits={(courseDetails !== undefined && 'credits' in courseDetails) ? courseDetails.credits : ('credits' in course) ? course.credits : 0}
             name={courseDetails !== undefined ? courseDetails.name : ''}
-            hasEquivalence={hasEquivalence}
+            showEquivalence={hasEquivalence}
             openSelector={callOpenSelector}
             remCourse={callRemCourse}
             hasWarning={hasWarning}
@@ -94,7 +94,7 @@ const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, t
   )
 }
 
-const CourseCard = memo(function _CourseCard ({ courseBlock, course, credits, name, hasEquivalence, openSelector, remCourse, hasWarning, hasError, isPassed, isCurrent }: CardProps): JSX.Element {
+const CourseCard = memo(function _CourseCard ({ courseBlock, course, credits, name, showEquivalence: hasEquivalence, openSelector, remCourse, hasWarning, hasError, isPassed, isCurrent }: CardProps): JSX.Element {
   const blockId = BlockInitials(courseBlock)
   const EditIcon = (blockId === 'FG') ? EditWhiteIcon : EditBlackIcon
   const CurrentIcon = (blockId === 'FG') ? currentWhiteIcon : currentBlackIcon

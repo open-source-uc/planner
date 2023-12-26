@@ -139,11 +139,20 @@ async def load_siding_offer_to_database():
                 )
 
 
+class InvalidStudentError(Exception):
+    """
+    Indicates that the referenced student is not a valid engineering student (as in,
+    SIDING does not provide info about them).
+    """
+
+
 async def fetch_student_info(rut: Rut) -> StudentInfo:
     """
     MUST BE CALLED WITH AUTHORIZATION
 
     Request the basic student information for a given RUT from SIDING.
+
+    Raises `InvalidStudentError` if the RUT does not refer to a valid student.
     """
     try:
         raw = await client.get_student_info(rut)
@@ -166,7 +175,7 @@ async def fetch_student_info(rut: Rut) -> StudentInfo:
             err,
             AssertionError,
         ):
-            raise ValueError("Not a valid engineering student") from err
+            raise InvalidStudentError("Not a valid engineering student") from err
         raise err
 
 
@@ -195,10 +204,10 @@ async def fetch_student_previous_courses(
                 in_course.append([])
             if c.Estado.startswith("2"):
                 # Failed course
-                course = ConcreteId(code="#FAILED", failed=c.Sigla)
+                course = ConcreteId(code="#FAILED", equivalence=None, failed=c.Sigla)
             else:
                 # Approved course
-                course = ConcreteId(code=c.Sigla)
+                course = ConcreteId(code=c.Sigla, equivalence=None)
             semesters[sem].append(course)
             currently_coursing = c.Estado.startswith("3")
             in_course[sem].append(currently_coursing)
