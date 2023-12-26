@@ -43,7 +43,6 @@ export type { ReqProgram } from './models/ReqProgram';
 export type { ReqSchool } from './models/ReqSchool';
 export type { SemesterCreditsDiag } from './models/SemesterCreditsDiag';
 export type { SemestralityWarn } from './models/SemestralityWarn';
-export type { StudentContext } from './models/StudentContext';
 export type { StudentInfo } from './models/StudentInfo';
 export type { Title } from './models/Title';
 export type { UnassignedWarn } from './models/UnassignedWarn';

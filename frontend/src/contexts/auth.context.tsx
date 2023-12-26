@@ -1,12 +1,12 @@
 import React, { type Dispatch, type SetStateAction, useEffect, useState } from 'react'
-import { DefaultService, type StudentContext } from '../client'
+import { DefaultService, type StudentInfo } from '../client'
 import { toast } from 'react-toastify'
 
 export interface UserData {
   token: string
 }
 
-export interface Student extends StudentContext {
+export interface Student extends StudentInfo {
   rut?: string
 }
 

@@ -466,7 +466,7 @@ async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
         )
     else:
         student = await sync.get_student_data(user)
-        cyear = cyear_from_str(student.info.cyear)
+        cyear = cyear_from_str(student.cyear)
         if cyear is None:
             # Just plow forward, after all the validation endpoint will generate an
             # error about the mismatched cyear
@@ -474,9 +474,9 @@ async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
         classes = student.passed_courses
         curriculum = CurriculumSpec(
             cyear=cyear,
-            major=student.info.reported_major,
-            minor=student.info.reported_minor,
-            title=student.info.reported_title,
+            major=student.reported_major,
+            minor=student.reported_minor,
+            title=student.reported_title,
         )
     return ValidatablePlan(
         version=CURRENT_PLAN_VERSION,

@@ -44,7 +44,7 @@ from app.sync.curriculums.collate import collate_plans
 from app.sync.curriculums.storage import CurriculumStorage
 from app.sync.siding import translate as siding_translate
 from app.user.auth import UserKey, allow_force_login
-from app.user.info import StudentContext, StudentInfo
+from app.user.info import StudentInfo
 from app.user.key import Rut
 
 if TYPE_CHECKING:
@@ -236,10 +236,10 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
 
 
 # TODO: Move this to redis
-_student_context_cache: OrderedDict[Rut, tuple[StudentContext, float]] = OrderedDict()
+_student_context_cache: OrderedDict[Rut, tuple[StudentInfo, float]] = OrderedDict()
 
 
-async def get_student_data(user: UserKey) -> StudentContext:
+async def get_student_data(user: UserKey) -> StudentInfo:
     # Use entries in cache
     if user.rut in _student_context_cache:
         return _student_context_cache[user.rut][0]
@@ -256,10 +256,6 @@ async def get_student_data(user: UserKey) -> StudentContext:
     print(f"fetching user data for student {user.rut} from SIDING...")
     try:
         info = await siding_translate.fetch_student_info(user.rut)
-        passed, in_course = await siding_translate.fetch_student_previous_courses(
-            user.rut,
-            info,
-        )
     except siding_translate.InvalidStudentError as err:
         if await allow_force_login(user):
             # Allow moderators and admins to login anyway, even with incomplete info
@@ -270,24 +266,20 @@ async def get_student_data(user: UserKey) -> StudentContext:
                 reported_major=None,
                 reported_minor=None,
                 reported_title=None,
+                passed_courses=[],
+                current_semester=0,
+                next_semester=0,
+                admission=(1900, 1),
             )
-            passed, in_course = [], False
         else:
             raise HTTPException(
                 403,
                 "User is not a valid engineering student.",
             ) from err
 
-    ctx = StudentContext(
-        info=info,
-        passed_courses=passed,
-        current_semester=len(passed) - (1 if in_course else 0),
-        next_semester=len(passed),
-    )
-
     # Add to cache and return
     _student_context_cache[user.rut] = (
-        ctx,
+        info,
         time.monotonic() + settings.student_info_expire,
     )
-    return ctx
+    return info
