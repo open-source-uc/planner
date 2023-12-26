@@ -124,15 +124,10 @@ const SemesterColumn = ({ coursesId, validation, classesDetails, authState, seme
         <ConditionalWrapper condition={isPassed} wrapper={(children: ReactNode) => <span className='line-through decoration-black/40'>{children}</span>}>
           <h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2>
         </ConditionalWrapper>
-        {isCurrent
-          ? <>
-          <p className='text-xs'>En curso</p>
+        <>
+          <p className="text-[0.6rem] opacity-75">{totalCredits} créd.{isCurrent ? ' (en curso)' : ''}</p>
           <div className="my-1 divider"></div>
         </>
-          : <>
-          <p className="text-[0.6rem] opacity-75">{totalCredits} créd.</p>
-          <div className="my-1 divider"></div>
-        </>}
       </div>
       <div ref={columnRef}>
         {classes.map((course: PseudoCourseId, index: number) => {
