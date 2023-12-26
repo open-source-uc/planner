@@ -39,7 +39,7 @@ ansible = "^8.1.0"
 ansible-lint = { version = "^6.17.2", markers = "platform_system != 'Windows'" }
 ansible-navigator = "^3.4.0"
 ansible-pylibssh = "^1.1.0"
-paramiko = "^3.2.0"
+paramiko = "^3.4.0"
 
 [build-system]
 requires = ["poetry-core"]
