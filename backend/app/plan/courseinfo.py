@@ -119,6 +119,7 @@ class EquivDetails(BaseModel):
 class CourseInfo:
     courses: dict[str, CourseDetails]
     equivs: dict[str, EquivDetails]
+    must_have_courses: set[str]
 
     def try_course(self, code: str) -> CourseDetails | None:
         return self.courses.get(code)
@@ -147,6 +148,13 @@ class CourseInfo:
         """
         creds = self.get_credits(course)
         return 1 if creds == 0 else creds
+
+    def is_available(self, code: str) -> bool:
+        if code in self.must_have_courses:
+            return True
+        if code not in self.courses:
+            return False
+        return self.courses[code].is_available
 
 
 _course_info_cache: CourseInfo | None = None

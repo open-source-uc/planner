@@ -87,7 +87,11 @@ async def load_packed_data_from_db():
     )
 
     # Save courseinfo in RAM
-    _static_course_info = CourseInfo(courses=courses, equivs=storage.lists)
+    _static_course_info = CourseInfo(
+        courses=courses,
+        equivs=storage.lists,
+        must_have_courses=storage.must_have_courses,
+    )
 
     # Save curriculum storage in RAM
     _static_curriculum_storage = storage

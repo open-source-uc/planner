@@ -132,6 +132,12 @@ async def collate_plans(courses: dict[str, CourseDetails]) -> CurriculumStorage:
     for curr in out.all_plans():
         curr.root.freeze_capacities()
 
+    # Determinar qué cursos si o si tienen que dictarse en algun momento, para evitar el
+    # warning de "este curso no se ha dictado nunca" para cursos nuevos
+    for equiv in out.lists.values():
+        if len(equiv.courses) == 1:
+            out.must_have_courses.add(equiv.courses[0])
+
     # TODO: Algunos minors y titulos tienen requerimientos especiales que no son
     #   representables en el formato que provee SIDING, y por ende faltan del
     #   mock (y estan incompletos en el webservice real).

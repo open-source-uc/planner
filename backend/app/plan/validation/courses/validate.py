@@ -246,7 +246,7 @@ class ValidationContext:
                 if isinstance(course, ConcreteId):
                     info = self.courseinfo.try_course(course.code)
                     if info is not None:
-                        if not info.is_available:
+                        if not self.courseinfo.is_available(course.code):
                             # This course is plain unavailable
                             unavailable.append(self.class_ids[sem_i][i])
                         elif (
@@ -548,12 +548,11 @@ def is_course_indirectly_available(courseinfo: CourseInfo, code: str):
     """
     Check if a course is available OR there is an available equivalent.
     """
+    if courseinfo.is_available(code):
+        return True
     info = courseinfo.try_course(code)
     if info is None:
         return False
-    if info.is_available:
-        return True
-    modernized_info = courseinfo.try_course(info.canonical_equiv)
-    if modernized_info is not None and modernized_info.is_available:
+    if courseinfo.is_available(info.canonical_equiv):
         return True
     return False
