@@ -56,6 +56,8 @@ async def _migrate_v0_0_1(plan: PlanV1) -> ValidatablePlan:
             return f"MAJOR-LIST-{code[1:]}"
         if code.startswith("?"):
             return f"MAJOR-EQUIV-{code[1:]}"
+        if code == "#FAILED":
+            return "FAILED"
         return code
 
     # Auxiliary function to map equivalences

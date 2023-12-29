@@ -17,7 +17,7 @@ from app.plan.validation.diagnostic import (
     UnassignedWarn,
     ValidationResult,
 )
-from app.user.info import StudentContext
+from app.user.info import StudentInfo
 
 
 def _check_missing_fillers(
@@ -134,7 +134,7 @@ def diagnose_curriculum(
     courseinfo: CourseInfo,
     curriculum: Curriculum,
     plan: ValidatablePlan,
-    user_ctx: StudentContext | None,
+    user_ctx: StudentInfo | None,
     out: ValidationResult,
 ):
     # Produce a warning if no major/minor is selected

@@ -6,12 +6,12 @@ from app.plan.validation.curriculum.diagnose import diagnose_curriculum, find_sw
 from app.plan.validation.diagnostic import ValidationResult
 from app.plan.validation.user import validate_against_owner
 from app.sync import get_curriculum
-from app.user.info import StudentContext
+from app.user.info import StudentInfo
 
 
 async def diagnose_plan(
     plan: ValidatablePlan,
-    user_ctx: StudentContext | None,
+    user_ctx: StudentInfo | None,
 ) -> ValidationResult:
     """
     Validate a career plan, checking that all pending courses can actually be taken

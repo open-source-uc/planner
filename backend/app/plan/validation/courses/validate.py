@@ -29,7 +29,7 @@ from app.plan.validation.diagnostic import (
     UnknownCourseErr,
     ValidationResult,
 )
-from app.user.info import StudentContext
+from app.user.info import StudentInfo
 
 # Students can only take this amount of credits if they meet certain criteria.
 # Currently, that criteria is not failing any course in the previous X
@@ -91,7 +91,7 @@ class ValidationContext:
     # Original validatable plan object.
     plan: ValidatablePlan
     # User context, if any
-    user_ctx: StudentContext | None
+    user_ctx: StudentInfo | None
     # On which semester to start validating requirements and other associated
     # validations.
     # Should be the first semester that has not yet been taken (ie. the semester after
@@ -102,7 +102,7 @@ class ValidationContext:
         self,
         courseinfo: CourseInfo,
         plan: ValidatablePlan,
-        user_ctx: StudentContext | None,
+        user_ctx: StudentInfo | None,
     ) -> None:
         # Map from coursecode to course instance
         self.by_code = {}
