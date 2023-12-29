@@ -29,7 +29,7 @@ const SemesterColumn = ({ coursesId, validation, classesDetails, authState, seme
   const semesterIsInProgress = ((authState?.student) != null) && (authState.student.current_semester === authState.student.next_semester - 1)
   const isPassed = ((authState?.student) != null) && (semester < authState.student.current_semester)
   const isCurrent = (semesterIsInProgress && (semester === authState?.student?.current_semester))
-  const semesterName = authState?.student?.admission != null ? `${authState?.student?.admission[0]}-${authState?.student?.admission[1]} ` : null
+  const semesterName = authState?.student?.admission != null ? `${authState?.student?.admission[0] + Math.floor(semester / 2)}-${semester % 2 + 1} ` : ''
   const totalCredits = classes.map(course => {
     const details = classesDetails[course.code]
     if ('credits' in course) {
