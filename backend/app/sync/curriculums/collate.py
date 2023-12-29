@@ -12,7 +12,7 @@ from itertools import chain
 from pydantic import BaseModel
 
 from app.plan.course import ConcreteId, EquivalenceId
-from app.plan.courseinfo import CourseDetails, add_equivalence
+from app.plan.courseinfo import CourseDetails
 from app.plan.validation.curriculum.tree import (
     Block,
     CurriculumSpec,
@@ -217,10 +217,6 @@ async def collate_plans(courses: dict[str, CourseDetails]) -> CurriculumStorage:
     # Por ende, hay que actualizar estas capacidades
     for curr in out.all_plans():
         curr.root.freeze_capacities()
-
-    # Agregar las listas a la base de datos global
-    for equiv in out.lists.values():
-        await add_equivalence(equiv)
 
     # TODO: Algunos minors y titulos tienen requerimientos especiales que no son
     #   representables en el formato que provee SIDING, y por ende faltan del

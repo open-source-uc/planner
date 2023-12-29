@@ -28,7 +28,7 @@ from prisma.models import Minor as DbMinor
 from prisma.models import PackedData as DbPackedData
 from prisma.models import Title as DbTitle
 
-from app.plan.courseinfo import CourseDetails, CourseInfo
+from app.plan.courseinfo import CourseDetails, CourseInfo, EquivDetails
 from app.sync import buscacursos_dl
 from app.sync.curriculums.collate import collate_plans
 from app.sync.curriculums.storage import CurriculumStorage
@@ -135,6 +135,13 @@ async def sync_from_external_sources(sync_coursedata: bool, sync_curriculum: boo
         log.info("  saving curriculum data to db")
         await _save_packed(CURRICULUMS_PACK_ID, storage.json())
 
+        log.info("  clearing equivalences from db")
+        await DbEquivalenceCourse.prisma().delete_many()
+        await DbEquivalence.prisma().delete_many()
+
+        log.info("  saving equivalences to db")
+        await _store_equivalences_to_db(storage.lists)
+
         if sync_curriculum:
             # Store new offer to database
             log.info("  syncing curriculum offer")
@@ -156,6 +163,38 @@ async def _update_packed_coursedata_in_database():
     packed = f"{{{','.join(course_dict)}}}"
     print("    storing to database")
     await _save_packed(COURSEDATA_PACK_ID, packed)
+
+
+async def _store_equivalences_to_db(lists: dict[str, EquivDetails]):
+    for equiv in lists.values():
+        # Add equivalence to database
+        await DbEquivalence.prisma().create(
+            {
+                "code": equiv.code,
+                "name": equiv.name,
+                "is_homogeneous": equiv.is_homogeneous,
+                "is_unessential": equiv.is_unessential,
+            },
+        )
+        # Add the courses of the equivalence to database
+        value_tuples: list[str] = []
+        query_args = [equiv.code]
+        for i, code in enumerate(equiv.courses):
+            value_tuples.append(
+                f"({i}, $1, ${2+i})",
+            )  # NOTE: No user-input is injected here
+            query_args.append(code)
+        if len(value_tuples) == 0:
+            raise Exception(f"equivalence {equiv.code} has no courses?")
+        await DbEquivalenceCourse.prisma().query_raw(
+            f"""
+            INSERT INTO "EquivalenceCourse" (index, equiv_code, course_code)
+            VALUES {','.join(value_tuples)}
+            ON CONFLICT
+            DO NOTHING
+            """,  # noqa: S608 (only numbers are inserted in string)
+            *query_args,
+        )
 
 
 async def _store_curriculum_offer_to_db(storage: CurriculumStorage):

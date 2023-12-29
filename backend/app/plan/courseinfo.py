@@ -2,7 +2,6 @@
 Cache course info from the database in memory, for easy access.
 """
 
-import logging
 from dataclasses import dataclass
 
 import pydantic
@@ -151,47 +150,6 @@ class CourseInfo:
 
 
 _course_info_cache: CourseInfo | None = None
-
-
-async def add_equivalence(equiv: EquivDetails):
-    logging.info(f"adding equivalence {equiv.code}")
-    # Add equivalence to database
-    await Equivalence.prisma().query_raw(
-        """
-        INSERT INTO "Equivalence" (code, name, is_homogeneous, is_unessential)
-        VALUES($1, $2, $3, $4)
-        ON CONFLICT (code)
-        DO UPDATE SET name = $2, is_homogeneous = $3, is_unessential = $4
-        """,
-        equiv.code,
-        equiv.name,
-        equiv.is_homogeneous,
-        equiv.is_unessential,
-    )
-    # Clear previous equivalence courses
-    await EquivalenceCourse.prisma().delete_many(where={"equiv_code": equiv.code})
-    # Add equivalence courses to database
-    value_tuples: list[str] = []
-    query_args = [equiv.code]
-    for i, code in enumerate(equiv.courses):
-        value_tuples.append(
-            f"({i}, $1, ${2+i})",
-        )  # NOTE: No user-input is injected here
-        query_args.append(code)
-    if len(value_tuples) == 0:
-        raise Exception(f"equivalence {equiv.code} has no courses?")
-    await EquivalenceCourse.prisma().query_raw(
-        f"""
-        INSERT INTO "EquivalenceCourse" (index, equiv_code, course_code)
-        VALUES {','.join(value_tuples)}
-        ON CONFLICT
-        DO NOTHING
-        """,  # noqa: S608 (only numbers are inserted in string)
-        *query_args,
-    )
-    # Update in-memory cache if it was already loaded
-    if _course_info_cache:
-        _course_info_cache.equivs[equiv.code] = equiv
 
 
 def make_searchable_name(name: str) -> str:
