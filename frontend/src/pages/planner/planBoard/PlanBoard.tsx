@@ -5,10 +5,11 @@ import { useDndScrolling, createVerticalStrength, createHorizontalStrength } fro
 import 'react-toastify/dist/ReactToastify.css'
 import { type ValidationResult } from '../../../client'
 import { getClassId, getValidationDigest } from '../utils/PlanBoardFunctions'
+import { type AuthState } from '../../../contexts/auth.context'
 
 interface PlanBoardProps {
   classesGrid: PseudoCourseId[][]
-  authState: any
+  authState: AuthState | null
   validationResult: ValidationResult | null
   classesDetails: Record<string, PseudoCourseDetail>
   moveCourse: Function

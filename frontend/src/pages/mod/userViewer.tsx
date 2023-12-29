@@ -79,7 +79,7 @@ const UserViewer = (): JSX.Element => {
               </div>
               {studentPlansStatus === 'success' && isStudentSearched &&
                 <div className="flex gap-4 items-center">
-                  <h2 className="text-2xl font-medium leading-normal mb-2 text-gray-800 text-center">{studentInfo?.info.full_name}</h2>
+                  <h2 className="text-2xl font-medium leading-normal mb-2 text-gray-800 text-center">{studentInfo?.full_name}</h2>
                   <Link to="/mod/planner/new/$userRut"
                     params={{
                       userRut
