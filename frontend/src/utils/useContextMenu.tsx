@@ -30,7 +30,7 @@ const useContextMenu = (): useContextMenuReturn => {
     })
     const courseCode = e.currentTarget.getAttribute('data-course-code')
     const courseInstance = e.currentTarget.getAttribute('data-course-instance')
-    const courseIsEquiv = e.currentTarget.getAttribute('data-course-hasEquiv')
+    const courseIsEquiv = e.currentTarget.getAttribute('data-course-hasequiv')
     const courseCredits = e.currentTarget.getAttribute('data-course-credits')
 
     if (courseCode != null && courseInstance != null && courseIsEquiv != null && courseCredits != null) {
@@ -44,10 +44,16 @@ const useContextMenu = (): useContextMenuReturn => {
     console.log('Right Click', courseCode, courseInstance, e.pageX, e.pageY)
   }
   useEffect(() => {
-    const handleClick = (): void => { setClicked(false) }
-    document.addEventListener('click', handleClick)
+    const handleClick = (e: MouseEvent): void => {
+      const target = e.target as HTMLElement
+      const contextMenu = document.getElementById('context-menu')
+      if ((contextMenu != null) && !contextMenu.contains(target)) {
+        setClicked(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
     return () => {
-      document.removeEventListener('click', handleClick)
+      document.removeEventListener('mousedown', handleClick)
     }
   }, [])
   return {

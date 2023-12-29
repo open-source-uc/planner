@@ -17,7 +17,7 @@ const CoursesContextMenu = ({ posibleBlocks, points, hasEquivalence, courseCredi
   const [showBlocks, setShowBlocks] = useState(false)
 
   return (
-    <div className="z-50 absolute w-40 bg-slate-100 border-slate-300 border-2  box-border" style={{ top: points.y, left: points.x }}>
+    <div id="context-menu" className="z-50 absolute w-40 bg-slate-100 border-slate-300 border-2  box-border" style={{ top: points.y, left: points.x }}>
     <ul className="box-border m-0 list-none font-medium text-sm text-gray-900 ">
       {courseInfo?.is_concrete === true && (
       <a

@@ -78,7 +78,7 @@ const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, t
       onContextMenu={handleContextMenu}
       data-course-code={courseId.code}
       data-course-instance={courseId.instance}
-      data-course-hasEquiv={hasEquivalence}
+      data-course-hasequiv={hasEquivalence}
       data-course-credits={courseDetails !== undefined && 'credits' in courseDetails ? courseDetails.credits : ('credits' in course) ? course.credits : 0}
       ref={ref}
       draggable={true}
