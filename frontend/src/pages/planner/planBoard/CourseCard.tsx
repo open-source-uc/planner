@@ -103,25 +103,38 @@ const CourseCard = memo(function _CourseCard ({ courseBlock, course, credits, na
 
   return (
     <div className={` card group bg-block-${blockId} ${blockId === 'FG' ? 'text-white' : ''} ${course.is_concrete !== true && allowAnimations ? 'animated' : ''}`}>
-      { hasEquivalence === true && (course.is_concrete === true
-        ? <button onClick={() => openSelector()}><div className='opacity-60 absolute w-3 top-2 left-2'><EditIcon/></div></button>
-        : <div className='opacity-60 absolute w-3 top-2 left-2'><EditIcon/></div>
-      )}
+      {/* Boton o icono para editar equivalencia */}
+      {hasEquivalence === true && <ConditionalWrapper condition={course.is_concrete === true} wrapper={(children) => (
+        <button onClick={() => openSelector()}>{children}</button>
+      )}>
+        <div className='opacity-60 absolute w-3 top-2 left-2'><EditIcon/></div>
+      </ConditionalWrapper>}
+
+      {/* Indicador de bloque asociado, o X para eliminar curso */}
       {blockId === ''
-        ? <>{(isPassed || isCurrent) ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>}</>
+        ? <>{(isPassed || isCurrent) ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>×</button>}</>
         : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{blockId}</div>
       }
+
+      {/* Nombre y codigo de curso */}
       <div className='flex items-center justify-center text-center flex-col'>
         <div className={`text-xs line-clamp-2 ${'failed' in course && course.failed !== null ? 'line-through' : ''}`}>{ name}</div>
         <div className='text-[0.6rem] opacity-75'>{course.is_concrete !== true ? 'Seleccionar Curso' : ('failed' in course ? course.failed : null) ?? course.code}</div>
       </div>
+
+      {/* Cantidad de creditos */}
       <div className='absolute bottom-2 left-2 text-[0.5rem] opacity-75'>{credits} créd.</div>
+
+      {/* Icono de curso en curso */}
       { isCurrent ? <div className='opacity-60 absolute w-3 bottom-2 right-2'> <CurrentIcon/> </div> : null}
 
+      {/* Simbolo de error asociado */}
       {hasError && <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
         <span className={`${allowAnimations ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-red-300 opacity-90`}></span>
         <span className="relative inline-flex rounded-full h-3 w-3 bg-red-400"></span>
       </span> }
+
+      {/* Simbolo de warning asociado */}
       {!hasError && hasWarning && <span className="flex absolute h-3 w-3 top-0 right-0 -mt-1 -mr-1">
         <span className={`${allowAnimations ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-90`}></span>
         <span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-400"></span>
