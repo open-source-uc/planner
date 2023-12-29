@@ -92,110 +92,24 @@ async def collate_plans(courses: dict[str, CourseDetails]) -> CurriculumStorage:
     # Es decir, majors y minors que no son "reales"
     # Para arreglarlo, se compara con la lista scrapeada y contra las mallas que
     # realmente existen
-    extract_true_offer(
-        "major",
-        siding.majors,
-        siding,
-        chain(
-            scraped.majors,
-            (major.major or MajorCode("M") for major in bypass.majors),
-        ),
-        out.offer,
-        True,
-    )
-    extract_true_offer(
-        "minor",
-        siding.minors,
-        siding,
-        chain(
-            scraped.minors,
-            (minor.minor or MinorCode("N") for minor in bypass.minors),
-        ),
-        out.offer,
-        False,
-    )
-    extract_true_offer(
-        "title",
-        siding.titles,
-        siding,
-        chain(
-            scraped.titles,
-            (title.title or TitleCode("") for title in bypass.titles),
-        ),
-        out.offer,
-        False,
-    )
+    clean_curriculum_offer(siding, scraped, bypass, out)
 
     # Falta extraer los majors y sus minors asociados
     extract_major_minor_associations(siding, out)
 
     # Traducir los majors desde los datos de SIDING
-    for cyear, offer in out.offer.items():
-        for major in offer.major.values():
-            if major.code not in siding.plans[cyear].plans:
-                continue
-            spec = CurriculumSpec(
-                cyear=cyear,
-                major=MajorCode(major.code),
-                minor=None,
-                title=None,
-            )
-            translate_major(
-                courses,
-                out,
-                spec,
-                siding,
-                siding.plans[cyear].plans[major.code],
-            )
+    translate_all_majors(courses, siding, scraped, out)
 
     # Agregar el plan comun
     translate_common_plan(courses, out, siding)
 
     # Los minors se traducen desde la informacion scrapeada, y posiblemente ayudados por
     # los datos de SIDING
-    for cyear, offer in out.offer.items():
-        for minor_meta in offer.minor.values():
-            if MinorCode(minor_meta.code) not in scraped.minors:
-                continue
-            for minor_scrape in scraped.minors[MinorCode(minor_meta.code)]:
-                spec = CurriculumSpec(
-                    cyear=cyear,
-                    major=minor_scrape.assoc_major,
-                    minor=minor_scrape.assoc_minor,
-                    title=minor_scrape.assoc_title,
-                )
-                translate_minor(
-                    courses,
-                    out,
-                    spec,
-                    minor_meta,
-                    siding,
-                    siding.plans[cyear].plans.get(minor_meta.code, []),
-                    minor_scrape,
-                )
+    translate_all_minors(courses, siding, scraped, out)
 
     # Los titulos se traducen desde la informacion scrapeada combinada con los datos de
     # SIDING
-    for cyear, offer in out.offer.items():
-        for title in offer.title.values():
-            if TitleCode(title.code) not in scraped.titles:
-                continue
-            scrape = scraped.titles[TitleCode(title.code)]
-            spec = CurriculumSpec(
-                cyear=cyear,
-                major=scrape.assoc_major,
-                minor=scrape.assoc_minor,
-                title=scrape.assoc_title,
-            )
-            translate_title(
-                courses,
-                out,
-                spec,
-                title,
-                siding,
-                siding.plans[cyear].plans.get(title.code, []),
-                scrape,
-            )
+    translate_all_titles(courses, siding, scraped, out)
 
     # Cargar majors minors y titulos desde el bypass
     translate_bypass(courses, siding, bypass, out)
@@ -324,6 +238,47 @@ def extract_true_offer(
         )
 
 
+def clean_curriculum_offer(
+    siding: SidingInfo,
+    scraped: ScrapedInfo,
+    bypass: BypassInfo,
+    out: CurriculumStorage,
+):
+    extract_true_offer(
+        "major",
+        siding.majors,
+        siding,
+        chain(
+            scraped.majors,
+            (major.major or MajorCode("M") for major in bypass.majors),
+        ),
+        out.offer,
+        True,
+    )
+    extract_true_offer(
+        "minor",
+        siding.minors,
+        siding,
+        chain(
+            scraped.minors,
+            (minor.minor or MinorCode("N") for minor in bypass.minors),
+        ),
+        out.offer,
+        False,
+    )
+    extract_true_offer(
+        "title",
+        siding.titles,
+        siding,
+        chain(
+            scraped.titles,
+            (title.title or TitleCode("") for title in bypass.titles),
+        ),
+        out.offer,
+        False,
+    )
+
+
 def filter_program(
     cyear: Cyear,
     program: Major | Minor | Titulo,
@@ -401,6 +356,84 @@ def filter_relevant_blocks(
 
 def _is_block_relevant(plan_name: str, block: BloqueMalla) -> bool:
     return block.Programa == plan_name or block.Programa == "Plan Común"
+
+
+def translate_all_majors(
+    courses: dict[str, CourseDetails],
+    siding: SidingInfo,
+    scraped: ScrapedInfo,
+    out: CurriculumStorage,
+):
+    for cyear, offer in out.offer.items():
+        for major in offer.major.values():
+            if major.code not in siding.plans[cyear].plans:
+                continue
+            spec = CurriculumSpec(
+                cyear=cyear,
+                major=MajorCode(major.code),
+                minor=None,
+                title=None,
+            )
+            translate_major(
+                courses,
+                out,
+                spec,
+                siding,
+                siding.plans[cyear].plans[major.code],
+            )
+def translate_all_minors(
+    courses: dict[str, CourseDetails],
+    siding: SidingInfo,
+    scraped: ScrapedInfo,
+    out: CurriculumStorage,
+):
+    for cyear, offer in out.offer.items():
+        for minor_meta in offer.minor.values():
+            if MinorCode(minor_meta.code) not in scraped.minors:
+                continue
+            for minor_scrape in scraped.minors[MinorCode(minor_meta.code)]:
+                spec = CurriculumSpec(
+                    cyear=cyear,
+                    major=minor_scrape.assoc_major,
+                    minor=minor_scrape.assoc_minor,
+                    title=minor_scrape.assoc_title,
+                )
+                translate_minor(
+                    courses,
+                    out,
+                    spec,
+                    minor_meta,
+                    siding,
+                    siding.plans[cyear].plans.get(minor_meta.code, []),
+                    minor_scrape,
+                )
+
+def translate_all_titles(
+    courses: dict[str, CourseDetails],
+    siding: SidingInfo,
+    scraped: ScrapedInfo,
+    out: CurriculumStorage,
+):
+    for cyear, offer in out.offer.items():
+        for title in offer.title.values():
+            if TitleCode(title.code) not in scraped.titles:
+                continue
+            scrape = scraped.titles[TitleCode(title.code)]
+            spec = CurriculumSpec(
+                cyear=cyear,
+                major=scrape.assoc_major,
+                minor=scrape.assoc_minor,
+                title=scrape.assoc_title,
+            )
+            translate_title(
+                courses,
+                out,
+                spec,
+                title,
+                siding,
+                siding.plans[cyear].plans.get(title.code, []),
+                scrape,
+            )
 
 
 def extract_major_minor_associations(siding: SidingInfo, out: CurriculumStorage):
