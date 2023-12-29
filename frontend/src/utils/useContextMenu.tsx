@@ -21,7 +21,6 @@ const useContextMenu = (): useContextMenuReturn => {
     credits: 0
   })
   const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>): void => {
-    console.log(e)
     e.preventDefault()
     setClicked(true)
     setPoints({
@@ -41,7 +40,7 @@ const useContextMenu = (): useContextMenuReturn => {
         credits: parseInt(courseCredits)
       })
     }
-    console.log('Right Click', courseCode, courseInstance, e.pageX, e.pageY)
+    // console.log('Right Click', courseCode, courseInstance, e.pageX, e.pageY)
   }
   useEffect(() => {
     const handleClick = (e: MouseEvent): void => {

@@ -15,16 +15,36 @@ interface CoursesContextMenuProps {
 
 const CoursesContextMenu = ({ posibleBlocks, points, hasEquivalence, courseCredits, courseInfo, coursePos, openEquivModal, forceBlockChange }: CoursesContextMenuProps): JSX.Element => {
   const [showBlocks, setShowBlocks] = useState(false)
+  const [showMoreInfo, setShowMoreBlocks] = useState(false)
 
   return (
     <div id="context-menu" className="z-50 absolute w-40 bg-slate-100 border-slate-300 border-2  box-border" style={{ top: points.y, left: points.x }}>
     <ul className="box-border m-0 list-none font-medium text-sm text-gray-900 ">
       {courseInfo?.is_concrete === true && (
-      <a
+      <div
         className="block p-2 w-full text-left hover:cursor-pointer hover:bg-slate-200 border-slate-300"
-        href={`https://catalogo.uc.cl/index.php?tmpl=component&option=com_catalogo&view=programa&sigla=${courseInfo.code}`} rel="noreferrer" target="_blank"
-      >Mas información</a>
+        onMouseEnter={() => { setShowMoreBlocks(true) }}
+        onMouseLeave={() => { setShowMoreBlocks(false) }}
+      >Mas información
+      {showMoreInfo && (
+        <div className="w-44 absolute top-0 left-full bg-slate-100 border-slate-300 border-2  shadow-md">
+          <a
+            className="block w-full p-2 text-left hover:bg-slate-200"
+            href={`https://catalogo.uc.cl/index.php?tmpl=component&option=com_catalogo&view=programa&sigla=${courseInfo?.code}`} rel="noreferrer" target="_blank"
+          >Ver programa</a>
+          <a
+            className="block w-full p-2 text-left hover:bg-slate-200  border-t-2 border-slate-200"
+            href={`https://catalogo.uc.cl/index.php?tmpl=component&option=com_catalogo&view=requisitos&sigla=${courseInfo?.code}`} rel="noreferrer" target="_blank"
+          >Ver requisitos</a>
+          <a
+            className="block w-full p-2 text-left hover:bg-slate-200  border-t-2 border-slate-200"
+            href={`https://buscacursos.uc.cl/?cxml_sigla=${courseInfo?.code}`} rel="noreferrer" target="_blank"
+          >Ver en busca cursos</a>
+        </div>
       )}
+      </div>
+      )}
+
       {hasEquivalence && (
         <button
           className="p-2 w-full text-left hover:cursor-pointer hover:bg-slate-200 border-t-2 border-slate-300"
