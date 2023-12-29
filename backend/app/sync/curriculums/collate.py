@@ -12,7 +12,7 @@ from itertools import chain
 from pydantic import BaseModel
 
 from app.plan.course import ConcreteId, EquivalenceId
-from app.plan.courseinfo import CourseInfo, add_equivalence, course_info
+from app.plan.courseinfo import CourseDetails, add_equivalence
 from app.plan.validation.curriculum.tree import (
     Block,
     CurriculumSpec,
@@ -68,25 +68,22 @@ class ScrapedInfo(BaseModel):
     titles: dict[TitleCode, ScrapedProgram]
 
 
-async def collate_plans() -> CurriculumStorage:
-    # Fetch course database
-    courseinfo = await course_info()
-
+async def collate_plans(courses: dict[str, CourseDetails]) -> CurriculumStorage:
     # Scrape information from PDFs
     scraped = ScrapedInfo(
         majors=scrape_majors(),
-        minors=scrape_minors(courseinfo),
-        titles=scrape_titles(courseinfo),
+        minors=scrape_minors(courses),
+        titles=scrape_titles(courses),
     )
 
     # Fetch information from SIDING
-    siding = await fetch_siding(courseinfo)
+    siding = await fetch_siding(courses)
 
     # Algunos titulos se agregan manualmente
     add_manual_title_offer(siding)
 
     # Cargar los planes que se agregan manualmente
-    bypass = load_bypass(courseinfo, scraped, siding)
+    bypass = load_bypass(courses, scraped, siding)
 
     # Colocar los curriculums resultantes aca
     out = CurriculumStorage()
@@ -144,7 +141,7 @@ async def collate_plans() -> CurriculumStorage:
                 title=None,
             )
             translate_major(
-                courseinfo,
+                courses,
                 out,
                 spec,
                 siding,
@@ -152,7 +149,7 @@ async def collate_plans() -> CurriculumStorage:
             )
 
     # Agregar el plan comun
-    translate_common_plan(courseinfo, out, siding)
+    translate_common_plan(courses, out, siding)
 
     # Los minors se traducen desde la informacion scrapeada, y posiblemente ayudados por
     # los datos de SIDING
@@ -168,7 +165,7 @@ async def collate_plans() -> CurriculumStorage:
                     title=minor_scrape.assoc_title,
                 )
                 translate_minor(
-                    courseinfo,
+                    courses,
                     out,
                     spec,
                     minor_meta,
@@ -191,7 +188,7 @@ async def collate_plans() -> CurriculumStorage:
                 title=scrape.assoc_title,
             )
             translate_title(
-                courseinfo,
+                courses,
                 out,
                 spec,
                 title,
@@ -201,13 +198,13 @@ async def collate_plans() -> CurriculumStorage:
             )
 
     # Cargar majors minors y titulos desde el bypass
-    translate_bypass(courseinfo, siding, bypass, out)
+    translate_bypass(courses, siding, bypass, out)
 
     # Aplicar los ultimos parches faltantes
-    patch_globally(courseinfo, out)
+    patch_globally(courses, out)
 
     # Tratar las equivalencias homogeneas
-    detect_homogeneous(courseinfo, out)
+    detect_homogeneous(courses, out)
 
     # Asegurarse que no hayan equivalencias vacias
     for equiv in out.lists.values():
@@ -423,7 +420,7 @@ def extract_major_minor_associations(siding: SidingInfo, out: CurriculumStorage)
             ]
 
 
-def detect_homogeneous(courseinfo: CourseInfo, out: CurriculumStorage):
+def detect_homogeneous(courses: dict[str, CourseDetails], out: CurriculumStorage):
     """
     Fixes the fillers for homogeneous equivalencies, providing a default choice if all
     options in the equivalence are similar (eg. Optimizacion -> ICS1113).
@@ -456,7 +453,7 @@ def detect_homogeneous(courseinfo: CourseInfo, out: CurriculumStorage):
             ):
                 # Determine the default course to use
                 representative = equiv.courses[0]
-                if courseinfo.try_course(representative) is None:
+                if representative not in courses:
                     raise Exception(
                         f"equivalence {equiv.code}"
                         f" has unknown representative {representative}",
@@ -484,17 +481,17 @@ def detect_homogeneous(courseinfo: CourseInfo, out: CurriculumStorage):
             curr.fillers.setdefault(add_this_code, []).extend(add_these_fillers)
 
 
-def patch_globally(courseinfo: CourseInfo, out: CurriculumStorage):
+def patch_globally(courses: dict[str, CourseDetails], out: CurriculumStorage):
     """
     Hay algunos parches que hay que aplicar globalmente sobre todos los curriculums, en
     lugar de uno a uno.
     Estos se aplican aca.
     """
 
-    _mark_homogeneous_equivs(courseinfo, out)
-    _mark_unessential_equivs(courseinfo, out)
-    _limit_multiplicity(courseinfo, out)
-    _force_subcourses(courseinfo, out)
+    _mark_homogeneous_equivs(courses, out)
+    _mark_unessential_equivs(courses, out)
+    _limit_multiplicity(courses, out)
+    _force_subcourses(courses, out)
 
 
 FORCE_HOMOGENEOUS_EQUIVS = (
@@ -504,7 +501,7 @@ FORCE_HOMOGENEOUS_EQUIVS = (
 )
 
 
-def _mark_homogeneous_equivs(courseinfo: CourseInfo, out: CurriculumStorage):
+def _mark_homogeneous_equivs(courses: dict[str, CourseDetails], out: CurriculumStorage):
     max_len = max(len(homogeneous) for homogeneous in FORCE_HOMOGENEOUS_EQUIVS)
     for equiv in out.lists.values():
         if len(equiv.courses) <= max_len and any(
@@ -527,7 +524,7 @@ UNESSENTIAL_EQUIVS = {
 }
 
 
-def _mark_unessential_equivs(courseinfo: CourseInfo, out: CurriculumStorage):
+def _mark_unessential_equivs(courses: dict[str, CourseDetails], out: CurriculumStorage):
     for list_code, equiv in out.lists.items():
         if any(list_code.endswith(unessential) for unessential in UNESSENTIAL_EQUIVS):
             equiv.is_unessential = True
@@ -538,7 +535,7 @@ _MULTIPLICITY_LIMITS = [
 ]
 
 
-def _limit_multiplicity(courseinfo: CourseInfo, out: CurriculumStorage):
+def _limit_multiplicity(courses: dict[str, CourseDetails], out: CurriculumStorage):
     """
     Algunos cursos estan limitados en grupo.
     Por ejemplo, ICS1113 (Optimizacion) y ICS113H (Optimizacion Honors) estan limitados
@@ -566,7 +563,7 @@ _FORCE_SUBCOURSES = {
 }
 
 
-def _force_subcourses(courseinfo: CourseInfo, out: CurriculumStorage):
+def _force_subcourses(courses: dict[str, CourseDetails], out: CurriculumStorage):
     """
     Forzamos a que algunos cursos sean "subcursos" de otros.
     En particular, ICS1113 es un subcurso de ICS113H, en el sentido de que cualquier
@@ -600,12 +597,16 @@ def _force_subcourses(courseinfo: CourseInfo, out: CurriculumStorage):
         add_supercourses(curr.root)
 
 
-def load_bypass(courseinfo: CourseInfo, scraped: ScrapedInfo, siding: SidingInfo):
+def load_bypass(
+    courses: dict[str, CourseDetails],
+    scraped: ScrapedInfo,
+    siding: SidingInfo,
+):
     return BypassInfo.parse_file("../static-curriculum-data/bypass.json")
 
 
 def translate_bypass(
-    courseinfo: CourseInfo,
+    courses: dict[str, CourseDetails],
     siding: SidingInfo,
     bypass: BypassInfo,
     out: CurriculumStorage,
@@ -626,7 +627,7 @@ def translate_bypass(
             )
             out.set_major(
                 spec,
-                bp.plan.translate(courseinfo, siding, out, f"MAJOR-{spec}"),
+                bp.plan.translate(courses, siding, out, f"MAJOR-{spec}"),
             )
         for bp in bypass.minors:
             spec = CurriculumSpec(
@@ -637,7 +638,7 @@ def translate_bypass(
             )
             out.set_minor(
                 spec,
-                bp.plan.translate(courseinfo, siding, out, f"MINOR-{spec}"),
+                bp.plan.translate(courses, siding, out, f"MINOR-{spec}"),
             )
         for bp in bypass.titles:
             spec = CurriculumSpec(
@@ -648,5 +649,5 @@ def translate_bypass(
             )
             out.set_title(
                 spec,
-                bp.plan.translate(courseinfo, siding, out, f"TITLE-{spec}"),
+                bp.plan.translate(courses, siding, out, f"TITLE-{spec}"),
             )

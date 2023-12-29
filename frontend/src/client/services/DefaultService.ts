@@ -59,14 +59,12 @@ export class DefaultService {
      * the database in order for the changes to reach all workers.
      * @param courses
      * @param curriculums
-     * @param packedcourses
      * @returns any Successful Response
      * @throws ApiError
      */
     public static syncDatabase(
         courses: boolean,
         curriculums: boolean,
-        packedcourses: boolean,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -74,7 +72,6 @@ export class DefaultService {
             query: {
                 'courses': courses,
                 'curriculums': curriculums,
-                'packedcourses': packedcourses,
             },
             errors: {
                 422: `Validation Error`,

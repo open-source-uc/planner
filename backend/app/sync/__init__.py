@@ -5,187 +5,19 @@ Currently using unofficial sources until we get better API access.
 
 import time
 from collections import OrderedDict
-from typing import TYPE_CHECKING
 
 from fastapi import HTTPException
-from prisma.models import (
-    CachedCurriculum as DbCachedCurriculum,
-)
-from prisma.models import (
-    Course as DbCourse,
-)
-from prisma.models import (
-    Equivalence as DbEquivalence,
-)
-from prisma.models import (
-    EquivalenceCourse as DbEquivalenceCourse,
-)
-from prisma.models import (
-    Major as DbMajor,
-)
-from prisma.models import (
-    MajorMinor as DbMajorMinor,
-)
-from prisma.models import (
-    Minor as DbMinor,
-)
-from prisma.models import (
-    Title as DbTitle,
-)
 
-from app.plan.courseinfo import pack_course_details
 from app.plan.validation.curriculum.tree import (
     Curriculum,
     CurriculumSpec,
 )
 from app.settings import settings
-from app.sync import buscacursos_dl
-from app.sync.curriculums.collate import collate_plans
-from app.sync.curriculums.storage import CurriculumStorage
+from app.sync.database import curriculum_storage
 from app.sync.siding import translate as siding_translate
 from app.user.auth import UserKey, allow_force_login
 from app.user.info import StudentInfo
 from app.user.key import Rut
-
-if TYPE_CHECKING:
-    from prisma.types import (
-        MajorCreateInput,
-        MajorMinorCreateInput,
-        MinorCreateInput,
-        TitleCreateInput,
-    )
-
-_CACHED_CURRICULUM_ID: str = "cached-course-info"
-
-
-async def run_upstream_sync(
-    *,
-    courses: bool,
-    curriculums: bool,
-    packedcourses: bool,
-):
-    """
-    Populate database with "official" data.
-
-    NOTE: This function should only be called from a startup script, before any workers
-    load.
-    """
-
-    if curriculums or courses:
-        # If we delete courses, we must also delete equivalences (because equivalences
-        # reference courses)
-        # If we delete equivalences, we must also delete curriculums (because
-        # curriculums reference equivalences)
-        print("deleting stored equivalences...")
-        await DbEquivalenceCourse.prisma().delete_many()
-        await DbEquivalence.prisma().delete_many()
-
-    if courses:
-        print("syncing course database...")
-        # Clear previous courses
-        await DbCourse.prisma().delete_many()
-        # Get course data from "official" source
-        # Currently we have no official source
-        await buscacursos_dl.fetch_to_database()
-
-    if curriculums or packedcourses or courses:
-        # If we updated the courses, we must update the packed courses too
-
-        print("updating packed course details...")
-        # Pack course details from main course database
-        await pack_course_details()
-
-    if curriculums or courses:
-        # If we updated the courses, we must update the curriculums too, because the
-        # equivalences reference the courses and to regenerate the equivalences we must
-        # regenerate the curriculums
-
-        # Equivalences and curriculums are sourced from various places
-        print("deleting curriculum cache...")
-        await DbCachedCurriculum.prisma().delete_many()
-        print("syncing all curriculums...")
-        storage = await collate_plans()
-        await DbCachedCurriculum.prisma().create(
-            {
-                "id": _CACHED_CURRICULUM_ID,
-                "curriculums": storage.json(),
-            },
-        )
-
-        if curriculums:
-            # Update curriculum offer
-
-            # Clear available programs
-            print("updating curriculum offer...")
-            await DbMajor.prisma().delete_many()
-            await DbMinor.prisma().delete_many()
-            await DbTitle.prisma().delete_many()
-            await DbMajorMinor.prisma().delete_many()
-            # Put new offer in database
-            await _store_curriculum_offer_to_db(storage)
-
-
-async def _store_curriculum_offer_to_db(storage: CurriculumStorage):
-    # Store major list
-    majors: list[MajorCreateInput] = []
-    for cyear, offer in storage.offer.items():
-        for major in offer.major.values():
-            majors.append(
-                {
-                    "cyear": cyear,
-                    "code": major.code,
-                    "name": major.name,
-                    "version": major.version,  # TODO
-                },
-            )
-    await DbMajor.prisma().create_many(majors)
-
-    # Store minor list
-    minors: list[MinorCreateInput] = []
-    for cyear, offer in storage.offer.items():
-        for minor in offer.minor.values():
-            minors.append(
-                {
-                    "cyear": cyear,
-                    "code": minor.code,
-                    "name": minor.name,
-                    "version": minor.version,
-                    "minor_type": minor.program_type,
-                },
-            )
-    await DbMinor.prisma().create_many(minors)
-
-    # Store title list
-    titles: list[TitleCreateInput] = []
-    for cyear, offer in storage.offer.items():
-        for title in offer.title.values():
-            titles.append(
-                {
-                    "cyear": cyear,
-                    "code": title.code,
-                    "name": title.name,
-                    "version": title.version,
-                    "title_type": title.program_type,
-                },
-            )
-    await DbTitle.prisma().create_many(titles)
-
-    # Store major-minor associations
-    major_minor: list[MajorMinorCreateInput] = []
-    for cyear, offer in storage.offer.items():
-        for major in offer.major:
-            for minor in offer.major_minor[major]:
-                major_minor.append(
-                    {
-                        "cyear": cyear,
-                        "major": major,
-                        "minor": minor,
-                    },
-                )
-    await DbMajorMinor.prisma().create_many(major_minor)
-
-
-_curriculum_cache: CurriculumStorage | None = None
 
 
 async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
@@ -197,37 +29,25 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
     Therefore, each call to `get_curriculum` should result in a fresh curriculum.
     """
 
-    global _curriculum_cache
-
-    if _curriculum_cache is None:
-        cached = await DbCachedCurriculum.prisma().find_unique(
-            {
-                "id": _CACHED_CURRICULUM_ID,
-            },
-        )
-        if cached is None:
-            raise Exception(
-                "curriculum cache not found in db (maybe startup script was not run?)",
-            )
-        _curriculum_cache = CurriculumStorage.parse_raw(cached.curriculums)
+    storage = await curriculum_storage()
     out = Curriculum.empty()
 
     # Fetch major (or common plan)
-    curr = _curriculum_cache.get_major(spec)
+    curr = storage.get_major(spec)
     if curr is None:
         raise HTTPException(404, "major not found")
     out.extend(curr)
 
     # Fetch minor
     if spec.has_minor():
-        curr = _curriculum_cache.get_minor(spec)
+        curr = storage.get_minor(spec)
         if curr is None:
             raise HTTPException(404, "minor not found")
         out.extend(curr)
 
     # Fetch title
     if spec.has_title():
-        curr = _curriculum_cache.get_title(spec)
+        curr = storage.get_title(spec)
         if curr is None:
             raise HTTPException(404, "title not found")
         out.extend(curr)
