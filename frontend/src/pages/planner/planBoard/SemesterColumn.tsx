@@ -29,6 +29,7 @@ const SemesterColumn = ({ coursesId, validation, classesDetails, authState, seme
   const semesterIsInProgress = ((authState?.student) != null) && (authState.student.current_semester === authState.student.next_semester - 1)
   const isPassed = ((authState?.student) != null) && (semester < authState.student.current_semester)
   const isCurrent = (semesterIsInProgress && (semester === authState?.student?.current_semester))
+  const semesterName = authState?.student?.admission != null ? `${authState?.student?.admission[0]}-${authState?.student?.admission[1]} ` : null
   const totalCredits = classes.map(course => {
     const details = classesDetails[course.code]
     if ('credits' in course) {
@@ -125,7 +126,7 @@ const SemesterColumn = ({ coursesId, validation, classesDetails, authState, seme
           <h2 className="mt-1 text-[1.2rem] text-center">{`Semestre ${semester + 1}`}</h2>
         </ConditionalWrapper>
         <>
-          <p className="text-[0.6rem] opacity-75">{totalCredits} créd.{isCurrent ? ' (en curso)' : ''}</p>
+          <p className="text-[0.6rem] opacity-75">{semesterName}{totalCredits} créd.{isCurrent ? ' (en curso)' : ''}</p>
           <div className="my-1 divider"></div>
         </>
       </div>
