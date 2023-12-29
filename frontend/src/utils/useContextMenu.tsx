@@ -4,6 +4,7 @@ interface useContextMenuReturn {
   clicked: boolean
   points: { x: number, y: number }
   handleContextMenu: MouseEventHandler
+  setClicked: Function
   courseInfo: { code: string, instance: number, credits: number, isEquivalence: boolean }
 }
 
@@ -57,6 +58,7 @@ const useContextMenu = (): useContextMenuReturn => {
   }, [])
   return {
     clicked,
+    setClicked,
     points,
     courseInfo,
     handleContextMenu

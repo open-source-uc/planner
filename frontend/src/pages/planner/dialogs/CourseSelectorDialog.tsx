@@ -230,7 +230,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       }
       debounceTimerRef.current = setTimeout(() => {
         setFilter({ ...filter, name: nameForm })
-      }, 500)
+      }, 300)
     }
   }, [open, nameForm, filter])
 

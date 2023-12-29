@@ -40,7 +40,7 @@ const Planner = (): JSX.Element => {
   const [modalData, setModalData] = useState<ModalData>()
   const [, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
 
-  const { clicked, courseInfo, points, handleContextMenu } = useContextMenu()
+  const { clicked, setClicked, courseInfo, points, handleContextMenu } = useContextMenu()
 
   const { isModalOpen: isLegendModalOpen, openModal: openLegendModal, closeModal: closeLegendModal } = useDummyModal()
   const { isModalOpen: isSavePlanModalOpen, openModal: openSavePlanModal, closeModal: closeSavePlanModal } = useDummyModal()
@@ -479,11 +479,11 @@ const Planner = (): JSX.Element => {
         <CoursesContextMenu
           posibleBlocks={possibleBlocksList[courseInfo.code] ?? []}
           points={points}
-          hasEquivalence={courseInfo.isEquivalence}
-          courseCredits={courseInfo.credits}
-          courseInfo={findClassInPlan(validatablePlan?.classes ?? [], courseInfo)}
+          courseInfo={courseInfo}
+          courseDetails={findClassInPlan(validatablePlan?.classes ?? [], courseInfo)}
           coursePos={locateClassInPlan(validatablePlan?.classes ?? [], courseInfo)}
-          openEquivModal={openModal}
+          setClicked={setClicked}
+          remCourse={remCourse}
           forceBlockChange={forceBlockChange}
         />
       )}

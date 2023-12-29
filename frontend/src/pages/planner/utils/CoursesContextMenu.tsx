@@ -5,22 +5,27 @@ import { type EquivDetails } from '../../../client'
 interface CoursesContextMenuProps {
   posibleBlocks: EquivDetails[]
   points: { x: number, y: number }
-  hasEquivalence: boolean
-  courseCredits: number
   coursePos?: CoursePos
-  courseInfo?: PseudoCourseId
-  openEquivModal: Function
+  courseInfo: {
+    code: string
+    instance: number
+    credits: number
+    isEquivalence: boolean
+  }
+  setClicked: Function
+  courseDetails?: PseudoCourseId
+  remCourse: Function
   forceBlockChange: Function
 }
 
-const CoursesContextMenu = ({ posibleBlocks, points, hasEquivalence, courseCredits, courseInfo, coursePos, openEquivModal, forceBlockChange }: CoursesContextMenuProps): JSX.Element => {
+const CoursesContextMenu = ({ posibleBlocks, points, courseInfo, setClicked, courseDetails, coursePos, remCourse, forceBlockChange }: CoursesContextMenuProps): JSX.Element => {
   const [showBlocks, setShowBlocks] = useState(false)
   const [showMoreInfo, setShowMoreBlocks] = useState(false)
 
   return (
     <div id="context-menu" className="z-50 absolute w-40 bg-slate-100 border-slate-300 border-2  box-border" style={{ top: points.y, left: points.x }}>
     <ul className="box-border m-0 list-none font-medium text-sm text-gray-900 ">
-      {courseInfo?.is_concrete === true && (
+      {courseDetails?.is_concrete === true && (
       <div
         className="block p-2 w-full text-left hover:cursor-pointer hover:bg-slate-200 border-slate-300"
         onMouseEnter={() => { setShowMoreBlocks(true) }}
@@ -30,35 +35,21 @@ const CoursesContextMenu = ({ posibleBlocks, points, hasEquivalence, courseCredi
         <div className="w-44 absolute top-0 left-full bg-slate-100 border-slate-300 border-2  shadow-md">
           <a
             className="block w-full p-2 text-left hover:bg-slate-200"
-            href={`https://catalogo.uc.cl/index.php?tmpl=component&option=com_catalogo&view=programa&sigla=${courseInfo?.code}`} rel="noreferrer" target="_blank"
+            href={`https://catalogo.uc.cl/index.php?tmpl=component&option=com_catalogo&view=programa&sigla=${courseInfo.code}`} rel="noreferrer" target="_blank"
           >Ver programa</a>
           <a
             className="block w-full p-2 text-left hover:bg-slate-200  border-t-2 border-slate-200"
-            href={`https://catalogo.uc.cl/index.php?tmpl=component&option=com_catalogo&view=requisitos&sigla=${courseInfo?.code}`} rel="noreferrer" target="_blank"
+            href={`https://catalogo.uc.cl/index.php?tmpl=component&option=com_catalogo&view=requisitos&sigla=${courseInfo.code}`} rel="noreferrer" target="_blank"
           >Ver requisitos</a>
           <a
             className="block w-full p-2 text-left hover:bg-slate-200  border-t-2 border-slate-200"
-            href={`https://buscacursos.uc.cl/?cxml_sigla=${courseInfo?.code}`} rel="noreferrer" target="_blank"
+            href={`https://buscacursos.uc.cl/?cxml_sigla=${courseInfo.code}`} rel="noreferrer" target="_blank"
           >Ver en busca cursos</a>
         </div>
       )}
       </div>
       )}
 
-      {hasEquivalence && (
-        <button
-          className="p-2 w-full text-left hover:cursor-pointer hover:bg-slate-200 border-t-2 border-slate-300"
-          onClick={() => {
-            if (coursePos !== undefined && courseInfo !== undefined) {
-              if ('equivalence' in courseInfo && courseInfo.equivalence !== undefined) {
-                void openEquivModal(courseInfo.equivalence, coursePos.semester, coursePos.index)
-              } else {
-                void openEquivModal(courseInfo, coursePos.semester, coursePos.index)
-              }
-            }
-          }}
-        >Ver equivalencias</button>
-      )}
       {posibleBlocks.length > 0 && (
         <div
           className="p-2 relative w-full text-left hover:cursor-pointer hover:bg-slate-200 border-t-2 border-slate-300"
@@ -71,10 +62,10 @@ const CoursesContextMenu = ({ posibleBlocks, points, hasEquivalence, courseCredi
               {posibleBlocks.map((block, index) => (
                 <button
                   key={index}
-                  className={`block w-full p-2 text-left hover:bg-slate-300 ${courseInfo !== undefined && 'equivalence' in courseInfo && block.code === courseInfo.equivalence?.code ? 'bg-slate-200' : ''}`}
+                  className={`block w-full p-2 text-left hover:bg-slate-300 ${courseDetails !== undefined && 'equivalence' in courseDetails && block.code === courseDetails.equivalence?.code ? 'bg-slate-200' : ''}`}
                   onClick={() => {
-                    if (courseInfo !== undefined && 'equivalence' in courseInfo && block.code === courseInfo.equivalence?.code) return
-                    forceBlockChange(block.code, coursePos, courseCredits)
+                    if (courseDetails !== undefined && 'equivalence' in courseDetails && block.code === courseDetails.equivalence?.code) return
+                    forceBlockChange(block.code, coursePos, courseInfo.credits)
                   }}
                 >
                   {block.name}
@@ -84,6 +75,14 @@ const CoursesContextMenu = ({ posibleBlocks, points, hasEquivalence, courseCredi
           )}
         </div>
       )}
+      <button
+        id="delete-course"
+        className="p-2 w-full text-left hover:cursor-pointer hover:bg-slate-200 border-t-2 border-slate-300"
+        onClick={() => {
+          remCourse(courseInfo)
+          setClicked(false)
+        }}
+      >Eliminar</button>
     </ul>
   </div>
   )
