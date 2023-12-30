@@ -21,7 +21,7 @@ from app.plan.validation.courses.logic import (
 )
 from app.plan.validation.courses.simplify import simplify
 from app.plan.validation.diagnostic import (
-    AmbiguousCourseErr,
+    AmbiguousCourseWarn,
     CourseRequirementErr,
     SemesterCreditsDiag,
     SemestralityWarn,
@@ -233,7 +233,7 @@ class ValidationContext:
                     if info is not None and not info.is_unessential:
                         ambiguous.append(self.class_ids[sem_i][i])
         if ambiguous:
-            out.add(AmbiguousCourseErr(associated_to=ambiguous))
+            out.add(AmbiguousCourseWarn(associated_to=ambiguous))
 
     def validate_all_availability(self, out: ValidationResult):
         """
