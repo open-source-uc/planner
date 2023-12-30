@@ -11,7 +11,7 @@ import { useParams, Navigate, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, Fragment } from 'react'
 import { type CourseDetails, type Major, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise, type ClassId, type CurriculumSpec } from '../../client'
 import { type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type Cyear, type PossibleBlocksList, type CoursePos } from './utils/Types'
-import { validateCourseMovement, updateClassesState, locateClassInPlan, findClassInPlan, changeCourseBlock, getCourseSuperblock } from './utils/PlanBoardFunctions'
+import { validateCourseMovement, updateClassesState, locateClassInPlan, changeCourseBlock, getCourseSuperblock } from './utils/PlanBoardFunctions'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import DebugGraph from '../../components/DebugGraph'
@@ -485,7 +485,7 @@ const Planner = (): JSX.Element => {
         courseInfo={courseInfo}
         courseDetails={coursePos != null ? validatablePlan?.classes?.[coursePos.semester]?.[coursePos.index] : undefined}
         coursePos={coursePos}
-        isAssigned={coursePos != null && getCourseSuperblock(validatablePlan?.classes ?? [], validationResult, coursePos) != ''}
+        isAssigned={coursePos != null && getCourseSuperblock(validatablePlan?.classes ?? [], validationResult, coursePos) !== ''}
         setClicked={setClicked}
         remCourse={remCourse}
         forceBlockChange={forceBlockChange}
