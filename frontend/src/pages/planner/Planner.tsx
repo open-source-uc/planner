@@ -80,8 +80,13 @@ const Planner = (): JSX.Element => {
       if (fetchAll != null) {
         // Process all equivalences
         const blocksList: Record<string, EquivDetails[]> = {}
+        const seen = new Set<string>()
         for (const detail of newDetails) {
           if ('courses' in detail) {
+            if (seen.has(detail.code)) {
+              continue
+            }
+            seen.add(detail.code)
             for (const course of detail.courses) {
               if (!(course in blocksList)) blocksList[course] = []
               blocksList[course].push(detail)
