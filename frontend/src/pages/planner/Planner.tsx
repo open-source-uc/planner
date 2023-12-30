@@ -11,7 +11,7 @@ import { useParams, Navigate, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback, Fragment } from 'react'
 import { type CourseDetails, type Major, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise, type ClassId, type CurriculumSpec } from '../../client'
 import { type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type Cyear, type PossibleBlocksList, type CoursePos } from './utils/Types'
-import { validateCourseMovement, updateClassesState, locateClassInPlan, findClassInPlan, changeCourseBlock } from './utils/PlanBoardFunctions'
+import { validateCourseMovement, updateClassesState, locateClassInPlan, findClassInPlan, changeCourseBlock, getCourseSuperblock } from './utils/PlanBoardFunctions'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import DebugGraph from '../../components/DebugGraph'
@@ -474,24 +474,31 @@ const Planner = (): JSX.Element => {
     return <Navigate to="/mod/users"/>
   }
 
+  let contextMenu = null
+  if (clicked) {
+    // the context menu for the courses, it will be shown when the user right clicks on a course, it can show the info and change block options
+    const coursePos = locateClassInPlan(validatablePlan?.classes ?? [], courseInfo)
+    contextMenu = (
+      <CoursesContextMenu
+        possibleBlocks={possibleBlocksList[courseInfo.code] ?? []}
+        points={points}
+        courseInfo={courseInfo}
+        courseDetails={coursePos != null ? validatablePlan?.classes?.[coursePos.semester]?.[coursePos.index] : undefined}
+        coursePos={coursePos}
+        isAssigned={coursePos != null && getCourseSuperblock(validatablePlan?.classes ?? [], validationResult, coursePos) != ''}
+        setClicked={setClicked}
+        remCourse={remCourse}
+        forceBlockChange={forceBlockChange}
+      />
+    )
+  }
+
   return (
     <Fragment>
       {authState?.isMod === true &&
         <Banner bannerType={'Warning'} text={'Estás en una visualización exclusiva para moderadores. Puedes ver e interactuar con los planes del estudiante, pero no puedes guardar los cambios realizados.'}/>
       }
-      {clicked && (
-        // the context menu for the courses, it will be shown when the user right clicks on a course, it can show the info and change block options
-        <CoursesContextMenu
-          possibleBlocks={possibleBlocksList[courseInfo.code] ?? []}
-          points={points}
-          courseInfo={courseInfo}
-          courseDetails={findClassInPlan(validatablePlan?.classes ?? [], courseInfo)}
-          coursePos={locateClassInPlan(validatablePlan?.classes ?? [], courseInfo)}
-          setClicked={setClicked}
-          remCourse={remCourse}
-          forceBlockChange={forceBlockChange}
-        />
-      )}
+      {contextMenu}
       <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
         <DebugGraph validatablePlan={validatablePlan} />
         <ReceivePaste validatablePlan={validatablePlan} getDefaultPlan={getDefaultPlan} />
