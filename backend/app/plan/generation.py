@@ -1,5 +1,8 @@
+import logging
+import time
 from collections import OrderedDict, defaultdict
 from collections.abc import Iterable
+from types import TracebackType
 
 from app import sync
 from app.plan.course import (
@@ -44,6 +47,8 @@ from app.plan.validation.curriculum.tree import (
 from app.sync import get_curriculum
 from app.sync.database import course_info
 from app.user.auth import UserKey
+
+log = logging.getLogger("plan-gen")
 
 RECOMMENDED_CREDITS_PER_SEMESTER = 50
 
@@ -490,6 +495,33 @@ async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
     )
 
 
+class Benchmark:
+    start: float
+    name: str
+
+    def __init__(self) -> None:
+        log.info("generation benchmark:")
+        self.name = "?"
+        self.start = 0
+
+    def section(self, name: str) -> "Benchmark":
+        self.name = name
+        return self
+
+    def __enter__(self) -> None:
+        self.start = time.monotonic()
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        exc_trace: TracebackType | None,
+    ) -> None:
+        end = time.monotonic()
+        t = end - self.start
+        log.info("  %s: %sms", self.name, round(1000 * t, 2))
+
+
 async def generate_recommended_plan(
     passed: ValidatablePlan,
     reference: ValidatablePlan | None = None,
@@ -500,12 +532,11 @@ async def generate_recommended_plan(
 
     NOTE: This function modifies `passed`.
     """
-    from time import monotonic as t
+    b = Benchmark()
 
-    t0 = t()
-    courseinfo = await course_info()
-    curriculum = await get_curriculum(passed.curriculum)
-    t1 = t()
+    with b.section("resource lookup"):
+        courseinfo = await course_info()
+        curriculum = await get_curriculum(passed.curriculum)
 
     # Re-select courses from equivalences using reference plan
     if reference is not None:
@@ -513,21 +544,22 @@ async def generate_recommended_plan(
 
     # Solve the curriculum to determine which courses have not been passed yet (and need
     # to be passed)
-    g = solve_curriculum(
-        courseinfo,
-        passed.curriculum,
-        curriculum,
-        passed.classes,
-        len(passed.classes),
-    )
+    with b.section("solve"):
+        g = solve_curriculum(
+            courseinfo,
+            passed.curriculum,
+            curriculum,
+            passed.classes,
+            len(passed.classes),
+        )
 
     # Flat list of all curriculum courses left to pass
-    courses_to_pass, ignore_reqs = _compute_courses_to_pass(
-        courseinfo,
-        g,
-        passed,
-    )
-    t2 = t()
+    with b.section("courses to pass"):
+        courses_to_pass, ignore_reqs = _compute_courses_to_pass(
+            courseinfo,
+            g,
+            passed,
+        )
 
     plan_ctx = ValidationContext(courseinfo, passed.copy(deep=True), user_ctx=None)
     for ignore in ignore_reqs:
@@ -535,90 +567,82 @@ async def generate_recommended_plan(
     plan_ctx.append_semester()
 
     # Precompute corequirements for courses
-    coreq_components = _find_mutual_coreqs(courseinfo, courses_to_pass)
-    t21 = t()
+    with b.section("coreq"):
+        coreq_components = _find_mutual_coreqs(courseinfo, courses_to_pass)
 
-    while courses_to_pass:
-        # Attempt to add a single course at the end of the last semester
+    with b.section("placement"):
+        while courses_to_pass:
+            # Attempt to add a single course at the end of the last semester
 
-        # Go in order, attempting to add each course to the semester
-        added_course = False
-        for idx in courses_to_pass:
-            course_group = coreq_components[idx]
+            # Go in order, attempting to add each course to the semester
+            added_course = False
+            for idx in courses_to_pass:
+                course_group = coreq_components[idx]
 
-            could_add = _try_add_course_group(
-                courseinfo,
-                plan_ctx,
-                courses_to_pass,
-                course_group,
-            )
-            if could_add:
-                # Successfully added a course, finish
-                added_course = True
+                could_add = _try_add_course_group(
+                    courseinfo,
+                    plan_ctx,
+                    courses_to_pass,
+                    course_group,
+                )
+                if could_add:
+                    # Successfully added a course, finish
+                    added_course = True
+                    break
+
+            if added_course:
+                # Made some progress!
+                # Continue adding courses
+                continue
+
+            # We could not add any course, try adding another semester
+            # However, we do not want to enter an infinite loop if nothing can be added, so
+            # only do this if we cannot add courses for 2 empty semesters
+            if (
+                len(plan_ctx.plan.classes) >= 2
+                and not plan_ctx.plan.classes[-1]
+                and not plan_ctx.plan.classes[-2]
+            ):
+                # Stuck :(
                 break
 
-        if added_course:
-            # Made some progress!
-            # Continue adding courses
-            continue
+            # Maybe some requirements are not met, maybe the semestrality is wrong, maybe
+            # we reached the credit limit for this semester
+            # Anyway, if we are stuck let's try adding a new semester and see if it helps
+            plan_ctx.append_semester()
 
-        # We could not add any course, try adding another semester
-        # However, we do not want to enter an infinite loop if nothing can be added, so
-        # only do this if we cannot add courses for 2 empty semesters
-        if (
-            len(plan_ctx.plan.classes) >= 2
-            and not plan_ctx.plan.classes[-1]
-            and not plan_ctx.plan.classes[-2]
-        ):
-            # Stuck :(
-            break
+        # Unwrap plan
+        plan = plan_ctx.plan
 
-        # Maybe some requirements are not met, maybe the semestrality is wrong, maybe
-        # we reached the credit limit for this semester
-        # Anyway, if we are stuck let's try adding a new semester and see if it helps
-        plan_ctx.append_semester()
+        # Remove empty semesters at the end (if any)
+        while plan.classes and not plan.classes[-1]:
+            plan.classes.pop()
 
-    # Unwrap plan
-    plan = plan_ctx.plan
-
-    # Remove empty semesters at the end (if any)
-    while plan.classes and not plan.classes[-1]:
-        plan.classes.pop()
-
-    # If any courses simply could not be added, add them now
-    # TODO: Do something about courses with missing requirements
-    if courses_to_pass:
-        print(f"WARNING: could not add courses {list(courses_to_pass.values())}")
-        plan.classes.append(list(courses_to_pass.values()))
-
-    t3 = t()
-
-    def p(t: float):
-        return f"{round(t*1000, 2)}ms"
-
-    print(f"generation: {p(t3-t0)}")
-    print(f"  resource lookup: {p(t1-t0)}")
-    print(f"  solve: {p(t2-t1)}")
-    print(f"  coreq: {p(t21-t2)}")
-    print(f"  insert: {p(t3-t21)}")
+        # If any courses simply could not be added, add them now
+        # TODO: Do something about courses with missing requirements
+        if courses_to_pass:
+            print(f"WARNING: could not add courses {list(courses_to_pass.values())}")
+            plan.classes.append(list(courses_to_pass.values()))
 
     # Assign blocks to courses based on the current solution
-    g.execute_recolors(plan.classes)
+    with b.section("recolor"):
+        g.execute_recolors(plan.classes)
 
     # Order courses by their color (ie. superblock assignment)
-    repetition_counter: defaultdict[str, int] = defaultdict(lambda: 0)
-    plan.classes = [
-        [
-            c
-            for _order, c in sorted(
-                (
-                    (_get_course_color_order(g, repetition_counter, c.code), c)
-                    for c in sem
-                ),
-                key=lambda pair: pair[0],
-            )
+    with b.section("reorder"):
+        repetition_counter: defaultdict[str, int] = defaultdict(lambda: 0)
+        plan.classes = [
+            [
+                c
+                for _order, c in sorted(
+                    (
+                        (_get_course_color_order(g, repetition_counter, c.code), c)
+                        for c in sem
+                    ),
+                    key=lambda pair: pair[0],
+                )
+            ]
+            for sem in plan.classes
         ]
-        for sem in plan.classes
-    ]
 
     return plan
