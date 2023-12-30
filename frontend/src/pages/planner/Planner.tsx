@@ -477,7 +477,7 @@ const Planner = (): JSX.Element => {
       {clicked && (
         // the context menu for the courses, it will be shown when the user right clicks on a course, it can show the info and change block options
         <CoursesContextMenu
-          posibleBlocks={possibleBlocksList[courseInfo.code] ?? []}
+          possibleBlocks={possibleBlocksList[courseInfo.code] ?? []}
           points={points}
           courseInfo={courseInfo}
           courseDetails={findClassInPlan(validatablePlan?.classes ?? [], courseInfo)}
