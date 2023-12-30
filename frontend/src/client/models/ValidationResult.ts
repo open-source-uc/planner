@@ -2,7 +2,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import type { AmbiguousCourseErr } from './AmbiguousCourseErr';
+import type { AmbiguousCourseWarn } from './AmbiguousCourseWarn';
 import type { CourseRequirementErr } from './CourseRequirementErr';
 import type { CurriculumErr } from './CurriculumErr';
 import type { MismatchedCurriculumSelectionWarn } from './MismatchedCurriculumSelectionWarn';
@@ -17,7 +17,7 @@ import type { UnavailableCourseWarn } from './UnavailableCourseWarn';
 import type { UnknownCourseErr } from './UnknownCourseErr';
 
 export type ValidationResult = {
-    diagnostics: Array<(CourseRequirementErr | UnknownCourseErr | MismatchedCyearErr | MismatchedCurriculumSelectionWarn | OutdatedPlanErr | SemestralityWarn | UnavailableCourseWarn | AmbiguousCourseErr | SemesterCreditsDiag | RecolorWarn | CurriculumErr | UnassignedWarn | NoMajorMinorWarn)>;
+    diagnostics: Array<(CourseRequirementErr | UnknownCourseErr | MismatchedCyearErr | MismatchedCurriculumSelectionWarn | OutdatedPlanErr | SemestralityWarn | UnavailableCourseWarn | AmbiguousCourseWarn | SemesterCreditsDiag | RecolorWarn | CurriculumErr | UnassignedWarn | NoMajorMinorWarn)>;
     course_superblocks: Record<string, Array<string>>;
 };
 

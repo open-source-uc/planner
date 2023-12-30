@@ -7,7 +7,7 @@ export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { AccessLevelOverview } from './models/AccessLevelOverview';
-export type { AmbiguousCourseErr } from './models/AmbiguousCourseErr';
+export type { AmbiguousCourseWarn } from './models/AmbiguousCourseWarn';
 export type { And } from './models/And';
 export type { Body_generate_plan } from './models/Body_generate_plan';
 export type { Body_get_pseudocourse_details } from './models/Body_get_pseudocourse_details';
