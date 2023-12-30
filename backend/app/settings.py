@@ -109,7 +109,7 @@ class Settings(BaseSettings):
     # URL for buscacursos-dl, the current temporary catalogo and buscacursos scraper
     # that we use as a courseinfo source.
     buscacursos_dl_url: AnyHttpUrl = Field(
-        "https://github.com/negamartin/buscacursos-dl/releases/download/universal-4/coursedata-noprogram.json.xz",
+        "https://github.com/kovaxis/buscacursos-dl/releases/download/universal-5/coursedata.json.xz",
     )
 
     # Logging level
