@@ -343,7 +343,7 @@ def translate_major(
     spec_id = "MAJOR"
 
     # Traducir la malla de SIDING en un curriculum nativo pero incompleto
-    curr = translate_siding(courses, out, spec_id, siding, raw_blocks)
+    curr = translate_siding(courses, out, spec, spec_id, siding, raw_blocks)
 
     # Completar los detalles faltantes
     curr = patch_major(courses, spec, curr)

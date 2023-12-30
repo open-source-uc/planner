@@ -15,9 +15,10 @@ import type { SemestralityWarn } from './SemestralityWarn';
 import type { UnassignedWarn } from './UnassignedWarn';
 import type { UnavailableCourseWarn } from './UnavailableCourseWarn';
 import type { UnknownCourseErr } from './UnknownCourseErr';
+import type { UnknownSpecErr } from './UnknownSpecErr';
 
 export type ValidationResult = {
-    diagnostics: Array<(CourseRequirementErr | UnknownCourseErr | MismatchedCyearErr | MismatchedCurriculumSelectionWarn | OutdatedPlanErr | SemestralityWarn | UnavailableCourseWarn | AmbiguousCourseWarn | SemesterCreditsDiag | RecolorWarn | CurriculumErr | UnassignedWarn | NoMajorMinorWarn)>;
+    diagnostics: Array<(CourseRequirementErr | UnknownCourseErr | MismatchedCyearErr | MismatchedCurriculumSelectionWarn | OutdatedPlanErr | SemestralityWarn | UnavailableCourseWarn | AmbiguousCourseWarn | SemesterCreditsDiag | RecolorWarn | CurriculumErr | UnassignedWarn | NoMajorMinorWarn | UnknownSpecErr)>;
     course_superblocks: Record<string, Array<string>>;
 };
 

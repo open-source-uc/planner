@@ -14,6 +14,7 @@ from app.plan.validation.curriculum.tree import (
     Block,
     Combination,
     Curriculum,
+    CurriculumSpec,
     FillerCourse,
     Leaf,
     Multiplicity,
@@ -72,13 +73,14 @@ class Bypass(BaseModel):
         courses: dict[str, CourseDetails],
         siding: SidingInfo,
         storage: CurriculumStorage,
+        spec: CurriculumSpec,
         unique_id: str,
     ) -> Curriculum:
         """
         Translate a human-friendly "bypass" format into a curriculum specification.
         """
 
-        curr = Curriculum.empty()
+        curr = Curriculum.empty(spec)
 
         # Translate the curriculum tree
         translator = BypassTranslator(courses, siding, unique_id, curr, storage)

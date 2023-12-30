@@ -48,6 +48,7 @@ export type { Title } from './models/Title';
 export type { UnassignedWarn } from './models/UnassignedWarn';
 export type { UnavailableCourseWarn } from './models/UnavailableCourseWarn';
 export type { UnknownCourseErr } from './models/UnknownCourseErr';
+export type { UnknownSpecErr } from './models/UnknownSpecErr';
 export type { ValidatablePlan } from './models/ValidatablePlan';
 export type { ValidationError } from './models/ValidationError';
 export type { ValidationResult } from './models/ValidationResult';

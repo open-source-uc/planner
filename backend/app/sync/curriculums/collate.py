@@ -675,7 +675,7 @@ def translate_bypass(
             )
             out.set_major(
                 spec,
-                bp.plan.translate(courses, siding, out, f"MAJOR-{spec}"),
+                bp.plan.translate(courses, siding, out, spec, f"MAJOR-{spec}"),
             )
         for bp in bypass.minors:
             spec = CurriculumSpec(
@@ -686,7 +686,7 @@ def translate_bypass(
             )
             out.set_minor(
                 spec,
-                bp.plan.translate(courses, siding, out, f"MINOR-{spec}"),
+                bp.plan.translate(courses, siding, out, spec, f"MINOR-{spec}"),
             )
         for bp in bypass.titles:
             spec = CurriculumSpec(
@@ -697,5 +697,5 @@ def translate_bypass(
             )
             out.set_title(
                 spec,
-                bp.plan.translate(courses, siding, out, f"TITLE-{spec}"),
+                bp.plan.translate(courses, siding, out, spec, f"TITLE-{spec}"),
             )
