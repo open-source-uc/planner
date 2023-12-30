@@ -100,9 +100,6 @@ class Settings(BaseSettings):
     # Whether to resynchronize curriculums on server startup.
     autosync_curriculums: bool = True
 
-    # Whether to resynchronize the courseinfo cache on server startup.
-    autosync_packedcourses: bool = True
-
     # URL for the Redis server.
     redis_uri: RedisDsn = Field("redis://localhost:6379")
 

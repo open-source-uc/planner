@@ -133,7 +133,8 @@ def _merge_c2020_ofgs(curriculum: Curriculum):
 
 
 def _allow_selection_duplication(
-    courses: dict[str, CourseDetails], curriculum: Curriculum,
+    courses: dict[str, CourseDetails],
+    curriculum: Curriculum,
 ):
     # Los ramos de seleccion deportiva pueden contar hasta 2 veces (la misma sigla!)
     # Los ramos de seleccion deportiva se definen segun SIDING como los ramos DPT que

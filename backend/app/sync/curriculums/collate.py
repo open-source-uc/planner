@@ -134,9 +134,8 @@ async def collate_plans(courses: dict[str, CourseDetails]) -> CurriculumStorage:
 
     # Determinar qué cursos si o si tienen que dictarse en algun momento, para evitar el
     # warning de "este curso no se ha dictado nunca" para cursos nuevos
-    for equiv in out.lists.values():
-        if len(equiv.courses) == 1:
-            out.must_have_courses.add(equiv.courses[0])
+    for curr in out.all_plans():
+        _extract_must_have_courses(curr.root, out.must_have_courses)
 
     # TODO: Algunos minors y titulos tienen requerimientos especiales que no son
     #   representables en el formato que provee SIDING, y por ende faltan del
@@ -162,6 +161,17 @@ async def collate_plans(courses: dict[str, CourseDetails]) -> CurriculumStorage:
     #   - (40023) Ingeniero Civil Matemático y Computacional
 
     return out
+
+
+def _extract_must_have_courses(block: Block, into: set[str]):
+    if isinstance(block, Leaf):
+        if len(block.codes) == 1:
+            into.add(next(iter(block.codes)))
+    else:
+        children_cap = sum(sub_block.cap for sub_block in block.children)
+        if block.cap == children_cap:
+            for sub_block in block.children:
+                _extract_must_have_courses(sub_block, into)
 
 
 @dataclass
@@ -387,6 +397,8 @@ def translate_all_majors(
                 siding,
                 siding.plans[cyear].plans[major.code],
             )
+
+
 def translate_all_minors(
     courses: dict[str, CourseDetails],
     siding: SidingInfo,
@@ -413,6 +425,7 @@ def translate_all_minors(
                     siding.plans[cyear].plans.get(minor_meta.code, []),
                     minor_scrape,
                 )
+
 
 def translate_all_titles(
     courses: dict[str, CourseDetails],
