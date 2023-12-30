@@ -226,7 +226,7 @@ def translate_scrape(
     siding: list[BloqueMalla],
     scrape: ScrapedProgram,
 ) -> Curriculum:
-    curr = Curriculum.empty()
+    curr = Curriculum.empty(spec)
     curr.root.cap = -1
 
     if kind.exclusive_credits is None:

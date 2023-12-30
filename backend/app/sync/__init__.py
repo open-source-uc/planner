@@ -30,27 +30,24 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
     """
 
     storage = await curriculum_storage()
-    out = Curriculum.empty()
+    out = Curriculum.empty(spec)
 
     # Fetch major (or common plan)
     curr = storage.get_major(spec)
-    if curr is None:
-        raise HTTPException(404, "major not found")
-    out.extend(curr)
+    if curr is not None:
+        out.extend(curr)
 
     # Fetch minor
     if spec.has_minor():
         curr = storage.get_minor(spec)
-        if curr is None:
-            raise HTTPException(404, "minor not found")
-        out.extend(curr)
+        if curr is not None:
+            out.extend(curr)
 
     # Fetch title
     if spec.has_title():
         curr = storage.get_title(spec)
-        if curr is None:
-            raise HTTPException(404, "title not found")
-        out.extend(curr)
+        if curr is not None:
+            out.extend(curr)
 
     return out
 

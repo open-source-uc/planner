@@ -10,6 +10,7 @@ from app.plan.validation.curriculum.tree import (
     Block,
     Combination,
     Curriculum,
+    CurriculumSpec,
     Cyear,
     FillerCourse,
     Leaf,
@@ -244,6 +245,7 @@ async def _fetch_siding_lists(courses: dict[str, CourseDetails], siding: SidingI
 def translate_siding(
     courses: dict[str, CourseDetails],
     out: CurriculumStorage,
+    spec: CurriculumSpec,
     spec_id: str,
     siding: SidingInfo,
     raw_blocks: list[BloqueMalla],
@@ -261,7 +263,7 @@ def translate_siding(
     Any found lists will be added to `out`.
     """
 
-    curriculum = Curriculum.empty()
+    curriculum = Curriculum.empty(spec)
     curriculum.root.cap = -1
 
     # Group into superblocks

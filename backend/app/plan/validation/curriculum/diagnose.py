@@ -9,7 +9,7 @@ from app.plan.validation.curriculum.solve import (
     SolvedCurriculum,
     solve_curriculum,
 )
-from app.plan.validation.curriculum.tree import Curriculum
+from app.plan.validation.curriculum.tree import Curriculum, CurriculumSpec
 from app.plan.validation.diagnostic import (
     CurriculumErr,
     NoMajorMinorWarn,
@@ -17,6 +17,7 @@ from app.plan.validation.diagnostic import (
     UnassignedWarn,
     ValidationResult,
 )
+from app.sync.curriculums.storage import CurriculumStorage
 from app.user.info import StudentInfo
 
 
@@ -132,6 +133,7 @@ def _diagnose_blocks(
 
 def diagnose_curriculum(
     courseinfo: CourseInfo,
+    cstore: CurriculumStorage,
     curriculum: Curriculum,
     plan: ValidatablePlan,
     user_ctx: StudentInfo | None,
