@@ -7,7 +7,7 @@ from app.plan.course import (
     EquivalenceId,
     pseudocourse_with_credits,
 )
-from app.plan.courseinfo import CourseDetails, CourseInfo, course_info
+from app.plan.courseinfo import CourseDetails, CourseInfo
 from app.plan.plan import (
     CURRENT_PLAN_VERSION,
     PseudoCourse,
@@ -42,6 +42,7 @@ from app.plan.validation.curriculum.tree import (
     cyear_from_str,
 )
 from app.sync import get_curriculum
+from app.sync.database import course_info
 from app.user.auth import UserKey
 
 RECOMMENDED_CREDITS_PER_SEMESTER = 50

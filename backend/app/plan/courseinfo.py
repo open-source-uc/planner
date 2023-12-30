@@ -2,13 +2,9 @@
 Cache course info from the database in memory, for easy access.
 """
 
-import logging
 from dataclasses import dataclass
 
 import pydantic
-from prisma.models import (
-    CachedCourseInfo as DbPackedCourseInfo,
-)
 from prisma.models import (
     Course,
     Equivalence,
@@ -19,8 +15,6 @@ from unidecode import unidecode
 
 from app.plan.course import EquivalenceId, PseudoCourse
 from app.plan.validation.courses.logic import Expr
-
-_CACHED_COURSES_ID: str = "cached-course-info"
 
 
 class CourseDetails(BaseModel):
@@ -125,6 +119,7 @@ class EquivDetails(BaseModel):
 class CourseInfo:
     courses: dict[str, CourseDetails]
     equivs: dict[str, EquivDetails]
+    must_have_courses: set[str]
 
     def try_course(self, code: str) -> CourseDetails | None:
         return self.courses.get(code)
@@ -154,122 +149,15 @@ class CourseInfo:
         creds = self.get_credits(course)
         return 1 if creds == 0 else creds
 
+    def is_available(self, code: str) -> bool:
+        if code in self.must_have_courses:
+            return True
+        if code not in self.courses:
+            return False
+        return self.courses[code].is_available
+
 
 _course_info_cache: CourseInfo | None = None
-
-
-async def add_equivalence(equiv: EquivDetails):
-    logging.info(f"adding equivalence {equiv.code}")
-    # Add equivalence to database
-    await Equivalence.prisma().query_raw(
-        """
-        INSERT INTO "Equivalence" (code, name, is_homogeneous, is_unessential)
-        VALUES($1, $2, $3, $4)
-        ON CONFLICT (code)
-        DO UPDATE SET name = $2, is_homogeneous = $3, is_unessential = $4
-        """,
-        equiv.code,
-        equiv.name,
-        equiv.is_homogeneous,
-        equiv.is_unessential,
-    )
-    # Clear previous equivalence courses
-    await EquivalenceCourse.prisma().delete_many(where={"equiv_code": equiv.code})
-    # Add equivalence courses to database
-    value_tuples: list[str] = []
-    query_args = [equiv.code]
-    for i, code in enumerate(equiv.courses):
-        value_tuples.append(
-            f"({i}, $1, ${2+i})",
-        )  # NOTE: No user-input is injected here
-        query_args.append(code)
-    if len(value_tuples) == 0:
-        raise Exception(f"equivalence {equiv.code} has no courses?")
-    await EquivalenceCourse.prisma().query_raw(
-        f"""
-        INSERT INTO "EquivalenceCourse" (index, equiv_code, course_code)
-        VALUES {','.join(value_tuples)}
-        ON CONFLICT
-        DO NOTHING
-        """,  # noqa: S608 (only numbers are inserted in string)
-        *query_args,
-    )
-    # Update in-memory cache if it was already loaded
-    if _course_info_cache:
-        _course_info_cache.equivs[equiv.code] = equiv
-
-
-class PackedCourseDetailsJson(BaseModel):
-    __root__: dict[str, CourseDetails]
-
-
-async def pack_course_details():
-    """
-    Take the course database and pack it into a compact JSON cache (in the database).
-    Only one worker has to do this, the rest just consume the packed database.
-    """
-    print("packing course database...")
-    all_courses = await Course.prisma().find_many()
-    print("  loading courses to memory...")
-    courses: dict[str, CourseDetails] = {}
-    for course in all_courses:
-        # Create course object
-        courses[course.code] = CourseDetails.from_db(course)
-    print("  packing and storing to database...")
-    await DbPackedCourseInfo.prisma().query_raw(
-        """
-        INSERT INTO "CachedCourseInfo" (id, info)
-        VALUES ($1, $2)
-        ON CONFLICT (id)
-        DO UPDATE SET info = $2
-        """,
-        _CACHED_COURSES_ID,
-        PackedCourseDetailsJson(__root__=courses).json(),
-    )
-
-
-async def course_info() -> CourseInfo:
-    """
-    Get the course details.
-    This function will lazily load from the packed course database on the first time
-    it's used.
-    NOTE: The packed course database must be populated beforehand, by the prestartup
-    script.
-    """
-
-    # TODO: Check in with the central database every so often
-    # This would allow us to update the course database without restarting
-    global _course_info_cache
-    if _course_info_cache is None:
-        # Derive course rules from courses in database
-        logging.info("caching courseinfo database to local memory")
-
-        print("  fetching packed course details...")
-        packed = await DbPackedCourseInfo.prisma().find_unique(
-            {"id": _CACHED_COURSES_ID},
-        )
-        if packed is None:
-            raise Exception(
-                "failed to fetch packed course database (did the prestart script run?)",
-            )
-        courses: dict[str, CourseDetails] = pydantic.parse_raw_as(
-            dict[str, CourseDetails],
-            packed.info,
-        )
-
-        logging.info(f"  processed {len(courses)} courses")
-
-        # Load equivalences
-        logging.info("  loading equivalences from database...")
-        all_equivs = await Equivalence.prisma().find_many()
-        equivs: dict[str, EquivDetails] = {}
-        for equiv in all_equivs:
-            equivs[equiv.code] = await EquivDetails.from_db(equiv)
-        logging.info(f"  processed {len(equivs)} equivalences")
-
-        _course_info_cache = CourseInfo(courses=courses, equivs=equivs)
-
-    return _course_info_cache
 
 
 def make_searchable_name(name: str) -> str:

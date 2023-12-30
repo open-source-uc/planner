@@ -84,15 +84,23 @@ export const CourseName = ({ course }: { course: string | ClassId | PseudoCourse
 }
 
 /**
+ * Join a list, optionally using a different separator for the last separation.
+ */
+const joinSep = (list: string[], sep: string, lastSep: string | null = null): string => {
+  if (lastSep == null) lastSep = sep
+  if (list.length === 0) return ''
+  else if (list.length === 1) return list[0]
+  else return list.slice(0, -1).join(sep) + lastSep + list[list.length - 1]
+}
+
+/**
  * Format a list of courses as a human readable list of codes.
  */
 const listCourses = (courses: Array<ClassId | PseudoCourseDetail>): string => {
-  const courseNames: string[] = courses.map(c => (
+  if (courses.length === 0) return '()'
+  return joinSep(courses.map(c => (
     getCourseNameWithCode(c)
-  ))
-  if (courseNames.length > 1) return `${courseNames.slice(0, -1).join(', ')} y ${courseNames[courseNames.length - 1]}`
-  else if (courseNames.length === 1) return courseNames[0]
-  else return '()'
+  )), ', ', ' y ')
 }
 
 /**
@@ -143,13 +151,10 @@ export const ValidationMessage: React.FC<FormatMessageProps> = ({ diag, reqCours
       return <span>Falta especificar {n} equivalencia{n === 1 ? '' : 's'} para validar correctamente tu plan.</span>
     }
     case 'nomajor': {
-      let missing = ''
-      if (diag.plan.major == null) missing += 'un major'
-      if (diag.plan.minor == null) {
-        if (missing !== '') missing += ' y '
-        missing += 'un minor'
-      }
-      return <span>Debes seleccionar {missing} para validar correctamente tu plan.</span>
+      const missing = []
+      if (diag.plan.major == null) missing.push('un major')
+      if (diag.plan.minor == null) missing.push('un minor')
+      return <span>Debes seleccionar {missing.join(' y ')} para validar correctamente tu plan.</span>
     }
     case 'outdated':
       if (diag.is_current) {
@@ -175,6 +180,15 @@ export const ValidationMessage: React.FC<FormatMessageProps> = ({ diag, reqCours
     case 'unknown': {
       const s = diag.associated_to.length !== 1 ? 's' : ''
       return <span>Código{s} de curso desconocido{s}: {listCourses(diag.associated_to)}</span>
+    }
+    case 'unkspec': {
+      const unknown = []
+      if (diag.major) unknown.push('major')
+      if (diag.minor) unknown.push('minor')
+      if (diag.title) unknown.push('título')
+      const listing = joinSep(unknown, ', ', ' y ')
+      const listingCaps = listing.slice(0, 1).toUpperCase() + listing.slice(1)
+      return <span>{listingCaps} desconocido.</span>
     }
     case 'useless': {
       const creds: number = diag.unassigned_credits

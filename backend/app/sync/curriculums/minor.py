@@ -1,4 +1,4 @@
-from app.plan.courseinfo import CourseInfo
+from app.plan.courseinfo import CourseDetails
 from app.plan.validation.curriculum.tree import (
     CurriculumSpec,
 )
@@ -18,7 +18,7 @@ MINOR_TYPE = ProgramType(
 
 
 def translate_minor(
-    courseinfo: CourseInfo,
+    courses: dict[str, CourseDetails],
     out: CurriculumStorage,
     spec: CurriculumSpec,
     meta: ProgramDetails,
@@ -28,7 +28,7 @@ def translate_minor(
 ):
     curr = translate_scrape(
         MINOR_TYPE,
-        courseinfo,
+        courses,
         out,
         spec,
         meta.name,

@@ -20,12 +20,6 @@ model AccessLevel {
   updated_at DateTime @updatedAt
 }
 
-// Cached course info.
-model CachedCourseInfo {
-  id   String @id
-  info String
-}
-
 // A concrete course in the DB
 // Cached from SIDING or whatever other source
 // In turn, these courses are cached in memory at startup
@@ -142,8 +136,8 @@ model Plan {
   validatable_plan String
 }
 
-// All curriculums, cached into a single structure.
-model CachedCurriculum {
-  id          String @id
-  curriculums String
+// Store static data such as curriculums and coursedata in packed form (a huge JSON).
+model PackedData {
+  id   String @id
+  data String
 }

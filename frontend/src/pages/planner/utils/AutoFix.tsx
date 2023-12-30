@@ -250,6 +250,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses, cours
     case 'nomajor':
     case 'currdecl':
     case 'credits':
+    case 'unkspec':
     case undefined:
       return <></>
   }

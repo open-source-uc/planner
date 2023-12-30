@@ -2,7 +2,7 @@
     "files.autoSave": "onFocusChange",
     // Frontend
     "editor.codeActionsOnSave": {
-        "source.fixAll.eslint": true
+        "source.fixAll.eslint": "explicit"
     },
     "[typescript]": {
         "editor.formatOnSave": false,
@@ -45,8 +45,8 @@
         "editor.defaultFormatter": "ms-python.black-formatter",
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
-            "source.fixAll": true,
-            "source.organizeImports": true
+            "source.fixAll": "explicit",
+            "source.organizeImports": "explicit"
         },
         // Prevents ruff-vscode#128
         "source.organizeImports.isort": true,
