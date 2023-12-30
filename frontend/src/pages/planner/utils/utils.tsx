@@ -1,8 +1,9 @@
-import { type CourseRequirementErr, type ClassId } from '../../../client'
+import { type CourseRequirementErr, type ClassId, type ValidatablePlan, type CancelablePromise, type ValidationResult, type ConcreteId, type EquivalenceId, type CourseDetails } from '../../../client'
 
-import { type PseudoCourseDetail, isApiError, isCancelError } from './Types'
+import { DefaultService } from '../../../client'
+import { type PseudoCourseDetail, type Cyear, type PseudoCourseId, isApiError, isCancelError, isCourseRequirementErr, type ModalData } from './Types'
 import { toast } from 'react-toastify'
-
+import { type AuthState } from '../../../contexts/auth.context'
 type RequirementExpr = CourseRequirementErr['missing']
 
 export enum PlannerStatus {
@@ -54,6 +55,149 @@ export const getCourseName = (course: string | ClassId | PseudoCourseDetail): st
   }
 }
 
+/**
+ * Get the correspond validation promise for the current user and mode.
+ */
+export const getValidationPromise = (validatablePlan: ValidatablePlan, authState: AuthState | null, impersonateRut?: string): CancelablePromise<ValidationResult> => {
+  if (authState?.user == null) {
+    return DefaultService.validateGuestPlan(validatablePlan)
+  } else if (authState?.isMod === true && impersonateRut != null) {
+    return DefaultService.validatePlanForAnyUser(impersonateRut, validatablePlan)
+  } else {
+    return DefaultService.validatePlanForUser(validatablePlan)
+  }
+}
+
+/**
+ * Empty validationPromise if it have one and update ref to be empty.
+ */
+export const handleEmptyPlan = (validatablePlan: ValidatablePlan, setValidationPromise: React.Dispatch<React.SetStateAction<CancelablePromise<any> | null>>, previousClasses: { current: Array<Array<ConcreteId | EquivalenceId>> }, previousCurriculum: { current: { major: string | undefined, minor: string | undefined, title: string | undefined, cyear?: Cyear } }): void => {
+  setValidationPromise(prev => {
+    if (prev != null) {
+      prev.cancel()
+      return null
+    }
+    return prev
+  })
+  updateClassesRef(validatablePlan, previousClasses, previousCurriculum)
+}
+
+/**
+ * Update ref to be the same as the current classes.
+ */
+export const updateClassesRef = (validatablePlan: ValidatablePlan, previousClasses: { current: PseudoCourseId[][] }, previousCurriculum: { current: { major: string | undefined, minor: string | undefined, title: string | undefined, cyear?: Cyear } }): void => {
+  if (previousClasses.current !== validatablePlan.classes) {
+    previousClasses.current = validatablePlan.classes
+  }
+  previousCurriculum.current = {
+    major: validatablePlan.curriculum.major,
+    minor: validatablePlan.curriculum.minor,
+    title: validatablePlan.curriculum.title,
+    cyear: validatablePlan.curriculum.cyear
+  }
+}
+
+/**
+ * Collect all the required courses from the diagnostics.
+ */
+export const collectRequiredCourses = (diagnostics: any[]): PseudoCourseId[] => {
+  const reqCourses = new Set<string>()
+  for (const diag of diagnostics) {
+    if (isCourseRequirementErr(diag)) {
+      collectRequirements(diag.modernized_missing, reqCourses)
+    }
+  }
+  return Array.from(reqCourses).map((code: string) => { return { code, isConcrete: true } })
+}
+
+/**
+ * Order the diagnostics by error first.
+ */
+export const orderValidationDiagnostics = (response: ValidationResult): void => {
+  response.diagnostics.sort((a, b) => {
+    if (a.is_err === b.is_err) {
+      return 0
+    } else if (a.is_err ?? true) {
+      return -1
+    } else {
+      return 1
+    }
+  })
+}
+
+/*
+  * Handle the selection of a course in the modal. This function will return a new validatable plan with the selected course and would handle the creddits of the equivalence if it is needed.
+*/
+export const handleSelectEquivalence = (selection: CourseDetails, prev: ValidatablePlan, modalData: ModalData): ValidatablePlan | null => {
+  if (modalData === undefined) return prev
+  const { equivalence, semester } = modalData
+  const newValidatablePlan = { ...prev, classes: [...prev.classes] }
+  while (newValidatablePlan.classes.length <= semester) {
+    newValidatablePlan.classes.push([])
+  }
+  const index = modalData?.index ?? newValidatablePlan.classes[semester].length
+  const pastClass = newValidatablePlan.classes[semester][index]
+  if (pastClass !== undefined && selection.code === pastClass.code) { return prev }
+  for (const existingCourse of newValidatablePlan.classes[semester].flat()) {
+    if (existingCourse.code === selection.code) {
+      toast.error(`${selection.name} ya se encuentra en este semestre, seleccione otro curso por favor`)
+      return prev
+    }
+  }
+  newValidatablePlan.classes[semester] = [...newValidatablePlan.classes[semester]]
+  if (equivalence === undefined) {
+    while (newValidatablePlan.classes.length <= semester) {
+      newValidatablePlan.classes.push([])
+    }
+    newValidatablePlan.classes[semester][index] = {
+      is_concrete: true,
+      code: selection.code,
+      equivalence: undefined
+    }
+  } else {
+    const oldEquivalence = 'credits' in pastClass ? pastClass : pastClass.equivalence
+
+    newValidatablePlan.classes[semester][index] = {
+      is_concrete: true,
+      code: selection.code,
+      equivalence: oldEquivalence
+    }
+    if (oldEquivalence !== undefined && oldEquivalence.credits !== selection.credits) {
+      if (oldEquivalence.credits > selection.credits) {
+        newValidatablePlan.classes[semester].splice(index, 1,
+          {
+            is_concrete: true,
+            code: selection.code,
+            equivalence: {
+              ...oldEquivalence,
+              credits: selection.credits
+            }
+          },
+          {
+            is_concrete: false,
+            code: oldEquivalence.code,
+            credits: oldEquivalence.credits - selection.credits
+          }
+        )
+      } else {
+        consumeCreditsOnEquivalenceSelection(newValidatablePlan.classes, oldEquivalence.code, selection.credits - oldEquivalence.credits)
+        // Increase the credits of the equivalence
+        newValidatablePlan.classes[semester].splice(index, 1,
+          {
+            is_concrete: true,
+            code: selection.code,
+            equivalence: {
+              ...oldEquivalence,
+              credits: selection.credits
+            }
+          }
+        )
+      }
+    }
+  }
+  return newValidatablePlan
+}
+
 export const handleErrors = (err: unknown, setPlannerStatus: Function, setError: Function, isMod?: boolean): void => {
   if (isApiError(err)) {
     console.error(err)
@@ -86,5 +230,24 @@ export const handleErrors = (err: unknown, setPlannerStatus: Function, setError:
     setError('Error desconocido')
     console.error(err)
     setPlannerStatus(PlannerStatus.ERROR)
+  }
+}
+
+export const consumeCreditsOnEquivalenceSelection = (newClasses: Array<Array<ConcreteId | EquivalenceId>>, block: string, creditsConsumedBySelection: number): void => {
+  for (const semesterIndex of newClasses.keys()) {
+    for (const courseIndex of newClasses[semesterIndex].keys()) {
+      const course = newClasses[semesterIndex][courseIndex]
+      if (course.code === block && course.is_concrete === false && 'credits' in course) {
+        if (course.credits <= creditsConsumedBySelection) {
+          newClasses[semesterIndex].splice(courseIndex, 1)
+          creditsConsumedBySelection -= course.credits
+        } else {
+          course.credits -= creditsConsumedBySelection
+          creditsConsumedBySelection = 0
+          break
+        }
+      }
+    }
+    if (creditsConsumedBySelection === 0) break
   }
 }

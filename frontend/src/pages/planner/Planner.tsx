@@ -7,49 +7,57 @@ import LegendModal from './dialogs/LegendModal'
 import SavePlanModal from './dialogs/SavePlanModal'
 import CurriculumSelector from './CurriculumSelector'
 import AlertModal from '../../components/AlertModal'
-import { Navigate, useParams } from '@tanstack/react-router'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useParams, Navigate, useNavigate } from '@tanstack/react-router'
+import { useState, useEffect, useRef, useCallback, Fragment } from 'react'
 import { type CourseDetails, type Major, DefaultService, type ValidatablePlan, type EquivDetails, type EquivalenceId, type ValidationResult, type PlanView, type CancelablePromise, type ClassId, type CurriculumSpec } from '../../client'
-import { type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, isCourseRequirementErr, type Cyear, type PossibleBlocksList } from './utils/Types'
-import { validateCourseMovement, updateClassesState, locateClassInPlan } from './utils/PlanBoardFunctions'
+import { type PseudoCourseDetail, type PseudoCourseId, type CurriculumData, type ModalData, type Cyear, type PossibleBlocksList, type CoursePos } from './utils/Types'
+import { validateCourseMovement, updateClassesState, locateClassInPlan, changeCourseBlock, getCourseSuperblock } from './utils/PlanBoardFunctions'
 import { useAuth } from '../../contexts/auth.context'
 import { toast } from 'react-toastify'
 import DebugGraph from '../../components/DebugGraph'
 import deepEqual from 'fast-deep-equal'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { collectRequirements, handleErrors, PlannerStatus } from './utils/utils'
+import { orderValidationDiagnostics, collectRequiredCourses, handleEmptyPlan, getValidationPromise, handleErrors, PlannerStatus, handleSelectEquivalence } from './utils/utils'
 import { updateCurriculum, isMinorValid, isMajorValid, loadCurriculumsData } from './utils/CurriculumUtils'
 import ReceivePaste from './utils/ReceivePaste'
-import ModBanner from './ModBanner'
-
+import Banner from '../../components/Banner'
+import useContextMenu from '../../utils/useContextMenu'
+import useDummyModal from '../../utils/useDummyModal'
+import CoursesContextMenu from './utils/CoursesContextMenu'
 /**
  * The main planner app. Contains the drag-n-drop main PlanBoard, the error tray and whatnot.
  */
 const Planner = (): JSX.Element => {
   const [planName, setPlanName] = useState<string>('')
-  const [planID, setPlanID] = useState<string | undefined>(useParams()?.plannerId)
   const [validatablePlan, setValidatablePlan] = useState<ValidatablePlan | null >(null)
   const [curriculumData, setCurriculumData] = useState<CurriculumData | null>(null)
-  const [modalData, setModalData] = useState<ModalData>()
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isLegendModalOpen, setIsLegendModalOpen] = useState(false)
-  const [isSavePlanModalOpen, setIsSavePlanModalOpen] = useState(false)
   const [plannerStatus, setPlannerStatus] = useState<PlannerStatus>(PlannerStatus.LOADING)
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [popUpAlert, setPopUpAlert] = useState<{ title: string, major?: string, year?: Cyear, deleteMajor: boolean, desc: string, isOpen: boolean }>({ title: '', major: '', deleteMajor: false, desc: '', isOpen: false })
-  const [, setPossibleBlocksList] = useState<PossibleBlocksList>({}) // TODO: Use the possibleBlocksList
+  const [modalData, setModalData] = useState<ModalData>()
+  const [, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
+
+  const { clicked, setClicked, courseInfo, points, handleContextMenu } = useContextMenu()
+
+  const { isModalOpen: isLegendModalOpen, openModal: openLegendModal, closeModal: closeLegendModal } = useDummyModal()
+  const { isModalOpen: isSavePlanModalOpen, openModal: openSavePlanModal, closeModal: closeSavePlanModal } = useDummyModal()
+
+  const [possibleBlocksList, setPossibleBlocksList] = useState<PossibleBlocksList>({})
 
   const previousCurriculum = useRef<{ major: string | undefined, minor: string | undefined, title: string | undefined, cyear?: Cyear }>({ major: '', minor: '', title: '' })
   const previousClasses = useRef<PseudoCourseId[][]>([[]])
 
+  const planID = useParams()?.plannerId
   // NOTE: Course rendering kind of depends on course details, but in practice courses should always have their course details available before their first render
   const courseDetails = useRef<Record<string, PseudoCourseDetail>>({})
 
-  const [, setValidationPromise] = useState<CancelablePromise<any> | null>(null)
   const impersonateRut = useParams()?.userRut
+
   const authState = useAuth()
+  const navigate = useNavigate()
 
   const addCourseDetails = useCallback((details: PseudoCourseDetail[]) => {
     for (const detail of details) {
@@ -72,8 +80,13 @@ const Planner = (): JSX.Element => {
       if (fetchAll != null) {
         // Process all equivalences
         const blocksList: Record<string, EquivDetails[]> = {}
+        const seen = new Set<string>()
         for (const detail of newDetails) {
           if ('courses' in detail) {
+            if (seen.has(detail.code)) {
+              continue
+            }
+            seen.add(detail.code)
             for (const course of detail.courses) {
               if (!(course in blocksList)) blocksList[course] = []
               blocksList[course].push(detail)
@@ -91,73 +104,37 @@ const Planner = (): JSX.Element => {
   const validate = useCallback(async (validatablePlan: ValidatablePlan): Promise<void> => {
     try {
       if (validatablePlan.classes.flat().length === 0) {
-        setValidationPromise(prev => {
-          if (prev != null) {
-            prev.cancel()
-            return null
-          }
-          return prev
-        })
-        previousClasses.current = validatablePlan.classes
-        previousCurriculum.current = {
-          major: validatablePlan.curriculum.major,
-          minor: validatablePlan.curriculum.minor,
-          title: validatablePlan.curriculum.title,
-          cyear: validatablePlan.curriculum.cyear
-        }
+        handleEmptyPlan(validatablePlan, setValidationPromise, previousClasses, previousCurriculum)
         setPlannerStatus(PlannerStatus.READY)
         return
       }
-      const promise = authState?.user == null
-        ? DefaultService.validateGuestPlan(validatablePlan)
-        : (authState?.isMod === true && impersonateRut != null)
-            ? DefaultService.validatePlanForAnyUser(impersonateRut, validatablePlan)
-            : DefaultService.validatePlanForUser(validatablePlan)
-      setValidationPromise(prev => {
+
+      const promise = getValidationPromise(validatablePlan, authState, impersonateRut)
+
+      setValidationPromise((prev) => {
         if (prev != null) {
           prev.cancel()
         }
         return promise
       })
+
       const response = await promise
-      setValidationPromise(null)
-      previousCurriculum.current = {
-        major: validatablePlan.curriculum.major,
-        minor: validatablePlan.curriculum.minor,
-        title: validatablePlan.curriculum.title,
-        cyear: validatablePlan.curriculum.cyear
+      orderValidationDiagnostics(response)
+      const reqCourses = collectRequiredCourses(response.diagnostics)
+
+      if (reqCourses.length > 0) {
+        await getCourseDetails(reqCourses)
       }
-      // Order diagnostics by putting errors first, then warnings.
-      response.diagnostics.sort((a, b) => {
-        if (a.is_err === b.is_err) {
-          return 0
-        } else if (a.is_err ?? true) {
-          return -1
-        } else {
-          return 1
-        }
-      })
-      const reqCourses = new Set<string>()
-      for (const diag of response.diagnostics) {
-        if (isCourseRequirementErr(diag)) {
-          collectRequirements(diag.modernized_missing, reqCourses)
-        }
-      }
-      if (reqCourses.size > 0) {
-        await getCourseDetails(Array.from(reqCourses).map((code: string) => { return { code, isConcrete: true } }))
-      }
-      setValidationResult(prev => {
-        // Validation often gives the same results after small changes
-        // Avoid triggering changes if this happens
+
+      setValidationResult((prev) => {
         if (deepEqual(prev, response)) return prev
         return response
       })
       setPlannerStatus(PlannerStatus.READY)
-      previousClasses.current = validatablePlan.classes
     } catch (err) {
       handleErrors(err, setPlannerStatus, setError)
     }
-  }, [authState?.isMod, impersonateRut, authState?.user, getCourseDetails])
+  }, [authState, impersonateRut, getCourseDetails])
 
   const savePlan = useCallback(async (planName: string): Promise<void> => {
     if (validatablePlan == null) {
@@ -173,29 +150,20 @@ const Planner = (): JSX.Element => {
         handleErrors(err, setPlannerStatus, setError)
       }
     } else {
-      if (planName == null || planName === '') return
+      if (planName === null || planName === '') return
       setPlannerStatus(PlannerStatus.VALIDATING)
       try {
         const res = await DefaultService.savePlan(planName, validatablePlan)
-        setPlanID(res.id)
-        setPlanName(res.name)
+        const planId = res.id
         toast.success('Plan guardado exitosamente')
+        await navigate({ to: '/planner/$planId', params: { planId } })
       } catch (err) {
         handleErrors(err, setPlannerStatus, setError)
       }
     }
-    setIsSavePlanModalOpen(false)
+    closeSavePlanModal()
     setPlannerStatus(PlannerStatus.READY)
-  }, [planID, validatablePlan])
-
-  const openModalForExtraClass = useCallback((semIdx: number): void => {
-    setModalData({
-      equivalence: undefined,
-      selector: true,
-      semester: semIdx
-    })
-    setIsModalOpen(true)
-  }, []) // addCourse should not depend on `validatablePlan`, so that memoing does its work
+  }, [planID, navigate, closeSavePlanModal, validatablePlan])
 
   const remCourse = useCallback((course: ClassId): void => {
     setValidatablePlan(prev => {
@@ -231,6 +199,14 @@ const Planner = (): JSX.Element => {
         return prev
       }
       return updateClassesState(prev, dragIndex, drop)
+    })
+  }, [])
+
+  const forceBlockChange = useCallback((newBlock: string, coursePos: CoursePos, courseCredits: number): void => {
+    setValidatablePlan(prev => {
+      if (prev == null) return prev
+      const newPlan = changeCourseBlock(prev, coursePos, courseCredits, newBlock)
+      return newPlan
     })
   }, [])
 
@@ -325,6 +301,15 @@ const Planner = (): JSX.Element => {
     }
   }, [getDefaultPlan])
 
+  const openModalForExtraClass = useCallback((semIdx: number): void => {
+    setModalData({
+      equivalence: undefined,
+      selector: true,
+      semester: semIdx
+    })
+    setIsModalOpen(true)
+  }, [])
+
   const openModal = useCallback(async (equivalence: EquivDetails | EquivalenceId, semester: number, index?: number): Promise<void> => {
     if ('courses' in equivalence) {
       setModalData({ equivalence, selector: false, semester, index })
@@ -342,121 +327,18 @@ const Planner = (): JSX.Element => {
   }, [courseDetails])
 
   const closeModal = useCallback(async (selection?: CourseDetails): Promise<void> => {
-    if (selection != null && modalData !== undefined) {
-      addCourseDetails([selection])
-      setValidatablePlan(prev => {
-        if (prev === null) return prev
-        const newValidatablePlan = { ...prev, classes: [...prev.classes] }
-        while (newValidatablePlan.classes.length <= modalData.semester) {
-          newValidatablePlan.classes.push([])
-        }
-        const index = modalData.index ?? newValidatablePlan.classes[modalData.semester].length
-        const pastClass = newValidatablePlan.classes[modalData.semester][index]
-        if (pastClass !== undefined && selection.code === pastClass.code) { setIsModalOpen(false); return prev }
-        for (const existingCourse of newValidatablePlan.classes[modalData.semester].flat()) {
-          if (existingCourse.code === selection.code) {
-            toast.error(`${selection.name} ya se encuentra en este semestre, seleccione otro curso por favor`)
-            return prev
-          }
-        }
-        newValidatablePlan.classes[modalData.semester] = [...newValidatablePlan.classes[modalData.semester]]
-        if (modalData.equivalence === undefined) {
-          while (newValidatablePlan.classes.length <= modalData.semester) {
-            newValidatablePlan.classes.push([])
-          }
-          newValidatablePlan.classes[modalData.semester][index] = {
-            is_concrete: true,
-            code: selection.code,
-            equivalence: undefined
-          }
-        } else {
-          const oldEquivalence = 'credits' in pastClass ? pastClass : pastClass.equivalence
-
-          newValidatablePlan.classes[modalData.semester][index] = {
-            is_concrete: true,
-            code: selection.code,
-            equivalence: oldEquivalence
-          }
-          if (oldEquivalence !== undefined && oldEquivalence.credits !== selection.credits) {
-            if (oldEquivalence.credits > selection.credits) {
-              newValidatablePlan.classes[modalData.semester].splice(index, 1,
-                {
-                  is_concrete: true,
-                  code: selection.code,
-                  equivalence: {
-                    ...oldEquivalence,
-                    credits: selection.credits
-                  }
-                },
-                {
-                  is_concrete: false,
-                  code: oldEquivalence.code,
-                  credits: oldEquivalence.credits - selection.credits
-                }
-              )
-            } else {
-              // handle when credis exced necesary
-              // Partial solution: just consume anything we find
-              const semester = newValidatablePlan.classes[modalData.semester]
-              let extra = selection.credits - oldEquivalence.credits
-              for (let i = semester.length; i-- > 0;) {
-                const equiv = semester[i]
-                if ('credits' in equiv && equiv.code === oldEquivalence.code) {
-                  if (equiv.credits <= extra) {
-                    // Consume this equivalence entirely
-                    semester.splice(index, 1)
-                    extra -= equiv.credits
-                  } else {
-                    // Consume part of this equivalence
-                    equiv.credits -= extra
-                    extra = 0
-                  }
-                }
-              }
-
-              // Increase the credits of the equivalence
-              // We might not have found all the missing credits, but that's ok
-              newValidatablePlan.classes[modalData.semester].splice(index, 1,
-                {
-                  is_concrete: true,
-                  code: selection.code,
-                  equivalence: {
-                    ...oldEquivalence,
-                    credits: selection.credits
-                  }
-                }
-              )
-            }
-          }
-        }
-        setPlannerStatus(PlannerStatus.VALIDATING)
-        setIsModalOpen(false)
-        return newValidatablePlan
-      })
-    } else {
+    if (selection == null || modalData === undefined) {
       setIsModalOpen(false)
+      return
     }
+    addCourseDetails([selection])
+    setValidatablePlan(prev => {
+      if (prev === null) return prev
+      return handleSelectEquivalence(selection, prev, modalData)
+    })
+    setPlannerStatus(PlannerStatus.VALIDATING)
+    setIsModalOpen(false)
   }, [addCourseDetails, modalData])
-
-  const openLegendModal = useCallback((): void => {
-    setIsLegendModalOpen(true)
-  }, [setIsLegendModalOpen])
-
-  const closeLegendModal = useCallback((): void => {
-    setIsLegendModalOpen(false)
-  }, [setIsLegendModalOpen])
-
-  const openSavePlanModal = useCallback(async (): Promise<void> => {
-    if (planName == null || planName === '') {
-      setIsSavePlanModalOpen(true)
-    } else {
-      await savePlan(planName)
-    }
-  }, [planName, savePlan])
-
-  const closeSavePlanModal = useCallback((): void => {
-    setIsSavePlanModalOpen(false)
-  }, [])
 
   const reset = useCallback((): void => {
     setPlannerStatus(PlannerStatus.LOADING)
@@ -591,11 +473,32 @@ const Planner = (): JSX.Element => {
   if (impersonateRut !== authState?.student?.rut && impersonateRut !== undefined && authState?.isMod === true) {
     return <Navigate to="/mod/users"/>
   }
+
+  let contextMenu = null
+  if (clicked) {
+    // the context menu for the courses, it will be shown when the user right clicks on a course, it can show the info and change block options
+    const coursePos = locateClassInPlan(validatablePlan?.classes ?? [], courseInfo)
+    contextMenu = (
+      <CoursesContextMenu
+        possibleBlocks={possibleBlocksList[courseInfo.code] ?? []}
+        points={points}
+        courseInfo={courseInfo}
+        courseDetails={coursePos != null ? validatablePlan?.classes?.[coursePos.semester]?.[coursePos.index] : undefined}
+        coursePos={coursePos}
+        isAssigned={coursePos != null && getCourseSuperblock(validatablePlan?.classes ?? [], validationResult, coursePos) !== ''}
+        setClicked={setClicked}
+        remCourse={remCourse}
+        forceBlockChange={forceBlockChange}
+      />
+    )
+  }
+
   return (
-    <>
+    <Fragment>
       {authState?.isMod === true &&
-        <ModBanner/>
+        <Banner bannerType={'Warning'} text={'Estás en una visualización exclusiva para moderadores. Puedes ver e interactuar con los planes del estudiante, pero no puedes guardar los cambios realizados.'}/>
       }
+      {contextMenu}
       <div className={`w-full relative h-full flex flex-grow overflow-hidden flex-row ${(plannerStatus === 'LOADING') ? 'cursor-wait' : ''}`}>
         <DebugGraph validatablePlan={validatablePlan} />
         <ReceivePaste validatablePlan={validatablePlan} getDefaultPlan={getDefaultPlan} />
@@ -628,7 +531,7 @@ const Planner = (): JSX.Element => {
                 />
                 <ControlTopBar
                   reset={reset}
-                  openSavePlanModal={openSavePlanModal}
+                  openSavePlanModal={planID === undefined ? openSavePlanModal : savePlan}
                   openLegendModal={openLegendModal}
                   isMod={authState?.isMod === true}
                 />
@@ -642,6 +545,7 @@ const Planner = (): JSX.Element => {
                     authState={authState}
                     addCourse={openModalForExtraClass}
                     remCourse={remCourse}
+                    handleContextMenu={handleContextMenu}
                     />
                 </DndProvider>
               </div>
@@ -655,7 +559,7 @@ const Planner = (): JSX.Element => {
           </div>
         }
       </div>
-    </>
+    </Fragment>
   )
 }
 

@@ -122,13 +122,13 @@ class UnavailableCourseWarn(BaseModel):
     associated_to: list[ClassId]
 
 
-class AmbiguousCourseErr(BaseModel):
+class AmbiguousCourseWarn(BaseModel):
     """
     Indicates that some equivalences (`associated_to`) should be disambiguated and they
     aren't.
     """
 
-    is_err: Literal[True] = Field(default=True, const=True)
+    is_err: Literal[False] = Field(default=False, const=True)
     kind: Literal["equiv"] = Field(default="equiv", const=True)
     associated_to: list[ClassId]
 
@@ -233,7 +233,7 @@ Diagnostic = Annotated[
     | OutdatedPlanErr
     | SemestralityWarn
     | UnavailableCourseWarn
-    | AmbiguousCourseErr
+    | AmbiguousCourseWarn
     | SemesterCreditsDiag
     | RecolorWarn
     | CurriculumErr

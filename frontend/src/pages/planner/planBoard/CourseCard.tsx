@@ -1,4 +1,4 @@
-import { memo, type ReactNode, useRef } from 'react'
+import { memo, type ReactNode, useRef, type MouseEventHandler } from 'react'
 import { useDrag } from 'react-dnd'
 import { ReactComponent as EditWhiteIcon } from '../../../assets/editWhite.svg'
 import { ReactComponent as EditBlackIcon } from '../../../assets/editBlack.svg'
@@ -7,7 +7,6 @@ import { ReactComponent as currentBlackIcon } from '../../../assets/currentBlack
 import ConditionalWrapper from '../utils/ConditionalWrapper'
 import deepEqual from 'fast-deep-equal'
 import { type PseudoCourseId, type PseudoCourseDetail } from '../utils/Types'
-
 interface DraggableCardProps {
   course: PseudoCourseId
   courseDetails: PseudoCourseDetail
@@ -21,6 +20,7 @@ interface DraggableCardProps {
   showEquivalence?: boolean
   hasError: boolean
   hasWarning: boolean
+  handleContextMenu: MouseEventHandler<HTMLDivElement>
 }
 interface CardProps {
   course: PseudoCourseId
@@ -52,8 +52,8 @@ const BlockInitials = (courseBlock: string): string => {
   return ''
 }
 
-const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, toggleDrag, remCourse, courseBlock, openSelector, showEquivalence: hasEquivalence, hasError, hasWarning }: DraggableCardProps): JSX.Element => {
-  const ref = useRef(null)
+const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, toggleDrag, remCourse, courseBlock, openSelector, showEquivalence: hasEquivalence, hasError, hasWarning, handleContextMenu }: DraggableCardProps): JSX.Element => {
+  const ref = useRef<HTMLDivElement>(null)
   const callOpenSelector = (): void => openSelector(courseId)
   const callRemCourse = (): void => remCourse(courseId)
   const [{ isDragging = false }, drag] = useDrag(() => ({
@@ -74,7 +74,16 @@ const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, t
     drag(ref)
   }
   return (
-    <div ref={ref} draggable={true} className={`${isDragging ? 'opacity-0 z-0' : 'mb-3'} mx-1 ${(isPassed || isCurrent) ? 'cursor-not-allowed opacity-50' : 'cursor-grab'} `}>
+    <div
+      onContextMenu={handleContextMenu}
+      data-course-code={courseId.code}
+      data-course-instance={courseId.instance}
+      data-course-hasequiv={hasEquivalence}
+      data-course-credits={courseDetails !== undefined && 'credits' in courseDetails ? courseDetails.credits : ('credits' in course) ? course.credits : 0}
+      ref={ref}
+      draggable={true}
+      className={`${isDragging ? 'opacity-0 z-0' : 'mb-3'} mx-1 ${(isPassed || isCurrent) ? 'cursor-not-allowed opacity-50' : 'cursor-grab'} `}
+    >
       <ConditionalWrapper condition={course.is_concrete !== true && courseBlock !== '' && courseBlock !== null} wrapper={(children: ReactNode) => <button className='w-full' onClick={callOpenSelector}>{children}</button>}>
           <CourseCard
             courseBlock={courseBlock}
