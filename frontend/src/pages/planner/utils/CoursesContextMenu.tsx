@@ -63,11 +63,11 @@ const CoursesContextMenu = ({ possibleBlocks, points, courseInfo, setClicked, co
       case 'changeblock':
         return (
           <div
-            className={`p-2 relative w-full text-left hover:cursor-pointer hover:bg-slate-300 border-slate-200 ${round}`}
+            className={`p-2 relative w-full text-left hover:cursor-default hover:bg-slate-300 border-slate-200 ${round}`}
             onMouseEnter={() => { setShowBlocks(true) }}
             onMouseLeave={() => { setShowBlocks(false) }}
           >
-            Ver bloques posibles
+            Asignar como
             {showBlocks && (
               <div className="w-44 absolute top-0 left-full bg-slate-100 border-slate-300 border-2 rounded-lg shadow-md">
                 {possibleBlocks.map((block, index) => (
