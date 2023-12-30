@@ -6,8 +6,10 @@ const Logout = (): JSX.Element => {
   console.assert(casURL, 'VITE_CAS_SERVER_URL environment variable not set during build')
 
   // Redirect to SSO logout URL
-  const ssoLogoutURL = new URL('logout', casURL).toString()
-  window.location.href = ssoLogoutURL
+  if (!import.meta.env.DEV) {
+    const ssoLogoutURL = new URL('logout', casURL).toString()
+    window.location.href = ssoLogoutURL
+  }
 
   return <div className="mx-auto my-auto">
     <h2 className="font-bold text-2xl">
