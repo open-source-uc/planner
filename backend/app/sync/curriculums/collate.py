@@ -12,7 +12,7 @@ from itertools import chain
 from pydantic import BaseModel
 
 from app.plan.course import ConcreteId, EquivalenceId
-from app.plan.courseinfo import CourseInfo, add_equivalence, course_info
+from app.plan.courseinfo import CourseDetails
 from app.plan.validation.curriculum.tree import (
     Block,
     CurriculumSpec,
@@ -68,25 +68,22 @@ class ScrapedInfo(BaseModel):
     titles: dict[TitleCode, ScrapedProgram]
 
 
-async def collate_plans() -> CurriculumStorage:
-    # Fetch course database
-    courseinfo = await course_info()
-
+async def collate_plans(courses: dict[str, CourseDetails]) -> CurriculumStorage:
     # Scrape information from PDFs
     scraped = ScrapedInfo(
         majors=scrape_majors(),
-        minors=scrape_minors(courseinfo),
-        titles=scrape_titles(courseinfo),
+        minors=scrape_minors(courses),
+        titles=scrape_titles(courses),
     )
 
     # Fetch information from SIDING
-    siding = await fetch_siding(courseinfo)
+    siding = await fetch_siding(courses)
 
     # Algunos titulos se agregan manualmente
     add_manual_title_offer(siding)
 
     # Cargar los planes que se agregan manualmente
-    bypass = load_bypass(courseinfo, scraped, siding)
+    bypass = load_bypass(courses, scraped, siding)
 
     # Colocar los curriculums resultantes aca
     out = CurriculumStorage()
@@ -95,119 +92,33 @@ async def collate_plans() -> CurriculumStorage:
     # Es decir, majors y minors que no son "reales"
     # Para arreglarlo, se compara con la lista scrapeada y contra las mallas que
     # realmente existen
-    extract_true_offer(
-        "major",
-        siding.majors,
-        siding,
-        chain(
-            scraped.majors,
-            (major.major or MajorCode("M") for major in bypass.majors),
-        ),
-        out.offer,
-        True,
-    )
-    extract_true_offer(
-        "minor",
-        siding.minors,
-        siding,
-        chain(
-            scraped.minors,
-            (minor.minor or MinorCode("N") for minor in bypass.minors),
-        ),
-        out.offer,
-        False,
-    )
-    extract_true_offer(
-        "title",
-        siding.titles,
-        siding,
-        chain(
-            scraped.titles,
-            (title.title or TitleCode("") for title in bypass.titles),
-        ),
-        out.offer,
-        False,
-    )
+    clean_curriculum_offer(siding, scraped, bypass, out)
 
     # Falta extraer los majors y sus minors asociados
     extract_major_minor_associations(siding, out)
 
     # Traducir los majors desde los datos de SIDING
-    for cyear, offer in out.offer.items():
-        for major in offer.major.values():
-            if major.code not in siding.plans[cyear].plans:
-                continue
-            spec = CurriculumSpec(
-                cyear=cyear,
-                major=MajorCode(major.code),
-                minor=None,
-                title=None,
-            )
-            translate_major(
-                courseinfo,
-                out,
-                spec,
-                siding,
-                siding.plans[cyear].plans[major.code],
-            )
+    translate_all_majors(courses, siding, scraped, out)
 
     # Agregar el plan comun
-    translate_common_plan(courseinfo, out, siding)
+    translate_common_plan(courses, out, siding)
 
     # Los minors se traducen desde la informacion scrapeada, y posiblemente ayudados por
     # los datos de SIDING
-    for cyear, offer in out.offer.items():
-        for minor_meta in offer.minor.values():
-            if MinorCode(minor_meta.code) not in scraped.minors:
-                continue
-            for minor_scrape in scraped.minors[MinorCode(minor_meta.code)]:
-                spec = CurriculumSpec(
-                    cyear=cyear,
-                    major=minor_scrape.assoc_major,
-                    minor=minor_scrape.assoc_minor,
-                    title=minor_scrape.assoc_title,
-                )
-                translate_minor(
-                    courseinfo,
-                    out,
-                    spec,
-                    minor_meta,
-                    siding,
-                    siding.plans[cyear].plans.get(minor_meta.code, []),
-                    minor_scrape,
-                )
+    translate_all_minors(courses, siding, scraped, out)
 
     # Los titulos se traducen desde la informacion scrapeada combinada con los datos de
     # SIDING
-    for cyear, offer in out.offer.items():
-        for title in offer.title.values():
-            if TitleCode(title.code) not in scraped.titles:
-                continue
-            scrape = scraped.titles[TitleCode(title.code)]
-            spec = CurriculumSpec(
-                cyear=cyear,
-                major=scrape.assoc_major,
-                minor=scrape.assoc_minor,
-                title=scrape.assoc_title,
-            )
-            translate_title(
-                courseinfo,
-                out,
-                spec,
-                title,
-                siding,
-                siding.plans[cyear].plans.get(title.code, []),
-                scrape,
-            )
+    translate_all_titles(courses, siding, scraped, out)
 
     # Cargar majors minors y titulos desde el bypass
-    translate_bypass(courseinfo, siding, bypass, out)
+    translate_bypass(courses, siding, bypass, out)
 
     # Aplicar los ultimos parches faltantes
-    patch_globally(courseinfo, out)
+    patch_globally(courses, out)
 
     # Tratar las equivalencias homogeneas
-    detect_homogeneous(courseinfo, out)
+    detect_homogeneous(courses, out)
 
     # Asegurarse que no hayan equivalencias vacias
     for equiv in out.lists.values():
@@ -221,9 +132,10 @@ async def collate_plans() -> CurriculumStorage:
     for curr in out.all_plans():
         curr.root.freeze_capacities()
 
-    # Agregar las listas a la base de datos global
-    for equiv in out.lists.values():
-        await add_equivalence(equiv)
+    # Determinar qué cursos si o si tienen que dictarse en algun momento, para evitar el
+    # warning de "este curso no se ha dictado nunca" para cursos nuevos
+    for curr in out.all_plans():
+        _extract_must_have_courses(curr.root, out.must_have_courses)
 
     # TODO: Algunos minors y titulos tienen requerimientos especiales que no son
     #   representables en el formato que provee SIDING, y por ende faltan del
@@ -249,6 +161,17 @@ async def collate_plans() -> CurriculumStorage:
     #   - (40023) Ingeniero Civil Matemático y Computacional
 
     return out
+
+
+def _extract_must_have_courses(block: Block, into: set[str]):
+    if isinstance(block, Leaf):
+        if len(block.codes) == 1:
+            into.add(next(iter(block.codes)))
+    else:
+        children_cap = sum(sub_block.cap for sub_block in block.children)
+        if block.cap == children_cap:
+            for sub_block in block.children:
+                _extract_must_have_courses(sub_block, into)
 
 
 @dataclass
@@ -331,6 +254,47 @@ def extract_true_offer(
         )
 
 
+def clean_curriculum_offer(
+    siding: SidingInfo,
+    scraped: ScrapedInfo,
+    bypass: BypassInfo,
+    out: CurriculumStorage,
+):
+    extract_true_offer(
+        "major",
+        siding.majors,
+        siding,
+        chain(
+            scraped.majors,
+            (major.major or MajorCode("M") for major in bypass.majors),
+        ),
+        out.offer,
+        True,
+    )
+    extract_true_offer(
+        "minor",
+        siding.minors,
+        siding,
+        chain(
+            scraped.minors,
+            (minor.minor or MinorCode("N") for minor in bypass.minors),
+        ),
+        out.offer,
+        False,
+    )
+    extract_true_offer(
+        "title",
+        siding.titles,
+        siding,
+        chain(
+            scraped.titles,
+            (title.title or TitleCode("") for title in bypass.titles),
+        ),
+        out.offer,
+        False,
+    )
+
+
 def filter_program(
     cyear: Cyear,
     program: Major | Minor | Titulo,
@@ -410,6 +374,87 @@ def _is_block_relevant(plan_name: str, block: BloqueMalla) -> bool:
     return block.Programa == plan_name or block.Programa == "Plan Común"
 
 
+def translate_all_majors(
+    courses: dict[str, CourseDetails],
+    siding: SidingInfo,
+    scraped: ScrapedInfo,
+    out: CurriculumStorage,
+):
+    for cyear, offer in out.offer.items():
+        for major in offer.major.values():
+            if major.code not in siding.plans[cyear].plans:
+                continue
+            spec = CurriculumSpec(
+                cyear=cyear,
+                major=MajorCode(major.code),
+                minor=None,
+                title=None,
+            )
+            translate_major(
+                courses,
+                out,
+                spec,
+                siding,
+                siding.plans[cyear].plans[major.code],
+            )
+
+
+def translate_all_minors(
+    courses: dict[str, CourseDetails],
+    siding: SidingInfo,
+    scraped: ScrapedInfo,
+    out: CurriculumStorage,
+):
+    for cyear, offer in out.offer.items():
+        for minor_meta in offer.minor.values():
+            if MinorCode(minor_meta.code) not in scraped.minors:
+                continue
+            for minor_scrape in scraped.minors[MinorCode(minor_meta.code)]:
+                spec = CurriculumSpec(
+                    cyear=cyear,
+                    major=minor_scrape.assoc_major,
+                    minor=minor_scrape.assoc_minor,
+                    title=minor_scrape.assoc_title,
+                )
+                translate_minor(
+                    courses,
+                    out,
+                    spec,
+                    minor_meta,
+                    siding,
+                    siding.plans[cyear].plans.get(minor_meta.code, []),
+                    minor_scrape,
+                )
+
+
+def translate_all_titles(
+    courses: dict[str, CourseDetails],
+    siding: SidingInfo,
+    scraped: ScrapedInfo,
+    out: CurriculumStorage,
+):
+    for cyear, offer in out.offer.items():
+        for title in offer.title.values():
+            if TitleCode(title.code) not in scraped.titles:
+                continue
+            scrape = scraped.titles[TitleCode(title.code)]
+            spec = CurriculumSpec(
+                cyear=cyear,
+                major=scrape.assoc_major,
+                minor=scrape.assoc_minor,
+                title=scrape.assoc_title,
+            )
+            translate_title(
+                courses,
+                out,
+                spec,
+                title,
+                siding,
+                siding.plans[cyear].plans.get(title.code, []),
+                scrape,
+            )
+
+
 def extract_major_minor_associations(siding: SidingInfo, out: CurriculumStorage):
     """
     Extraer la asociacion entre majors y minors a partir de la informacion de SIDING.
@@ -423,7 +468,7 @@ def extract_major_minor_associations(siding: SidingInfo, out: CurriculumStorage)
             ]
 
 
-def detect_homogeneous(courseinfo: CourseInfo, out: CurriculumStorage):
+def detect_homogeneous(courses: dict[str, CourseDetails], out: CurriculumStorage):
     """
     Fixes the fillers for homogeneous equivalencies, providing a default choice if all
     options in the equivalence are similar (eg. Optimizacion -> ICS1113).
@@ -456,7 +501,7 @@ def detect_homogeneous(courseinfo: CourseInfo, out: CurriculumStorage):
             ):
                 # Determine the default course to use
                 representative = equiv.courses[0]
-                if courseinfo.try_course(representative) is None:
+                if representative not in courses:
                     raise Exception(
                         f"equivalence {equiv.code}"
                         f" has unknown representative {representative}",
@@ -484,17 +529,17 @@ def detect_homogeneous(courseinfo: CourseInfo, out: CurriculumStorage):
             curr.fillers.setdefault(add_this_code, []).extend(add_these_fillers)
 
 
-def patch_globally(courseinfo: CourseInfo, out: CurriculumStorage):
+def patch_globally(courses: dict[str, CourseDetails], out: CurriculumStorage):
     """
     Hay algunos parches que hay que aplicar globalmente sobre todos los curriculums, en
     lugar de uno a uno.
     Estos se aplican aca.
     """
 
-    _mark_homogeneous_equivs(courseinfo, out)
-    _mark_unessential_equivs(courseinfo, out)
-    _limit_multiplicity(courseinfo, out)
-    _force_subcourses(courseinfo, out)
+    _mark_homogeneous_equivs(courses, out)
+    _mark_unessential_equivs(courses, out)
+    _limit_multiplicity(courses, out)
+    _force_subcourses(courses, out)
 
 
 FORCE_HOMOGENEOUS_EQUIVS = (
@@ -504,7 +549,7 @@ FORCE_HOMOGENEOUS_EQUIVS = (
 )
 
 
-def _mark_homogeneous_equivs(courseinfo: CourseInfo, out: CurriculumStorage):
+def _mark_homogeneous_equivs(courses: dict[str, CourseDetails], out: CurriculumStorage):
     max_len = max(len(homogeneous) for homogeneous in FORCE_HOMOGENEOUS_EQUIVS)
     for equiv in out.lists.values():
         if len(equiv.courses) <= max_len and any(
@@ -527,7 +572,7 @@ UNESSENTIAL_EQUIVS = {
 }
 
 
-def _mark_unessential_equivs(courseinfo: CourseInfo, out: CurriculumStorage):
+def _mark_unessential_equivs(courses: dict[str, CourseDetails], out: CurriculumStorage):
     for list_code, equiv in out.lists.items():
         if any(list_code.endswith(unessential) for unessential in UNESSENTIAL_EQUIVS):
             equiv.is_unessential = True
@@ -538,7 +583,7 @@ _MULTIPLICITY_LIMITS = [
 ]
 
 
-def _limit_multiplicity(courseinfo: CourseInfo, out: CurriculumStorage):
+def _limit_multiplicity(courses: dict[str, CourseDetails], out: CurriculumStorage):
     """
     Algunos cursos estan limitados en grupo.
     Por ejemplo, ICS1113 (Optimizacion) y ICS113H (Optimizacion Honors) estan limitados
@@ -566,7 +611,7 @@ _FORCE_SUBCOURSES = {
 }
 
 
-def _force_subcourses(courseinfo: CourseInfo, out: CurriculumStorage):
+def _force_subcourses(courses: dict[str, CourseDetails], out: CurriculumStorage):
     """
     Forzamos a que algunos cursos sean "subcursos" de otros.
     En particular, ICS1113 es un subcurso de ICS113H, en el sentido de que cualquier
@@ -600,12 +645,16 @@ def _force_subcourses(courseinfo: CourseInfo, out: CurriculumStorage):
         add_supercourses(curr.root)
 
 
-def load_bypass(courseinfo: CourseInfo, scraped: ScrapedInfo, siding: SidingInfo):
+def load_bypass(
+    courses: dict[str, CourseDetails],
+    scraped: ScrapedInfo,
+    siding: SidingInfo,
+):
     return BypassInfo.parse_file("../static-curriculum-data/bypass.json")
 
 
 def translate_bypass(
-    courseinfo: CourseInfo,
+    courses: dict[str, CourseDetails],
     siding: SidingInfo,
     bypass: BypassInfo,
     out: CurriculumStorage,
@@ -626,7 +675,7 @@ def translate_bypass(
             )
             out.set_major(
                 spec,
-                bp.plan.translate(courseinfo, siding, out, f"MAJOR-{spec}"),
+                bp.plan.translate(courses, siding, out, f"MAJOR-{spec}"),
             )
         for bp in bypass.minors:
             spec = CurriculumSpec(
@@ -637,7 +686,7 @@ def translate_bypass(
             )
             out.set_minor(
                 spec,
-                bp.plan.translate(courseinfo, siding, out, f"MINOR-{spec}"),
+                bp.plan.translate(courses, siding, out, f"MINOR-{spec}"),
             )
         for bp in bypass.titles:
             spec = CurriculumSpec(
@@ -648,5 +697,5 @@ def translate_bypass(
             )
             out.set_title(
                 spec,
-                bp.plan.translate(courseinfo, siding, out, f"TITLE-{spec}"),
+                bp.plan.translate(courses, siding, out, f"TITLE-{spec}"),
             )

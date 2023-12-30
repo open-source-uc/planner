@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from pydantic import BaseModel, Field
 
 from app.plan.course import ConcreteId, EquivalenceId
-from app.plan.courseinfo import CourseInfo, EquivDetails
+from app.plan.courseinfo import CourseDetails, EquivDetails
 from app.plan.validation.curriculum.tree import (
     Block,
     Combination,
@@ -69,7 +69,7 @@ class Bypass(BaseModel):
 
     def translate(
         self,
-        courseinfo: CourseInfo,
+        courses: dict[str, CourseDetails],
         siding: SidingInfo,
         storage: CurriculumStorage,
         unique_id: str,
@@ -81,7 +81,7 @@ class Bypass(BaseModel):
         curr = Curriculum.empty()
 
         # Translate the curriculum tree
-        translator = BypassTranslator(courseinfo, siding, unique_id, curr, storage)
+        translator = BypassTranslator(courses, siding, unique_id, curr, storage)
         root, _creds = translator.translate(
             BypassCombination(debug_name="Raíz", children=self.blocks),
             "",
@@ -99,7 +99,7 @@ class Bypass(BaseModel):
 
 @dataclass
 class BypassTranslator:
-    courseinfo: CourseInfo
+    courses: dict[str, CourseDetails]
     siding: SidingInfo
     unique_id: str
     out: Curriculum
@@ -222,10 +222,10 @@ class BypassTranslator:
             codes = [
                 curso.Sigla
                 for curso in self.siding.lists[codes]
-                if curso.Sigla and self.courseinfo.try_course(curso.Sigla)
+                if curso.Sigla and curso.Sigla in self.courses
             ]
         for code in codes:
-            if not self.courseinfo.try_course(code):
+            if code not in self.courses:
                 raise Exception(f"unknown course '{code}'")
         # Add the courses to the courses in the filler equivalence
         filler.courses.extend(codes)
@@ -255,9 +255,9 @@ class BypassTranslator:
         # If there is a single course, we can extract metadata from it
         if len(live_filler.courses) == 1:
             main_code = live_filler.courses[0]
-            info = self.courseinfo.try_course(main_code)
-            if info is None:
+            if main_code not in self.courses:
                 raise Exception(f"unknown single-course equivalence {main_code}")
+            info = self.courses[main_code]
             if name is None:
                 name = info.name
             credits = info.credits

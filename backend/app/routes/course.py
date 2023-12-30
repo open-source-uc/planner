@@ -9,11 +9,11 @@ from unidecode import unidecode
 from app.plan.courseinfo import (
     CourseDetails,
     EquivDetails,
-    course_info,
     make_searchable_name,
 )
 from app.plan.validation.curriculum.tree import CurriculumSpec
 from app.sync import get_curriculum
+from app.sync.database import course_info
 
 router = APIRouter(prefix="/course")
 

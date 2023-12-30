@@ -4,13 +4,13 @@ The startup script must have been run before.
 """
 
 from app.database import prisma
-from prisma.models import CachedCurriculum as DbCachedCurriculum
+from app.sync.database import CURRICULUMS_PACK_ID, load_packed
 
 
 async def collate():
     async with prisma:
-        plans = await DbCachedCurriculum.prisma().find_first_or_raise()
-        print(plans.curriculums)
+        packed = await load_packed(CURRICULUMS_PACK_ID)
+        print(packed)
 
 
 if __name__ == "__main__":

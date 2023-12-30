@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from unidecode import unidecode
 
 from app.plan.course import ConcreteId, EquivalenceId
-from app.plan.courseinfo import CourseInfo, EquivDetails
+from app.plan.courseinfo import CourseDetails, EquivDetails
 from app.plan.validation.curriculum.tree import (
     Combination,
     Curriculum,
@@ -218,7 +218,7 @@ class ListBuilder:
 
 def translate_scrape(
     kind: ProgramType,
-    courseinfo: CourseInfo,
+    courses: dict[str, CourseDetails],
     out: CurriculumStorage,
     spec: CurriculumSpec,
     name: str,
@@ -240,10 +240,9 @@ def translate_scrape(
             if block.creds is not None:
                 # Un optativo con un creditaje fijo
                 exclusive_credits += block.creds
-            elif len(block.options) == 1 and courseinfo.try_course(block.options[0]):
+            elif len(block.options) == 1 and block.options[0] in courses:
                 # Un ramo unico
-                info = courseinfo.try_course(block.options[0])
-                assert info is not None
+                info = courses[block.options[0]]
                 exclusive_credits += info.credits
     else:
         # Una cantidad fija de creditos exclusivos (ie. el titulo)
@@ -290,7 +289,7 @@ def translate_scrape(
     listbuilder = ListBuilder(kind, out, spec, siding_info, siding)
     for block in scrape.blocks:
         exh, exc, fills = translate_block(
-            courseinfo,
+            courses,
             kind,
             spec,
             listbuilder,
@@ -308,7 +307,7 @@ def translate_scrape(
 
 
 def translate_block(
-    courseinfo: CourseInfo,
+    courses: dict[str, CourseDetails],
     kind: ProgramType,
     spec: CurriculumSpec,
     listbuilder: ListBuilder,
@@ -319,10 +318,9 @@ def translate_block(
     if block.name is not None:
         # El bloque tiene nombre, usar este nombre
         name = block.name
-    elif len(block.options) == 1 and courseinfo.try_course(block.options[0]):
+    elif len(block.options) == 1 and block.options[0] in courses:
         # El bloque tiene un único curso, usar el nombre del curso
-        info = courseinfo.try_course(block.options[0])
-        assert info is not None
+        info = courses[block.options[0]]
         name = info.name
     elif set(block.options) == {"ICS1113", "ICS113H"}:
         # Optimización es un caso especial que sí tiene nombre
@@ -339,13 +337,12 @@ def translate_block(
         name = f"Optativos (LISTA {listbuilder.next_optative()})"
 
     # Convertir pseudocodigos como IEE2XXX en listas concretas
-    _apply_course_patches(courseinfo, block.options)
+    _apply_course_patches(courses, block.options)
 
     if block.creds is None and len(block.options) == 1:
         # Agregar este curso al plan
         code = block.options[0]
-        info = courseinfo.try_course(code)
-        assert info is not None
+        info = courses[code]
         equiv = listbuilder.add_list(name, block.options)
         exh = Leaf(
             debug_name=name,
@@ -386,11 +383,9 @@ def translate_block(
             # Si no hay informacion de creditos, se supone que todas las opciones
             # tienen el mismo creditaje
             assert block.options
-            representative = courseinfo.try_course(block.options[0])
-            assert representative is not None
+            representative = courses[block.options[0]]
             for code in block.options:
-                info = courseinfo.try_course(code)
-                assert info is not None
+                info = courses[code]
                 if info.credits != representative.credits:
                     raise Exception(
                         f"credits in credit-less equivalence {name} in"
@@ -403,7 +398,7 @@ def translate_block(
         # Filtrar las opciones que no estan en la base de datos de cursos
         available_options: list[str] = []
         for code in block.options:
-            if courseinfo.try_course(code) is None:
+            if code not in courses:
                 log.warning(f"unknown course {code} in scrape of {spec}")
                 continue
             available_options.append(code)
@@ -448,13 +443,13 @@ def translate_block(
     return exh, exc, fill
 
 
-def _apply_course_patches(courseinfo: CourseInfo, courses: list[str]):
+def _apply_course_patches(allcourses: dict[str, CourseDetails], courses: list[str]):
     if "IEE2XXX" in courses:
         # Arreglar los optativos de electrica
         courses.remove("IEE2XXX")
         courses.extend(
             code
-            for code in courseinfo.courses
+            for code in allcourses
             if code.startswith("IEE2") and len(code) == len("IEE2XXX")
         )
 
@@ -477,7 +472,7 @@ def _apply_course_patches(courseinfo: CourseInfo, courses: list[str]):
         courses.remove("IDI999X")
         courses.extend(
             course.code
-            for course in courseinfo.courses.values()
+            for course in allcourses.values()
             if unidecode(course.school) == "Ingenieria"
             and (
                 "Investigacion o Proyecto" in unidecode(course.name)

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { type CoursePos, type PseudoCourseId } from '../utils/Types'
 import { type EquivDetails } from '../../../client'
+import { useAuth } from '../../../contexts/auth.context'
 
 interface CoursesContextMenuProps {
   possibleBlocks: EquivDetails[]
@@ -12,28 +13,34 @@ interface CoursesContextMenuProps {
     credits: number
     isEquivalence: boolean
   }
+  isAssigned: boolean
   setClicked: Function
   courseDetails?: PseudoCourseId
   remCourse: Function
   forceBlockChange: Function
 }
 
-const CoursesContextMenu = ({ possibleBlocks, points, courseInfo, setClicked, courseDetails, coursePos, remCourse, forceBlockChange }: CoursesContextMenuProps): JSX.Element => {
+const CoursesContextMenu = ({ isAssigned, possibleBlocks, points, courseInfo, setClicked, courseDetails, coursePos, remCourse, forceBlockChange }: CoursesContextMenuProps): JSX.Element => {
   const [showBlocks, setShowBlocks] = useState(false)
   const [showMoreInfo, setShowMoreBlocks] = useState(false)
+  const authState = useAuth()
 
   const optionsName: Array<'moreinfo' | 'changeblock' | 'delete'> = []
 
   if (courseDetails?.is_concrete === true) {
     optionsName.push('moreinfo')
   }
-  if (possibleBlocks.length > 1) {
+  if (possibleBlocks.length > 0) {
     optionsName.push('changeblock')
   }
-  optionsName.push('delete')
+  if (coursePos != null && authState?.student != null && coursePos.semester < authState.student.current_semester) {
+    // Semestre pasado, no se pueden borrar esos cursos
+  } else {
+    optionsName.push('delete')
+  }
 
   const options = optionsName.map((kind, idx) => {
-    const round = (idx === 0 ? 'rounded-t-lg ' : 'border-t-2 ') + (idx === optionsName.length - 1 ? 'rounded-b-lg' : '')
+    const round = (idx === 0 ? 'rounded-t-md ' : 'border-t-2 ') + (idx === optionsName.length - 1 ? 'rounded-b-md' : '')
     switch (kind) {
       case 'moreinfo':
         return (
@@ -79,7 +86,7 @@ const CoursesContextMenu = ({ possibleBlocks, points, courseInfo, setClicked, co
                       forceBlockChange(block.code, coursePos, courseInfo.credits)
                     }}
                   >
-                    {courseDetails !== undefined && 'equivalence' in courseDetails && block.code === courseDetails.equivalence?.code ? '✔ ' : ''}
+                    {courseDetails !== undefined && 'equivalence' in courseDetails && block.code === courseDetails.equivalence?.code ? (isAssigned ? '✔ ' : '❗ ') : ''}
                     {block.name}
                   </button>
                 ))}
