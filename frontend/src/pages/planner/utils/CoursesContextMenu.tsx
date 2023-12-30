@@ -86,7 +86,7 @@ const CoursesContextMenu = ({ isAssigned, possibleBlocks, points, courseInfo, se
                       forceBlockChange(block.code, coursePos, courseInfo.credits)
                     }}
                   >
-                    {courseDetails !== undefined && 'equivalence' in courseDetails && block.code === courseDetails.equivalence?.code ? '✔ ' : ''}
+                    {courseDetails !== undefined && 'equivalence' in courseDetails && block.code === courseDetails.equivalence?.code ? (isAssigned ? '✔ ' : '❗ ') : ''}
                     {block.name}
                   </button>
                 ))}
