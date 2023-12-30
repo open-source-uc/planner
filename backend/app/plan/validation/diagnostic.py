@@ -215,6 +215,16 @@ class NoMajorMinorWarn(BaseModel):
     plan: CurriculumSpec
 
 
+class UnknownSpecErr(BaseModel):
+    is_err: Literal[True] = Field(default=True, const=True)
+    kind: Literal["unkspec"] = Field(default="unkspec", const=True)
+    associated_to: None = None
+
+    major: bool
+    minor: bool
+    title: bool
+
+
 Diagnostic = Annotated[
     CourseRequirementErr
     | UnknownCourseErr
@@ -228,7 +238,8 @@ Diagnostic = Annotated[
     | RecolorWarn
     | CurriculumErr
     | UnassignedWarn
-    | NoMajorMinorWarn,
+    | NoMajorMinorWarn
+    | UnknownSpecErr,
     Field(discriminator="kind"),
 ]
 
