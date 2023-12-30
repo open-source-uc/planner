@@ -150,7 +150,9 @@ def _diagnose_major_minor_presence(
 
 
 def _diagnose_unknown_spec(
-    cstore: CurriculumStorage, spec: CurriculumSpec, out: ValidationResult,
+    cstore: CurriculumStorage,
+    spec: CurriculumSpec,
+    out: ValidationResult,
 ):
     major = spec.major is not None and spec.major not in cstore.offer[spec.cyear].major
     minor = spec.minor is not None and spec.minor not in cstore.offer[spec.cyear].minor
