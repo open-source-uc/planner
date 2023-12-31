@@ -7,8 +7,8 @@ from pydantic import AnyHttpUrl, BaseSettings, Field, RedisDsn, SecretStr
 from dotenv import load_dotenv
 
 
-# Load production and then environment-specific variables
-load_dotenv('.env.production', override=False, encoding='utf8')
+# Load default and then environment-specific variables
+load_dotenv('.env.default', override=False, encoding='utf8')
 load_dotenv('.env', override=True, encoding='utf8')
 
 
