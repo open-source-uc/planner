@@ -37,10 +37,13 @@ def _get_service_url(params: dict[str, str]) -> str:
 
     callback_endpoint = "/api" + user_router.url_path_for("authenticate")
     url = urljoin(settings.planner_url, callback_endpoint)
-    if params:
-        query_params = urlencode(params)
-        url = f"{url}?{query_params}"
-    return url
+
+    # Include the `next` parameter to indicate where to redirect after generating the
+    # JWT token.
+    params["next"] = urljoin(settings.planner_url, "/")
+
+    query_params = urlencode(params)
+    return f"{url}?{query_params}"
 
 
 def _get_cas_client() -> CASClientV3:
@@ -76,9 +79,6 @@ def _get_login_url(service_params: dict[str, str]) -> str:
     `service_params` are extra URL parameters to include in step 2.
     """
 
-    # Include the `next` parameter to indicate where to redirect after generating the
-    # JWT token.
-    service_params["next"] = urljoin(settings.planner_url, "/")
     # Generate the service URL, including the `next` parameter and any extra parameters
     service_url = _get_service_url(service_params)
 
@@ -240,7 +240,7 @@ async def login_cas(
     # User has just authenticated themselves with CAS, and were redirected here
     # with a token
     if not next:
-        return HTTPException(status_code=422, detail="Missing next URL")
+        raise HTTPException(status_code=422, detail="Missing next URL")
 
     # Verify that the ticket is valid directly with the authority (the CAS server)
     username: Any  # CAS username (ie. mail without @uc.cl)
@@ -254,30 +254,30 @@ async def login_cas(
         ) = _get_cas_client().verify_ticket(  # pyright: ignore
             ticket,
         )
-    except Exception:  # noqa: BLE001 (CAS lib is untyped)
+    except Exception as e:  # noqa: BLE001 (CAS lib is untyped)
         traceback.print_exc()
-        return HTTPException(status_code=502, detail="Error verifying CAS ticket")
+        raise HTTPException(status_code=502, detail="Error verifying CAS ticket") from e
 
     if not isinstance(username, str) or not isinstance(attributes, dict):
         # Failed to authenticate
-        return HTTPException(status_code=401, detail="Authentication failed")
+        raise HTTPException(status_code=401, detail="Authentication failed")
 
     # Get rut
     rut: Any = None
     with contextlib.suppress(KeyError):
         rut = attributes["carlicense"]
     if not isinstance(rut, str):
-        return HTTPException(
+        raise HTTPException(
             status_code=500,
             detail="RUT is missing from CAS attributes",
         )
     try:
         rut = Rut(rut)
-    except ValueError:
-        return HTTPException(
+    except ValueError as e:
+        raise HTTPException(
             status_code=500,
             detail="Received invalid RUT from CAS",
-        )
+        ) from e
 
     # Only allow impersonation if the user is a mod
     if impersonate_rut is not None:
