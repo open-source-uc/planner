@@ -29,9 +29,11 @@ from app.plan.validation.courses.logic import (
     ReqLevel,
     ReqProgram,
     ReqSchool,
+    create_op,
+    hash_expr,
     map_atoms,
 )
-from app.plan.validation.courses.simplify import as_dnf
+from app.plan.validation.courses.simplify import as_dnf, simplify
 from app.plan.validation.courses.validate import CourseInstance, ValidationContext
 from app.plan.validation.curriculum.solve import (
     SolvedCurriculum,
@@ -145,72 +147,174 @@ def _is_satisfiable(plan: ValidatablePlan, ready: set[str], expr: Expr) -> bool:
     return expr.value
 
 
+class Collapser:
+    atom_counts: dict[bytes, int]
+    expands_to: dict[bytes, list[Atom]]
+    collapsed: Expr
+
+    def __init__(self, expr: Expr) -> None:
+        self.atom_counts = {}
+        self._count_atoms(expr)
+        self.expands_to = {}
+        self.collapsed = self._collapse(expr)
+
+    def _count_atoms(self, expr: Expr):
+        if isinstance(expr, Operator):
+            for child in expr.children:
+                self._count_atoms(child)
+        else:
+            self.atom_counts[hash_expr(expr)] = (
+                self.atom_counts.get(hash_expr(expr), 0) + 1
+            )
+
+    def _collapse(self, expr: Expr) -> Expr:
+        if isinstance(expr, Operator):
+            new_children: list[Expr] = []
+            representative: Atom | None = None
+            for child in expr.children:
+                child = self._collapse(child)
+                if (
+                    isinstance(child, Atom)
+                    and self.atom_counts.get(hash_expr(child), 1) == 1
+                ):
+                    if representative is None:
+                        if isinstance(expr, And):
+                            representative = ReqCourse(
+                                code=str(len(self.expands_to)),
+                                coreq=False,
+                            )
+                            self.expands_to[hash_expr(representative)] = self.expand(
+                                child,
+                            )
+                        else:
+                            representative = child
+                    else:
+                        if isinstance(expr, And):
+                            self.expands_to[hash_expr(representative)].extend(
+                                self.expand(child),
+                            )
+                        else:
+                            if self._weight_of(child) < self._weight_of(representative):
+                                representative = child
+                else:
+                    new_children.append(child)
+            if representative is not None:
+                new_children.append(representative)
+            if len(new_children) == 1:
+                return new_children[0]
+            else:
+                return create_op(expr.neutral, tuple(new_children))
+        else:
+            return expr
+
+    def _weight_of(self, atom: Atom) -> int:
+        if hash_expr(atom) in self.expands_to:
+            return len(self.expands_to[hash_expr(atom)])
+        else:
+            return 1
+
+    def expand(
+        self,
+        atom: Atom,
+    ) -> list[Atom]:
+        if hash_expr(atom) in self.expands_to:
+            return self.expands_to[hash_expr(atom)]
+        else:
+            return [atom]
+
+
 def _find_hidden_requirements(
     courseinfo: CourseInfo,
     passed: ValidatablePlan,
     courses_to_pass: OrderedDict[int, PseudoCourse],
-) -> list[list[str]]:
+) -> list[str]:
     """
     Take the list of courses to pass and compute which necessary requirements are
     missing.
-    Returns a list of options: each with a set of hidden requirements.
-    The options are sorted by best to worst (where best is the option with least
-    courses).
+    Computes all possible ways to complete the hidden requirements, and returns one of
+    the shortest (arbitrarily).
     """
 
+    b = Benchmark("hidden requirements")
+
     # Compute a big list of taken and to-be-passed courses
-    all_courses: list[CourseDetails] = []
-    for sem in passed.classes:
-        for course in sem:
+    with b.section("collect courses"):
+        all_courses: list[CourseDetails] = []
+        for sem in passed.classes:
+            for course in sem:
+                info = courseinfo.try_course(course.code)
+                if info is not None:
+                    all_courses.append(info)
+        for course in courses_to_pass.values():
             info = courseinfo.try_course(course.code)
             if info is not None:
                 all_courses.append(info)
-    for course in courses_to_pass.values():
-        info = courseinfo.try_course(course.code)
-        if info is not None:
-            all_courses.append(info)
 
-    # Compute which courses are considered taken
-    ready: set[str] = {course.code for course in all_courses}
+        # Compute which courses are considered taken
+        ready: set[str] = {course.code for course in all_courses}
 
     # Find courses with missing requirements, and add them here
-    missing: list[Expr] = []
-    for course in all_courses:
-        if _is_satisfiable(passed, ready, course.deps):
-            continue
+    with b.section("collect requirements"):
+        missing: list[Expr] = []
+        for course in all_courses:
+            if _is_satisfiable(passed, ready, course.deps):
+                continue
 
-        # Something missing!
-        def map(atom: Atom) -> Atom:
-            if _is_satisfiable(passed, ready, atom):
-                # Already satisfiable, don't worry about it
-                return Const(value=True)
-            if isinstance(atom, ReqCourse):
-                # We *could* satisfy this atom by adding a course
-                return atom
-            # Not satisfiable by adding a course
-            # Consider this impossible
-            return Const(value=False)
+            # Something missing!
+            def map(atom: Atom) -> Atom:
+                if _is_satisfiable(passed, ready, atom):
+                    # Already satisfiable, don't worry about it
+                    return Const(value=True)
+                if isinstance(atom, ReqCourse):
+                    # We *could* satisfy this atom by adding a course
+                    # Ignore corequirements for simplicity
+                    return ReqCourse(code=atom.code, coreq=False)
+                # Not satisfiable by adding a course
+                # Consider this impossible
+                return Const(value=False)
 
-        missing.append(map_atoms(course.deps, map))
+            missing.append(map_atoms(course.deps, map))
 
-    # Good case: there is nothing missing
-    # Exit early to avoid some computations
-    if not missing:
-        return []
+        # Good case: there is nothing missing
+        # Exit early to avoid some computations
+        if not missing:
+            return []
+
+    # Apply some domain-specific heuristics
+    # In particular, recognize courses that are equivalent, and consider them as 1
+    # pseudo-course
+    with b.section("simplify"):
+        missing_expr = And(children=tuple(missing))
+        missing_expr = simplify(missing_expr)
+
+    with b.section("collapse"):
+        collapser = Collapser(missing_expr)
+        missing_expr = collapser.collapsed
 
     # Normalize the resulting expression to DNF:
     # (IIC1000 y IIC1001) o (IIC1000 y IIC1002) o (IIC2000 y IIC1002)
     # (ie. an OR of ANDs)
-    dnf = as_dnf(And(children=tuple(missing)))
-    print(f"dnfized missing expression: {dnf}")
-    options = [
-        [atom.code for atom in clause.children if isinstance(atom, ReqCourse)]
-        for clause in dnf.children
-    ]
-    for option_courses in options:
-        option_courses.sort()
-    options.sort(key=len)
-    return options
+    with b.section("dnfize"):
+        missing_dnf = as_dnf(missing_expr)
+
+    with b.section("expand"):
+        to_fill = min(
+            (
+                [
+                    expanded_atom.code
+                    for pseudoatom in clause.children
+                    for expanded_atom in collapser.expand(pseudoatom)
+                    if isinstance(expanded_atom, ReqCourse)
+                ]
+                for clause in missing_dnf.children
+            ),
+            key=lambda opt: len(opt),
+        )
+
+    with b.section("debug printing"):
+        print(f"consider-as-passed: {to_fill}")
+
+    return to_fill
 
 
 def _reselect_equivs(
@@ -292,7 +396,6 @@ def _compute_courses_to_pass(
     # Find out which requirements are missing from the plan
     extra_reqs = _find_hidden_requirements(courseinfo, passed, courses_to_pass)
 
-    # Ignore the extra requirements
     # TODO: Automatically place the extra courses
     # This has at least 3 problems:
     # 1. It becomes very obvious that the plan generation algorithm is not optimal in
@@ -307,7 +410,7 @@ def _compute_courses_to_pass(
     #   This could be taken into account, for example by first finding hidden
     #   requirements and then solving the curriculum, but that would have the effect of
     #   automatically choosing equivalences, worsening problem #2.
-    consider_as_passed = extra_reqs[0] if extra_reqs else []
+    consider_as_passed = extra_reqs
 
     return courses_to_pass, consider_as_passed
 
@@ -499,8 +602,8 @@ class Benchmark:
     start: float
     name: str
 
-    def __init__(self) -> None:
-        log.info("generation benchmark:")
+    def __init__(self, bigname: str) -> None:
+        log.info("%s:", bigname)
         self.name = "?"
         self.start = 0
 
@@ -532,7 +635,7 @@ async def generate_recommended_plan(
 
     NOTE: This function modifies `passed`.
     """
-    b = Benchmark()
+    b = Benchmark("plan generation")
 
     with b.section("resource lookup"):
         courseinfo = await course_info()

@@ -82,7 +82,8 @@ ignore = [
     "ANN201",
     "ANN202", # "Missing return type annotation" (sometimes return types are too complex)
     "S101",   # "Use of `assert` detected" (debug assertions are useful)
-    "TCH001" # Pydantic relies heavily on runtime type reflection
+    "TCH001", # Pydantic relies heavily on runtime type reflection
+    "RET505"  # Redundant else and return many times helps readability
 ]
 
 extend-exclude = ["typings/"]
