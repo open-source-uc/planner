@@ -596,8 +596,8 @@ async def generate_recommended_plan(
                 continue
 
             # We could not add any course, try adding another semester
-            # However, we do not want to enter an infinite loop if nothing can be added, so
-            # only do this if we cannot add courses for 2 empty semesters
+            # However, we do not want to enter an infinite loop if nothing can be added,
+            # so only do this if we cannot add courses for 2 empty semesters
             if (
                 len(plan_ctx.plan.classes) >= 2
                 and not plan_ctx.plan.classes[-1]
@@ -606,9 +606,10 @@ async def generate_recommended_plan(
                 # Stuck :(
                 break
 
-            # Maybe some requirements are not met, maybe the semestrality is wrong, maybe
-            # we reached the credit limit for this semester
-            # Anyway, if we are stuck let's try adding a new semester and see if it helps
+            # Maybe some requirements are not met, maybe the semestrality is wrong,
+            # maybe we reached the credit limit for this semester
+            # Anyway, if we are stuck let's try adding a new semester and see if it
+            # helps
             plan_ctx.append_semester()
 
         # Unwrap plan
