@@ -4,6 +4,12 @@ from pathlib import Path
 from typing import Literal
 
 from pydantic import AnyHttpUrl, BaseSettings, Field, RedisDsn, SecretStr
+from dotenv import load_dotenv
+
+
+# Load default and then environment-specific variables
+load_dotenv('.env.default', override=False, encoding='utf8')
+load_dotenv('.env', override=True, encoding='utf8')
 
 
 def generate_random_jwt_secret():
@@ -128,8 +134,4 @@ class Settings(BaseSettings):
 
 
 # Load settings and allow global app access to them
-# NOTE: Pyright reports this line (rightfully) as an error because there are missing
-# arguments.
-# However, we actually want this to fail if there are missing environment variables, so
-# it's ok to ignore.
-settings = Settings(_env_file=".env", _env_file_encoding="utf-8")  # type: ignore
+settings = Settings()
