@@ -603,7 +603,7 @@ class Benchmark:
     name: str
 
     def __init__(self, bigname: str) -> None:
-        log.info("%s:", bigname)
+        log.debug("%s:", bigname)
         self.name = "?"
         self.start = 0
 
@@ -622,7 +622,7 @@ class Benchmark:
     ) -> None:
         end = time.monotonic()
         t = end - self.start
-        log.info("  %s: %sms", self.name, round(1000 * t, 2))
+        log.debug("  %s: %sms", self.name, round(1000 * t, 2))
 
 
 async def generate_recommended_plan(
@@ -642,8 +642,9 @@ async def generate_recommended_plan(
         curriculum = await get_curriculum(passed.curriculum)
 
     # Re-select courses from equivalences using reference plan
-    if reference is not None:
-        _reselect_equivs(courseinfo, curriculum, reference)
+    with b.section("ref reselect"):
+        if reference is not None:
+            _reselect_equivs(courseinfo, curriculum, reference)
 
     # Solve the curriculum to determine which courses have not been passed yet (and need
     # to be passed)
