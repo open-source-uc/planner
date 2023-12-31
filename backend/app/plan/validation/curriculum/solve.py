@@ -2,94 +2,81 @@
 Fill the slots of a curriculum with courses, making sure that there is no overlap
 within a block and respecting exclusivity rules.
 
-General program flow when solving a curriculum:
-1. A curriculum tree is built from external sources such as SIDING (see
-    `sync.siding.translate`).
-2. Some hand-written transformations are applied on the tree (see
-    `sync.siding.siding_rules`), and the result is a curriculum tree as defined in
-    `plan.validation.curriculum.tree`.
-    This tree is not yet a graph, but instead is a "blueprint" to build a graph later.
+Overview of the flow when solving a curriculum:
+1. A curriculum tree is built from external sources such as SIDING, scrapes and
+    hardcoded rules (see `sync.collate`).
+2. The result is a curriculum tree, as defined in `plan.validation.curriculum.tree`.
+    Along with a course database, this tree completely defines the curriculum.
 3. When a plan needs to be validated, `solve_curriculum` is called with the taken
     courses and the curriculum tree as arguments.
-4. A flow network is built, with each unit of flow representing a single credit. Each
-    unit of flow that reaches the flow sink represents a credit in the curriculum.
-    Flow can be sourced from a taken course, or from a virtual filler course.
-    Filler courses represent courses that have not yet been taken, but *could* be taken.
-    While building the network graph, a table is kept that maps from course codes to
-    edge IDs in the graph, so that later we can identify which edge represents which
-    course.
-5. Min-cost-max-flow is run on the flow network.
-    Virtual filler courses are given a high cost so that concrete taken courses are
-    always preferred.
+4. Now, we build a flow network (see https://en.wikipedia.org/wiki/Flow_network), where
+    taken courses act as flow sources, and a single sink consumes this flow.
+    The flow network is based on the curriculum tree.
+    In particular, a source node is created for each taken course, and it is connected
+    to the leaves of the curriculum tree that accept this course.
+    The root of the curriculum tree becomes the sink.
+5. A variation of min-cost-max-flow (see
+    https://en.wikipedia.org/wiki/Minimum-cost_flow_problem) is run on the tree.
+    In particular, we add virtual "filler courses" that are able to supply enough flow
+    to fill the network, but with a high cost.
+    Taken courses, on the other hand, have a low cost.
+    Therefore, running min-cost-max-flow tries to fill the network with flow with
+    the least cost. That is, the least amount of virtual courses.
 6. Once `solve_curriculum` returns, other modules like
     `plan.validation.curriculum.diagnose` analyze which edges have flow in them.
-    If an edge from a filler course has flow, it means that some block could not be
-    satisfied only with taken courses, and the solver had to fall back to filler
-    courses.
-    In this case, we report an error to the user.
-7. When a user's plan is missing a course, sometimes there are several filler courses
-    that could plug the hole equally well (or at least similarly well).
-    However, the flow algorithm has to choose 1 option, and chooses that option
-    arbitrarily.
-    In order to determine all of the options that could satisfy a course, we have to
-    find cycles in the solved graph.
-    The `EquivalentFillerFinder` class helps with this.
+    The courses that supply flow are "active".
+    If a filler course is active, it means the solver could not find a way to fill the
+    network with flow with only taken courses, so some courses need to be added to the
+    plan to make it complete.
+    This is interpreted as the solver suggesting to add the filler course to the plan.
 
+Some extra details:
+- Courses have limited multiplicity. This means that taking the course twice may not
+    contribute more flow to the network.
+    Most courses can be taken only once (and still contribute), but some have stranger
+    restrictions.
+    For example, abstract courses (like "any OFG") can be taken multiple times.
+    Some are even stranger, like sports selection team courses, which can count up to 2
+    times.
+    Some courses share their flow budget. For example, courses ICS1113 and ICS113H are
+    equivalent, and therefore even if the two are taken together, only 1 can provide
+    flow.
+    To model all of these situations, courses may share a common source node, with
+    limited flow capacity.
+- Sometimes there are several options to choose fillers.
+    This represents that there are several valid ways to fill the plan, for example
+    choosing an OPI or a different minor optative.
+    This choice is ultimately up to the user, so the solver should report all of the
+    available options.
+    To achieve this, the solver checks each potential filler to see which gaps can it
+    fill.
+- For optimization purposes, some nodes that exist in the curriculum tree may not exist
+    in the actually optimized flow network.
+    For example, if node A connected to node B, B connected to node C, and there were no
+    other connections to B, node B could be completely eliminated and replaced by a
+    direct connection from A to C.
 
-The solved network (which is different than the curriculum tree) looks like this:
-
-         course       instance          block
-          edge          edge            edge       curriculum-tree edges
-infinite -----> course -----> instance -----> leaf ----->  tree   -----> curriculum
- source          node  ----->   nodes  -----> node        nodes...          root
-
-Each edge and node fulfills a different role:
-    - Infinite source: The global source of flow (supersource).
-    - Course edge: Has the course multiplicity as its edge capacity. This edge limits
-    the amount of times a particular course can be coursed and still count towards
-    the curriculum.
-    - Course node: Distributes available flow for a particular course code within the
-    course instances.
-    - Instance edge: Limits the amount of credits a single instance can provide, and
-    has an associated cost that depends on the particular course instance.
-    For example, taken courses have a low cost and filler courses have a high cost.
-    - Instance node: Distribute the available flow of an instance across the different
-    curriculum blocks that a course can provide.
-    - Block edge: Carries the flow between a particular course instance and a
-    particular curriculum block that is being fed.
-    Note that the specific curriculum blocks that a course can provide does not
-    depend only on its course code.
-    In particular, concrete courses with an associated equivalence can only count
-    towards blocks that accept the equivalence.
-    However, the same course with the same code, but tagged with another
-    equivalence, would count towards other blocks.
-    - Leaf node: Accepts flow from a set of courses, defined by the leaf.
-    Called a leaf node because leaves in the curriculum tree are nodes of this type.
-    - Tree nodes: The rest of the nodes are part of the structure of the curriculum
-    itself.
-    These nodes form a tree that eventually ends up in the root node.
-    - Root node: The root of the curriculum graph. All flow ends up here. This is
-    usually also an infinite sink that accepts all flow.
-
-Note that for optimization some nodes may not physically exist in the flow network.
-For example, any node that has one input and one output is useless, and is usually
-replaced by a single edge.
-In general, any node with one output that has at least as much output capacity as it
-has input capacity is useless.
-Similarly, any node with one input that has at least as much input capacity as it
-has output capacity is useless.
+Some interesting combinations in terms of solving:
+M233-N207-40095
+M175-N207-40095
 """
 
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from ortools.sat.python import cp_model as cpsat
+from ortools.linear_solver import pywraplp as lmip
 
-from app.plan.course import ConcreteId, EquivalenceId, PseudoCourse
+from app.plan.course import (
+    ConcreteId,
+    EquivalenceId,
+    PseudoCourse,
+    pseudocourse_with_credits,
+    pseudocourse_with_equivalence,
+)
 from app.plan.courseinfo import CourseInfo
+from app.plan.plan import ClassId
 from app.plan.validation.curriculum.tree import (
-    SUPERBLOCK_PREFIX,
     Block,
     Curriculum,
     CurriculumSpec,
@@ -101,16 +88,35 @@ from app.plan.validation.curriculum.tree import (
 # Infinite placeholder.
 # A huge value that still fits in a 64-bit integer.
 INFINITY: int = 10**18
-# Base cost of using a filler course. In contrast with a taken course, filler courses
-# are virtual courses that are not actually taken by the user. Instead, filler courses
-# serve as a "fallback" when a curriculum can't be filled with taken courses only.
-FILLER_COST = 10**6
-# Base cost of taking a course. This number should be large enough so that cost offsets
-# dont make it more profitable to take an extra course.
-TAKEN_COST = 10**3
 
+# Cost of adding an extra course to the plan.
+# This has the highest relative cost, since we want to avoid as much as possible telling
+# the user they need to add more courses.
+COST_PER_FILLER_CREDIT = 10**5
+# Cost of planning a course.
+# This has a high relative cost, in the sense that we want to avoid planning extra
+# courses as much as possible.
+COST_PER_PLANNED_CREDIT = 10**4
+# Cost of using a course that is already passed.
+# This cost is much lower than the cost of planned courses, because there is nothing to
+# do about courses that were already passed (it's sunken cost).
+# This only has a cost in order to accurately show unused past courses.
+COST_PER_ACTIVE_PAST_CREDIT = 10**1
+# Cost of recoloring a course.
+# This cost is the lowest so that the solver prefers to use the user preference of
+# colors, but only if it doesn't hinder other priorities.
+COST_PER_RECOLORED_CREDIT = 10**1
 
-IntExpr = int | cpsat.LinearExpr
+# Note about the relationship between these values:
+# These costs are not used as-is. In order to determine the final priorities, the solver
+# sorts all courses and then adds a bias to each cost depending on the position of each
+# course within the sorted list.
+# Therefore, the final cost of an active past credit might be much higer than
+# `COST_PER_ACTIVE_PAST_CREDIT`.
+# Therefore, the cost of a planned credit must be high enough so that the solver always
+# prefers avoiding a single future planned course over saving many active past courses.
+
+IntExpr = int | lmip.LinearExpr
 
 
 @dataclass
@@ -121,20 +127,27 @@ class BlockEdgeInfo:
     If the edge has flow going through it, it means that the course was assigned to the
     blocks in `block_path`.
 
-    - active_flow: The amount of flow in this course instance - leaf block association.
-        If this amount is zero, the association is not made.
-        If it is not zero, `flow` amount of credits are being assigned to the
-        course-block pair.
     - block_path: The curriculum block that is connected to receive the flow through
         this edge.
         The first element is the root, the last element is the leaf and there is any
         number of elements in between.
+    - needs_recolor: Indicates whether putting flow through this edge requires changing
+        the course-block assignment.
+    - flow: The amount of credits assigned from this course to the given block.
+        This might be smaller than the amount of credits corresponding to the course, if
+        the block is already almost full.
+    - active_var: Internal boolean variable indicating whether the edge is active or
+        not.
+    - flow_var: Internal variable indicating how many credits are flowing through this
+        edge. May only be non-zero if the edge is active.
     """
 
     block_path: tuple[Block, ...]
+    needs_recolor: bool
+    flow: int
 
-    active: bool
-    active_var: cpsat.IntVar
+    active_var: lmip.Variable
+    flow_var: lmip.Variable
 
 
 @dataclass
@@ -165,25 +178,27 @@ class UsableInstance:
     - instance_idx: The instance index of this course.
         Instance indices start from zero, and go up for each course with the same code.
         Instance indices for filler courses continue from the taken instance indices.
-    - flat_order: The order of this course within the plan.
-        Used for prioritization.
-        The `flat_order` values of filler courses continues after taken courses.
+    - semester_and_index: The semester and index of the course. Only present for
+        non-fillers (ie. taken or planned courses).
     - original_pseudocourse: The original `PseudoCourse` instance that gave birth to
         this `UsableInstance`.
         Should not be used to identify the instance.
         In particular, do not use `original_pseudocourse.code`, since this would ignore
         all course equivalencies!
+    - cost_per_credit: The cost per credit of using this instance. Calculated from the
+        type of course (filler, planned, past or future).
     """
 
     code: str
     credits: int
     filler: FillerCourse | None
     instance_idx: int
-    flat_order: int
+    semester_and_index: tuple[int, int] | None
     original_pseudocourse: PseudoCourse
+    cost_per_credit: int
 
-    used: bool
-    used_var: cpsat.IntVar
+    flow: int
+    flow_var: lmip.Variable
     layers: defaultdict[str, InstanceEdges] = field(
         default_factory=lambda: defaultdict(InstanceEdges),
     )
@@ -213,7 +228,7 @@ class SolvedCurriculum:
     """
 
     # The CP-SAT model that models this curriculum.
-    model: cpsat.CpModel
+    model: lmip.Solver
     # Taken courses (and filler courses).
     usable: dict[str, UsableCourse]
     # Taken course codes.
@@ -223,11 +238,45 @@ class SolvedCurriculum:
     superblocks: dict[str, list[str]]
 
     def __init__(self) -> None:
-        self.model = cpsat.CpModel()
+        # OPTIMIZE: Use a pool for solver objects
+        self.model = lmip.Solver.CreateSolver("SCIP")
         self.usable = {}
         self.usable_keys = set()
         self.superblocks = {}
         self.mapping = {}
+
+    def find_swapouts(self, inst: UsableInstance) -> list[list[PseudoCourse]]:
+        """
+        Given an active course (ie. a course that has flow through it in the current
+        optimal solution), compute all of the equivalent fillers that could take its
+        place (possibly including itself).
+        """
+
+        assert inst.flow > 0
+        return _explore_options_for(self, inst)
+
+    def forbid_recolor(self) -> bool:
+        """
+        Resolve the curriculum, this time respecting previous course-block assignments.
+        Returns `True` if forbidding recolor required adding a course.
+        """
+
+        return _resolve_with_fixed_colors(self)
+
+    def find_recolors(self) -> list[tuple[ClassId, EquivalenceId]]:
+        """
+        Reassign the equivalences attached to courses in `plan` in order to match the
+        block assignments in `self`.
+        """
+        return _find_recolors(self)
+
+    def execute_recolors(self, plan: list[list[PseudoCourse]]):
+        """
+        Reassign the equivalences of courses in `plan`, using the assignments in `self`.
+        Assumes that `self` was solved on `plan`.
+        Modifies `plan`.
+        """
+        return _reassign_blocks(self, plan)
 
     def dump_graphviz_pretty(self, curriculum: Curriculum) -> str:
         from app.plan.validation.curriculum.dump import GraphDumper
@@ -247,31 +296,33 @@ def _connect_course_instance(
     block_order: int,
     block_path: tuple[Block, ...],
     inst: UsableInstance,
-) -> cpsat.IntVar:
+    needs_recolor: bool,
+) -> lmip.Variable:
     """
     Connect the course instance `inst` to the graph node `connect_to`.
     Creates a minimal amount of nodes and edges to model the connection in the graph.
     """
 
-    # TODO: Per-edge cost
-
     # Indicates whether the course counts towards the block
-    active_var = g.model.NewBoolVar("")
+    active_var = g.model.BoolVar("")
 
-    # The course instance must be used for this edge to be active
-    g.model.AddImplication(active_var, inst.used_var)
+    # The flow through this edge
+    flow_var = g.model.NumVar(0, inst.credits, "")
 
-    # There can only be flow if active is true
-    flow_var = g.model.NewIntVar(0, inst.credits, "")
-    # flow <= active * credits
-    g.model.AddLinearConstraint(active_var * inst.credits - flow_var, 0, inst.credits)
+    # The flow through this edge must be smaller than the course flow
+    g.model.Add(flow_var <= inst.flow_var)
+
+    # There can only be flow if this edge is active
+    g.model.Add(flow_var <= active_var * inst.credits)
 
     layer = inst.layers[layer_id]
     layer.block_edges.append(
         BlockEdgeInfo(
             block_path=block_path,
-            active=False,
+            needs_recolor=needs_recolor,
+            flow=0,
             active_var=active_var,
+            flow_var=flow_var,
         ),
     )
 
@@ -289,30 +340,42 @@ def _build_visit(
     g: SolvedCurriculum,
     visit_state: VisitState,
     block: Block,
-) -> list[cpsat.IntVar]:
+) -> list[lmip.LinearExpr]:
     """
     Recursively visit a block of the curriculum tree, building it as we go.
     Connect all of the children, and then connect this node to `connect_to`.
     """
     visit_state.stack.append(block)
 
+    in_flows: list[lmip.LinearExpr] = []
+    max_in_flow = 0
     if isinstance(block, Leaf):
         # A list of courses
         visit_state.flat_order += 1
-
-        in_flows: list[cpsat.IntVar] = []
-        max_in_flow = 0
         block_path = tuple(visit_state.stack)
-        for code in block.codes.intersection(g.usable_keys):
+
+        # Determine which codes can count towards this block
+        usable_codes = block.codes.intersection(g.usable_keys)
+        if block.list_code in g.usable_keys:
+            usable_codes.add(block.list_code)
+
+        # Visit the usable codes
+        for code in usable_codes:
             for inst in g.usable[code].instances:
-                if (
+                # Courses with an assigned equivalence can just connect to the
+                # corresponding block at no extra cost
+                # However, connecting a course with no equivalence, or connecting a
+                # course to a block that does not correspond to their equivalence, has
+                # some small extra cost and requires permission from the user
+                needs_recolor = (
                     block.layer == ""
                     and isinstance(inst.original_pseudocourse, ConcreteId)
-                    and inst.original_pseudocourse.equivalence is not None
-                    and inst.original_pseudocourse.equivalence.code not in block.codes
-                ):
-                    # Skips instances with mismatching tagged equivalence
-                    continue
+                    and (
+                        inst.original_pseudocourse.equivalence is None
+                        or inst.original_pseudocourse.equivalence.code
+                        != block.list_code
+                    )
+                )
                 child_flow = _connect_course_instance(
                     courseinfo,
                     g,
@@ -320,13 +383,12 @@ def _build_visit(
                     visit_state.flat_order,
                     block_path,
                     inst,
+                    needs_recolor,
                 )
                 in_flows.append(child_flow)
                 max_in_flow += inst.credits
     else:
         # A combination of blocks
-        max_in_flow = 0
-        in_flows: list[cpsat.IntVar] = []
         for c in block.children:
             child_flow = _build_visit(courseinfo, g, visit_state, c)
             in_flows.extend(child_flow)
@@ -334,14 +396,12 @@ def _build_visit(
 
     visit_state.stack.pop()
 
-    out_flows = in_flows
+    out_flows: list[lmip.LinearExpr] = in_flows
     if max_in_flow > block.cap:
-        out_flow = g.model.NewIntVar(0, block.cap, "")
+        out_flow = g.model.NumVar(0, block.cap, "")
         # out_flow <= in_flow
-        g.model.AddLinearConstraint(
-            cpsat.LinearExpr.Sum(in_flows) - out_flow,
-            0,
-            max_in_flow,
+        g.model.Add(
+            out_flow <= g.model.Sum(in_flows),
         )
         out_flows = [out_flow]
 
@@ -352,7 +412,7 @@ def _add_usable_course(
     courseinfo: CourseInfo,
     curriculum: Curriculum,
     g: SolvedCurriculum,
-    flat_order: int,
+    semester_and_index: tuple[int, int] | None,
     credit_cap: int,
     to_add: PseudoCourse | FillerCourse,
 ):
@@ -385,12 +445,7 @@ def _add_usable_course(
         # For this to work correctly, fillers must be added after taken courses!
         # (This is an optimization)
         if any(
-            previous.original_pseudocourse == og_course
-            or (
-                isinstance(previous.original_pseudocourse, ConcreteId)
-                and previous.original_pseudocourse.equivalence is None
-            )
-            for previous in usable.instances
+            previous.original_pseudocourse == og_course for previous in usable.instances
         ):
             return
 
@@ -414,10 +469,11 @@ def _add_usable_course(
             credits=credits,
             filler=filler,
             instance_idx=inst_idx,
-            flat_order=flat_order,
+            semester_and_index=semester_and_index,
             original_pseudocourse=og_course,
-            used=False,
-            used_var=g.model.NewBoolVar(""),
+            flow=0,
+            flow_var=g.model.NumVar(0, credits, ""),
+            cost_per_credit=0,  # Calculated later
         ),
     )
     usable.total += credits
@@ -425,7 +481,7 @@ def _add_usable_course(
 
 def _fill_usable(
     courseinfo: CourseInfo,
-    taken: list[list[PseudoCourse]],
+    plan: list[list[PseudoCourse]],
     curriculum: Curriculum,
     g: SolvedCurriculum,
 ):
@@ -434,41 +490,39 @@ def _fill_usable(
     Basically, recognize which courses can be used to fill the curriculum slots.
     """
 
-    flat_order = 0
     filler_cap: dict[str, int] = {
         code: sum(courseinfo.get_credits(filler.course) or 0 for filler in fillers)
         for code, fillers in curriculum.fillers.items()
     }
-    for sem in taken:
-        for c in sorted(sem, key=lambda c: c.code):
+    for sem_i, sem in enumerate(plan):
+        for idx, c in enumerate(sem):
             if courseinfo.try_any(c) is None:
                 continue
             _add_usable_course(
                 courseinfo,
                 curriculum,
                 g,
-                flat_order,
+                (sem_i, idx),
                 filler_cap[c.code] if c.code in filler_cap else INFINITY,
                 c,
             )
-            flat_order += 1
     for code, fillers in curriculum.fillers.items():
         for filler in fillers:
             _add_usable_course(
                 courseinfo,
                 curriculum,
                 g,
-                flat_order,
+                None,
                 filler_cap[code],
                 filler,
             )
-            flat_order += 1
 
 
 def _build_problem(
     courseinfo: CourseInfo,
     curriculum: Curriculum,
-    taken_semesters: list[list[PseudoCourse]],
+    plan_semesters: list[list[PseudoCourse]],
+    plan_boundary: int,
     *,
     tolerance: int = 0,
 ) -> SolvedCurriculum:
@@ -480,20 +534,47 @@ def _build_problem(
     g = SolvedCurriculum()
 
     # Fill in credit pool from approved courses and filler credits
-    _fill_usable(courseinfo, taken_semesters, curriculum, g)
+    _fill_usable(courseinfo, plan_semesters, curriculum, g)
 
     # Build curriculum graph from the curriculum tree
     root_flow = _build_visit(courseinfo, g, VisitState(), curriculum.root)
 
     # Ensure the maximum amount of flow reaches the root
-    g.model.AddLinearConstraint(
-        cpsat.LinearExpr.Sum(root_flow),
-        curriculum.root.cap - tolerance,
-        curriculum.root.cap,
+    g.model.Add(
+        lmip.LinearConstraint(
+            g.model.Sum(root_flow),
+            curriculum.root.cap - tolerance,
+            curriculum.root.cap,
+        ),
     )
 
     # Apply multiplicity limits
-    # Each course can only be taken once (or, a certain number of times)
+    _enforce_multiplicity(g)
+
+    # Each course instance can only feed one block per layer
+    for usable in g.usable.values():
+        for inst in usable.instances:
+            for layer in inst.layers.values():
+                if len(layer.block_edges) <= 1:
+                    continue
+                g.model.Add(
+                    g.model.Sum([edge.active_var for edge in layer.block_edges]) <= 1,
+                )
+
+    # Sort all courses to determine the cost of each course
+    _prioritize_courses(g, plan_boundary)
+
+    # Minimize the amount of used course flow
+    _minimize_cost(g)
+
+    return g
+
+
+def _enforce_multiplicity(g: SolvedCurriculum):
+    """
+    Ensure that each course can only be taken once (or a certain amount of times
+    depending on the course).
+    """
     seen: set[str] = set()
     for code, usable in g.usable.items():
         if code in seen:
@@ -508,55 +589,80 @@ def _build_problem(
                 total_credits += g.usable[ecode].total
         if max_creds is None or total_credits <= max_creds:
             continue
-        vars = []
-        coeffs = []
+        vars: list[lmip.LinearExpr] = []
         for ecode in group:
             if ecode not in g.usable:
                 continue
             for inst in g.usable[ecode].instances:
-                vars.append(inst.used_var)
-                coeffs.append(inst.credits)
-        g.model.AddLinearConstraint(
-            cpsat.LinearExpr.WeightedSum(vars, coeffs),
-            0,
-            max_creds,
+                vars.append(inst.flow_var)
+        g.model.Add(
+            g.model.Sum(vars) <= max_creds,
         )
 
-    # Each course instance can only feed one block per layer
+
+def _get_course_priority(inst: UsableInstance) -> tuple[int, int, int]:
+    if inst.filler:
+        return (1, inst.filler.cost_offset, inst.filler.order)
+    assert inst.semester_and_index
+    sem, idx = inst.semester_and_index
+    return (0, sem, idx)
+
+
+def _prioritize_courses(g: SolvedCurriculum, plan_boundary: int):
+    # Sort all courses by type first (filler or planned), then cost offset, then flat
+    # order
+    sorted_instances: list[UsableInstance] = sorted(
+        (inst for usable in g.usable.values() for inst in usable.instances),
+        key=_get_course_priority,
+    )
+    for index, inst in enumerate(sorted_instances):
+        if inst.semester_and_index:
+            sem, _idx = inst.semester_and_index
+            if sem < plan_boundary:
+                inst.cost_per_credit = COST_PER_ACTIVE_PAST_CREDIT
+            else:
+                # NOTE: Using wildly different costs for planned courses and filler
+                # courses speeds up the optimizer 6x (!)
+                inst.cost_per_credit = COST_PER_PLANNED_CREDIT
+        else:
+            inst.cost_per_credit = COST_PER_FILLER_CREDIT
+        inst.cost_per_credit += index
+
+
+def _minimize_cost(g: SolvedCurriculum):
+    """
+    Minimize the amount of used credits.
+    Not all credits are equal though, some credits represent more cost than others.
+    """
+
+    costs: list[lmip.LinearExpr] = []
     for usable in g.usable.values():
         for inst in usable.instances:
-            for layer in inst.layers.values():
-                if len(layer.block_edges) <= 1:
-                    continue
-                g.model.AddAtMostOne(edge.active_var for edge in layer.block_edges)
+            # Consider the cost of using this instance
+            # The cost is higher if it is a filler, because it means adding an extra
+            # course
+            costs.append(inst.cost_per_credit * inst.flow_var)
+            # Add extra cost for taking recolor-edges
+            for edges in inst.layers.values():
+                for edge in edges.block_edges:
+                    if edge.needs_recolor:
+                        costs.append(COST_PER_RECOLORED_CREDIT * edge.flow_var)
 
-    # Minimize the amount of used courses
-    vars: list[cpsat.IntVar] = []
-    coeffs: list[int] = []
-    for usable in g.usable.values():
-        for inst in usable.instances:
-            vars.append(inst.used_var)
-            coeffs.append(
-                TAKEN_COST
-                if inst.filler is None
-                else FILLER_COST + inst.filler.cost_offset,
-            )
-    g.model.Minimize(cpsat.LinearExpr.WeightedSum(vars, coeffs))
-
-    return g
+    g.model.Minimize(g.model.Sum(costs))
 
 
-def _tag_edge_flow(solver: cpsat.CpSolver, g: SolvedCurriculum):
+def _tag_edge_flow(g: SolvedCurriculum):
     """
     Update the `used` and `active` flags of all course instances and edges.
     """
     for usable in g.usable.values():
         for inst in usable.instances:
-            inst.used = solver.BooleanValue(inst.used_var)
+            inst.flow = round(inst.flow_var.SolutionValue())
             for layer in inst.layers.values():
+                layer.active_edge = None
                 for edge in layer.block_edges:
-                    edge.active = solver.BooleanValue(edge.active_var)
-                    if edge.active:
+                    edge.flow = round(edge.flow_var.SolutionValue())
+                    if edge.flow > 0:
                         layer.active_edge = edge
 
 
@@ -567,10 +673,10 @@ def _get_superblock(
     for _layer_id, layer in sorted(inst.layers.items(), key=lambda pair: pair[0]):
         if layer.active_edge is not None:
             # This block edge is active!
-            # Use the first superblock block in the path
-            for block in layer.active_edge.block_path:
-                if block.block_code.startswith(SUPERBLOCK_PREFIX):
-                    return block.block_code[len(SUPERBLOCK_PREFIX) :]
+            # Use the superblock of the leaf (the last block in the path)
+            leaf = layer.active_edge.block_path[-1]
+            assert isinstance(leaf, Leaf)
+            return leaf.superblock
 
     # No superblock found
     return ""
@@ -584,42 +690,244 @@ def _tag_superblocks(g: SolvedCurriculum):
         g.superblocks[code] = [_get_superblock(g, inst) for inst in usable.instances]
 
 
-solver = cpsat.CpSolver()
-solver.parameters.num_workers = 1  # type: ignore
+_solver_status_to_name: dict[int, str] = {
+    lmip.Solver.OPTIMAL: "OPTIMAL",
+    lmip.Solver.FEASIBLE: "FEASIBLE",
+    lmip.Solver.INFEASIBLE: "INFEASIBLE",
+    lmip.Solver.UNBOUNDED: "UNBOUNDED",
+    lmip.Solver.ABNORMAL: "ABNORMAL",
+    lmip.Solver.MODEL_INVALID: "MODEL_INVALID",
+    lmip.Solver.NOT_SOLVED: "NOT_SOLVED",
+}
+
+
+SOLVE_PARAMETERS = lmip.MPSolverParameters()
+# NOTE: SCIP has a known issue where it fails to find the optimal solution sometimes,
+# and the primal tolerance must set to some custom small value to fix it.
+# This doesn't seem to be necessary for now, but further experimentation would not hurt.
+# https://stackoverflow.com/questions/65244692/non-optimal-result-from-mip-program-in-google-or-tools/65244914#65244914
+# SOLVE_PARAMETERS.SetDoubleParam(lmip.MPSolverParameters.PRIMAL_TOLERANCE, 1e-3)
 
 
 def solve_curriculum(
     courseinfo: CourseInfo,
     spec: CurriculumSpec,
     curriculum: Curriculum,
-    taken: list[list[PseudoCourse]],
+    plan: list[list[PseudoCourse]],
+    plan_boundary: int = 0,
 ) -> SolvedCurriculum:
+    """
+    Solve the given plan against the given curriculum.
+
+    Optionally accepts a plan boundary, that specifies the number of semesters that
+    should be considered as passed and immutable.
+
+    This function does **not** modify `plan`.
+    """
+
     # Take the curriculum blueprint, and produce a graph for this student
-    g = _build_problem(courseinfo, curriculum, taken)
+    g = _build_problem(courseinfo, curriculum, plan, plan_boundary)
     # Solve the integer optimization problem
-    solve_status = solver.Solve(g.model)
-    if not (solve_status == cpsat.OPTIMAL or solve_status == cpsat.FEASIBLE):
+    solve_status = g.model.Solve(SOLVE_PARAMETERS)
+    if not (
+        solve_status == lmip.Solver.OPTIMAL or solve_status == lmip.Solver.FEASIBLE
+    ):
         if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
-            logging.debug(f"solving failed for {spec}: {solver.StatusName()}")
+            logging.debug(
+                f"solving failed for {spec}: {_solver_status_to_name[solve_status]}",
+            )
             logging.debug(f"original graph:\n{g.dump_graphviz_debug(curriculum)}")
             logging.debug("searching for minimum relaxation to make it feasible...")
             tol = "infinite"
             for i in range(1, curriculum.root.cap + 1):
-                g = _build_problem(courseinfo, curriculum, taken, tolerance=i)
-                solve_status_2 = solver.Solve(g.model)
-                if solve_status_2 == cpsat.OPTIMAL or solve_status_2 == cpsat.FEASIBLE:
+                g = _build_problem(
+                    courseinfo,
+                    curriculum,
+                    plan,
+                    plan_boundary,
+                    tolerance=i,
+                )
+                solve_status_2 = g.model.Solve(SOLVE_PARAMETERS)
+                if (
+                    solve_status_2 == lmip.Solver.OPTIMAL
+                    or solve_status_2 == lmip.Solver.FEASIBLE
+                ):
                     tol = i
-                    _tag_edge_flow(solver, g)
+                    _tag_edge_flow(g)
                     break
             logging.debug(
                 f"solvable with tolerance {tol}:\n{g.dump_graphviz_debug(curriculum)}",
             )
         raise Exception(
-            f"failed to solve curriculum {spec}: {solver.StatusName()}",
+            f"failed to solve {spec}: {_solver_status_to_name[solve_status]}",
         )
     # Extract solution from solver
-    _tag_edge_flow(solver, g)
+    _tag_edge_flow(g)
     # Determine course superblocks
     _tag_superblocks(g)
 
     return g
+
+
+def _reassign_blocks(g: SolvedCurriculum, plan: list[list[PseudoCourse]]):
+    """
+    Reassign the equivalences of courses in `plan`, using the assignments in `g`.
+    """
+    recolors_by_id: dict[str, dict[int, EquivalenceId]] = {}
+    for id, new_equiv in g.find_recolors():
+        recolors_by_id.setdefault(id.code, {})[id.instance] = new_equiv
+
+    rep_counter: defaultdict[str, int] = defaultdict(lambda: 0)
+    for sem in plan:
+        for i, course in enumerate(sem):
+            instance_idx = rep_counter[course.code]
+            rep_counter[course.code] += 1
+
+            if (
+                isinstance(course, ConcreteId)
+                and course.code in recolors_by_id
+                and instance_idx in recolors_by_id[course.code]
+            ):
+                new_equiv = recolors_by_id[course.code][instance_idx]
+                sem[i] = pseudocourse_with_equivalence(course, new_equiv)
+
+
+def _find_recolors(g: SolvedCurriculum) -> list[tuple[ClassId, EquivalenceId]]:
+    """
+    Find the concrete courses that need to be recolored according to `g`.
+    """
+
+    recolors: list[tuple[ClassId, EquivalenceId]] = []
+    for usable in g.usable.values():
+        for inst in usable.instances:
+            course = inst.original_pseudocourse
+            if not isinstance(course, ConcreteId):
+                continue
+            if "" in inst.layers:
+                edges = inst.layers[""]
+                if edges.active_edge is not None and edges.active_edge.needs_recolor:
+                    active_block = edges.active_edge.block_path[-1]
+                    assert isinstance(active_block, Leaf)
+                    credits = (
+                        course.equivalence.credits
+                        if course.equivalence is not None
+                        else edges.active_edge.flow
+                    )
+                    new_equiv = EquivalenceId(
+                        code=active_block.list_code,
+                        credits=credits,
+                    )
+                    recolors.append(
+                        (
+                            ClassId(code=course.code, instance=inst.instance_idx),
+                            new_equiv,
+                        ),
+                    )
+    return recolors
+
+
+def _resolve_with_fixed_colors(g: SolvedCurriculum) -> bool:
+    """
+    Resolve the curriculum, this time inflexibly respecting the fixed assignments.
+    """
+
+    # Determine how many courses were taken
+    old_taken = 0
+    old_fillers = 0
+    for usable in g.usable.values():
+        for inst in usable.instances:
+            if inst.filler is None:
+                old_taken += inst.flow
+            else:
+                old_fillers += inst.flow
+    # Forbid edges that require reassignment (coloquially called recoloring)
+    for usable in g.usable.values():
+        for inst in usable.instances:
+            for edges in inst.layers.values():
+                for edge in edges.block_edges:
+                    if edge.needs_recolor:
+                        edge.active_var.SetUb(0)
+                        edge.flow_var.SetUb(0)
+    # Re-solve model
+    solve_status = g.model.Solve(SOLVE_PARAMETERS)
+    if not (
+        solve_status == lmip.Solver.OPTIMAL or solve_status == lmip.Solver.FEASIBLE
+    ):
+        raise Exception(
+            "failed to resolve with fixed colors:"
+            f" {_solver_status_to_name[solve_status]}",
+        )
+    # Extract solution
+    _tag_edge_flow(g)
+    # Determine new course superblocks
+    _tag_superblocks(g)
+    # Determine how many courses are taken now
+    new_taken = 0
+    new_fillers = 0
+    for usable in g.usable.values():
+        for inst in usable.instances:
+            if inst.filler is None:
+                new_taken += inst.flow
+            else:
+                new_fillers += inst.flow
+    # If more courses were taken, then we had to make sacrifices in order to forbid
+    # recoloring
+    return new_taken > old_taken or new_fillers > old_fillers
+
+
+def _explore_options_for(
+    g: SolvedCurriculum,
+    og_inst: UsableInstance,
+) -> list[list[PseudoCourse]]:
+    # Place the options in here
+    opts: list[list[PseudoCourse]] = []
+    # Place the variables that will need their upperbounds restored in here
+    restore: list[tuple[lmip.Variable, float]] = []
+
+    insts: list[tuple[UsableInstance, int]] = [(og_inst, og_inst.flow)]
+    while True:
+        # If this option is a filler, include it in the options
+        if any(inst.filler for inst, _flow in insts):
+            opts.append(
+                [
+                    pseudocourse_with_credits(
+                        inst.filler.course,
+                        flow,
+                    )
+                    for inst, flow in insts
+                    if inst.filler
+                ],
+            )
+
+        # Forbid this courses
+        # Note that not only the active instances are forbidden, but also all of the
+        # instances associated to their courses
+        # These prevents duplicate fillers from showing up in the suggestions
+        courses = {inst.code for inst, _flow in insts}
+        for code in courses:
+            for inst in g.usable[code].instances:
+                restore.append((inst.flow_var, inst.flow_var.Ub()))
+                inst.flow_var.SetUb(0)
+
+        # Solve with these new restrictions
+        solve_status = g.model.Solve(SOLVE_PARAMETERS)
+        if not (
+            solve_status == lmip.Solver.OPTIMAL or solve_status == lmip.Solver.FEASIBLE
+        ):
+            # Could not solve, we ran out of options
+            break
+
+        # Find which course(s) were used to fill in the gap
+        insts.clear()
+        for usable in g.usable.values():
+            for inst in usable.instances:
+                flow = round(inst.flow_var.SolutionValue())
+                if flow > inst.flow:
+                    insts.append((inst, flow))
+        assert insts
+
+    # Re-enable the killed variables
+    for var, ub in restore:
+        var.SetUb(ub)
+
+    return opts

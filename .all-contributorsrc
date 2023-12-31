@@ -22,7 +22,10 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/62021328?v=4",
       "profile": "http://benjavicente.github.io",
       "contributions": [
-        "doc"
+        "doc",
+        "code",
+        "eventOrganizing",
+        "research"
       ]
     },
     {
@@ -32,6 +35,92 @@
       "profile": "https://github.com/tomastrivino",
       "contributions": [
         "content"
+      ]
+    },
+    {
+      "login": "fernandosmither",
+      "name": "Fernando",
+      "avatar_url": "https://avatars.githubusercontent.com/u/66154723?v=4",
+      "profile": "https://github.com/fernandosmither",
+      "contributions": [
+        "eventOrganizing",
+        "research"
+      ]
+    },
+    {
+      "login": "riadeane",
+      "name": "Ria Deane",
+      "avatar_url": "https://avatars.githubusercontent.com/u/62292336?v=4",
+      "profile": "http://riadeane.dev",
+      "contributions": [
+        "fundingFinding",
+        "eventOrganizing",
+        "research"
+      ]
+    },
+    {
+      "login": "a-maccormack",
+      "name": "Alister MacCormack",
+      "avatar_url": "https://avatars.githubusercontent.com/u/78695941?v=4",
+      "profile": "http://www.linkedin.com/in/a-maccormack",
+      "contributions": [
+        "eventOrganizing",
+        "research"
+      ]
+    },
+    {
+      "login": "csantiagopaz",
+      "name": "csantiagopaz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/42182095?v=4",
+      "profile": "https://github.com/csantiagopaz",
+      "contributions": [
+        "eventOrganizing",
+        "research"
+      ]
+    },
+    {
+      "login": "JosefaPaz",
+      "name": "Josefa Paz España H.",
+      "avatar_url": "https://avatars.githubusercontent.com/u/41802643?v=4",
+      "profile": "https://www.linkedin.com/in/josefaespana/",
+      "contributions": [
+        "eventOrganizing"
+      ]
+    },
+    {
+      "login": "nbcl",
+      "name": "nbcl",
+      "avatar_url": "https://avatars.githubusercontent.com/u/48532672?v=4",
+      "profile": "https://github.com/nbcl",
+      "contributions": [
+        "eventOrganizing"
+      ]
+    },
+    {
+      "login": "lnatero",
+      "name": "Lucas Natero",
+      "avatar_url": "https://avatars.githubusercontent.com/u/64765306?v=4",
+      "profile": "https://github.com/lnatero",
+      "contributions": [
+        "research"
+      ]
+    },
+    {
+      "login": "VicenteLavagnino",
+      "name": "Vicente Lavagnino Gatica",
+      "avatar_url": "https://avatars.githubusercontent.com/u/92047754?v=4",
+      "profile": "https://github.com/VicenteLavagnino",
+      "contributions": [
+        "research"
+      ]
+    },
+    {
+      "login": "ignaciolaval",
+      "name": "Ignacio Laval",
+      "avatar_url": "https://avatars.githubusercontent.com/u/80926065?v=4",
+      "profile": "https://github.com/ignaciolaval",
+      "contributions": [
+        "research"
       ]
     }
   ],

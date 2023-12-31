@@ -7,7 +7,8 @@ module.exports = {
     'plugin:react/recommended',
     'plugin:react/jsx-runtime',
     'standard-with-typescript',
-    'plugin:jsx-a11y/recommended'
+    'plugin:jsx-a11y/recommended',
+    'plugin:react-hooks/recommended'
   ],
   ignorePatterns: [
     'vite*.ts'

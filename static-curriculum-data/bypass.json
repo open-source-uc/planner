@@ -1,0 +1,4332 @@
+{
+    "majors": [],
+    "minors": [
+        {
+            "major": "M231",
+            "minor": "N290",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad de Articulación Ingeniería Civil",
+                        "name": "Optativos Minor",
+                        "superblock": "Minor",
+                        "filler": {
+                            "order": [
+                                101,
+                                102,
+                                103,
+                                104,
+                                105
+                            ]
+                        },
+                        "cap": 50,
+                        "children": [
+                            {
+                                "debug_name": "Area Construccion",
+                                "credits": 20,
+                                "codes": [
+                                    "ICC2204",
+                                    "ICC2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Estructural",
+                                "credits": 30,
+                                "codes": [
+                                    "ICE2006",
+                                    "ICE2114",
+                                    "ICE2313"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Diseño",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2403",
+                                    "ICC2454",
+                                    "ICE2413",
+                                    "ICE2533"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Geotecnia",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2604"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Hidraulica",
+                                "credits": 20,
+                                "codes": [
+                                    "ICH2114",
+                                    "ICH1104"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Ambiental",
+                                "credits": 10,
+                                "codes": [
+                                    "ICH2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Materiales de Ingenieria",
+                                "credits": 10,
+                                "codes": [
+                                    "ICC2105"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Transporte",
+                                "credits": 10,
+                                "codes": [
+                                    "ICT2904",
+                                    "ICC2514"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M232",
+            "minor": "N290",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad de Articulación Ingeniería Civil",
+                        "name": "Optativos Minor",
+                        "superblock": "Minor",
+                        "filler": {
+                            "order": [
+                                101,
+                                102,
+                                103,
+                                104,
+                                105
+                            ]
+                        },
+                        "cap": 50,
+                        "children": [
+                            {
+                                "debug_name": "Area Construccion",
+                                "credits": 20,
+                                "codes": [
+                                    "ICC2204",
+                                    "ICC2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Diseño",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2403",
+                                    "ICC2454",
+                                    "ICE2413",
+                                    "ICE2533"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Geotecnia",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2604"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Hidraulica",
+                                "credits": 20,
+                                "codes": [
+                                    "ICH2114",
+                                    "ICH1104"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Ambiental",
+                                "credits": 10,
+                                "codes": [
+                                    "ICH2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Materiales de Ingenieria",
+                                "credits": 10,
+                                "codes": [
+                                    "ICC2105"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Transporte",
+                                "credits": 10,
+                                "codes": [
+                                    "ICT2904",
+                                    "ICC2514"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M180",
+            "minor": "N290",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad de Articulación Ingeniería Civil",
+                        "name": "Optativos Minor",
+                        "superblock": "Minor",
+                        "filler": {
+                            "order": [
+                                101,
+                                102,
+                                103,
+                                104,
+                                105
+                            ]
+                        },
+                        "cap": 50,
+                        "children": [
+                            {
+                                "debug_name": "Area Construccion",
+                                "credits": 20,
+                                "codes": [
+                                    "ICC2204",
+                                    "ICC2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Estructural",
+                                "credits": 30,
+                                "codes": [
+                                    "ICE2006",
+                                    "ICE2114",
+                                    "ICE2313"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Diseño",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2403",
+                                    "ICC2454",
+                                    "ICE2413",
+                                    "ICE2533"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Geotecnia",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2604"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Hidraulica",
+                                "credits": 20,
+                                "codes": [
+                                    "ICH2114",
+                                    "ICH1104"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Ambiental",
+                                "credits": 10,
+                                "codes": [
+                                    "ICH2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Materiales de Ingenieria",
+                                "credits": 10,
+                                "codes": [
+                                    "ICC2105"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M181",
+            "minor": "N290",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad de Articulación Ingeniería Civil",
+                        "name": "Optativos Minor",
+                        "superblock": "Minor",
+                        "filler": {
+                            "order": [
+                                101,
+                                102,
+                                103,
+                                104,
+                                105
+                            ]
+                        },
+                        "cap": 50,
+                        "children": [
+                            {
+                                "debug_name": "Area Construccion",
+                                "credits": 20,
+                                "codes": [
+                                    "ICC2204",
+                                    "ICC2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Estructural",
+                                "credits": 30,
+                                "codes": [
+                                    "ICE2006",
+                                    "ICE2114",
+                                    "ICE2313"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Diseño",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2403",
+                                    "ICC2454",
+                                    "ICE2413",
+                                    "ICE2533"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Geotecnia",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2604"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Hidraulica",
+                                "credits": 20,
+                                "codes": [
+                                    "ICH2114",
+                                    "ICH1104"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Ambiental",
+                                "credits": 10,
+                                "codes": [
+                                    "ICH2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Materiales de Ingenieria",
+                                "credits": 10,
+                                "codes": [
+                                    "ICC2105"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M182",
+            "minor": "N290",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad de Articulación Ingeniería Civil",
+                        "name": "Optativos Minor",
+                        "superblock": "Minor",
+                        "filler": {
+                            "order": [
+                                101,
+                                102,
+                                103,
+                                104,
+                                105
+                            ]
+                        },
+                        "cap": 50,
+                        "children": [
+                            {
+                                "debug_name": "Area Construccion",
+                                "credits": 20,
+                                "codes": [
+                                    "ICC2204",
+                                    "ICC2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Estructural",
+                                "credits": 30,
+                                "codes": [
+                                    "ICE2006",
+                                    "ICE2114",
+                                    "ICE2313"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Diseño",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2403",
+                                    "ICC2454",
+                                    "ICE2413",
+                                    "ICE2533"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Geotecnia",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2604"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Hidraulica",
+                                "credits": 20,
+                                "codes": [
+                                    "ICH2114",
+                                    "ICH1104"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Ambiental",
+                                "credits": 10,
+                                "codes": [
+                                    "ICH2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Materiales de Ingenieria",
+                                "credits": 10,
+                                "codes": [
+                                    "ICC2105"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M183",
+            "minor": "N290",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad de Articulación Ingeniería Civil",
+                        "name": "Optativos Minor",
+                        "superblock": "Minor",
+                        "filler": {
+                            "order": [
+                                101,
+                                102,
+                                103,
+                                104,
+                                105
+                            ]
+                        },
+                        "cap": 50,
+                        "children": [
+                            {
+                                "debug_name": "Area Construccion",
+                                "credits": 20,
+                                "codes": [
+                                    "ICC2204",
+                                    "ICC2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Estructural",
+                                "credits": 30,
+                                "codes": [
+                                    "ICE2006",
+                                    "ICE2114",
+                                    "ICE2313"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Diseño",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2403",
+                                    "ICC2454",
+                                    "ICE2413",
+                                    "ICE2533"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Geotecnia",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2604"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Hidraulica",
+                                "credits": 20,
+                                "codes": [
+                                    "ICH2114",
+                                    "ICH1104"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Ambiental",
+                                "credits": 10,
+                                "codes": [
+                                    "ICH2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Materiales de Ingenieria",
+                                "credits": 10,
+                                "codes": [
+                                    "ICC2105"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M170",
+            "minor": "N290",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad de Articulación Ingeniería Civil",
+                        "name": "Optativos Minor",
+                        "superblock": "Minor",
+                        "filler": {
+                            "order": [
+                                101,
+                                102,
+                                103,
+                                104,
+                                105
+                            ]
+                        },
+                        "cap": 50,
+                        "children": [
+                            {
+                                "debug_name": "Area Construccion",
+                                "credits": 20,
+                                "codes": [
+                                    "ICC2204",
+                                    "ICC2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Estructural",
+                                "credits": 30,
+                                "codes": [
+                                    "ICE2006",
+                                    "ICE2114",
+                                    "ICE2313"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Diseño",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2403",
+                                    "ICC2454",
+                                    "ICE2413",
+                                    "ICE2533"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Geotecnia",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2604"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Hidraulica",
+                                "credits": 20,
+                                "codes": [
+                                    "ICH2114",
+                                    "ICH1104"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Materiales de Ingenieria",
+                                "credits": 10,
+                                "codes": [
+                                    "ICC2105"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Transporte",
+                                "credits": 10,
+                                "codes": [
+                                    "ICT2904",
+                                    "ICC2514"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M238",
+            "minor": "N290",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad de Articulación Ingeniería Civil",
+                        "name": "Optativos Minor",
+                        "superblock": "Minor",
+                        "filler": {
+                            "order": [
+                                101,
+                                102,
+                                103,
+                                104,
+                                105
+                            ]
+                        },
+                        "cap": 50,
+                        "children": [
+                            {
+                                "debug_name": "Area Construccion",
+                                "credits": 20,
+                                "codes": [
+                                    "ICC2204",
+                                    "ICC2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Estructural",
+                                "credits": 30,
+                                "codes": [
+                                    "ICE2006",
+                                    "ICE2114",
+                                    "ICE2313"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Diseño",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2403",
+                                    "ICC2454",
+                                    "ICE2413",
+                                    "ICE2533"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Hidraulica",
+                                "credits": 20,
+                                "codes": [
+                                    "ICH2114",
+                                    "ICH1104"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Ambiental",
+                                "credits": 10,
+                                "codes": [
+                                    "ICH2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Materiales de Ingenieria",
+                                "credits": 10,
+                                "codes": [
+                                    "ICC2105"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Transporte",
+                                "credits": 10,
+                                "codes": [
+                                    "ICT2904",
+                                    "ICC2514"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M234",
+            "minor": "N290",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad de Articulación Ingeniería Civil",
+                        "name": "Optativos Minor",
+                        "superblock": "Minor",
+                        "filler": {
+                            "order": [
+                                101,
+                                102,
+                                103,
+                                104,
+                                105
+                            ]
+                        },
+                        "cap": 50,
+                        "children": [
+                            {
+                                "debug_name": "Area Construccion",
+                                "credits": 20,
+                                "codes": [
+                                    "ICC2204",
+                                    "ICC2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Estructural",
+                                "credits": 30,
+                                "codes": [
+                                    "ICE2006",
+                                    "ICE2114",
+                                    "ICE2313"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Diseño",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2403",
+                                    "ICC2454",
+                                    "ICE2413",
+                                    "ICE2533"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Geotecnia",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2604"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Ambiental",
+                                "credits": 10,
+                                "codes": [
+                                    "ICH2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Materiales de Ingenieria",
+                                "credits": 10,
+                                "codes": [
+                                    "ICC2105"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Transporte",
+                                "credits": 10,
+                                "codes": [
+                                    "ICT2904",
+                                    "ICC2514"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M192",
+            "minor": "N290",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad de Articulación Ingeniería Civil",
+                        "name": "Optativos Minor",
+                        "superblock": "Minor",
+                        "filler": {
+                            "order": [
+                                101,
+                                102,
+                                103,
+                                104,
+                                105
+                            ]
+                        },
+                        "cap": 50,
+                        "children": [
+                            {
+                                "debug_name": "Area Construccion",
+                                "credits": 20,
+                                "codes": [
+                                    "ICC2204",
+                                    "ICC2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Estructural",
+                                "credits": 30,
+                                "codes": [
+                                    "ICE2006",
+                                    "ICE2114",
+                                    "ICE2313"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Diseño",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2403",
+                                    "ICC2454",
+                                    "ICE2413",
+                                    "ICE2533"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Geotecnia",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2604"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Hidraulica",
+                                "credits": 20,
+                                "codes": [
+                                    "ICH2114",
+                                    "ICH1104"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Ambiental",
+                                "credits": 10,
+                                "codes": [
+                                    "ICH2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Materiales de Ingenieria",
+                                "credits": 10,
+                                "codes": [
+                                    "ICC2105"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Transporte",
+                                "credits": 10,
+                                "codes": [
+                                    "ICT2904",
+                                    "ICC2514"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M235",
+            "minor": "N290",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad de Articulación Ingeniería Civil",
+                        "name": "Optativos Minor",
+                        "superblock": "Minor",
+                        "filler": {
+                            "order": [
+                                101,
+                                102,
+                                103,
+                                104,
+                                105
+                            ]
+                        },
+                        "cap": 50,
+                        "children": [
+                            {
+                                "debug_name": "Area Construccion",
+                                "credits": 20,
+                                "codes": [
+                                    "ICC2204",
+                                    "ICC2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Estructural",
+                                "credits": 30,
+                                "codes": [
+                                    "ICE2006",
+                                    "ICE2114",
+                                    "ICE2313"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Geotecnia",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2604"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Hidraulica",
+                                "credits": 20,
+                                "codes": [
+                                    "ICH2114",
+                                    "ICH1104"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Ambiental",
+                                "credits": 10,
+                                "codes": [
+                                    "ICH2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Materiales de Ingenieria",
+                                "credits": 10,
+                                "codes": [
+                                    "ICC2105"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Transporte",
+                                "credits": 10,
+                                "codes": [
+                                    "ICT2904",
+                                    "ICC2514"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M237",
+            "minor": "N290",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad de Articulación Ingeniería Civil",
+                        "name": "Optativos Minor",
+                        "superblock": "Minor",
+                        "filler": {
+                            "order": [
+                                101,
+                                102,
+                                103,
+                                104,
+                                105
+                            ]
+                        },
+                        "cap": 50,
+                        "children": [
+                            {
+                                "debug_name": "Area Construccion",
+                                "credits": 20,
+                                "codes": [
+                                    "ICC2204",
+                                    "ICC2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Estructural",
+                                "credits": 30,
+                                "codes": [
+                                    "ICE2006",
+                                    "ICE2114",
+                                    "ICE2313"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Geotecnia",
+                                "credits": 10,
+                                "codes": [
+                                    "ICE2604"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Hidraulica",
+                                "credits": 20,
+                                "codes": [
+                                    "ICH2114",
+                                    "ICH1104"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Ambiental",
+                                "credits": 10,
+                                "codes": [
+                                    "ICH2304"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Materiales de Ingenieria",
+                                "credits": 10,
+                                "codes": [
+                                    "ICC2105"
+                                ]
+                            },
+                            {
+                                "debug_name": "Area Transporte",
+                                "credits": 10,
+                                "codes": [
+                                    "ICT2904",
+                                    "ICC2514"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M129",
+            "minor": "N181",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 1: Fundamentos de Optimización - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 1",
+                                "name": "Optativos Track 1",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2111",
+                                    "IMT2112",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT255I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 2: Fundamentos de Análisis Numérico",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Álgebra Lineal Numérica",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT2111"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 2",
+                                "name": "Optativos Track 2",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2112",
+                                    "IMT2113",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "MAT250I",
+                                    "MAT255I",
+                                    "MAT2615",
+                                    "MAT270I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 2: Fundamentos de Análisis Numérico (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Álgebra Lineal Numérica",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT2111"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 2",
+                                "name": "Optativos Track 2",
+                                "credits": 20,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2112",
+                                    "IMT2113",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "MAT250I",
+                                    "MAT255I",
+                                    "MAT2615",
+                                    "MAT270I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102,
+                                        103
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                104,
+                                105
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M129",
+            "minor": "N182",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 1: Fundamentos de Optimización - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 1",
+                                "name": "Optativos Track 1",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2111",
+                                    "IMT2112",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT255I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 3: Cuantificación de Incertidumbre",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Métodos Bayesianos",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP280I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 3",
+                                "name": "Optativos Track 3",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2113",
+                                    "MAT380I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 3: Cuantificación de Incertidumbre (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Métodos Bayesianos",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP280I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 3",
+                                "name": "Optativos Track 3",
+                                "credits": 20,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2113",
+                                    "MAT380I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102,
+                                        103
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                104,
+                                105
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M129",
+            "minor": "N183",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 1: Fundamentos de Optimización - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 1",
+                                "name": "Optativos Track 1",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2111",
+                                    "IMT2112",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT255I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 4: Teoría de la Computación",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Estructuras de Datos y Algoritmos",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC2133"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 4",
+                                "name": "Optativos Track 4",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2213",
+                                    "IIC2223",
+                                    "IIC2283",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 4: Teoría de la Computación (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Estructuras de Datos y Algoritmos",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC2133"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 4",
+                                "name": "Optativos Track 4",
+                                "credits": 20,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2213",
+                                    "IIC2223",
+                                    "IIC2283",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102,
+                                        103
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                104,
+                                105
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M129",
+            "minor": "N184",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 1: Fundamentos de Optimización - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 1",
+                                "name": "Optativos Track 1",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2111",
+                                    "IMT2112",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT255I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 5: Data Science",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos 1",
+                                "name": "Métodos Bayesianos",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP280I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Minimos 2",
+                                "name": "Bases de Datos",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC2413"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 5: Data Science (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos 1",
+                                "name": "Métodos Bayesianos",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP280I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Minimos 2",
+                                "name": "Bases de Datos",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC2413"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 5",
+                                "name": "Optativos Track 5",
+                                "credits": 20,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IIC2433",
+                                    "IIC2613",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2118",
+                                    "IMT2310",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        103,
+                                        104
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                105,
+                                106
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M130",
+            "minor": "N180",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 2: Fundamentos de Análisis Numérico - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 2",
+                                "name": "Optativos Track 2",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2112",
+                                    "IMT2113",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "MAT250I",
+                                    "MAT255I",
+                                    "MAT2615",
+                                    "MAT270I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 1: Fundamentos de Optimización",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Métodos de Optimización",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2121"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 1",
+                                "name": "Optativos Track 1",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2111",
+                                    "IMT2112",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT255I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 1: Fundamentos de Optimización (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Métodos de Optimización",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2121"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 1",
+                                "name": "Optativos Track 1",
+                                "credits": 20,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2111",
+                                    "IMT2112",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT255I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102,
+                                        103
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                104,
+                                105
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M130",
+            "minor": "N182",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 2: Fundamentos de Análisis Numérico - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 2",
+                                "name": "Optativos Track 2",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2112",
+                                    "IMT2113",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "MAT250I",
+                                    "MAT255I",
+                                    "MAT2615",
+                                    "MAT270I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 3: Cuantificación de Incertidumbre",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Métodos Bayesianos",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP280I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 3",
+                                "name": "Optativos Track 3",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2113",
+                                    "MAT380I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 3: Cuantificación de Incertidumbre (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Métodos Bayesianos",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP280I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 3",
+                                "name": "Optativos Track 3",
+                                "credits": 20,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2113",
+                                    "MAT380I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102,
+                                        103
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                104,
+                                105
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M130",
+            "minor": "N183",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 2: Fundamentos de Análisis Numérico - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 2",
+                                "name": "Optativos Track 2",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2112",
+                                    "IMT2113",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "MAT250I",
+                                    "MAT255I",
+                                    "MAT2615",
+                                    "MAT270I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 4: Teoría de la Computación",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Estructuras de Datos y Algoritmos",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC2133"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 4",
+                                "name": "Optativos Track 4",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2213",
+                                    "IIC2223",
+                                    "IIC2283",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 4: Teoría de la Computación (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Estructuras de Datos y Algoritmos",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC2133"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 4",
+                                "name": "Optativos Track 4",
+                                "credits": 20,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2213",
+                                    "IIC2223",
+                                    "IIC2283",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102,
+                                        103
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                104,
+                                105
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M130",
+            "minor": "N184",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 2: Fundamentos de Análisis Numérico - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 2",
+                                "name": "Optativos Track 2",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2112",
+                                    "IMT2113",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "MAT250I",
+                                    "MAT255I",
+                                    "MAT2615",
+                                    "MAT270I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 5: Data Science",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos 1",
+                                "name": "Métodos Bayesianos",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP280I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Minimos 2",
+                                "name": "Bases de Datos",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC2413"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 5: Data Science (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos 1",
+                                "name": "Métodos Bayesianos",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP280I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Minimos 2",
+                                "name": "Bases de Datos",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC2413"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 5",
+                                "name": "Optativos Track 5",
+                                "credits": 20,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IIC2433",
+                                    "IIC2613",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2118",
+                                    "IMT2310",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        103,
+                                        104
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                105,
+                                106
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M131",
+            "minor": "N180",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 3: Cuantificación de Incertidumbre - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 3",
+                                "name": "Optativos Track 3",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2113",
+                                    "MAT380I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 1: Fundamentos de Optimización",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Métodos de Optimización",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2121"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 1",
+                                "name": "Optativos Track 1",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2111",
+                                    "IMT2112",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT255I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 1: Fundamentos de Optimización (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Métodos de Optimización",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2121"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 1",
+                                "name": "Optativos Track 1",
+                                "credits": 20,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2111",
+                                    "IMT2112",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT255I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102,
+                                        103
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                104,
+                                105
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M131",
+            "minor": "N181",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 3: Cuantificación de Incertidumbre - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 3",
+                                "name": "Optativos Track 3",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2113",
+                                    "MAT380I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 2: Fundamentos de Análisis Numérico",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Álgebra Lineal Numérica",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT2111"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 2",
+                                "name": "Optativos Track 2",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2112",
+                                    "IMT2113",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "MAT250I",
+                                    "MAT255I",
+                                    "MAT2615",
+                                    "MAT270I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 2: Fundamentos de Análisis Numérico (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Álgebra Lineal Numérica",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT2111"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 2",
+                                "name": "Optativos Track 2",
+                                "credits": 20,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2112",
+                                    "IMT2113",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "MAT250I",
+                                    "MAT255I",
+                                    "MAT2615",
+                                    "MAT270I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102,
+                                        103
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                104,
+                                105
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M131",
+            "minor": "N183",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 3: Cuantificación de Incertidumbre - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 3",
+                                "name": "Optativos Track 3",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2113",
+                                    "MAT380I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 4: Teoría de la Computación",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Estructuras de Datos y Algoritmos",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC2133"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 4",
+                                "name": "Optativos Track 4",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2213",
+                                    "IIC2223",
+                                    "IIC2283",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 4: Teoría de la Computación (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Estructuras de Datos y Algoritmos",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC2133"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 4",
+                                "name": "Optativos Track 4",
+                                "credits": 20,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2213",
+                                    "IIC2223",
+                                    "IIC2283",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102,
+                                        103
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                104,
+                                105
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M131",
+            "minor": "N184",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 3: Cuantificación de Incertidumbre - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 3",
+                                "name": "Optativos Track 3",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2113",
+                                    "MAT380I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 5: Data Science",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos 1",
+                                "name": "Métodos Bayesianos",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP280I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Minimos 2",
+                                "name": "Bases de Datos",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC2413"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 5: Data Science (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos 1",
+                                "name": "Métodos Bayesianos",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP280I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Minimos 2",
+                                "name": "Bases de Datos",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC2413"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 5",
+                                "name": "Optativos Track 5",
+                                "credits": 20,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IIC2433",
+                                    "IIC2613",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2118",
+                                    "IMT2310",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        103,
+                                        104
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                105,
+                                106
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M135",
+            "minor": "N180",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 4: Teoría de la Computación - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 4",
+                                "name": "Optativos Track 4",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2213",
+                                    "IIC2223",
+                                    "IIC2283",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 1: Fundamentos de Optimización",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Métodos de Optimización",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2121"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 1",
+                                "name": "Optativos Track 1",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2111",
+                                    "IMT2112",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT255I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 1: Fundamentos de Optimización (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Métodos de Optimización",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2121"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 1",
+                                "name": "Optativos Track 1",
+                                "credits": 20,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2111",
+                                    "IMT2112",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT255I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102,
+                                        103
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                104,
+                                105
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M135",
+            "minor": "N181",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 4: Teoría de la Computación - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 4",
+                                "name": "Optativos Track 4",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2213",
+                                    "IIC2223",
+                                    "IIC2283",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 2: Fundamentos de Análisis Numérico",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Álgebra Lineal Numérica",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT2111"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 2",
+                                "name": "Optativos Track 2",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2112",
+                                    "IMT2113",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "MAT250I",
+                                    "MAT255I",
+                                    "MAT2615",
+                                    "MAT270I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 2: Fundamentos de Análisis Numérico (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Álgebra Lineal Numérica",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT2111"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 2",
+                                "name": "Optativos Track 2",
+                                "credits": 20,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2112",
+                                    "IMT2113",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "MAT250I",
+                                    "MAT255I",
+                                    "MAT2615",
+                                    "MAT270I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102,
+                                        103
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                104,
+                                105
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M135",
+            "minor": "N182",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 4: Teoría de la Computación - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 4",
+                                "name": "Optativos Track 4",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2213",
+                                    "IIC2223",
+                                    "IIC2283",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 3: Cuantificación de Incertidumbre",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Métodos Bayesianos",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP280I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 3",
+                                "name": "Optativos Track 3",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2113",
+                                    "MAT380I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 3: Cuantificación de Incertidumbre (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Métodos Bayesianos",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP280I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 3",
+                                "name": "Optativos Track 3",
+                                "credits": 20,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2113",
+                                    "MAT380I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102,
+                                        103
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                104,
+                                105
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M135",
+            "minor": "N184",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 4: Teoría de la Computación - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 4",
+                                "name": "Optativos Track 4",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2213",
+                                    "IIC2223",
+                                    "IIC2283",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 5: Data Science",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos 1",
+                                "name": "Métodos Bayesianos",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP280I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Minimos 2",
+                                "name": "Bases de Datos",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC2413"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 5: Data Science (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos 1",
+                                "name": "Métodos Bayesianos",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP280I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Minimos 2",
+                                "name": "Bases de Datos",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC2413"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 5",
+                                "name": "Optativos Track 5",
+                                "credits": 20,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IIC2433",
+                                    "IIC2613",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2118",
+                                    "IMT2310",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        103,
+                                        104
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                105,
+                                106
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M074",
+            "minor": "N180",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 5: Data Science - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 5",
+                                "name": "Optativos Track 5",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IIC2433",
+                                    "IIC2613",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2118",
+                                    "IMT2310",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 1: Fundamentos de Optimización",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Métodos de Optimización",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2121"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 1",
+                                "name": "Optativos Track 1",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2111",
+                                    "IMT2112",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT255I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 1: Fundamentos de Optimización (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Métodos de Optimización",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2121"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 1",
+                                "name": "Optativos Track 1",
+                                "credits": 20,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2111",
+                                    "IMT2112",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT255I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102,
+                                        103
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                104,
+                                105
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M074",
+            "minor": "N181",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 5: Data Science - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 5",
+                                "name": "Optativos Track 5",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IIC2433",
+                                    "IIC2613",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2118",
+                                    "IMT2310",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 2: Fundamentos de Análisis Numérico",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Álgebra Lineal Numérica",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT2111"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 2",
+                                "name": "Optativos Track 2",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2112",
+                                    "IMT2113",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "MAT250I",
+                                    "MAT255I",
+                                    "MAT2615",
+                                    "MAT270I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 2: Fundamentos de Análisis Numérico (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Álgebra Lineal Numérica",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT2111"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 2",
+                                "name": "Optativos Track 2",
+                                "credits": 20,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2112",
+                                    "IMT2113",
+                                    "IMT2115",
+                                    "IMT2117",
+                                    "MAT250I",
+                                    "MAT255I",
+                                    "MAT2615",
+                                    "MAT270I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102,
+                                        103
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                104,
+                                105
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M074",
+            "minor": "N182",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 5: Data Science - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 5",
+                                "name": "Optativos Track 5",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IIC2433",
+                                    "IIC2613",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2118",
+                                    "IMT2310",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 3: Cuantificación de Incertidumbre",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Métodos Bayesianos",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP280I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 3",
+                                "name": "Optativos Track 3",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2113",
+                                    "MAT380I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 3: Cuantificación de Incertidumbre (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Métodos Bayesianos",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP280I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 3",
+                                "name": "Optativos Track 3",
+                                "credits": 20,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IMT2113",
+                                    "MAT380I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102,
+                                        103
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                104,
+                                105
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "major": "M074",
+            "minor": "N183",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 5: Data Science - Optativos Area Major",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "children": [
+                            {
+                                "debug_name": "Optativos Track 5",
+                                "name": "Optativos Track 5",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP230I",
+                                    "ICS2123",
+                                    "IIC2133",
+                                    "IIC2433",
+                                    "IIC2613",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2118",
+                                    "IMT2310",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        100
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 4: Teoría de la Computación",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "layer": "minor",
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Estructuras de Datos y Algoritmos",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC2133"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 4",
+                                "name": "Optativos Track 4",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2213",
+                                    "IIC2223",
+                                    "IIC2283",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Track 4: Teoría de la Computación (20 creditos exclusivos)",
+                        "superblock": "Minor",
+                        "name": "Minor",
+                        "cap": 20,
+                        "children": [
+                            {
+                                "debug_name": "Minimos",
+                                "name": "Estructuras de Datos y Algoritmos",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC2133"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        101
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos Track 4",
+                                "name": "Optativos Track 4",
+                                "credits": 20,
+                                "codes": [
+                                    "ICS2123",
+                                    "IIC2213",
+                                    "IIC2223",
+                                    "IIC2283",
+                                    "IMT2112",
+                                    "IMT2117",
+                                    "IMT2310",
+                                    "IMT2565",
+                                    "MAT2615"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        102,
+                                        103
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Minor de Profundidad en Teoría y Aplicación en Ingeniería Matemática - Optativos de Aplicación",
+                        "superblock": "Minor",
+                        "name": "Optativos de Aplicación Minor",
+                        "credits": 20,
+                        "codes": "L13",
+                        "filler": {
+                            "order": [
+                                104,
+                                105
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "titles": [
+        {
+            "title": "40023",
+            "plan": {
+                "blocks": [
+                    {
+                        "debug_name": "Ingeniero Civil Matemático y Computacional",
+                        "name": "Título",
+                        "superblock": "Titulo",
+                        "layer": "title",
+                        "children": [
+                            {
+                                "debug_name": "Optimización",
+                                "name": "Optimización",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS1113",
+                                    "ICS113H"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        201
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Matemática Discretas",
+                                "name": "Matemática Discretas",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC1253"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        202
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Inferencia Estadística",
+                                "name": "Inferencia Estadística",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP2114"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        203
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Análisis Real",
+                                "name": "Análisis Real",
+                                "credits": 10,
+                                "codes": [
+                                    "MAT251I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        204
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Cálculo Científico I",
+                                "name": "Cálculo Científico I",
+                                "credits": 10,
+                                "codes": [
+                                    "MAT2605"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        205
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Análisis de Regresión",
+                                "name": "Análisis de Regresión",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP230I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        206
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Análisis Funcional",
+                                "name": "Análisis Funcional",
+                                "credits": 10,
+                                "codes": [
+                                    "MAT255I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        207
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Algoritmos Paralelos en Computación Científica",
+                                "name": "Algoritmos Paralelos en Computación Científica",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT2112"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        208
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optimización Avanzada",
+                                "name": "Optimización Avanzada",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS3153"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        209
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Complejidad Computacional",
+                                "name": "Complejidad Computacional",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC3242"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        210
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Fundamentos Matemáticos para Ciencia de Datos",
+                                "name": "Fundamentos Matemáticos para Ciencia de Datos",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT3120"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        211
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Aplicaciones de Ecuaciones Diferenciales Parciales y Análisis Funcional en Ingeniería",
+                                "name": "Aplicaciones de Ecuaciones Diferenciales Parciales y Análisis Funcional en Ingeniería",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT3130"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        212
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Taller de Ingeniería Matemática (Proyecto de Título)",
+                                "name": "Taller de Ingeniería Matemática (Proyecto de Título)",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT3140"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        213
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos de Aplicación en Ingeniería",
+                                "name": "Optativos de Aplicación en Ingeniería",
+                                "credits": 20,
+                                "codes": [
+                                    "IBM3202",
+                                    "ICH3224",
+                                    "ICM3920",
+                                    "ICS3105",
+                                    "ICS3151",
+                                    "ICS3233",
+                                    "ICS3252",
+                                    "ICS3413",
+                                    "IEE3002",
+                                    "IEE3433",
+                                    "IEE3692",
+                                    "IEE3732",
+                                    "IEE3764",
+                                    "FIM3436",
+                                    "FIM4141",
+                                    "IIC3253",
+                                    "IIC3272",
+                                    "IIC3284",
+                                    "IIC3413",
+                                    "IIC3633",
+                                    "IIC3640",
+                                    "IIC3697",
+                                    "IIC3724",
+                                    "IIC3733",
+                                    "IIC3783"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        214,
+                                        215
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos de Profundización",
+                                "name": "Optativos de Profundización",
+                                "credits": 20,
+                                "codes": [
+                                    "ICS3143",
+                                    "IMT3800",
+                                    "FIZ0313",
+                                    "IMT3810",
+                                    "EYP243I",
+                                    "EYP290I",
+                                    "EYP2915",
+                                    "IMT3820",
+                                    "MAT2825",
+                                    "MAT380I",
+                                    "IIC3263",
+                                    "IIC3632",
+                                    "IIC3810",
+                                    "IIC3413",
+                                    "IIC3423",
+                                    "IIC3432",
+                                    "IIC3633",
+                                    "IIC3695"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        216,
+                                        217
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativo de aplicación o de profundización",
+                                "name": "Optativo de aplicación o de profundización",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS3143",
+                                    "IMT3800",
+                                    "FIZ0313",
+                                    "IMT3810",
+                                    "EYP243I",
+                                    "EYP290I",
+                                    "EYP2915",
+                                    "IMT3820",
+                                    "MAT2825",
+                                    "MAT380I",
+                                    "IIC3263",
+                                    "IIC3632",
+                                    "IIC3810",
+                                    "IIC3413",
+                                    "IIC3423",
+                                    "IIC3432",
+                                    "IIC3633",
+                                    "IIC3695",
+                                    "IBM3202",
+                                    "ICH3224",
+                                    "ICM3920",
+                                    "ICS3105",
+                                    "ICS3151",
+                                    "ICS3233",
+                                    "ICS3252",
+                                    "ICS3413",
+                                    "IEE3002",
+                                    "IEE3433",
+                                    "IEE3692",
+                                    "IEE3732",
+                                    "IEE3764",
+                                    "FIM3436",
+                                    "FIM4141",
+                                    "IIC3253",
+                                    "IIC3272",
+                                    "IIC3284",
+                                    "IIC3640",
+                                    "IIC3697",
+                                    "IIC3724",
+                                    "IIC3733",
+                                    "IIC3783"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        218
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Ingeniero Civil Matemático y Computacional (130 créditos exclusivos)",
+                        "name": "Título (130 créditos exclusivos)",
+                        "superblock": "Titulo",
+                        "cap": 50,
+                        "children": [
+                            {
+                                "debug_name": "Optimización",
+                                "name": "Optimización",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS1113",
+                                    "ICS113H"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        201
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Matemática Discretas",
+                                "name": "Matemática Discretas",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC1253"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        202
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Inferencia Estadística",
+                                "name": "Inferencia Estadística",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP2114"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        203
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Análisis Real",
+                                "name": "Análisis Real",
+                                "credits": 10,
+                                "codes": [
+                                    "MAT251I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        204
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Cálculo Científico I",
+                                "name": "Cálculo Científico I",
+                                "credits": 10,
+                                "codes": [
+                                    "MAT2605"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        205
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos de Aplicación en Ingeniería",
+                                "name": "Optativos de Aplicación en Ingeniería",
+                                "credits": 20,
+                                "codes": [
+                                    "IBM3202",
+                                    "ICH3224",
+                                    "ICM3920",
+                                    "ICS3105",
+                                    "ICS3151",
+                                    "ICS3233",
+                                    "ICS3252",
+                                    "ICS3413",
+                                    "IEE3002",
+                                    "IEE3433",
+                                    "IEE3692",
+                                    "IEE3732",
+                                    "IEE3764",
+                                    "FIM3436",
+                                    "FIM4141",
+                                    "IIC3253",
+                                    "IIC3272",
+                                    "IIC3284",
+                                    "IIC3413",
+                                    "IIC3633",
+                                    "IIC3640",
+                                    "IIC3697",
+                                    "IIC3724",
+                                    "IIC3733",
+                                    "IIC3783"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        214,
+                                        215
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativos de Profundización",
+                                "name": "Optativos de Profundización",
+                                "credits": 20,
+                                "codes": [
+                                    "ICS3143",
+                                    "IMT3800",
+                                    "FIZ0313",
+                                    "IMT3810",
+                                    "EYP243I",
+                                    "EYP290I",
+                                    "EYP2915",
+                                    "IMT3820",
+                                    "MAT2825",
+                                    "MAT380I",
+                                    "IIC3263",
+                                    "IIC3632",
+                                    "IIC3810",
+                                    "IIC3413",
+                                    "IIC3423",
+                                    "IIC3432",
+                                    "IIC3633",
+                                    "IIC3695"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        216,
+                                        217
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativo de aplicación o de profundización",
+                                "name": "Optativo de aplicación o de profundización",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS3143",
+                                    "IMT3800",
+                                    "FIZ0313",
+                                    "IMT3810",
+                                    "EYP243I",
+                                    "EYP290I",
+                                    "EYP2915",
+                                    "IMT3820",
+                                    "MAT2825",
+                                    "MAT380I",
+                                    "IIC3263",
+                                    "IIC3632",
+                                    "IIC3810",
+                                    "IIC3413",
+                                    "IIC3423",
+                                    "IIC3432",
+                                    "IIC3633",
+                                    "IIC3695",
+                                    "IBM3202",
+                                    "ICH3224",
+                                    "ICM3920",
+                                    "ICS3105",
+                                    "ICS3151",
+                                    "ICS3233",
+                                    "ICS3252",
+                                    "ICS3413",
+                                    "IEE3002",
+                                    "IEE3433",
+                                    "IEE3692",
+                                    "IEE3732",
+                                    "IEE3764",
+                                    "FIM3436",
+                                    "FIM4141",
+                                    "IIC3253",
+                                    "IIC3272",
+                                    "IIC3284",
+                                    "IIC3640",
+                                    "IIC3697",
+                                    "IIC3724",
+                                    "IIC3733",
+                                    "IIC3783"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        218
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "debug_name": "Ingeniero Civil Matemático y Computacional - Anexo (e)",
+                        "name": "Título (80 créditos exclusivos)",
+                        "superblock": "Titulo",
+                        "cap": 80,
+                        "children": [
+                            {
+                                "debug_name": "Análisis de Regresión",
+                                "name": "Análisis de Regresión",
+                                "credits": 10,
+                                "codes": [
+                                    "EYP230I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        206
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Análisis Funcional",
+                                "name": "Análisis Funcional",
+                                "credits": 10,
+                                "codes": [
+                                    "MAT255I"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        207
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Algoritmos Paralelos en Computación Científica",
+                                "name": "Algoritmos Paralelos en Computación Científica",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT2112"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        208
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optimización Avanzada",
+                                "name": "Optimización Avanzada",
+                                "credits": 10,
+                                "codes": [
+                                    "ICS3153"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        209
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Complejidad Computacional",
+                                "name": "Complejidad Computacional",
+                                "credits": 10,
+                                "codes": [
+                                    "IIC3242"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        210
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Fundamentos Matemáticos para Ciencia de Datos",
+                                "name": "Fundamentos Matemáticos para Ciencia de Datos",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT3120"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        211
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Aplicaciones de Ecuaciones Diferenciales Parciales y Análisis Funcional en Ingeniería",
+                                "name": "Aplicaciones de Ecuaciones Diferenciales Parciales y Análisis Funcional en Ingeniería",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT3130"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        212
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Taller de Ingeniería Matemática (Proyecto de Título)",
+                                "name": "Taller de Ingeniería Matemática (Proyecto de Título)",
+                                "credits": 10,
+                                "codes": [
+                                    "IMT3140"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        213
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Optativo Complementario Especialidad",
+                                "name": "Optativo Complementario Especialidad",
+                                "credits": 80,
+                                "codes": [
+                                    "ICS2121",
+                                    "ICS3143",
+                                    "IMT2111",
+                                    "IMT2115",
+                                    "IMT2565",
+                                    "IMT2111",
+                                    "IMT2113",
+                                    "IMT2115",
+                                    "IMT2565",
+                                    "MAT270I",
+                                    "EYP211I",
+                                    "EYP243I",
+                                    "EYP2625",
+                                    "EYP290I",
+                                    "EYP2915",
+                                    "ICS2123",
+                                    "ICS2562",
+                                    "IMT2113",
+                                    "MAT2825",
+                                    "MAT380I",
+                                    "IIC2283",
+                                    "IIC3263",
+                                    "IIC3632",
+                                    "IIC3800",
+                                    "EYP210I",
+                                    "EYP270I",
+                                    "IIC2433",
+                                    "IIC2613",
+                                    "IIC3413",
+                                    "IIC3423",
+                                    "IIC3432",
+                                    "IIC3633",
+                                    "IIC3695"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        221,
+                                        222,
+                                        223,
+                                        224,
+                                        225,
+                                        226,
+                                        227,
+                                        228
+                                    ],
+                                    "cost_offset": 1
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

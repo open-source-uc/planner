@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Annotated, Literal
 import sentry_sdk
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.params import Depends
 from fastapi.routing import APIRoute
 from pydantic import BaseModel, Field
@@ -14,9 +15,9 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from app import routes
 from app.database import prisma
 from app.logger import setup_logger
-from app.plan.courseinfo import course_info
 from app.redis import get_redis
 from app.settings import settings
+from app.sync.database import load_packed_data_from_db
 from app.sync.siding.client import client as siding_soap_client
 from app.sync.siding.client import get_titles
 
@@ -85,6 +86,10 @@ app.add_middleware(
     allow_headers=["*", "sentry-trace", "baggage"],
 )
 
+# Enable compression for large responses
+# Lots of JSON in responses, so this saves a lot of space
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 
 @app.on_event("startup")  # type: ignore
 async def startup():
@@ -97,8 +102,8 @@ async def startup():
     siding_soap_client.on_startup()
     # HACK: Random sleep to avoid DDoSing the DB
     await asyncio.sleep(random.SystemRandom().random() * 15)
-    # Prime local in-memory course info cache
-    await course_info()
+    # Load static data from DB to RAM
+    await load_packed_data_from_db()
 
 
 @app.on_event("shutdown")  # type: ignore

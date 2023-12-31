@@ -1,41 +1,55 @@
 from collections import defaultdict
 
-from app.plan.course import PseudoCourse
+from fastapi import HTTPException
+
+from app.plan.course import EquivalenceId, PseudoCourse
 from app.plan.courseinfo import CourseInfo
-from app.plan.plan import ValidatablePlan
+from app.plan.plan import ClassId, ValidatablePlan
 from app.plan.validation.curriculum.solve import (
     SolvedCurriculum,
     solve_curriculum,
 )
-from app.plan.validation.curriculum.tree import Curriculum
+from app.plan.validation.curriculum.tree import Curriculum, CurriculumSpec
 from app.plan.validation.diagnostic import (
     CurriculumErr,
     NoMajorMinorWarn,
+    RecolorWarn,
     UnassignedWarn,
+    UnknownSpecErr,
     ValidationResult,
 )
-from app.user.info import StudentContext
+from app.sync.curriculums.storage import CurriculumStorage
+from app.user.info import StudentInfo
 
 
-def _diagnose_blocks(
-    courseinfo: CourseInfo,
+def _check_missing_fillers(
     out: ValidationResult,
     g: SolvedCurriculum,
-):
-    def fetch_name(filler: PseudoCourse):
-        info = courseinfo.try_any(filler)
-        return (filler, "?" if info is None else info.name)
+    panacea_recolors: list[tuple[ClassId, EquivalenceId]] | None,
+) -> bool:
+    """
+    Check if `g` indicates that fillers should be added, and if so add a `CurriculumErr`
+    to `out`.
+    Note that `g` might be allowing or forbiding recolors, this function does not care.
 
-    # TODO: If there are several alternatives to fill a gap in the curriculum, show all
-    # of them
+    `panacea_recolors` is an optional argument that is passed on directly to any
+    generated `CurriculumErr`.
+    It indicates that recoloring in this way will solve all curriculum colors.
 
-    # Get any fillers in use
+    Returns whether the curriculum is satisfied (ie. if there are no fillers missing).
+    """
+
+    satisfied = True
+
     for usable in g.usable.values():
         for inst in usable.instances:
-            if inst.filler is None or not inst.used:
+            if not inst.filler or not inst.flow:
                 continue
 
+            options: list[list[PseudoCourse]] = g.find_swapouts(inst)
+
             # This filler is active, therefore something is missing
+            satisfied = False
             out.add(
                 CurriculumErr(
                     blocks=[
@@ -47,29 +61,128 @@ def _diagnose_blocks(
                         for layer in inst.layers.values()
                         if layer.active_edge is not None
                     ],
-                    credits=courseinfo.get_credits(inst.filler.course) or 0,
-                    fill_options=[
-                        fetch_name(
-                            inst.filler.course,
-                        ),
-                    ],
+                    credits=inst.flow,
+                    fill_options=[filler for option in options for filler in option],
+                    panacea_recolor_courses=[id for id, _ in panacea_recolors]
+                    if panacea_recolors
+                    else None,
+                    panacea_recolor_blocks=[equiv for _, equiv in panacea_recolors]
+                    if panacea_recolors
+                    else None,
                 ),
             )
+
+    return satisfied
+
+
+def _diagnose_blocks(
+    courseinfo: CourseInfo,
+    out: ValidationResult,
+    g: SolvedCurriculum,
+):
+    # Remember which courses were recolored
+    # Note that courses are only recolored if doing so allows a better plan, so this
+    # list contains no unnecessary recolors
+    recolors = g.find_recolors()
+
+    # Get any fillers in use
+    # Note that at this point recoloring *is* allowed
+    # This means that:
+    # - If there is a way to recolor the courses such that the curriculum is satisfied,
+    #   Planner will always recommend to recolor and will not complain about missing
+    #   courses.
+    # - If courses *are* missing anyway, Planner will assume that all courses can be
+    #   recolored arbitrarily.
+    satisfied_with_recoloring = _check_missing_fillers(out, g, None)
+
+    if satisfied_with_recoloring:
+        # There are enough courses to satisfy the curriculum, but they might not be
+        # the correct colors
+        # Now, forbid recoloring and retry
+        if g.forbid_recolor():
+            # Reassigning equivalences can save us some courses
+
+            # The user might prefer to keep these colors and add more courses (ie. if
+            # they are in the middle of changing their curriculum), but they might also
+            # want to just change the colors and solve the problem.
+            # Give them both options
+            satisfied_without_recoloring = _check_missing_fillers(out, g, recolors)
+            if satisfied_without_recoloring:
+                # All is OK, but remember that `forbid_recolor` returned true!
+                # Therefore, we could save some courses by recoloring
+                # Let the user know that
+                out.add(
+                    RecolorWarn(
+                        associated_to=[id for id, _equiv in recolors],
+                        recolor_as=[equiv for _id, equiv in recolors],
+                    ),
+                )
+            else:
+                # The curriculum is satisfied with recoloring, but not without it
+                # An error was emitted inside of `_check_missing_fillers`, so there's
+                # nothing to do here
+                pass
+        else:
+            # All is OK!
+            pass
+    else:
+        # There are not even enough courses to satisfy the curriculum _with
+        # recoloring_.
+        # Let the user solve that issue first, then worry about the right colors.
+        pass
+
+
+def _diagnose_major_minor_presence(
+    cstore: CurriculumStorage,
+    spec: CurriculumSpec,
+    out: ValidationResult,
+):
+    if (
+        spec.cyear not in cstore.offer
+        or (spec.major is not None and spec.major not in cstore.offer[spec.cyear].major)
+        or (spec.minor is not None and spec.minor not in cstore.offer[spec.cyear].minor)
+    ):
+        return
+    if spec.major is None or (
+        spec.minor is None and len(cstore.offer[spec.cyear].major_minor[spec.major]) > 0
+    ):
+        out.add(NoMajorMinorWarn(plan=spec))
+
+
+def _diagnose_unknown_spec(
+    cstore: CurriculumStorage,
+    spec: CurriculumSpec,
+    out: ValidationResult,
+):
+    major = spec.major is not None and spec.major not in cstore.offer[spec.cyear].major
+    minor = spec.minor is not None and spec.minor not in cstore.offer[spec.cyear].minor
+    title = spec.title is not None and spec.title not in cstore.offer[spec.cyear].title
+    if major or minor or title:
+        out.add(UnknownSpecErr(major=major, minor=minor, title=title))
 
 
 def diagnose_curriculum(
     courseinfo: CourseInfo,
+    cstore: CurriculumStorage,
     curriculum: Curriculum,
     plan: ValidatablePlan,
-    user_ctx: StudentContext | None,
+    user_ctx: StudentInfo | None,
     out: ValidationResult,
 ):
     # Produce a warning if no major/minor is selected
-    if plan.curriculum.major is None or plan.curriculum.minor is None:
-        out.add(NoMajorMinorWarn(plan=plan.curriculum))
+    _diagnose_major_minor_presence(cstore, plan.curriculum, out)
+
+    # Produce an error if the curriculum spec is unknown
+    _diagnose_unknown_spec(cstore, plan.curriculum, out)
 
     # Solve plan
-    g = solve_curriculum(courseinfo, plan.curriculum, curriculum, plan.classes)
+    g = solve_curriculum(
+        courseinfo,
+        plan.curriculum,
+        curriculum,
+        plan.classes,
+        user_ctx.current_semester if user_ctx else 0,
+    )
 
     # Generate diagnostics
     _diagnose_blocks(courseinfo, out, g)
@@ -95,10 +208,43 @@ def diagnose_curriculum(
         out.add(UnassignedWarn(unassigned_credits=unassigned))
 
     # Tag each course with its associated superblock
-    superblocks = {}
-    for code, count in rep_counter.items():
-        superblocks[code] = ["" for _ in range(count)]
-        for rep_idx in range(count):
+    superblocks: dict[str, list[str]] = {}
+    for sem in plan.classes:
+        for course in sem:
+            code = course.code
+            if code not in superblocks:
+                superblocks[code] = []
+            superblock = ""
+            rep_idx = len(superblocks[code])
             if code in g.superblocks and rep_idx < len(g.superblocks[code]):
-                superblocks[code][rep_idx] = g.superblocks[code][rep_idx]
+                superblock = g.superblocks[code][rep_idx]
+            superblocks[code].append(superblock)
     out.course_superblocks = superblocks
+
+
+def find_swapouts(
+    courseinfo: CourseInfo,
+    curriculum: Curriculum,
+    plan: ValidatablePlan,
+    sem_idx: int,
+    class_idx: int,
+) -> list[list[PseudoCourse]]:
+    # Determine the course code and instance index
+    if sem_idx >= len(plan.classes) or class_idx >= len(plan.classes[sem_idx]):
+        raise HTTPException(400, "invalid class index")
+    code = plan.classes[sem_idx][class_idx].code
+    instance_idx = 0
+    for sem_i, sem in enumerate(plan.classes):
+        for cl_i, cl in enumerate(sem):
+            if sem_i == sem_idx and cl_i == class_idx:
+                break
+            if cl.code == code:
+                instance_idx += 1
+        if sem_i == sem_idx:
+            break
+
+    # Solve the plan first
+    g = solve_curriculum(courseinfo, plan.curriculum, curriculum, plan.classes)
+
+    # Now, get the equivalents for the given class
+    return g.find_swapouts(g.usable[code].instances[instance_idx])

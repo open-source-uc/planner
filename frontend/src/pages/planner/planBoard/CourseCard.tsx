@@ -1,4 +1,4 @@
-import { memo, type ReactNode, useRef } from 'react'
+import { memo, type ReactNode, useRef, type MouseEventHandler } from 'react'
 import { useDrag } from 'react-dnd'
 import { ReactComponent as EditWhiteIcon } from '../../../assets/editWhite.svg'
 import { ReactComponent as EditBlackIcon } from '../../../assets/editBlack.svg'
@@ -7,7 +7,6 @@ import { ReactComponent as currentBlackIcon } from '../../../assets/currentBlack
 import ConditionalWrapper from '../utils/ConditionalWrapper'
 import deepEqual from 'fast-deep-equal'
 import { type PseudoCourseId, type PseudoCourseDetail } from '../utils/Types'
-
 interface DraggableCardProps {
   course: PseudoCourseId
   courseDetails: PseudoCourseDetail
@@ -18,9 +17,10 @@ interface DraggableCardProps {
   remCourse: Function
   courseBlock: string
   openSelector: Function
-  hasEquivalence?: boolean
+  showEquivalence?: boolean
   hasError: boolean
   hasWarning: boolean
+  handleContextMenu: MouseEventHandler<HTMLDivElement>
 }
 interface CardProps {
   course: PseudoCourseId
@@ -29,7 +29,7 @@ interface CardProps {
   remCourse: Function
   courseBlock: string
   openSelector: Function
-  hasEquivalence?: boolean
+  showEquivalence?: boolean
   hasError: boolean
   hasWarning: boolean
   isPassed: boolean
@@ -52,8 +52,8 @@ const BlockInitials = (courseBlock: string): string => {
   return ''
 }
 
-const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, toggleDrag, remCourse, courseBlock, openSelector, hasEquivalence, hasError, hasWarning }: DraggableCardProps): JSX.Element => {
-  const ref = useRef(null)
+const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, toggleDrag, remCourse, courseBlock, openSelector, showEquivalence: hasEquivalence, hasError, hasWarning, handleContextMenu }: DraggableCardProps): JSX.Element => {
+  const ref = useRef<HTMLDivElement>(null)
   const callOpenSelector = (): void => openSelector(courseId)
   const callRemCourse = (): void => remCourse(courseId)
   const [{ isDragging = false }, drag] = useDrag(() => ({
@@ -74,14 +74,23 @@ const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, t
     drag(ref)
   }
   return (
-    <div ref={ref} draggable={true} className={`${isDragging ? 'opacity-0 z-0' : 'mb-3'} mx-1 ${(isPassed || isCurrent) ? 'cursor-not-allowed opacity-50' : 'cursor-grab'} `}>
-      <ConditionalWrapper condition={course.is_concrete !== true && courseBlock != null} wrapper={(children: ReactNode) => <button className='w-full' onClick={() => { callOpenSelector() }}>{children}</button>}>
+    <div
+      onContextMenu={handleContextMenu}
+      data-course-code={courseId.code}
+      data-course-instance={courseId.instance}
+      data-course-hasequiv={hasEquivalence}
+      data-course-credits={courseDetails !== undefined && 'credits' in courseDetails ? courseDetails.credits : ('credits' in course) ? course.credits : 0}
+      ref={ref}
+      draggable={true}
+      className={`${isDragging ? 'opacity-0 z-0' : 'mb-3'} mx-1 ${(isPassed || isCurrent) ? 'cursor-not-allowed opacity-50' : 'cursor-grab'} `}
+    >
+      <ConditionalWrapper condition={course.is_concrete !== true && courseBlock !== '' && courseBlock !== null} wrapper={(children: ReactNode) => <button className='w-full' onClick={callOpenSelector}>{children}</button>}>
           <CourseCard
             courseBlock={courseBlock}
             course={course}
             credits={(courseDetails !== undefined && 'credits' in courseDetails) ? courseDetails.credits : ('credits' in course) ? course.credits : 0}
             name={courseDetails !== undefined ? courseDetails.name : ''}
-            hasEquivalence={hasEquivalence}
+            showEquivalence={hasEquivalence}
             openSelector={callOpenSelector}
             remCourse={callRemCourse}
             hasWarning={hasWarning}
@@ -94,7 +103,7 @@ const DraggableCard = ({ course, courseDetails, courseId, isPassed, isCurrent, t
   )
 }
 
-const CourseCard = memo(function _CourseCard ({ courseBlock, course, credits, name, hasEquivalence, openSelector, remCourse, hasWarning, hasError, isPassed, isCurrent }: CardProps): JSX.Element {
+const CourseCard = memo(function _CourseCard ({ courseBlock, course, credits, name, showEquivalence: hasEquivalence, openSelector, remCourse, hasWarning, hasError, isPassed, isCurrent }: CardProps): JSX.Element {
   const blockId = BlockInitials(courseBlock)
   const EditIcon = (blockId === 'FG') ? EditWhiteIcon : EditBlackIcon
   const CurrentIcon = (blockId === 'FG') ? currentWhiteIcon : currentBlackIcon
@@ -108,7 +117,7 @@ const CourseCard = memo(function _CourseCard ({ courseBlock, course, credits, na
         : <div className='opacity-60 absolute w-3 top-2 left-2'><EditIcon/></div>
       )}
       {blockId === ''
-        ? <>{isPassed || isCurrent ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>}</>
+        ? <>{(isPassed || isCurrent) ? null : <button className='absolute top-0 right-2 hidden group-hover:inline' onClick={() => remCourse()}>x</button>}</>
         : <div className='absolute top-2 right-2 text-[0.6rem] opacity-75'>{blockId}</div>
       }
       <div className='flex items-center justify-center text-center flex-col'>

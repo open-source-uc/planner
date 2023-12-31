@@ -2,7 +2,6 @@ import secrets
 import warnings
 from pathlib import Path
 from typing import Literal
-from urllib.parse import urlencode, urljoin
 
 from pydantic import AnyHttpUrl, BaseSettings, Field, RedisDsn, SecretStr
 
@@ -51,25 +50,7 @@ class Settings(BaseSettings):
     # This is ignored in development mode for convenience
     root_path: str = "/api"
 
-    @property
-    def cas_callback_url(self):
-        """
-        Get the "CAS callback URL", also known as "service URL" in CAS terms.
-        After the user enters their username and password in the CAS webpage, the CAS
-        webpage will redirect the user's browser to this URL, with the CAS token
-        attached as a URL parameter.
-        Therefore, this URL must be able to receive the CAS token, create a JWT token
-        and hand it to the frontend.
-        """
-        next_url = urljoin(self.planner_url, "/")
-        auth_login_url = urljoin(self.planner_url, "/api/user/login")
-        params = urlencode({"next": next_url})
-        return f"{auth_login_url}?{params}"
-
     # Admin RUT as string. This user will always be the only admin.
-    # TODO: Maybe use the username instead of the RUT, because RUTs can have zeros in
-    # front of them and this can be confusing.
-    # Alternatively, remove leading zeros before matching admin RUTs.
     admin_rut: SecretStr = Field("")
 
     # JWT secret hex string. If this secret is leaked, anyone can forge JWT tokens for
@@ -94,15 +75,15 @@ class Settings(BaseSettings):
     # Siding mock database file.
     # If "", it does not load any mock data.
     # Failing to read the mock database is not a fatal error, only a warning.
-    siding_mock_path: Path = Path("../siding-mock-data/data.json")
+    siding_mock_path: Literal[""] | Path = Path("../siding-mock-data/index.json")
 
     # Where to store recorded SIDING responses.
     # If "", responses are not recorded.
     # Steps to record SIDING responses:
     # 1. Set SIDING_RECORD_PATH in the `.env` file to some path
-    #   (eg. "./mock-data/siding-mock.json").
-    # 2. Run the backend. You may want to clear some caches to force the SIDING
-    #   requests to execute and be recorded.
+    #   (eg. "./siding-mock-data/data.json").
+    # 2. Run the backend. You may want to reset the database so that the cache is
+    #   cleared and it forces the SIDING requests to execute and be recorded.
     # 3. Close the backend **with CTRL+C**.
     #   Force-closing the backend through VSCode will not trigger the shutdown hook to
     #   write the recorded responses.
@@ -119,19 +100,13 @@ class Settings(BaseSettings):
     # Whether to resynchronize curriculums on server startup.
     autosync_curriculums: bool = True
 
-    # Whether to resynchronize offer on server startup.
-    autosync_offer: bool = True
-
-    # Whether to resynchronize the courseinfo cache on server startup.
-    autosync_packedcourses: bool = True
-
     # URL for the Redis server.
     redis_uri: RedisDsn = Field("redis://localhost:6379")
 
     # URL for buscacursos-dl, the current temporary catalogo and buscacursos scraper
     # that we use as a courseinfo source.
     buscacursos_dl_url: AnyHttpUrl = Field(
-        "https://github.com/negamartin/buscacursos-dl/releases/download/universal-4/coursedata-noprogram.json.xz",
+        "https://github.com/kovaxis/buscacursos-dl/releases/download/universal-5/coursedata.json.xz",
     )
 
     # Logging level

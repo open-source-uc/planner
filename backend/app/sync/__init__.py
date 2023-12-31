@@ -4,194 +4,20 @@ Currently using unofficial sources until we get better API access.
 """
 
 import time
-import traceback
 from collections import OrderedDict
 
 from fastapi import HTTPException
-from prisma.models import (
-    Course as DbCourse,
-)
-from prisma.models import (
-    Curriculum as DbCurriculum,
-)
-from prisma.models import (
-    Equivalence as DbEquivalence,
-)
-from prisma.models import (
-    EquivalenceCourse as DbEquivalenceCourse,
-)
-from prisma.models import (
-    Major as DbMajor,
-)
-from prisma.models import (
-    MajorMinor as DbMajorMinor,
-)
-from prisma.models import (
-    Minor as DbMinor,
-)
-from prisma.models import (
-    Title as DbTitle,
-)
-from pydantic import ValidationError
 
-from app.plan.courseinfo import course_info, pack_course_details
 from app.plan.validation.curriculum.tree import (
     Curriculum,
     CurriculumSpec,
-    Cyear,
-    MajorCode,
-    MinorCode,
-    TitleCode,
 )
 from app.settings import settings
-from app.sync import buscacursos_dl
+from app.sync.database import curriculum_storage
 from app.sync.siding import translate as siding_translate
-from app.user.auth import UserKey
-from app.user.info import StudentContext
-
-
-async def run_upstream_sync(
-    *,
-    courses: bool,
-    curriculums: bool,
-    offer: bool,
-    packedcourses: bool,
-):
-    """
-    Populate database with "official" data.
-
-    NOTE: This function should only be called from a startup script, before any workers
-    load.
-    """
-
-    if offer:
-        print("syncing curriculum offer...")
-        # Clear available programs
-        await DbMajor.prisma().delete_many()
-        await DbMinor.prisma().delete_many()
-        await DbTitle.prisma().delete_many()
-        await DbMajorMinor.prisma().delete_many()
-        # Refetch available programs
-        await siding_translate.load_siding_offer_to_database()
-
-    if curriculums or courses:
-        # If we delete courses, we must also delete equivalences (because equivalences
-        # reference courses)
-        # If we delete equivalences, we must also delete curriculums (because
-        # curriculums reference equivalences)
-        print("deleting stored equivalences...")
-        await DbEquivalenceCourse.prisma().delete_many()
-        await DbEquivalence.prisma().delete_many()
-
-    if courses:
-        print("syncing course database...")
-        # Clear previous courses
-        await DbCourse.prisma().delete_many()
-        # Get course data from "official" source
-        # Currently we have no official source
-        await buscacursos_dl.fetch_to_database()
-
-    if curriculums or packedcourses or courses:
-        # If we updated the courses, we must update the packed courses too
-
-        print("updating packed course details...")
-        # Pack course details from main course database
-        await pack_course_details()
-
-    if curriculums or courses:
-        # Equivalences and curriculums are cached lazily
-        print("deleting curriculum cache...")
-        await DbCurriculum.prisma().delete_many()
-        print("syncing all curriculums...")
-        cyears: set[Cyear] = set()
-        for major in await DbMajor.prisma().find_many():
-            cyear = Cyear.parse_obj({"raw": major.cyear})
-            cyears.add(cyear)
-            await _get_curriculum_piece(
-                CurriculumSpec(
-                    cyear=cyear,
-                    major=MajorCode(major.code),
-                    minor=None,
-                    title=None,
-                ),
-            )
-        for minor in await DbMinor.prisma().find_many():
-            cyear = Cyear.parse_obj({"raw": minor.cyear})
-            cyears.add(cyear)
-            await _get_curriculum_piece(
-                CurriculumSpec(
-                    cyear=cyear,
-                    major=None,
-                    minor=MinorCode(minor.code),
-                    title=None,
-                ),
-            )
-        for title in await DbTitle.prisma().find_many():
-            cyear = Cyear.parse_obj({"raw": title.cyear})
-            cyears.add(cyear)
-            await _get_curriculum_piece(
-                CurriculumSpec(
-                    cyear=cyear,
-                    major=None,
-                    minor=None,
-                    title=TitleCode(title.code),
-                ),
-            )
-        for cyear in cyears:
-            await _get_curriculum_piece(
-                CurriculumSpec(
-                    cyear=cyear,
-                    major=None,
-                    minor=None,
-                    title=None,
-                ),
-            )
-
-
-async def _get_curriculum_piece(spec: CurriculumSpec) -> Curriculum:
-    """
-    Get the curriculum definition for a given spec.
-    In other words, fetch the full curriculum corresponding to a given
-    cyear-major-minor-title combination.
-    Note that currently when there is no major/minor selected, an empty curriculum is
-    returned.
-    Currently, these have to be requested from SIDING, so some caching is performed.
-    """
-
-    db_curr = await DbCurriculum.prisma().find_unique(
-        where={
-            "cyear_major_minor_title": {
-                "cyear": str(spec.cyear),
-                "major": spec.major or "",
-                "minor": spec.minor or "",
-                "title": spec.title or "",
-            },
-        },
-    )
-    if db_curr is not None:
-        try:
-            return Curriculum.parse_raw(db_curr.curriculum)
-        except ValidationError:
-            print(f"regenerating curriculum for {spec}: failed to parse cache")
-            traceback.print_exc()
-
-    courseinfo = await course_info()
-    curr = await siding_translate.fetch_curriculum(courseinfo, spec)
-    await DbCurriculum.prisma().query_raw(
-        """
-        INSERT INTO "Curriculum"
-            (cyear, major, minor, title, curriculum)
-        VALUES($1, $2, $3, $4, $5)
-        ON CONFLICT (cyear, major, minor, title)
-        DO UPDATE SET curriculum = $5
-        """,
-        str(spec.cyear),
-        spec.major or "",
-        spec.minor or "",
-        spec.title or "",
-        curr.json(),
-    )
-    return curr
+from app.user.auth import UserKey, allow_force_login
+from app.user.info import StudentInfo
+from app.user.key import Rut
 
 
 async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
@@ -202,50 +28,35 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
     returned `Curriculum`.
     Therefore, each call to `get_curriculum` should result in a fresh curriculum.
     """
-    out = Curriculum.empty()
+
+    storage = await curriculum_storage()
+    out = Curriculum.empty(spec)
 
     # Fetch major (or common plan)
-    major = await _get_curriculum_piece(
-        CurriculumSpec(
-            cyear=spec.cyear,
-            major=spec.major,
-            minor=None,
-            title=None,
-        ),
-    )
-    out.extend(major)
+    curr = storage.get_major(spec)
+    if curr is not None:
+        out.extend(curr)
 
     # Fetch minor
-    if spec.minor is not None:
-        minor = await _get_curriculum_piece(
-            CurriculumSpec(
-                cyear=spec.cyear,
-                major=None,
-                minor=spec.minor,
-                title=None,
-            ),
-        )
-        out.extend(minor)
+    if spec.has_minor():
+        curr = storage.get_minor(spec)
+        if curr is not None:
+            out.extend(curr)
 
     # Fetch title
-    if spec.title is not None:
-        title = await _get_curriculum_piece(
-            CurriculumSpec(
-                cyear=spec.cyear,
-                major=None,
-                minor=None,
-                title=spec.title,
-            ),
-        )
-        out.extend(title)
+    if spec.has_title():
+        curr = storage.get_title(spec)
+        if curr is not None:
+            out.extend(curr)
 
     return out
 
 
-_student_context_cache: OrderedDict[str, tuple[StudentContext, float]] = OrderedDict()
+# TODO: Move this to redis
+_student_context_cache: OrderedDict[Rut, tuple[StudentInfo, float]] = OrderedDict()
 
 
-async def get_student_data(user: UserKey) -> StudentContext:
+async def get_student_data(user: UserKey) -> StudentInfo:
     # Use entries in cache
     if user.rut in _student_context_cache:
         return _student_context_cache[user.rut][0]
@@ -262,29 +73,30 @@ async def get_student_data(user: UserKey) -> StudentContext:
     print(f"fetching user data for student {user.rut} from SIDING...")
     try:
         info = await siding_translate.fetch_student_info(user.rut)
-        passed, in_course = await siding_translate.fetch_student_previous_courses(
-            user.rut,
-            info,
-        )
-    except ValueError as err:
-        # TODO: Refactor ValueError to use a custom exception
-        if "Not a valid" in str(err):
+    except siding_translate.InvalidStudentError as err:
+        if await allow_force_login(user):
+            # Allow moderators and admins to login anyway, even with incomplete info
+            info = StudentInfo(
+                full_name=str(user.rut),
+                cyear="?",
+                is_cyear_supported=False,
+                reported_major=None,
+                reported_minor=None,
+                reported_title=None,
+                passed_courses=[],
+                current_semester=0,
+                next_semester=0,
+                admission=(1900, 1),
+            )
+        else:
             raise HTTPException(
                 403,
                 "User is not a valid engineering student.",
             ) from err
-        raise ValueError from err
-
-    ctx = StudentContext(
-        info=info,
-        passed_courses=passed,
-        current_semester=len(passed) - (1 if in_course else 0),
-        next_semester=len(passed),
-    )
 
     # Add to cache and return
     _student_context_cache[user.rut] = (
-        ctx,
+        info,
         time.monotonic() + settings.student_info_expire,
     )
-    return ctx
+    return info

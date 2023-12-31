@@ -2,9 +2,7 @@ from fastapi import APIRouter, Depends
 
 from app import sync
 from app.limiting import ratelimit_guest, ratelimit_user
-from app.plan.courseinfo import (
-    course_info,
-)
+from app.plan.course import PseudoCourse
 from app.plan.generation import generate_empty_plan, generate_recommended_plan
 from app.plan.plan import ValidatablePlan
 from app.plan.storage import (
@@ -19,13 +17,15 @@ from app.plan.storage import (
 )
 from app.plan.validation.curriculum.solve import solve_curriculum
 from app.plan.validation.diagnostic import ValidationResult
-from app.plan.validation.validate import diagnose_plan
+from app.plan.validation.validate import diagnose_plan, list_swapouts
+from app.sync.database import course_info
 from app.user.auth import (
     ModKey,
     UserKey,
     require_authentication,
     require_mod_auth,
 )
+from app.user.key import Rut
 
 router = APIRouter(prefix="/plan")
 
@@ -45,7 +45,7 @@ async def empty_plan_for_user(user: UserKey = Depends(require_authentication)):
 
 @router.get("/empty_for_any", response_model=ValidatablePlan)
 async def empty_plan_for_any_user(
-    user_rut: str,
+    user_rut: Rut,
     mod: ModKey = Depends(require_mod_auth),
 ):
     """
@@ -93,7 +93,7 @@ async def validate_plan_for_user(
 @router.post("/validate_for_any", response_model=ValidationResult)
 async def validate_plan_for_any_user(
     plan: ValidatablePlan,
-    user_rut: str,
+    user_rut: Rut,
     mod: ModKey = Depends(require_mod_auth),
 ) -> ValidationResult:
     """
@@ -103,6 +103,26 @@ async def validate_plan_for_any_user(
     """
     user_ctx = await sync.get_student_data(mod.as_any_user(user_rut))
     return await diagnose_plan(plan, user_ctx)
+
+
+@router.post("/swapouts", response_model=list[list[PseudoCourse]])
+async def list_swapouts_guest(
+    plan: ValidatablePlan,
+    semester_idx: int,
+    class_idx: int,
+    _limited: None = Depends(ratelimit_guest("8/5second")),
+):
+    return await list_swapouts(plan, semester_idx, class_idx)
+
+
+@router.post("/swapouts_for", response_model=list[list[PseudoCourse]])
+async def list_swapouts_for(
+    plan: ValidatablePlan,
+    semester_idx: int,
+    class_idx: int,
+    _limited: UserKey = Depends(ratelimit_user("7/5second")),
+):
+    return await list_swapouts(plan, semester_idx, class_idx)
 
 
 @router.post("/curriculum_graph")
@@ -153,7 +173,7 @@ async def save_plan(
 async def save_any_plan(
     name: str,
     plan: ValidatablePlan,
-    user_rut: str,
+    user_rut: Rut,
     mod: ModKey = Depends(require_mod_auth),
 ) -> PlanView:
     """
@@ -181,7 +201,7 @@ async def read_plans(
 
 @router.get("/storage/any", response_model=list[LowDetailPlanView])
 async def read_any_plans(
-    user_rut: str,
+    user_rut: Rut,
     mod: ModKey = Depends(require_mod_auth),
 ) -> list[LowDetailPlanView]:
     """

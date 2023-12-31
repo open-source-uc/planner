@@ -21,16 +21,15 @@ from app.plan.validation.courses.logic import (
 )
 from app.plan.validation.courses.simplify import simplify
 from app.plan.validation.diagnostic import (
-    AmbiguousCourseErr,
+    AmbiguousCourseWarn,
     CourseRequirementErr,
-    SemesterCreditsErr,
-    SemesterCreditsWarn,
+    SemesterCreditsDiag,
     SemestralityWarn,
     UnavailableCourseWarn,
     UnknownCourseErr,
     ValidationResult,
 )
-from app.user.info import StudentContext
+from app.user.info import StudentInfo
 
 # Students can only take this amount of credits if they meet certain criteria.
 # Currently, that criteria is not failing any course in the previous X
@@ -92,7 +91,7 @@ class ValidationContext:
     # Original validatable plan object.
     plan: ValidatablePlan
     # User context, if any
-    user_ctx: StudentContext | None
+    user_ctx: StudentInfo | None
     # On which semester to start validating requirements and other associated
     # validations.
     # Should be the first semester that has not yet been taken (ie. the semester after
@@ -103,7 +102,7 @@ class ValidationContext:
         self,
         courseinfo: CourseInfo,
         plan: ValidatablePlan,
-        user_ctx: StudentContext | None,
+        user_ctx: StudentInfo | None,
     ) -> None:
         # Map from coursecode to course instance
         self.by_code = {}
@@ -234,7 +233,7 @@ class ValidationContext:
                     if info is not None and not info.is_unessential:
                         ambiguous.append(self.class_ids[sem_i][i])
         if ambiguous:
-            out.add(AmbiguousCourseErr(associated_to=ambiguous))
+            out.add(AmbiguousCourseWarn(associated_to=ambiguous))
 
     def validate_all_availability(self, out: ValidationResult):
         """
@@ -247,7 +246,7 @@ class ValidationContext:
                 if isinstance(course, ConcreteId):
                     info = self.courseinfo.try_course(course.code)
                     if info is not None:
-                        if not info.is_available:
+                        if not self.courseinfo.is_available(course.code):
                             # This course is plain unavailable
                             unavailable.append(self.class_ids[sem_i][i])
                         elif (
@@ -277,17 +276,19 @@ class ValidationContext:
                 sem_credits += self.courseinfo.get_credits(course) or 0
             if sem_credits > CREDIT_HARD_MAX:
                 out.add(
-                    SemesterCreditsErr(
+                    SemesterCreditsDiag(
+                        is_err=True,
                         associated_to=[sem_i],
-                        max_allowed=CREDIT_HARD_MAX,
+                        credit_limit=CREDIT_HARD_MAX,
                         actual=sem_credits,
                     ),
                 )
             elif sem_credits > CREDIT_SOFT_MAX:
                 out.add(
-                    SemesterCreditsWarn(
+                    SemesterCreditsDiag(
+                        is_err=False,
                         associated_to=[sem_i],
-                        max_recommended=CREDIT_SOFT_MAX,
+                        credit_limit=CREDIT_SOFT_MAX,
                         actual=sem_credits,
                     ),
                 )
@@ -547,12 +548,11 @@ def is_course_indirectly_available(courseinfo: CourseInfo, code: str):
     """
     Check if a course is available OR there is an available equivalent.
     """
+    if courseinfo.is_available(code):
+        return True
     info = courseinfo.try_course(code)
     if info is None:
         return False
-    if info.is_available:
-        return True
-    modernized_info = courseinfo.try_course(info.canonical_equiv)
-    if modernized_info is not None and modernized_info.is_available:
+    if courseinfo.is_available(info.canonical_equiv):
         return True
     return False

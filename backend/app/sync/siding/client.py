@@ -14,6 +14,7 @@ from zeep.transports import AsyncTransport
 
 from app.plan.validation.curriculum.tree import MajorCode, MinorCode, TitleCode
 from app.settings import settings
+from app.user.key import Rut
 
 
 class StringArrayInner(BaseModel):
@@ -67,7 +68,7 @@ class PlanEstudios(BaseModel):
 
 
 class Curso(BaseModel):
-    Sigla: str
+    Sigla: str | None
     Nombre: str | None
     Semestralidad: Literal["I", "II", "I y II"] | None
     Creditos: Annotated[int, Field(ge=0)] | None
@@ -106,7 +107,7 @@ class BloqueMalla(BaseModel):
     # Catedra, catedra y laboratorio, etc
     # A veces simplemente no hay info
     Tipocurso: str | None
-    BloqueAcademico: str
+    BloqueAcademico: str | None
     # Seems to always be empty.
     Requisitos: ListaRequisitos | None
     # Seems to always be empty.
@@ -171,6 +172,12 @@ class CursoHecho(BaseModel):
     UnidadAcademica: str | None
 
 
+def decode_cyears(cyears: StringArray | None) -> list[str]:
+    if cyears is None:
+        return []
+    return cyears.strings.string
+
+
 class SoapClient:
     soap_client: AsyncClient | None
     mock_db: dict[str, dict[str, Any]]
@@ -185,7 +192,20 @@ class SoapClient:
         # Load mock data
         if settings.siding_mock_path != "":
             try:
-                self.mock_db = json.loads(settings.siding_mock_path.read_text())
+                # Clear mock DB
+                self.mock_db = {}
+                # Read all files in the index
+                file_list: list[str] = json.load(settings.siding_mock_path.open())
+                for file_name in file_list:
+                    # Load this submock
+                    file_path = settings.siding_mock_path.parent.joinpath(file_name)
+                    submock: dict[str, dict[str, Any]] = json.load(file_path.open())
+                    # Merge submock with main mock DB
+                    for endpoint_name, responses in submock.items():
+                        db_responses = self.mock_db.setdefault(endpoint_name, {})
+                        for request_key, response in responses.items():
+                            db_responses[request_key] = response
+                # Log that we've finished
                 cnt = sum(len(r) for r in self.mock_db.values())
                 logging.info(
                     f"Loaded {cnt} SIDING mock responses from"
@@ -330,7 +350,6 @@ async def get_curriculum_for_spec(study_spec: PlanEstudios) -> list[BloqueMalla]
     """
     Get a list of curriculum blocks for the given spec.
     """
-    print(study_spec.dict())
     return parse_obj_as(
         list[BloqueMalla],
         await client.call_endpoint(
@@ -413,7 +432,7 @@ async def get_predefined_list(list_code: str) -> list[Curso]:
     )
 
 
-async def get_student_info(rut: str) -> InfoEstudiante:
+async def get_student_info(rut: Rut) -> InfoEstudiante:
     """
     Get the information associated with the given student, by RUT.
     The RUT must be in the format "011222333-K", the same format used by CAS.
@@ -424,7 +443,7 @@ async def get_student_info(rut: str) -> InfoEstudiante:
     )
 
 
-async def get_student_done_courses(rut: str) -> list[CursoHecho]:
+async def get_student_done_courses(rut: Rut) -> list[CursoHecho]:
     """
     Get the information associated with the given student, by RUT.
     The RUT must be in the format "011222333-K", the same format used by CAS.
