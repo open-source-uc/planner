@@ -6,7 +6,9 @@ import svgr from 'vite-plugin-svgr'
 import dotenv from 'dotenv'
 import fs from 'fs'
 
-function loadEnvWithDefault() {
+
+// TODO: don't redefine this function in multiple places, move to utils
+const loadEnvWithDefault = () => {
   const defaultEnv = dotenv.parse(fs.readFileSync('.env.default'))
   const env = dotenv.config({ path: ".env" }).parsed
 

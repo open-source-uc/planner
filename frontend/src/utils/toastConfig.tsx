@@ -1,9 +1,21 @@
 import { toast } from 'react-toastify'
+import dotenv from 'dotenv'
+import fs from 'fs'
+
+const loadEnvWithDefault = () => {
+  const defaultEnv = dotenv.parse(fs.readFileSync('.env.default'))
+  const env = dotenv.config({ path: ".env" }).parsed
+
+  // Combine default and environment-specific env variables
+  return { ...defaultEnv, ...env }
+}
 
 export function toastConfig (): void {
+  const env = loadEnvWithDefault()
+
   toast.onChange((payload: any) => {
     if (payload.status === 'removed' && payload.type === toast.TYPE.ERROR && payload.id === 'ERROR401') {
-      window.location.href = `${(import.meta.env.VITE_BASE_API_URL || "/api") as string}/user/login`
+      window.location.href = `${env.VITE_BASE_API_URL as string}/user/login`
       localStorage.removeItem('access-token')
     } else if (payload.status === 'removed' && payload.type === toast.TYPE.ERROR && payload.id === 'ERROR403') {
       window.location.href = '/logout'

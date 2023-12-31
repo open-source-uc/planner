@@ -1,7 +1,19 @@
 import Axios from 'axios'
+import dotenv from 'dotenv'
+import fs from 'fs'
+
+const loadEnvWithDefault = () => {
+  const defaultEnv = dotenv.parse(fs.readFileSync('.env.default'))
+  const env = dotenv.config({ path: ".env" }).parsed
+
+  // Combine default and environment-specific env variables
+  return { ...defaultEnv, ...env }
+}
+
+const env = loadEnvWithDefault()
 
 const axios = Axios.create({
-  baseURL: import.meta.env.VITE_BASE_API_URL || "/api",
+  baseURL: env.VITE_BASE_API_URL,
 })
 
 // Inject the token into the request header
