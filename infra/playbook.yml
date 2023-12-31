@@ -28,12 +28,10 @@
       private: false
     - name: "siding_password"
       prompt: "SIDING password (optional)"
-    - name: "netdata_token"
-      prompt: "Netdata Claim Token (optional)"
-    - name: "netdata_room_id"
-      prompt: "Netdata Room ID (optional)"
-    - name: "tailscale_authkey"
-      prompt: "Tailscale Authkey (optional)"
+    # - name: "netdata_token"
+    #   prompt: "Netdata Claim Token (optional)"
+    # - name: "netdata_room_id"
+    #   prompt: "Netdata Room ID (optional)"
   tasks:
     - name: Check that we're running Rocky Linux 9
       ansible.builtin.assert:
@@ -98,77 +96,13 @@
           - dnf-automatic
           # NTS-compatible NTP client
           - chrony
-          # For the tailscale selinux policy
-          - selinux-policy-devel
-          # For installing the just command runner
-          - snapd
-
-          # Misc
-          - fish
-          - fortune-mod
-          - neofetch
-          - cowsay
 
         state: present
 
-    - name: Install and configure the micro editor # noqa: risky-shell-pipe command-instead-of-module
-      ansible.builtin.shell:
-        cmd: curl https://getmic.ro/r | bash
-        creates: /usr/bin/micro
-        chdir: /usr/bin
-
-    - name: Enable snapd
-      ansible.builtin.service:
-        name: snapd.socket
-        enabled: true
-        state: started
-
-    - name: Wait for snapd to finish seeding (snap wait system seed.loaded)
-      ansible.builtin.command:
-        cmd: snap wait system seed.loaded
-      check_mode: false
-      changed_when: false
-      failed_when: false
-
-
-    - name: Enable classic snap support
-      ansible.builtin.command:
-        cmd: ln -s /var/lib/snapd/snap /snap
-        creates: /snap
-
-    - name: Install the just command runner
-      ansible.builtin.command:
-        cmd: snap install just --classic --edge
-        creates: /snap/bin/just
-
-    - name: Install the magic wormhole
-      ansible.builtin.command:
-        cmd: snap install wormhole
-        creates: /snap/bin/wormhole
-
-    - name: Enable selinux
-      ansible.posix.selinux:
-        policy: targeted
-        state: enforcing
-
-    - name: Install and connect to Tailscale network
-      ansible.builtin.include_role:
-        name: artis3n.tailscale
-      vars:
-        tailscale_args: "--ssh"
-        tailscale_up_skip: "{{ tailscale_authkey | length == 0 }}"
-      register: tailscale_role
-
-    - name: Notify Tailscale changes # noqa: no-handler
-      ansible.builtin.debug:
-        msg: "Tailscale changed, notifying handlers"
-      when: tailscale_role.changed
-      notify:
-        - Clone Tailscale selinux policy
-        - Compile Tailscale selinux policy
-        - Stop tailscale
-        - Load Tailscale selinux policy
-        - Start tailscale
+    # - name: Enable selinux
+    #   ansible.posix.selinux:
+    #     policy: targeted
+    #     state: enforcing
 
     - name: Use higher default receive buffer
       ansible.posix.sysctl:
@@ -307,11 +241,11 @@
     - name: Configure NTP to use Cloudflare Time Services
       ansible.builtin.lineinfile:
         path: /etc/chrony.conf
-        regexp: '^pool'
-        line: 'pool time.cloudflare.com iburst nts'
+        regexp: "^pool"
+        line: "pool time.cloudflare.com iburst nts"
         state: present
-        validate: 'chronyd -p -f %s'
-        insertafter: '^# Please consider joining the pool'
+        validate: "chronyd -p -f %s"
+        insertafter: "^# Please consider joining the pool"
         firstmatch: true
       notify: Restart (and enable) chronyd
 
@@ -321,55 +255,39 @@
         enabled: true
         state: started
 
-    - name: Check if netdata is installed
-      ansible.builtin.command:
-        cmd: netdata -v
-      register: netdata_installed
-      changed_when: false
-      failed_when: false
-      check_mode: false
+    # - name: Check if netdata is installed
+    #   ansible.builtin.command:
+    #     cmd: netdata -v
+    #   register: netdata_installed
+    #   changed_when: false
+    #   failed_when: false
+    #   check_mode: false
 
-    - name: Download netdata kickstart
-      ansible.builtin.get_url:
-        url: https://my-netdata.io/kickstart.sh
-        dest: /tmp/netdata-kickstart.sh
-        mode: '0755'
-      when: netdata_installed.rc != 0 and (netdata_token | length > 0) and (netdata_room_id | length > 0)
+    # - name: Download netdata kickstart
+    #   ansible.builtin.get_url:
+    #     url: https://my-netdata.io/kickstart.sh
+    #     dest: /tmp/netdata-kickstart.sh
+    #     mode: "0755"
+    #   when: netdata_installed.rc != 0 and (netdata_token | length > 0) and (netdata_room_id | length > 0)
 
-    - name: Install and claim Netdata
-      ansible.builtin.command:
-        cmd: sh /tmp/netdata-kickstart.sh {{ i_args }}
-        creates: /sbin/netdata
-      when: netdata_installed.rc != 0 and (netdata_token | length > 0) and (netdata_room_id | length > 0)
-      vars:
-        i_args: "--claim-token {{ netdata_token }} --claim-rooms {{ netdata_room_id }} --non-interactive --stable-channel --disable-telemetry"
+    # - name: Install and claim Netdata
+    #   ansible.builtin.command:
+    #     cmd: sh /tmp/netdata-kickstart.sh {{ i_args }}
+    #     creates: /sbin/netdata
+    #   when: netdata_installed.rc != 0 and (netdata_token | length > 0) and (netdata_room_id | length > 0)
+    #   vars:
+    #     i_args: "--claim-token {{ netdata_token }} --claim-rooms {{ netdata_room_id }} --non-interactive --stable-channel --disable-telemetry"
 
-    - name: Start and enable Netdata
-      ansible.builtin.service:
-        name: netdata
-        enabled: true
-        state: started
-
-    - name: Get location of fish
-      ansible.builtin.command:
-        cmd: which fish
-      register: fish_location
-      changed_when: false
-      failed_when: false
-      check_mode: false
-
-    - name: Add fish to /etc/shells
-      ansible.builtin.lineinfile:
-        path: /etc/shells
-        line: "{{ fish_location.stdout }}"
-        state: present
-        create: true
-        mode: "0644"
+    # - name: Start and enable Netdata
+    #   ansible.builtin.service:
+    #     name: netdata
+    #     enabled: true
+    #     state: started
 
     - name: Create "planner" user
       ansible.builtin.user:
         name: planner
-        shell: "{{ fish_location.stdout }}"
+        shell: /bin/bash
         createhome: true
         home: /home/planner
         groups:
@@ -430,101 +348,101 @@
         planner_url: "https://{{ planner_domain }}"
       when: planner_domain | length > 0
 
-    - name: Configure back-end mode
-      ansible.builtin.lineinfile:
-        path: /home/planner/planner/backend/.env
-        regexp: '^PYTHON_ENV'
-        line: 'PYTHON_ENV={{ env_mode }}'
-        state: present
-        insertafter: '^# PYTHON_ENV'
-        firstmatch: true
-      when: env_mode | length > 0
+    # - name: Configure back-end mode
+    #   ansible.builtin.lineinfile:
+    #     path: /home/planner/planner/backend/.env
+    #     regexp: "^PYTHON_ENV"
+    #     line: "PYTHON_ENV={{ env_mode }}"
+    #     state: present
+    #     insertafter: "^# PYTHON_ENV"
+    #     firstmatch: true
+    #   when: env_mode | length > 0
 
-    - name: Configure front-end mode
-      ansible.builtin.lineinfile:
-        path: /home/planner/planner/frontend/.env
-        regexp: '^NODE_ENV'
-        line: 'NODE_ENV={{ env_mode }}'
-        state: present
-        insertafter: '^# NODE_ENV'
-        firstmatch: true
-      when: env_mode | length > 0
+    # - name: Configure front-end mode
+    #   ansible.builtin.lineinfile:
+    #     path: /home/planner/planner/frontend/.env
+    #     regexp: "^NODE_ENV"
+    #     line: "NODE_ENV={{ env_mode }}"
+    #     state: present
+    #     insertafter: "^# NODE_ENV"
+    #     firstmatch: true
+    #   when: env_mode | length > 0
 
-    - name: Configure back-end URL
-      ansible.builtin.lineinfile:
-        path: /home/planner/planner/backend/.env
-        regexp: '^PLANNER_URL'
-        line: 'PLANNER_URL={{ planner_url }}'
-        state: present
-        insertafter: '^# PLANNER_URL'
-        firstmatch: true
-      when: planner_domain | length > 0
+    # - name: Configure back-end URL
+    #   ansible.builtin.lineinfile:
+    #     path: /home/planner/planner/backend/.env
+    #     regexp: "^PLANNER_URL"
+    #     line: "PLANNER_URL={{ planner_url }}"
+    #     state: present
+    #     insertafter: "^# PLANNER_URL"
+    #     firstmatch: true
+    #   when: planner_domain | length > 0
 
-    - name: Configure CAS URL
-      ansible.builtin.lineinfile:
-        path: /home/planner/planner/backend/.env
-        regexp: '^CAS_SERVER_URL'
-        line: 'CAS_SERVER_URL={{ cas_server_url }}'
-        state: present
-        insertafter: '^# CAS_SERVER_URL'
-        firstmatch: true
-      when: cas_server_url | length > 0
+    # - name: Configure CAS URL
+    #   ansible.builtin.lineinfile:
+    #     path: /home/planner/planner/backend/.env
+    #     regexp: "^CAS_SERVER_URL"
+    #     line: "CAS_SERVER_URL={{ cas_server_url }}"
+    #     state: present
+    #     insertafter: "^# CAS_SERVER_URL"
+    #     firstmatch: true
+    #   when: cas_server_url | length > 0
 
-    - name: Configure admin RUT
-      ansible.builtin.lineinfile:
-        path: /home/planner/planner/backend/.env
-        regexp: '^ADMIN_RUT'
-        line: 'ADMIN_RUT={{ admin_rut }}'
-        state: present
-        insertafter: '^# ADMIN_RUT'
-        firstmatch: true
-      when: admin_rut | length > 0
+    # - name: Configure admin RUT
+    #   ansible.builtin.lineinfile:
+    #     path: /home/planner/planner/backend/.env
+    #     regexp: "^ADMIN_RUT"
+    #     line: "ADMIN_RUT={{ admin_rut }}"
+    #     state: present
+    #     insertafter: "^# ADMIN_RUT"
+    #     firstmatch: true
+    #   when: admin_rut | length > 0
 
-    - name: Configure SIDING username
-      ansible.builtin.lineinfile:
-        path: /home/planner/planner/backend/.env
-        regexp: '^SIDING_USERNAME'
-        line: 'SIDING_USERNAME={{ siding_username }}'
-        state: present
-        insertafter: '^# SIDING_USERNAME'
-        firstmatch: true
-      when: siding_username | length > 0
+    # - name: Configure SIDING username
+    #   ansible.builtin.lineinfile:
+    #     path: /home/planner/planner/backend/.env
+    #     regexp: "^SIDING_USERNAME"
+    #     line: "SIDING_USERNAME={{ siding_username }}"
+    #     state: present
+    #     insertafter: "^# SIDING_USERNAME"
+    #     firstmatch: true
+    #   when: siding_username | length > 0
 
-    - name: Configure SIDING password
-      ansible.builtin.lineinfile:
-        path: /home/planner/planner/backend/.env
-        regexp: '^SIDING_PASSWORD'
-        line: 'SIDING_PASSWORD={{ siding_password }}'
-        state: present
-        insertafter: '^# SIDING_PASSWORD'
-        firstmatch: true
-      when: siding_password | length > 0
+    # - name: Configure SIDING password
+    #   ansible.builtin.lineinfile:
+    #     path: /home/planner/planner/backend/.env
+    #     regexp: "^SIDING_PASSWORD"
+    #     line: "SIDING_PASSWORD={{ siding_password }}"
+    #     state: present
+    #     insertafter: "^# SIDING_PASSWORD"
+    #     firstmatch: true
+    #   when: siding_password | length > 0
 
-    - name: Check if JWT secret is already configured
-      ansible.builtin.command:
-        cmd: grep -q '^JWT_SECRET' /home/planner/planner/backend/.env
-      register: jwt_secret_check
-      check_mode: false
-      changed_when: false
-      failed_when: false
+    # - name: Check if JWT secret is already configured
+    #   ansible.builtin.command:
+    #     cmd: grep -q '^JWT_SECRET' /home/planner/planner/backend/.env
+    #   register: jwt_secret_check
+    #   check_mode: false
+    #   changed_when: false
+    #   failed_when: false
 
-    - name: Configure JWT secret
-      ansible.builtin.lineinfile:
-        path: /home/planner/planner/backend/.env
-        regexp: '^JWT_SECRET'
-        line: "JWT_SECRET={{ lookup('community.general.random_string', length=64, base64=True) }}"
-        state: present
-        insertafter: '^# JWT_SECRET'
-        firstmatch: true
-      when: jwt_secret_check.rc != 0
+    # - name: Configure JWT secret
+    #   ansible.builtin.lineinfile:
+    #     path: /home/planner/planner/backend/.env
+    #     regexp: "^JWT_SECRET"
+    #     line: "JWT_SECRET={{ lookup('community.general.random_string', length=64, base64=True) }}"
+    #     state: present
+    #     insertafter: "^# JWT_SECRET"
+    #     firstmatch: true
+    #   when: jwt_secret_check.rc != 0
 
-    - name: Configure front-end URL
-      ansible.builtin.lineinfile:
-        path: /home/planner/planner/frontend/.env
-        regexp: '^PLANNER_URL'
-        line: 'PLANNER_URL={{ planner_url }}'
-        state: present
-      when: planner_domain | length > 0
+    # - name: Configure front-end URL
+    #   ansible.builtin.lineinfile:
+    #     path: /home/planner/planner/frontend/.env
+    #     regexp: "^PLANNER_URL"
+    #     line: "PLANNER_URL={{ planner_url }}"
+    #     state: present
+    #   when: planner_domain | length > 0
 
     - name: Create caddy_data volume
       ansible.builtin.command:
@@ -557,37 +475,3 @@
         group: root
         mode: "0644"
       when: machine_name | length > 0
-
-    - name: Clone Tailscale selinux policy
-      ansible.builtin.git:
-        repo: "git@github.com:abhiseksanyal/tailscale-selinux-policy.git"
-        dest: /usr/share/selinux/devel/tailscale
-        version: "83c908e4c2bb6521054afd03390ebbc20ab9e9e7"
-
-    - name: Compile Tailscale selinux policy
-      ansible.builtin.command:
-        cmd:
-          - make -f ../Makefile tailscaled.pp
-        creates: /usr/share/selinux/devel/tailscale/tailscale.pp
-        chdir: /usr/share/selinux/devel/tailscale
-
-    - name: Stop tailscale
-      ansible.builtin.service:
-        name: tailscaled
-        state: stopped
-
-    - name: Load Tailscale selinux policy
-      ansible.builtin.command:
-        cmd:
-          - semodule -i tailscaled.pp
-          - restorecon /usr/sbin/tailscaled
-          - restorecon /lib/systemd/system/tailscaled.service
-          - restorecon -R /var/lib/tailscale
-          - restorecon -R /var/run/tailscale
-        chdir: /usr/share/selinux/devel/tailscale
-      changed_when: true
-
-    - name: Start tailscale
-      ansible.builtin.service:
-        name: tailscaled
-        state: started
