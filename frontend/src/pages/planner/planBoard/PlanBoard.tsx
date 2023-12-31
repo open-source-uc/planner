@@ -1,20 +1,22 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, type MouseEventHandler } from 'react'
 import SemesterColumn from './SemesterColumn'
 import { type PseudoCourseId, type PseudoCourseDetail } from '../utils/Types'
 import { useDndScrolling, createVerticalStrength, createHorizontalStrength } from 'react-dnd-scrolling'
 import 'react-toastify/dist/ReactToastify.css'
 import { type ValidationResult } from '../../../client'
 import { getClassId, getValidationDigest } from '../utils/PlanBoardFunctions'
+import { type AuthState } from '../../../contexts/auth.context'
 
 interface PlanBoardProps {
   classesGrid: PseudoCourseId[][]
-  authState: any
+  authState: AuthState | null
   validationResult: ValidationResult | null
   classesDetails: Record<string, PseudoCourseDetail>
   moveCourse: Function
   openModal: Function
   addCourse: Function
   remCourse: Function
+  handleContextMenu: MouseEventHandler<HTMLDivElement>
 }
 
 // Estos parametros controlan a cuantos pixeles de distancia al borde de la pantalla se activa el scroll
@@ -25,7 +27,7 @@ const hStrength = createHorizontalStrength(300)
  * Displays several semesters, as well as several classes per semester.
  */
 
-const PlanBoard = ({ classesGrid = [], authState, validationResult, classesDetails, moveCourse, openModal, addCourse, remCourse }: PlanBoardProps): JSX.Element => {
+const PlanBoard = ({ classesGrid = [], authState, validationResult, classesDetails, moveCourse, openModal, addCourse, remCourse, handleContextMenu }: PlanBoardProps): JSX.Element => {
   const [active, setActive] = useState<{ semester: number, index: number } | null>(null)
   const boardRef = useRef(null)
   useDndScrolling(boardRef, { horizontalStrength: hStrength, verticalStrength: vStrength })
@@ -48,6 +50,7 @@ const PlanBoard = ({ classesGrid = [], authState, validationResult, classesDetai
               isDragging={active !== null}
               activeIndex={(active !== null && active.semester === semester) ? active.index : null}
               setActive={setActive}
+              handleContextMenu={handleContextMenu}
             />
         ))}
         {[0, 1].map(off => (
@@ -65,6 +68,7 @@ const PlanBoard = ({ classesGrid = [], authState, validationResult, classesDetai
             isDragging={active !== null}
             activeIndex={(active !== null && active.semester === classesGrid.length + off) ? active.index : null}
             setActive={setActive}
+            handleContextMenu={handleContextMenu}
           />
         ))}
     </div>

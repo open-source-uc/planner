@@ -1,5 +1,5 @@
 from app.plan.course import EquivalenceId
-from app.plan.courseinfo import CourseDetails, CourseInfo, EquivDetails
+from app.plan.courseinfo import CourseDetails, EquivDetails
 from app.plan.validation.curriculum.tree import (
     Combination,
     Curriculum,
@@ -25,7 +25,7 @@ TITLE_TYPE = ProgramType(
 
 
 def translate_title(
-    courseinfo: CourseInfo,
+    courses: dict[str, CourseDetails],
     out: CurriculumStorage,
     spec: CurriculumSpec,
     meta: ProgramDetails,
@@ -43,7 +43,7 @@ def translate_title(
     # Traducir desde los datos scrapeados
     curr = translate_scrape(
         TITLE_TYPE,
-        courseinfo,
+        courses,
         out,
         spec,
         meta.name,
@@ -53,7 +53,7 @@ def translate_title(
     )
 
     # Agregar los OPIs a mano
-    add_opi_to_title(courseinfo, out, spec, curr)
+    add_opi_to_title(courses, out, spec, curr)
 
     # Agregar el titulo al listado
     out.set_title(spec, curr)
@@ -74,7 +74,7 @@ OPI_EXTRAS = [
 
 
 def add_opi_to_title(
-    courseinfo: CourseInfo,
+    courses: dict[str, CourseDetails],
     out: CurriculumStorage,
     spec: CurriculumSpec,
     curr: Curriculum,
@@ -94,15 +94,15 @@ def add_opi_to_title(
     assert exclusive_block.children
 
     # Conseguir la equivalencia de OPIs
-    opi_equiv = build_opi_equiv(courseinfo, out, spec)
+    opi_equiv = build_opi_equiv(courses, out, spec)
 
     # Meter los codigos en un diccionario
     opi_set: set[str] = set()
     ipre_set: set[str] = set()
     for code in opi_equiv.courses:
-        info = courseinfo.try_course(code)
-        if info is None:
+        if code not in courses:
             continue
+        info = courses[code]
         # TODO: Preguntar cual es la multiplicidad de las IPres
         if (
             info.name == "Investigacion o Proyecto"
@@ -157,7 +157,7 @@ def add_opi_to_title(
 
 
 def build_opi_equiv(
-    courseinfo: CourseInfo,
+    courses: dict[str, CourseDetails],
     out: CurriculumStorage,
     spec: CurriculumSpec,
 ) -> EquivDetails:
@@ -169,7 +169,7 @@ def build_opi_equiv(
         return out.lists[opi_code]
 
     # Sino, recolectar los cursos que calzan con los requisitos
-    opis = [course.code for course in courseinfo.courses.values() if is_opi(course)]
+    opis = [course.code for course in courses.values() if is_opi(course)]
     opis.extend(OPI_EXTRAS)
     opi_equiv = EquivDetails(
         code=opi_code,

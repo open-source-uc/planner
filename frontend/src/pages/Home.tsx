@@ -33,8 +33,7 @@ const Home = (): JSX.Element => {
       >
         <div className="prose text-md">
           <p className="mb-0">
-            Planner es todavía una{' '}
-            <span className="font-semibold">plataforma experimental</span>.
+            Planner es todavía una plataforma experimental.
           </p>
           <ul className="list-disc pl-5 mt-0">
             <li>
@@ -45,18 +44,16 @@ const Home = (): JSX.Element => {
               </ul>
             </li>
             <li>
-              Algunas mallas curriculares todavía no han sido cargadas. Esto
-              está en curso.
+              <span className='font-bold'>Se agregaron la mayoría de las mallas faltantes</span> 🎊. También hemos arreglado muchos de los problemas y hecho varias mejoras. ¡Prueba haciendo click derecho en tus cursos! 🖱️
             </li>
             {
-              hideLogin
-                ? (<li>
+              hideLogin &&
+                (<li>
                 Por ahora, el <span className='font-bold'>login UC no está funcionando</span>, así que
                 debes <a href="https://github.com/open-source-uc/planner/pull/276#issue-1808769979" target="_blank" rel="noopener noreferrer">
                   ingresar tus cursos manualmente en el modo invitado
                 </a>.
               </li>)
-                : (<li><span className='font-bold'> El login UC ya está habilitado!</span> 🎉</li>)
             }
           </ul>
         </div>

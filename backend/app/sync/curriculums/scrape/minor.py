@@ -21,7 +21,7 @@ import logging
 import re
 from pathlib import Path
 
-from app.plan.courseinfo import CourseInfo
+from app.plan.courseinfo import CourseDetails
 from app.plan.validation.curriculum.tree import MajorCode, MinorCode
 from app.sync.curriculums.scrape.common import ScrapedBlock, ScrapedProgram
 
@@ -59,7 +59,9 @@ REGEX_DETECT_AREA_FALLBACK = re.compile(r"de [^\n]+ área")
 REGEX_IDENTIFY_AREA = re.compile(r"(?:^|\n)(Área [^\n\(]+)")
 
 
-def scrape_minors(courseinfo: CourseInfo) -> dict[MinorCode, list[ScrapedProgram]]:
+def scrape_minors(
+    courses: dict[str, CourseDetails],
+) -> dict[MinorCode, list[ScrapedProgram]]:
     log.debug("scraping minors...")
 
     # Load raw pre-scraped text
@@ -83,7 +85,7 @@ def scrape_minors(courseinfo: CourseInfo) -> dict[MinorCode, list[ScrapedProgram
         if major_code is not None:
             major_code = MajorCode(major_code)
         minors.setdefault(minor_code, []).append(
-            scrape_minor(courseinfo, minor_code, minor_raw, major_code),
+            scrape_minor(courses, minor_code, minor_raw, major_code),
         )
 
     log.debug("processed %s minors", len(minors))
@@ -93,7 +95,7 @@ def scrape_minors(courseinfo: CourseInfo) -> dict[MinorCode, list[ScrapedProgram
 
 
 def scrape_minor(
-    courseinfo: CourseInfo,
+    courses: dict[str, CourseDetails],
     code: MinorCode,
     raw: str,
     major_code: MajorCode | None,
@@ -151,7 +153,7 @@ def scrape_minor(
             for area_name, area_raw in zip(areas[::2], areas[1::2], strict=True):
                 log.debug(f"        processing area {area_name}")
                 process_block(
-                    courseinfo,
+                    courses,
                     out,
                     creds,
                     complementary,
@@ -162,7 +164,7 @@ def scrape_minor(
         else:
             # Un curso o optativo
             process_block(
-                courseinfo,
+                courses,
                 out,
                 creds,
                 complementary,
@@ -171,7 +173,7 @@ def scrape_minor(
                 None,
             )
 
-    sanity_check_minor(courseinfo, out)
+    sanity_check_minor(courses, out)
 
     return out
 
@@ -215,7 +217,7 @@ def _extract_block_metadata(
 
 
 def process_block(
-    courseinfo: CourseInfo,
+    courses: dict[str, CourseDetails],
     out: ScrapedProgram,
     creds: int | None,
     complementary: bool,
@@ -238,7 +240,7 @@ def process_block(
 
     if "nivel 3000" in raw:
         # Si el bloque dice algo parecido a "cualquier curso nivel 3000", agregarlos
-        add_level_3000_courses(courseinfo, course_codes, raw)
+        add_level_3000_courses(courses, course_codes, raw)
 
     # Identificar cuando no hay cursos en el bloque
     if not course_codes:
@@ -284,10 +286,9 @@ def process_block(
                 code, or_operator = course_codes[i]
                 block.options.append(code)
                 if (
-                    code in courseinfo.courses
-                    and main_code in courseinfo.courses
-                    and courseinfo.courses[code].credits
-                    != courseinfo.courses[main_code].credits
+                    code in courses
+                    and main_code in courses
+                    and courses[code].credits != courses[main_code].credits
                 ):
                     log.warning(
                         "block with codes %s has nonhomogeneous credits",
@@ -318,7 +319,7 @@ def process_block(
 
 
 def add_level_3000_courses(
-    courseinfo: CourseInfo,
+    courses: dict[str, CourseDetails],
     course_codes: list[tuple[str, str | None]],
     raw: str,
 ):
@@ -337,7 +338,7 @@ def add_level_3000_courses(
 
         # Buscar los cursos con el codigo especificado y nivel 3000
         extra_courses: list[tuple[str, str | None]] = []
-        for course_code in courseinfo.courses:
+        for course_code in courses:
             if (
                 len(course_code) >= 4
                 and course_code[3] == "3"
@@ -353,7 +354,7 @@ def add_level_3000_courses(
         )
 
 
-def sanity_check_minor(courseinfo: CourseInfo, minor: ScrapedProgram):
+def sanity_check_minor(courses: dict[str, CourseDetails], minor: ScrapedProgram):
     """
     Hacer un sanity-check del minor.
     Esta funcion no modifica el minor, solo emite diagnosticos al log si algo falla.
@@ -370,7 +371,7 @@ def sanity_check_minor(courseinfo: CourseInfo, minor: ScrapedProgram):
             complementary_blocks += 1
         if block.creds is None:
             # Concrete course
-            minor_credits += courseinfo.courses[block.options[0]].credits
+            minor_credits += courses[block.options[0]].credits
         else:
             # Optative course
             minor_credits += block.creds

@@ -16,7 +16,7 @@ from app.plan.validation.diagnostic import (
     OutdatedPlanErr,
     ValidationResult,
 )
-from app.user.info import StudentContext
+from app.user.info import StudentInfo
 
 
 def _check_sem_eq(sem1: list[PseudoCourse], sem2: list[PseudoCourse]) -> bool:
@@ -39,7 +39,7 @@ def _validate_possibly_outdated(
     courseinfo: CourseInfo,
     curriculum: Curriculum,
     plan: ValidatablePlan,
-    user_ctx: StudentContext,
+    user_ctx: StudentInfo,
     out: ValidationResult,
 ):
     """
@@ -109,28 +109,28 @@ def validate_against_owner(
     courseinfo: CourseInfo,
     curr: Curriculum,
     plan: ValidatablePlan,
-    user_ctx: StudentContext,
+    user_ctx: StudentInfo,
     out: ValidationResult,
 ):
-    if plan.curriculum.cyear != user_ctx.info.cyear:
+    if plan.curriculum.cyear != user_ctx.cyear:
         out.add(
-            MismatchedCyearErr(plan=plan.curriculum.cyear, user=user_ctx.info.cyear),
+            MismatchedCyearErr(plan=plan.curriculum.cyear, user=user_ctx.cyear),
         )
 
     if (
-        _is_mismatched(plan.curriculum.major, user_ctx.info.reported_major)
-        or _is_mismatched(plan.curriculum.minor, user_ctx.info.reported_minor)
-        or _is_mismatched(plan.curriculum.title, user_ctx.info.reported_title)
-        or (plan.curriculum.title is None and user_ctx.info.reported_title is not None)
+        _is_mismatched(plan.curriculum.major, user_ctx.reported_major)
+        or _is_mismatched(plan.curriculum.minor, user_ctx.reported_minor)
+        or _is_mismatched(plan.curriculum.title, user_ctx.reported_title)
+        or (plan.curriculum.title is None and user_ctx.reported_title is not None)
     ):
         out.add(
             MismatchedCurriculumSelectionWarn(
                 plan=plan.curriculum,
                 user=CurriculumSpec(
                     cyear=plan.curriculum.cyear,
-                    major=user_ctx.info.reported_major,
-                    minor=user_ctx.info.reported_minor,
-                    title=user_ctx.info.reported_title,
+                    major=user_ctx.reported_major,
+                    minor=user_ctx.reported_minor,
+                    title=user_ctx.reported_title,
                 ),
             ),
         )

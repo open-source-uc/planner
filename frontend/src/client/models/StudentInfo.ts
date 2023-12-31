@@ -2,6 +2,9 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { ConcreteId } from './ConcreteId';
+import type { EquivalenceId } from './EquivalenceId';
+
 export type StudentInfo = {
     full_name: string;
     cyear: string;
@@ -18,5 +21,9 @@ export type StudentInfo = {
      * A title code, eg. `40007` for a computer engineering.
      */
     reported_title?: string;
+    passed_courses: Array<Array<(ConcreteId | EquivalenceId)>>;
+    current_semester: number;
+    next_semester: number;
+    admission?: Array<any>;
 };
 

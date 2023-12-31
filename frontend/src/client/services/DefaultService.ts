@@ -16,7 +16,7 @@ import type { LowDetailPlanView } from '../models/LowDetailPlanView';
 import type { Major } from '../models/Major';
 import type { Minor } from '../models/Minor';
 import type { PlanView } from '../models/PlanView';
-import type { StudentContext } from '../models/StudentContext';
+import type { StudentInfo } from '../models/StudentInfo';
 import type { Title } from '../models/Title';
 import type { ValidatablePlan } from '../models/ValidatablePlan';
 import type { ValidationResult } from '../models/ValidationResult';
@@ -59,14 +59,12 @@ export class DefaultService {
      * the database in order for the changes to reach all workers.
      * @param courses
      * @param curriculums
-     * @param packedcourses
      * @returns any Successful Response
      * @throws ApiError
      */
     public static syncDatabase(
         courses: boolean,
         curriculums: boolean,
-        packedcourses: boolean,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -74,7 +72,6 @@ export class DefaultService {
             query: {
                 'courses': courses,
                 'curriculums': curriculums,
-                'packedcourses': packedcourses,
             },
             errors: {
                 422: `Validation Error`,
@@ -921,10 +918,10 @@ export class DefaultService {
      * Get the student info for the currently logged in user.
      * Requires authentication (!)
      * This forwards a request to the SIDING service.
-     * @returns StudentContext Successful Response
+     * @returns StudentInfo Successful Response
      * @throws ApiError
      */
-    public static getStudentInfo(): CancelablePromise<StudentContext> {
+    public static getStudentInfo(): CancelablePromise<StudentInfo> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/user/info',
@@ -937,12 +934,12 @@ export class DefaultService {
      * their RUT with `user_rut`.
      * Moderator access is required.
      * @param userRut
-     * @returns StudentContext Successful Response
+     * @returns StudentInfo Successful Response
      * @throws ApiError
      */
     public static getStudentInfoForAnyUser(
         userRut: string,
-    ): CancelablePromise<StudentContext> {
+    ): CancelablePromise<StudentInfo> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/user/info_for_any_user',

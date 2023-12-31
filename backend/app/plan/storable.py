@@ -5,13 +5,13 @@ import pydantic
 from pydantic import BaseModel, Field
 
 from app.plan.course import ConcreteId, EquivalenceId, PseudoCourse
-from app.plan.courseinfo import course_info
 from app.plan.plan import ValidatablePlan
 from app.plan.validation.curriculum.solve import solve_curriculum
 from app.plan.validation.curriculum.tree import (
     CurriculumSpec,
 )
 from app.sync import get_curriculum
+from app.sync.database import course_info
 
 
 class PlanV1(BaseModel):
@@ -56,6 +56,8 @@ async def _migrate_v0_0_1(plan: PlanV1) -> ValidatablePlan:
             return f"MAJOR-LIST-{code[1:]}"
         if code.startswith("?"):
             return f"MAJOR-EQUIV-{code[1:]}"
+        if code == "#FAILED":
+            return "FAILED"
         return code
 
     # Auxiliary function to map equivalences

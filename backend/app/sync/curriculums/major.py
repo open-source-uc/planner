@@ -2,7 +2,7 @@ from typing import Literal
 
 from unidecode import unidecode
 
-from app.plan.courseinfo import CourseInfo
+from app.plan.courseinfo import CourseDetails
 from app.plan.validation.curriculum.tree import (
     Block,
     Combination,
@@ -132,7 +132,10 @@ def _merge_c2020_ofgs(curriculum: Curriculum):
             )
 
 
-def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum):
+def _allow_selection_duplication(
+    courses: dict[str, CourseDetails],
+    curriculum: Curriculum,
+):
     # Los ramos de seleccion deportiva pueden contar hasta 2 veces (la misma sigla!)
     # Los ramos de seleccion deportiva se definen segun SIDING como los ramos DPT que
     # comienzan con "Seleccion"
@@ -144,9 +147,9 @@ def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum)
                 for code in block.codes:
                     if not code.startswith("DPT"):
                         continue
-                    info = courseinfo.try_course(code)
-                    if info is None:
+                    if code not in courses:
                         continue
+                    info = courses[code]
                     if info.name.startswith("Seleccion ") or info.name.startswith(
                         "Selección ",
                     ):
@@ -160,12 +163,12 @@ def _allow_selection_duplication(courseinfo: CourseInfo, curriculum: Curriculum)
 
 
 def _ofg_classify(
-    courseinfo: CourseInfo,
+    courses: dict[str, CourseDetails],
     code: str,
 ) -> Literal["limited"] | Literal["unlimited"] | Literal["science"]:
-    info = courseinfo.try_course(code)
-    if info is None:
+    if code not in courses:
         return "unlimited"
+    info = courses[code]
     if info.code in C2020_OFG_SCIENCE_OPTS:
         return "science"
     if info.credits != 5:
@@ -179,7 +182,7 @@ def _ofg_classify(
     return "unlimited"
 
 
-def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
+def _limit_ofg10(courses: dict[str, CourseDetails], curriculum: Curriculum):
     # https://intrawww.ing.puc.cl/siding/dirdes/web_docencia/pre_grado/formacion_gral/alumno_2020/index.phtml
     # En el bloque de OFG hay algunos cursos de 5 creditos que en conjunto pueden
     # contribuir a lo mas 10 creditos:
@@ -216,7 +219,7 @@ def _limit_ofg10(courseinfo: CourseInfo, curriculum: Curriculum):
                 unlimited: set[str] = set()
                 science: set[str] = set()
                 for code in block.codes:
-                    match _ofg_classify(courseinfo, code):
+                    match _ofg_classify(courses, code):
                         case "unlimited":
                             unlimited.add(code)
                         case "limited":
@@ -298,7 +301,7 @@ def _c2022_defer_free_area_ofg(curriculum: Curriculum):
 
 
 def patch_major(
-    courseinfo: CourseInfo,
+    courses: dict[str, CourseDetails],
     spec: CurriculumSpec,
     curr: Curriculum,
 ) -> Curriculum:
@@ -313,14 +316,14 @@ def patch_major(
         case "C2020":
             # NOTE: El orden en que se llama a estas funciones es importante
             _merge_c2020_ofgs(curr)
-            _limit_ofg10(courseinfo, curr)
+            _limit_ofg10(courses, curr)
             _c2020_defer_general_ofg(curr)
-            _allow_selection_duplication(courseinfo, curr)
+            _allow_selection_duplication(courses, curr)
         case "C2022":
             # TODO: Averiguar bien como funcionan los OFG y si falta alguna regla
             # especial.
             _c2022_defer_free_area_ofg(curr)
-            _allow_selection_duplication(courseinfo, curr)
+            _allow_selection_duplication(courses, curr)
 
     # TODO: Marcar termodinamica, electromagnetismo y optimizacion como equivalencias
     # homogeneas.
@@ -330,7 +333,7 @@ def patch_major(
 
 
 def translate_major(
-    courseinfo: CourseInfo,
+    courses: dict[str, CourseDetails],
     out: CurriculumStorage,
     spec: CurriculumSpec,
     siding: SidingInfo,
@@ -340,10 +343,10 @@ def translate_major(
     spec_id = "MAJOR"
 
     # Traducir la malla de SIDING en un curriculum nativo pero incompleto
-    curr = translate_siding(courseinfo, out, spec_id, siding, raw_blocks)
+    curr = translate_siding(courses, out, spec, spec_id, siding, raw_blocks)
 
     # Completar los detalles faltantes
-    curr = patch_major(courseinfo, spec, curr)
+    curr = patch_major(courses, spec, curr)
 
     # Agregar al set de curriculums
     out.set_major(spec, curr)
@@ -356,7 +359,7 @@ PLANCOMUN_SUPERBLOCKS = {"PlanComun", "FormacionGeneral"}
 
 
 def translate_common_plan(
-    courseinfo: CourseInfo,
+    courses: dict[str, CourseDetails],
     out: CurriculumStorage,
     siding: SidingInfo,
 ):
@@ -382,7 +385,7 @@ def translate_common_plan(
         ]
         # Traducir como un major cualquiera, pero sin un major particular
         translate_major(
-            courseinfo,
+            courses,
             out,
             CurriculumSpec(cyear=cyear, major=None, minor=None, title=None),
             siding,

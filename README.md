@@ -153,12 +153,18 @@ Nota: los comandos podrían variar ligeramente dependiendo del sistema operativo
 ---
 
 ## Equipo
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="20%"><a href="https://github.com/shantifabri"><img src="https://avatars.githubusercontent.com/u/37163566?v=4" width="175px;" alt="Shantal Fabri"/><br /><sub><b>Shantal Fabri</b></sub></a><br /><a href="#" title="Coordinación">📋</a><a href="https://github.com/open-source-uc/planner/commits?author=shantifabri" title="Frontend">💻</a></td>
+      <td align="center" valign="top" width="20%"><a href="https://github.com/Diegothx"><img src="https://avatars.githubusercontent.com/u/37160496?v=4" width="175px;" alt="Diego Prudencio"/><br /><sub><b>Diego Prudencio</b></sub></a><br /><a href="https://github.com/open-source-uc/planner/commits?author=Diegothx" title="Frontend">💻</a></td>
+      <td align="center" valign="top" width="20%"><a href="https://github.com/kovaxis"><img src="https://avatars.githubusercontent.com/u/7827085?v=4" width="175px;" alt="Martín Andrighetti"/><br /><sub><b>Martín Andrighetti</b></sub></a><br /><a href="https://github.com/open-source-uc/planner/commits?author=kovaxis" title="Backend">⚙️</a></td>
+      <td align="center" valign="top" width="20%"><a href="https://github.com/fagiannoni"><img src="https://avatars.githubusercontent.com/u/27508976?v=4" width="175px;" alt="Franco Giannoni Humud "/><br /><sub><b>Franco Giannoni Humud</b></sub></a><br /><a href="https://github.com/open-source-uc/planner/commits?author=fagiannoni" title="Backend">⚙️</a> </td>
+      <td align="center" valign="top" width="20%"><a href="https://github.com/agucova"><img src="https://avatars.githubusercontent.com/u/4694408?v=4" width="175px;" alt="Agustín Covarrubias"/><br /><sub><b>Agustín Covarrubias</b></sub></a><br /><a href="https://github.com/open-source-uc/planner/commits?author=agucova" title="Apoyo Frontend">💻</a> <a href="https://github.com/open-source-uc/planner/commits?author=agucova" title="Apoyo Backend">⚙️</a></td>
+    </tr>
+  </tbody>
+</table>
 
-- [@shantifabri](https://github.com/shantifabri) - Coordinación / Frontend
-- [@Diegothx](https://github.com/Diegothx) - Frontend
-- [@negamartin](https://github.com/negamartin) - Backend
-- [@fagiannoni](https://github.com/fagiannoni) - Backend
-- [@agucova](https://github.com/agucova) - Apoyo Backend/Frontend
 
 Además del equipo núcleo, nos apoyan los contribuidores al proyecto. Puedes ver [la lista completa de contribuidores aquí.](contributors.md)
 

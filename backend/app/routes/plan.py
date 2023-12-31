@@ -3,9 +3,6 @@ from fastapi import APIRouter, Depends
 from app import sync
 from app.limiting import ratelimit_guest, ratelimit_user
 from app.plan.course import PseudoCourse
-from app.plan.courseinfo import (
-    course_info,
-)
 from app.plan.generation import generate_empty_plan, generate_recommended_plan
 from app.plan.plan import ValidatablePlan
 from app.plan.storage import (
@@ -21,6 +18,7 @@ from app.plan.storage import (
 from app.plan.validation.curriculum.solve import solve_curriculum
 from app.plan.validation.diagnostic import ValidationResult
 from app.plan.validation.validate import diagnose_plan, list_swapouts
+from app.sync.database import course_info
 from app.user.auth import (
     ModKey,
     UserKey,

@@ -3,7 +3,7 @@ from prisma.models import (
     AccessLevel as DbAccessLevel,
 )
 
-from app import sync
+from app.sync.database import sync_from_external_sources
 from app.sync.siding import translate as siding_translate
 from app.user.auth import (
     AccessLevelOverview,
@@ -19,7 +19,6 @@ router = APIRouter(prefix="/admin")
 async def sync_database(
     courses: bool,
     curriculums: bool,
-    packedcourses: bool,
     admin: AdminKey = Depends(require_admin_auth),
 ):
     """
@@ -28,10 +27,9 @@ async def sync_database(
     NOTE: This endpoint is currently broken: a server restart is necessary after syncing
     the database in order for the changes to reach all workers.
     """
-    await sync.run_upstream_sync(
-        courses=courses,
-        curriculums=curriculums,
-        packedcourses=packedcourses,
+    await sync_from_external_sources(
+        sync_coursedata=courses,
+        sync_curriculum=curriculums,
     )
     return {
         "message": "Synchronized",

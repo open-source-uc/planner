@@ -7,7 +7,7 @@ from app.user.auth import (
     require_authentication,
     require_mod_auth,
 )
-from app.user.info import StudentContext
+from app.user.info import StudentInfo
 from app.user.key import AdminKey, ModKey, Rut, UserKey
 
 router = APIRouter(prefix="/user")
@@ -52,7 +52,7 @@ async def check_admin(user: AdminKey = Depends(require_admin_auth)):
     return {"message": "Authenticated with admin access"}
 
 
-@router.get("/info", response_model=StudentContext)
+@router.get("/info", response_model=StudentInfo)
 async def get_student_info(user: UserKey = Depends(require_authentication)):
     """
     Get the student info for the currently logged in user.
@@ -62,7 +62,7 @@ async def get_student_info(user: UserKey = Depends(require_authentication)):
     return await sync.get_student_data(user)
 
 
-@router.get("/info_for_any_user", response_model=StudentContext)
+@router.get("/info_for_any_user", response_model=StudentInfo)
 async def get_student_info_for_any_user(
     user_rut: Rut,
     mod: ModKey = Depends(require_mod_auth),

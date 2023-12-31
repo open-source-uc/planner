@@ -9,15 +9,17 @@ from app.plan.validation.curriculum.solve import (
     SolvedCurriculum,
     solve_curriculum,
 )
-from app.plan.validation.curriculum.tree import Curriculum
+from app.plan.validation.curriculum.tree import Curriculum, CurriculumSpec
 from app.plan.validation.diagnostic import (
     CurriculumErr,
     NoMajorMinorWarn,
     RecolorWarn,
     UnassignedWarn,
+    UnknownSpecErr,
     ValidationResult,
 )
-from app.user.info import StudentContext
+from app.sync.curriculums.storage import CurriculumStorage
+from app.user.info import StudentInfo
 
 
 def _check_missing_fillers(
@@ -130,16 +132,48 @@ def _diagnose_blocks(
         pass
 
 
+def _diagnose_major_minor_presence(
+    cstore: CurriculumStorage,
+    spec: CurriculumSpec,
+    out: ValidationResult,
+):
+    if (
+        spec.cyear not in cstore.offer
+        or (spec.major is not None and spec.major not in cstore.offer[spec.cyear].major)
+        or (spec.minor is not None and spec.minor not in cstore.offer[spec.cyear].minor)
+    ):
+        return
+    if spec.major is None or (
+        spec.minor is None and len(cstore.offer[spec.cyear].major_minor[spec.major]) > 0
+    ):
+        out.add(NoMajorMinorWarn(plan=spec))
+
+
+def _diagnose_unknown_spec(
+    cstore: CurriculumStorage,
+    spec: CurriculumSpec,
+    out: ValidationResult,
+):
+    major = spec.major is not None and spec.major not in cstore.offer[spec.cyear].major
+    minor = spec.minor is not None and spec.minor not in cstore.offer[spec.cyear].minor
+    title = spec.title is not None and spec.title not in cstore.offer[spec.cyear].title
+    if major or minor or title:
+        out.add(UnknownSpecErr(major=major, minor=minor, title=title))
+
+
 def diagnose_curriculum(
     courseinfo: CourseInfo,
+    cstore: CurriculumStorage,
     curriculum: Curriculum,
     plan: ValidatablePlan,
-    user_ctx: StudentContext | None,
+    user_ctx: StudentInfo | None,
     out: ValidationResult,
 ):
     # Produce a warning if no major/minor is selected
-    if plan.curriculum.major is None or plan.curriculum.minor is None:
-        out.add(NoMajorMinorWarn(plan=plan.curriculum))
+    _diagnose_major_minor_presence(cstore, plan.curriculum, out)
+
+    # Produce an error if the curriculum spec is unknown
+    _diagnose_unknown_spec(cstore, plan.curriculum, out)
 
     # Solve plan
     g = solve_curriculum(

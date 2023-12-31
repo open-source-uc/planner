@@ -34,6 +34,7 @@ class CurriculumStorage(BaseModel):
     minors: dict[str, Curriculum] = Field(default_factory=dict)
     titles: dict[str, Curriculum] = Field(default_factory=dict)
     lists: dict[str, EquivDetails] = Field(default_factory=dict)
+    must_have_courses: set[str] = Field(default_factory=set)
 
     def get_major(self, spec: CurriculumSpec) -> Curriculum | None:
         if x := _try_get(self.majors, spec):
