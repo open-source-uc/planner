@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     # Also, all env variables required to build containers must be set in `.env.default`
 
     # Environment name. Used to select the correct environment variables.
-    # Possible values: "development", "production".
+    # Possible values: "development", "staging", "production".
     env: Literal["development", "staging", "production"] = Field(
         "production",
         env="PYTHON_ENV",
