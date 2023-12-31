@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     # Why? This way we can control most production values through commits, instead
     # of having to manually set them in the production server. The `.env` in production
     # is reserved only for secrets.
+    # Also, all env variables required to build containers must be set in `.env.default`
 
     # Environment name. Used to select the correct environment variables.
     # Possible values: "development", "production".
