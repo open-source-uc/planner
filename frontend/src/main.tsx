@@ -9,21 +9,10 @@ import {
 } from '@tanstack/react-query'
 import { OpenAPI } from './client'
 import { toastConfig } from './utils/toastConfig'
-import dotenv from 'dotenv'
-import fs from 'fs'
+import { loadEnvWithDefault } from './utils/env'
 import App from './app'
 
-const loadEnvWithDefault = () => {
-  const defaultEnv = dotenv.parse(fs.readFileSync('.env.default'))
-  const env = dotenv.config({ path: ".env" }).parsed
-
-  // Combine default and environment-specific env variables
-  return { ...defaultEnv, ...env }
-}
-
-const env = loadEnvWithDefault()
-
-if (env.MODE !== 'development') {
+if (import.meta.env.MODE !== 'development') {
   // Runs in staging and production
   Sentry.init({
     dsn: 'https://deb7a1791e004fd6887189c03b568e8c@o4505547874172928.ingest.sentry.io/4505547928109056',
@@ -61,6 +50,8 @@ if (env.MODE !== 'development') {
 
 toastConfig()
 const queryClient = new QueryClient()
+
+const env = loadEnvWithDefault()
 
 const baseUrl = env.VITE_BASE_API_URL
 if (typeof baseUrl !== 'string') {
