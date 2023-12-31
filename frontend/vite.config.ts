@@ -7,17 +7,17 @@ import dotenv from 'dotenv'
 import fs from 'fs'
 
 // TODO: import from utils/env instead of redefining here
-const loadEnvWithDefault = () => {
-  const defaultEnv = dotenv.parse(fs.readFileSync('.env.default'))
+const loadEnvWithProduction = () => {
+  const productionEnv = dotenv.parse(fs.readFileSync('.env.production'))
   const env = dotenv.config({ path: ".env" }).parsed
 
-  // Combine default and environment-specific env variables
-  return { ...defaultEnv, ...env }
+  // Combine production and environment-specific env variables
+  return { ...productionEnv, ...env }
 }
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
-  const env = loadEnvWithDefault()
+  const env = loadEnvWithProduction()
 
   const backendUrl = env.BACKEND_API_URL
   if (typeof backendUrl !== 'string') {
