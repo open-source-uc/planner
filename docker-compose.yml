@@ -19,7 +19,6 @@ services:
       - api
     env_file:
       - ./frontend/.env.production
-      - ./frontend/.env
     volumes:
       - caddy_data:/data
       - caddy_config:/config
@@ -41,7 +40,7 @@ services:
       - ./siding-mock-data:/siding-mock-data
       - ./static-curriculum-data:/static-curriculum-data
     env_file:
-      - ./backend/.env.production
+      - ./backend/.env.default
       - ./backend/.env
 
   db:

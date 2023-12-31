@@ -20,7 +20,6 @@ Estas instrucciones están pensadas para configurar por primera vez la máquina 
 4. Para generar los archivos `.env` en las carpetas backend, frontend y database a partir de los templates, se deben copiar los archivos `.env.production.template` en todos los servicios y rellenar a mano para generar los archivos `.env`.
    En particular,
    - Generar `backend/.env` a partir de `backend/.env.production.template`.
-   - Generar `frontend/.env` a partir de `frontend/.env.production.template`.
    - Generar `database/.env` a partir de `database/.env.production.template`.
 5. Para permitir las actualizaciones recurrentes del proyecto, es necesario agregar a la maquina el archivo `update.sh`, luego darle permisos de ejecución con el comando `chmod +x update.sh`, y luego crear el _cronjob_ que lo ejecute recurrentemente con el comando `crontab -e`. Se recomienda una frecuencia no tan baja, para que las actualizaciones ocurran de forma más inmediata.
 

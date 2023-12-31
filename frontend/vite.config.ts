@@ -1,23 +1,12 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import { sentryVitePlugin } from "@sentry/vite-plugin"
 import react from '@vitejs/plugin-react'
 import eslintPlugin from '@nabla/vite-plugin-eslint'
 import svgr from 'vite-plugin-svgr'
-import dotenv from 'dotenv'
-import fs from 'fs'
-
-// TODO: import from utils/env instead of redefining here
-const loadEnvWithProduction = () => {
-  const productionEnv = dotenv.parse(fs.readFileSync('.env.production'))
-  const env = dotenv.config({ path: ".env" }).parsed
-
-  // Combine production and environment-specific env variables
-  return { ...productionEnv, ...env }
-}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
-  const env = loadEnvWithProduction()
+  const env = loadEnv(mode, process.cwd(), '')
 
   const backendUrl = env.BACKEND_API_URL
   if (typeof backendUrl !== 'string') {
