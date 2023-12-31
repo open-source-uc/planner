@@ -7,7 +7,6 @@
  * semesters is over a certain threshold.
  */
 export type MinCredits = {
-    hash?: Blob;
     expr?: 'cred';
     min_credits: number;
 };

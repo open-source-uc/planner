@@ -1,7 +1,7 @@
-import { type CurriculumErr, type MismatchedCyearErr, type OutdatedCurrentSemesterErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult } from '../../../client'
+import { type CurriculumErr, type MismatchedCyearErr, type OutdatedPlanErr, type ValidatablePlan, type ValidationResult, type ClassId, type EquivalenceId } from '../../../client'
 import { type AuthState, useAuth } from '../../../contexts/auth.context'
-import { type PseudoCourseId } from './Types'
-import { validateCyear } from './PlanBoardFunctions'
+import { type PseudoCourseDetail, type PseudoCourseId } from './Types'
+import { validateCyear, locateClassInPlan } from './PlanBoardFunctions'
 import { CourseName } from '../ErrorTray'
 
 type Diagnostic = ValidationResult['diagnostics'][number]
@@ -38,17 +38,36 @@ const fixIncorrectCyear = (plan: ValidatablePlan, diag: MismatchedCyearErr): Val
   }
 }
 
-const fixOutdatedPlan = (plan: ValidatablePlan, diag: OutdatedPlanErr | OutdatedCurrentSemesterErr, auth: AuthState | null): ValidatablePlan => {
-  if (auth == null) return plan
+const fixOutdatedPlan = (plan: ValidatablePlan, diag: OutdatedPlanErr): ValidatablePlan => {
   // Update all outdated semesters
   const newClasses = [...plan.classes]
-  for (const semIdx of diag.associated_to) {
-    const passedSem = auth.student?.passed_courses?.[semIdx]
+  for (let i = 0; i < diag.associated_to.length; i++) {
+    const semIdx = diag.associated_to[i]
+    const passedSem = diag.replace_with[i]
     if (passedSem != null) {
       newClasses[semIdx] = passedSem
     }
   }
   return { ...plan, classes: newClasses }
+}
+
+const reassignPlanCourses = (plan: ValidatablePlan, courses: ClassId[], recolors: EquivalenceId[]): ValidatablePlan => {
+  // Apply equivalence reassignments in `diag` to `plan`
+  const reassigned = { ...plan, classes: plan.classes.map(sem => [...sem]) }
+  courses.forEach((classId, idx) => {
+    const newEquiv = recolors[idx]
+    // Find where is the course
+    const coursePos = locateClassInPlan(plan.classes, classId)
+    if (coursePos != null) {
+      const course = reassigned.classes[coursePos.semester][coursePos.index]
+      if ('equivalence' in course) {
+        // Replace the equivalence
+        const newCourse = { ...course, equivalence: newEquiv }
+        reassigned.classes[coursePos.semester][coursePos.index] = newCourse
+      }
+    }
+  })
+  return reassigned
 }
 
 const addCourseAt = (plan: ValidatablePlan, code: string, onSem: number): ValidatablePlan => {
@@ -59,35 +78,17 @@ const addCourseAt = (plan: ValidatablePlan, code: string, onSem: number): Valida
   return { ...plan, classes: newClasses }
 }
 
-const moveCourseByCode = (plan: ValidatablePlan, code: string, repIdx: number, toSem: number): ValidatablePlan => {
+const moveCourseByCode = (plan: ValidatablePlan, classId: ClassId, toSem: number): ValidatablePlan => {
   // Find the course within the plan
-  let semIdx = null
-  let courseIdx = null
-  let course = null
-  for (let i = 0; i < plan.classes.length; i++) {
-    const sem = plan.classes[i]
-    for (let j = 0; j < sem.length; j++) {
-      if (sem[j].code === code) {
-        if (repIdx === 0) {
-          semIdx = i
-          courseIdx = j
-          course = sem[j]
-          i = plan.classes.length
-          break
-        } else {
-          repIdx--
-        }
-      }
-    }
-  }
-  console.log(code, repIdx, semIdx, courseIdx, course)
-  if (semIdx == null || courseIdx == null || course == null) return plan
-  if (semIdx === toSem) return plan
+  const coursePos = locateClassInPlan(plan.classes, classId)
+  if (coursePos == null) return plan
+  if (coursePos.semester === toSem) return plan
 
   // Create a new plan with the moved course
+  const course = plan.classes[coursePos.semester][coursePos.index]
   const newClasses = [...plan.classes]
-  newClasses[semIdx] = [...newClasses[semIdx]]
-  newClasses[semIdx].splice(courseIdx, 1)
+  newClasses[coursePos.semester] = [...newClasses[coursePos.semester]]
+  newClasses[coursePos.semester].splice(coursePos.index, 1)
   while (newClasses.length <= toSem) newClasses.push([])
   newClasses[toSem] = [...newClasses[toSem]]
   newClasses[toSem].unshift(course)
@@ -96,6 +97,7 @@ const moveCourseByCode = (plan: ValidatablePlan, code: string, repIdx: number, t
 
 interface AutoFixProps {
   diag: Diagnostic
+  courseDetails: Record<string, PseudoCourseDetail>
   setValidatablePlan: Function
   getCourseDetails: Function
   reqCourses: any
@@ -104,23 +106,42 @@ interface AutoFixProps {
 /**
  * Get the quick fixed for some diagnostic, if any.
  */
-const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: AutoFixProps): JSX.Element => {
-  // FIXME: TODO: Los cursos añadidos a traves del autofix les faltan los CourseDetails.
-  // No me manejo bien con la implementación del frontend, lo dejo en mejores manos.
+const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses, courseDetails }: AutoFixProps): JSX.Element => {
   const auth = useAuth()
   switch (diag.kind) {
     case 'curr': {
-      const buttons = diag.fill_options.map(([fillWith, fillWithName], i) => (
-        <button key={i} className="autofix" onClick={() => {
-          setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
-            if (plan == null) return null
-            const planArreglado = fixMissingCurriculumCourse(plan, diag, fillWith, auth)
-            void getCourseDetails(planArreglado.classes.flat())
-            return planArreglado
-          })
-        }}>
-          Agregar {fillWithName}
-        </button>))
+      const buttons = []
+      const recolorCourses = diag.panacea_recolor_courses
+      const recolorBlocks = diag.panacea_recolor_blocks
+      if (recolorCourses != null && recolorBlocks != null) {
+        buttons.push(
+          <button key="recolor" className="autofix" onClick={() => {
+            setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+              if (plan == null) return null
+              const planArreglado = reassignPlanCourses(plan, recolorCourses, recolorBlocks)
+              void getCourseDetails(planArreglado.classes.flat())
+              return planArreglado
+            })
+          }}>
+            Reasignar cursos
+          </button>
+        )
+      }
+      diag.fill_options.forEach((fillWith, i) => {
+        const button = (
+          <button key={i} className="autofix" onClick={() => {
+            setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+              if (plan == null) return null
+              const planArreglado = fixMissingCurriculumCourse(plan, diag, fillWith, auth)
+              void getCourseDetails(planArreglado.classes.flat())
+              return planArreglado
+            })
+          }}>
+            Agregar {courseDetails[fillWith.code]?.name ?? '?'}
+          </button>
+        )
+        buttons.push(button)
+      })
       return <>{buttons}</>
     }
     case 'cyear':
@@ -134,20 +155,29 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: Aut
       } else {
         return <></>
       }
-    case 'outdated':
-    case 'outdatedcurrent':
-      if (auth != null) {
-        return <button className="autofix" onClick={() => {
-          setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
-            if (plan == null) return null
-            const planArreglado = fixOutdatedPlan(plan, diag, auth)
-            void getCourseDetails(planArreglado.classes.flat())
-            return planArreglado
-          })
-        }}>Actualizar semestres {diag.associated_to.map(s => s + 1).join(', ')}</button>
-      } else {
-        return <></>
-      }
+    case 'outdated': {
+      const n = diag.associated_to.length
+      return <button className="autofix" onClick={() => {
+        setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+          if (plan == null) return null
+          const planArreglado = fixOutdatedPlan(plan, diag)
+          void getCourseDetails(planArreglado.classes.flat())
+          return planArreglado
+        })
+      }}>Actualizar semestre{n === 1 ? '' : 's'} {diag.associated_to.map(s => s + 1).join(', ')}</button>
+    }
+    case 'recolor': {
+      return (<button className="autofix" onClick={() => {
+        setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
+          if (plan == null) return null
+          const planArreglado = reassignPlanCourses(plan, diag.associated_to, diag.recolor_as)
+          void getCourseDetails(planArreglado.classes.flat())
+          return planArreglado
+        })
+      }}>
+        Reasignar cursos
+      </button>)
+    }
     case 'req': {
       const buttons = []
       // Push back course itself
@@ -157,7 +187,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: Aut
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
             console.log(diag.associated_to[0])
-            return moveCourseByCode(plan, diag.associated_to[0].code, diag.associated_to[0].instance, pushBackTo)
+            return moveCourseByCode(plan, diag.associated_to[0], pushBackTo)
           })
         }}>
           Atrasar <CourseName course={diag.associated_to[0]}/>
@@ -169,7 +199,7 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: Aut
         buttons.push(<button key={buttons.length} className="autofix" onClick={() => {
           setValidatablePlan((plan: ValidatablePlan | null): ValidatablePlan | null => {
             if (plan == null) return null
-            return moveCourseByCode(plan, code, 0, toSem)
+            return moveCourseByCode(plan, { code, instance: 0 }, toSem)
           })
         }}>
           Adelantar <CourseName course={reqCourses[code] ?? { code }}/>
@@ -219,8 +249,8 @@ const AutoFix = ({ diag, setValidatablePlan, getCourseDetails, reqCourses }: Aut
     case 'sem':
     case 'nomajor':
     case 'currdecl':
-    case 'creditserr':
-    case 'creditswarn':
+    case 'credits':
+    case 'unkspec':
     case undefined:
       return <></>
   }

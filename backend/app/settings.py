@@ -100,16 +100,13 @@ class Settings(BaseSettings):
     # Whether to resynchronize curriculums on server startup.
     autosync_curriculums: bool = True
 
-    # Whether to resynchronize the courseinfo cache on server startup.
-    autosync_packedcourses: bool = True
-
     # URL for the Redis server.
     redis_uri: RedisDsn = Field("redis://localhost:6379")
 
     # URL for buscacursos-dl, the current temporary catalogo and buscacursos scraper
     # that we use as a courseinfo source.
     buscacursos_dl_url: AnyHttpUrl = Field(
-        "https://github.com/negamartin/buscacursos-dl/releases/download/universal-4/coursedata-noprogram.json.xz",
+        "https://github.com/kovaxis/buscacursos-dl/releases/download/universal-5/coursedata.json.xz",
     )
 
     # Logging level

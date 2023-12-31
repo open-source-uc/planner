@@ -14,7 +14,7 @@ import logging
 import re
 from pathlib import Path
 
-from app.plan.courseinfo import CourseInfo
+from app.plan.courseinfo import CourseDetails
 from app.plan.validation.curriculum.tree import TitleCode
 from app.sync.curriculums.scrape.common import ScrapedBlock, ScrapedProgram
 
@@ -49,7 +49,7 @@ REGEX_DETECT_AREA = re.compile(r"cr de [^\n]+ área")
 REGEX_IDENTIFY_AREA = re.compile(r"Área \d+: ([^\n\(]+)")
 
 
-def scrape_titles(courseinfo: CourseInfo) -> dict[TitleCode, ScrapedProgram]:
+def scrape_titles(courses: dict[str, CourseDetails]) -> dict[TitleCode, ScrapedProgram]:
     log.debug("scraping titles...")
 
     # Load raw pre-scraped text
@@ -66,12 +66,16 @@ def scrape_titles(courseinfo: CourseInfo) -> dict[TitleCode, ScrapedProgram]:
         strict=True,
     ):
         title_code = TitleCode(title_code)
-        titles[title_code] = scrape_title(courseinfo, title_code, title_raw)
+        titles[title_code] = scrape_title(courses, title_code, title_raw)
 
     return titles
 
 
-def scrape_title(courseinfo: CourseInfo, code: TitleCode, raw: str) -> ScrapedProgram:
+def scrape_title(
+    courses: dict[str, CourseDetails],
+    code: TitleCode,
+    raw: str,
+) -> ScrapedProgram:
     log.debug("scraping title '%s'", code)
     out = ScrapedProgram(
         code=code,
@@ -114,7 +118,7 @@ def scrape_title(courseinfo: CourseInfo, code: TitleCode, raw: str) -> ScrapedPr
             areas_raw.pop(0)
             for name, area_raw in zip(areas_raw[::2], areas_raw[1::2], strict=True):
                 log.debug("        processing area %s", name)
-                scrape_block(courseinfo, out, creds, area_raw, name)
+                scrape_block(courses, out, creds, area_raw, name)
         else:
             has_de_cada = REGEX_DETECT_AREA.search(block_raw)
             if has_de_cada:
@@ -124,13 +128,13 @@ def scrape_title(courseinfo: CourseInfo, code: TitleCode, raw: str) -> ScrapedPr
                     has_de_cada[0],
                     simplified_text,
                 )
-            scrape_block(courseinfo, out, creds, block_raw, None)
+            scrape_block(courses, out, creds, block_raw, None)
 
     return out
 
 
 def scrape_block(
-    courseinfo: CourseInfo,
+    courses: dict[str, CourseDetails],
     out: ScrapedProgram,
     creds_str: str | None,
     raw: str,
@@ -161,7 +165,7 @@ def scrape_block(
 
             # Buscar los cursos con el codigo especificado y nivel 3000
             extra_courses: list[tuple[str, str | None]] = []
-            for course_code in courseinfo.courses:
+            for course_code in courses:
                 if (
                     len(course_code) >= 4
                     and course_code[3] == "3"
@@ -208,10 +212,9 @@ def scrape_block(
                 code, or_operator = course_codes[i]
                 block.options.append(code)
                 if (
-                    code in courseinfo.courses
-                    and main_code in courseinfo.courses
-                    and courseinfo.courses[code].credits
-                    != courseinfo.courses[main_code].credits
+                    code in courses
+                    and main_code in courses
+                    and courses[code].credits != courses[main_code].credits
                 ):
                     log.warning(
                         "block with codes %s has nonhomogeneous credits",

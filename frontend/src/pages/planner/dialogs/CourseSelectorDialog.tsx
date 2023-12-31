@@ -79,7 +79,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       if (coursesCodes.length === 0) return
       setLoadingCoursesData(true)
 
-      const promise = DefaultService.getPseudocourseDetails(coursesCodes)
+      const promise = DefaultService.getPseudocourseDetails({ codes: coursesCodes })
       setPromiseInstance(promise)
       const response = await promise
       setPromiseInstance(null)
@@ -230,7 +230,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       }
       debounceTimerRef.current = setTimeout(() => {
         setFilter({ ...filter, name: nameForm })
-      }, 500)
+      }, 300)
     }
   }, [open, nameForm, filter])
 
@@ -240,7 +240,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
       onClose={close}
       initialFocus={acceptButton}
     >
-          <Dialog.Panel className="w-11/12 px-5 py-6 bg-slate-100 border-slate-300 overflow-hidden max-w-4xl transform  rounded-2xl border-2 text-left align-middle shadow-xl transition-all">
+          <Dialog.Panel className="w-11/12 px-5 py-6 bg-slate-100 border-slate-300 max-w-4xl transform  rounded-2xl border-2 text-left align-middle shadow-xl transition-all">
             <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900  mb-3">
               {equivalence !== undefined ? equivalence.name : 'Curso Extra'}
             </Dialog.Title>
@@ -341,7 +341,7 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                     <th className="w-96">Nombre</th>
                     <th className="w-8">Crd</th>
                     <th className="w-52">Escuela</th>
-                    <th className="w-8"></th>
+                    <th className="w-8">Info</th>
                   </tr>
                 </thead>
                 <tbody onScroll={handleScroll} className="bg-white relative rounded-b block flex-col items-center justify-between overflow-y-scroll h-72 w-full">
@@ -374,7 +374,9 @@ const CourseSelectorDialog = ({ equivalence, open, onClose }: { equivalence?: Eq
                           <div className='w-96'>{course.name}</div>
                           <div className='w-8'>{course.credits}</div>
                           <div className='w-52'>{course.school}</div>
-                          <div className="w-8"></div>
+                          <a className="w-8 " href={`https://catalogo.uc.cl/index.php?tmpl=component&option=com_catalogo&view=programa&sigla=${course.code}`} rel="noreferrer" target="_blank">
+                            <Info message='Ver Programa'/>
+                          </a>
                         </label>
                         </td>
                       </tr>

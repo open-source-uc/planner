@@ -3,6 +3,7 @@
 /* eslint-disable */
 import type { AccessLevelOverview } from '../models/AccessLevelOverview';
 import type { Body_generate_plan } from '../models/Body_generate_plan';
+import type { Body_get_pseudocourse_details } from '../models/Body_get_pseudocourse_details';
 import type { ConcreteId } from '../models/ConcreteId';
 import type { CourseDetails } from '../models/CourseDetails';
 import type { CourseFilter } from '../models/CourseFilter';
@@ -15,7 +16,7 @@ import type { LowDetailPlanView } from '../models/LowDetailPlanView';
 import type { Major } from '../models/Major';
 import type { Minor } from '../models/Minor';
 import type { PlanView } from '../models/PlanView';
-import type { StudentContext } from '../models/StudentContext';
+import type { StudentInfo } from '../models/StudentInfo';
 import type { Title } from '../models/Title';
 import type { ValidatablePlan } from '../models/ValidatablePlan';
 import type { ValidationResult } from '../models/ValidationResult';
@@ -58,14 +59,12 @@ export class DefaultService {
      * the database in order for the changes to reach all workers.
      * @param courses
      * @param curriculums
-     * @param packedcourses
      * @returns any Successful Response
      * @throws ApiError
      */
     public static syncDatabase(
         courses: boolean,
         curriculums: boolean,
-        packedcourses: boolean,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -73,7 +72,6 @@ export class DefaultService {
             query: {
                 'courses': courses,
                 'curriculums': curriculums,
-                'packedcourses': packedcourses,
             },
             errors: {
                 422: `Validation Error`,
@@ -189,20 +187,20 @@ export class DefaultService {
      * course/equivalence details.
      * Returns null in the corresponding slot if the code is unknown.
      *
-     * Request example: `/api/courses?codes=IIC2233&codes=IIC2173`
-     * @param codes
+     * Additionally, a curriculum spec can be specified. In this case, all equivalences in
+     * the plan will be fetched and appended to the list.
+     * @param requestBody
      * @returns any Successful Response
      * @throws ApiError
      */
     public static getPseudocourseDetails(
-        codes: Array<string>,
+        requestBody: Body_get_pseudocourse_details,
     ): CancelablePromise<Array<(CourseDetails | EquivDetails)>> {
         return __request(OpenAPI, {
-            method: 'GET',
+            method: 'POST',
             url: '/course/details',
-            query: {
-                'codes': codes,
-            },
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: `Validation Error`,
             },
@@ -920,10 +918,10 @@ export class DefaultService {
      * Get the student info for the currently logged in user.
      * Requires authentication (!)
      * This forwards a request to the SIDING service.
-     * @returns StudentContext Successful Response
+     * @returns StudentInfo Successful Response
      * @throws ApiError
      */
-    public static getStudentInfo(): CancelablePromise<StudentContext> {
+    public static getStudentInfo(): CancelablePromise<StudentInfo> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/user/info',
@@ -936,12 +934,12 @@ export class DefaultService {
      * their RUT with `user_rut`.
      * Moderator access is required.
      * @param userRut
-     * @returns StudentContext Successful Response
+     * @returns StudentInfo Successful Response
      * @throws ApiError
      */
     public static getStudentInfoForAnyUser(
         userRut: string,
-    ): CancelablePromise<StudentContext> {
+    ): CancelablePromise<StudentInfo> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/user/info_for_any_user',

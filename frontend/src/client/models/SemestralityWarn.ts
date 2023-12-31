@@ -10,9 +10,9 @@ import type { ClassId } from './ClassId';
  * Instead, they are usually only given in semesters with parity `only_available_on`.
  */
 export type SemestralityWarn = {
+    is_err?: boolean;
     kind?: 'sem';
     associated_to: Array<ClassId>;
-    is_err?: boolean;
     only_available_on: number;
 };
 

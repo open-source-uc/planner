@@ -4,6 +4,7 @@ Transform the Siding format into something usable.
 
 
 import logging
+from dataclasses import dataclass
 
 from prisma.models import (
     Major as DbMajor,
@@ -28,6 +29,7 @@ from app.plan.validation.curriculum.tree import (
 )
 from app.sync.siding import client
 from app.sync.siding.client import (
+    InfoEstudiante,
     StringArray,
 )
 from app.user.info import StudentInfo
@@ -139,51 +141,40 @@ async def load_siding_offer_to_database():
                 )
 
 
-async def fetch_student_info(rut: Rut) -> StudentInfo:
+class InvalidStudentError(Exception):
     """
-    MUST BE CALLED WITH AUTHORIZATION
+    Indicates that the referenced student is not a valid engineering student (as in,
+    SIDING does not provide info about them).
+    """
 
-    Request the basic student information for a given RUT from SIDING.
-    """
+
+@dataclass
+class CursosHechos:
+    cursos: list[list[PseudoCourse]]
+    en_curso: bool
+    admision: tuple[int, int] | None
+
+
+async def _fetch_meta(rut: Rut) -> InfoEstudiante:
     try:
         raw = await client.get_student_info(rut)
-        career = "INGENIERÍA CIVIL"
-        assert raw.Curriculo is not None and raw.Carrera == career
-
-        return StudentInfo(
-            full_name=raw.Nombre,
-            cyear=raw.Curriculo,
-            is_cyear_supported=cyear_from_str(raw.Curriculo) is not None,
-            reported_major=MajorCode(raw.MajorInscrito) if raw.MajorInscrito else None,
-            reported_minor=MinorCode(raw.MinorInscrito) if raw.MinorInscrito else None,
-            reported_title=TitleCode(raw.TituloInscrito)
-            if raw.TituloInscrito
-            else None,
-        )
-
+        assert raw.Curriculo is not None and raw.Carrera == "INGENIERÍA CIVIL"
     except (AssertionError, Fault) as err:
         if (isinstance(err, Fault) and "no pertenece" in err.message) or isinstance(
             err,
             AssertionError,
         ):
-            raise ValueError("Not a valid engineering student") from err
+            raise InvalidStudentError("Not a valid engineering student") from err
         raise err
+    return raw
 
 
-async def fetch_student_previous_courses(
-    rut: Rut,
-    info: StudentInfo,
-) -> tuple[list[list[PseudoCourse]], bool]:
-    """
-    MUST BE CALLED WITH AUTHORIZATION
-
-    Make a request to SIDING to find out the courses that the given student has passed.
-    """
-
+async def _fetch_done_courses(rut: Rut) -> CursosHechos:
     raw = await client.get_student_done_courses(rut)
     semesters: list[list[PseudoCourse]] = []
     in_course: list[list[bool]] = []
     # Make sure semester 1 is always odd, adding an empty semester if necessary
+    start_period = None
     if raw:
         start_year = int(raw[0].Periodo.split("-")[0])
         start_period = (start_year, 1)
@@ -195,10 +186,10 @@ async def fetch_student_previous_courses(
                 in_course.append([])
             if c.Estado.startswith("2"):
                 # Failed course
-                course = ConcreteId(code="#FAILED", failed=c.Sigla)
+                course = ConcreteId(code="FAILED", equivalence=None, failed=c.Sigla)
             else:
                 # Approved course
-                course = ConcreteId(code=c.Sigla)
+                course = ConcreteId(code=c.Sigla, equivalence=None)
             semesters[sem].append(course)
             currently_coursing = c.Estado.startswith("3")
             in_course[sem].append(currently_coursing)
@@ -206,4 +197,41 @@ async def fetch_student_previous_courses(
     # Check if the last semester is currently being coursed
     last_semester_in_course = bool(in_course and in_course[-1] and all(in_course[-1]))
 
-    return semesters, last_semester_in_course
+    return CursosHechos(
+        cursos=semesters,
+        en_curso=last_semester_in_course,
+        admision=start_period,
+    )
+
+
+async def fetch_student_info(rut: Rut) -> StudentInfo:
+    """
+    MUST BE CALLED WITH AUTHORIZATION
+
+    Request all the student information for a given RUT from SIDING.
+
+    Raises `InvalidStudentError` if the RUT does not refer to a valid student.
+    """
+
+    raw_meta = await _fetch_meta(rut)
+    raw_courses = await _fetch_done_courses(rut)
+
+    assert raw_meta.Curriculo is not None
+    return StudentInfo(
+        full_name=raw_meta.Nombre,
+        cyear=raw_meta.Curriculo,
+        is_cyear_supported=cyear_from_str(raw_meta.Curriculo) is not None,
+        reported_major=MajorCode(raw_meta.MajorInscrito)
+        if raw_meta.MajorInscrito
+        else None,
+        reported_minor=MinorCode(raw_meta.MinorInscrito)
+        if raw_meta.MinorInscrito
+        else None,
+        reported_title=TitleCode(raw_meta.TituloInscrito)
+        if raw_meta.TituloInscrito
+        else None,
+        passed_courses=raw_courses.cursos,
+        next_semester=len(raw_courses.cursos),
+        current_semester=len(raw_courses.cursos) - (1 if raw_courses.en_curso else 0),
+        admission=raw_courses.admision,
+    )

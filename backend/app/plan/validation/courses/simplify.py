@@ -20,12 +20,13 @@ from app.plan.validation.courses.logic import (
     And,
     AndClause,
     Atom,
-    BaseOp,
     Const,
     DnfExpr,
     Expr,
     Operator,
     Or,
+    create_op,
+    hash_expr,
 )
 
 T = TypeVar("T")
@@ -78,17 +79,18 @@ def as_dnf(expr: Expr) -> DnfExpr:
     if not isinstance(expr, Or):
         expr = Or(children=(expr,))
     for subexpr in expr.children:
-        if isinstance(subexpr, And):
-            subsubatoms: list[Atom] = []
-            for subsubatom in subexpr.children:
-                if not isinstance(subsubatom, Atom):
-                    raise Exception(f"dnf simplification failed: {expr}")
-                subsubatoms.append(subsubatom)
-            conjunctions.append(AndClause(children=tuple(subsubatoms)))
-        elif isinstance(subexpr, Or):
-            # This can never happen, because it would be an Or within an Or and
-            # there are simplification rules that take care of that
-            raise Exception(f"dnf simplification failed: {expr}")
+        if not isinstance(subexpr, Atom):
+            if isinstance(subexpr, And):
+                subsubatoms: list[Atom] = []
+                for subsubatom in subexpr.children:
+                    if not isinstance(subsubatom, Atom):
+                        raise Exception(f"dnf simplification failed: {expr}")
+                    subsubatoms.append(subsubatom)
+                conjunctions.append(AndClause(children=tuple(subsubatoms)))
+            else:
+                # This can never happen, because it would be an Or within an Or and
+                # there are simplification rules that take care of that
+                raise Exception(f"dnf simplification failed: {expr}")
         else:
             conjunctions.append(AndClause(children=(subexpr,)))
 
@@ -130,7 +132,7 @@ def apply_simplification(
             # No change done, pass child through to new instance
             new_children.append(child)
     # Make sure that if no changes are made, the exact same object is returned
-    return BaseOp.create(expr.neutral, tuple(new_children)) if changed else expr
+    return create_op(expr.neutral, tuple(new_children)) if changed else expr
 
 
 def _dnfize_chilren_rule(ctx: None, op: Operator, new: list[Expr], child: Expr) -> bool:
@@ -240,10 +242,10 @@ def ident(expr: Operator) -> Expr:
 
 
 def _idem_rule(seen: set[bytes], op: Operator, new: list[Expr], child: Expr) -> bool:
-    if child.hash in seen:
+    if hash_expr(child) in seen:
         # Skip this duplicate term
         return True
-    seen.add(child.hash)
+    seen.add(hash_expr(child))
     return False
 
 
@@ -264,7 +266,7 @@ def _absorp_rule(
 ) -> bool:
     if isinstance(child, Operator) and child.neutral != op.neutral:
         for grandchild in child.children:
-            if grandchild.hash in children:
+            if hash_expr(grandchild) in children:
                 # This entire subclause is unnecessary
                 return True
     return False
@@ -279,7 +281,7 @@ def absorp(expr: Operator) -> Expr:
     """
     children: set[bytes] = set()
     for child in expr.children:
-        children.add(child.hash)
+        children.add(hash_expr(child))
     return apply_simplification(expr, children, _absorp_rule)
 
 
@@ -292,7 +294,7 @@ def factor(expr: Operator) -> Expr:
     for child in expr.children:
         if isinstance(child, Operator) and child.neutral != expr.neutral:
             for grandchild in child.children:
-                h = grandchild.hash
+                h = hash_expr(grandchild)
                 count_factors[h] = count_factors.get(h, 0) + 1
 
     # Find the most repeated factor
@@ -321,7 +323,7 @@ def factor(expr: Operator) -> Expr:
         if isinstance(child, And | Or) and child.neutral != expr.neutral:
             without_factor: list[Expr] = []
             for grandchild in child.children:
-                if grandchild.hash == factor_hash:
+                if hash_expr(grandchild) == factor_hash:
                     # The child clause contains a factor
                     has_factor = True
                     # Keep track of the factor for later reference
@@ -331,17 +333,17 @@ def factor(expr: Operator) -> Expr:
                     without_factor.append(grandchild)
             if has_factor:
                 # Strip the factor and add the expression to the inner clause
-                inner.append(degen(BaseOp.create(child.neutral, tuple(without_factor))))
+                inner.append(degen(create_op(child.neutral, tuple(without_factor))))
         if not has_factor:
             # Add the expression as-is to the outer clause
             outer.append(child)
     assert factor is not None
 
     # Merge inner and outer clauses with the factor
-    inner_clause = BaseOp.create(expr.neutral, tuple(inner))
-    with_factor = BaseOp.create(not expr.neutral, (factor, inner_clause))
+    inner_clause = create_op(expr.neutral, tuple(inner))
+    with_factor = create_op(not expr.neutral, (factor, inner_clause))
     outer.append(with_factor)
-    return degen(BaseOp.create(expr.neutral, tuple(outer)))
+    return degen(create_op(expr.neutral, tuple(outer)))
 
 
 def defactor(expr: Operator) -> Expr:
@@ -385,7 +387,7 @@ def defactor(expr: Operator) -> Expr:
     while True:
         # Add this combination
         new_children.append(
-            BaseOp.create(
+            create_op(
                 expr.neutral,
                 tuple(options[i][cur_choice[i]] for i in range(len(options))),
             ),
@@ -404,7 +406,7 @@ def defactor(expr: Operator) -> Expr:
             # (and therefore we already tried all options)
             break
 
-    return BaseOp.create(not expr.neutral, tuple(new_children))
+    return create_op(not expr.neutral, tuple(new_children))
 
 
 def defactor_and(expr: Operator) -> Expr:
