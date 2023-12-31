@@ -1,7 +1,7 @@
 import Axios from 'axios'
 
 const axios = Axios.create({
-  baseURL: import.meta.env.VITE_BASE_API_URL
+  baseURL: import.meta.env.VITE_BASE_API_URL || "/api",
 })
 
 // Inject the token into the request header
