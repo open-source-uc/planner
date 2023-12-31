@@ -2,7 +2,6 @@ from app.plan.validation.courses.logic import (
     And,
     AndClause,
     Atom,
-    Const,
     DnfExpr,
     Expr,
     Or,
@@ -32,13 +31,11 @@ def test_dnf():
         )
 
     a, b, c, d = atoms(4)
-    t = Const(value=True)
-    f = Const(value=False)
 
     assert as_dnf(
         y(a, b, o(c, d)),
     ) == dnf([a, b, c], [a, b, d])
-    assert as_dnf(o(y(), a)) == dnf([])
-    assert as_dnf(o(t, a, b, o(c, d))) == dnf([])
+    assert as_dnf(o(y(), a)) == dnf([], [a])
+    assert as_dnf(o(o(c, d), a, b)) == dnf([c], [d], [a], [b])
     assert as_dnf(o()) == dnf()
-    assert as_dnf(y(f, b, c)) == dnf()
+    assert as_dnf(y(b, c)) == dnf([b, c])
