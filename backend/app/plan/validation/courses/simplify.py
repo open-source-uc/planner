@@ -25,7 +25,6 @@ from app.plan.validation.courses.logic import (
     Expr,
     Operator,
     Or,
-    ReqCourse,
     create_op,
     hash_expr,
 )
@@ -462,18 +461,3 @@ simplification_methods = [
     degen,
     factor,
 ]
-
-if __name__ == "__main__":
-    expr = And(
-        children=(
-            ReqCourse(code="A", coreq=False),
-            ReqCourse(code="B", coreq=False),
-            Or(
-                children=(
-                    ReqCourse(code="C", coreq=False),
-                    ReqCourse(code="D", coreq=False),
-                ),
-            ),
-        ),
-    )
-    dnfized = as_dnf(expr)
