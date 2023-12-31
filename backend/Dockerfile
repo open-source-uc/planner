@@ -42,6 +42,7 @@ COPY --from=requirements-stage /tmp/requirements.txt /app/requirements.txt
 # Install deps from the requirements-stage
 RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
 
+# TODO: copy only the necessary files
 # Copy the application code, including config and env files
 COPY ./ /app
 WORKDIR /app
