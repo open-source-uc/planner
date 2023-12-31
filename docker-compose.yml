@@ -37,6 +37,7 @@ services:
         condition: service_healthy
     volumes:
       - ./siding-mock-data:/siding-mock-data
+      - ./static-curriculum-data:/static-curriculum-data
     env_file:
       - ./backend/.env
   db:
