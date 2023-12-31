@@ -9,7 +9,6 @@ import {
 } from '@tanstack/react-query'
 import { OpenAPI } from './client'
 import { toastConfig } from './utils/toastConfig'
-import { loadEnvWithDefault } from './utils/env'
 import App from './app'
 
 if (import.meta.env.MODE !== 'development') {
@@ -51,9 +50,7 @@ if (import.meta.env.MODE !== 'development') {
 toastConfig()
 const queryClient = new QueryClient()
 
-const env = loadEnvWithDefault()
-
-const baseUrl = env.VITE_BASE_API_URL
+const baseUrl = import.meta.env.VITE_BASE_API_URL
 if (typeof baseUrl !== 'string') {
   throw new Error('VITE_BASE_API_URL environment variable not set during build')
 }

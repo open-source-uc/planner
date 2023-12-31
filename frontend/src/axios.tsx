@@ -1,10 +1,7 @@
 import Axios from 'axios'
-import { loadEnvWithDefault } from './utils/env'
-
-const env = loadEnvWithDefault()
 
 const axios = Axios.create({
-  baseURL: env.VITE_BASE_API_URL,
+  baseURL: import.meta.env.VITE_BASE_API_URL,
 })
 
 // Inject the token into the request header
