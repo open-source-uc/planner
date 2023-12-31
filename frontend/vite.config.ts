@@ -7,12 +7,10 @@ import svgr from 'vite-plugin-svgr'
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-
   const backendUrl = env.BACKEND_API_URL
   if (typeof backendUrl !== 'string') {
     throw new Error('BACKEND_API_URL environment variable not set during build')
   }
-
   return {
     build: {
       sourcemap: true,
@@ -35,7 +33,7 @@ export default defineConfig(({ command, mode }) => {
       eslintPlugin(), 
       svgr(), 
       sentryVitePlugin({
-        authToken: env.SENTRY_AUTH_TOKEN,
+        authToken: process.env.SENTRY_AUTH_TOKEN,
         org: "planner-ing-uc",
         project: "planner-frontend",
       })
