@@ -51,8 +51,10 @@ services:
       - api
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    env_file:
-      - ./database/.env
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
 

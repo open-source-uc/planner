@@ -142,10 +142,7 @@ Finalmente, se puede detener la app con `docker compose down` desde la raíz del
 
 El ambiente de producción es manejado por la universidad de forma interna, por lo que aquí se detallan las **instrucciones para desplegar el planner** de forma manual:
 
-1. Se deben crear tres archivos `.env`, uno por cada servicio y dentro de su respectiva carpeta:
-
-- `backend/.env` a partir del ejemplo `backend/.env.production.template` (_API_).
-- `database/.env` a partir del ejemplo `database/.env.production.template` (_base de datos_).
+1. Se debe crear el archivo `.env` para la API. En particular, crear `backend/.env` a partir del ejemplo `backend/.env.production.template`.
 
 2. Reemplazar los valores de las variables de entorno según corresponda en todos los archivos `.env` creados. **IMPORTANTE:** no olvidar modificar la variable `JWT_SECRET` en `backend/.env` y otras variables que puedan contener secretos para evitar vulnerabilidades de seguridad.
 
