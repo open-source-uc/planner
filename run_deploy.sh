@@ -3,6 +3,7 @@
 # Instalar Ansible si no está presente
 if ! command -v ansible >/dev/null; then
     echo "Ansible no está instalado. Instalando Ansible..."
+    sudo dnf install epel-release
     sudo dnf install ansible -y
 fi
 
@@ -13,7 +14,7 @@ if ! ansible-galaxy collection list | grep -q 'community.docker'; then
 fi
 
 # Definir el directorio del playbook
-PLAYBOOK_DIR=/opt/planner/infra/productive-deploy
+PLAYBOOK_DIR=/opt/planner/infra
 
 # Ejecutar el playbook de Ansible
 echo "Ejecutando el playbook de Ansible..."
