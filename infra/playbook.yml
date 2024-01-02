@@ -7,6 +7,9 @@
     admin_rut_default: ""
     siding_username_default: "default_username"
     siding_password_default: "default_password"
+    logging_ip_default: ""
+    logging_port_default: ""
+    run_mode: "{{ playbook_run_mode | default('automatic') }}"
 
   tasks:
     - block:
@@ -40,7 +43,7 @@
           register: prompt_logging_port
           when: logging_port_default == "" and ansible_run_tags | intersect(['manual']) | length > 0
 
-      when: ansible_run_tags | intersect(['manual']) | length > 0
+      when: run_mode == 'manual'
 
     - set_fact:
         admin_rut: "{{ prompt_admin_rut.user_input | default(admin_rut_default) }}"
