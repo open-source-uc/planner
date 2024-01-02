@@ -3,8 +3,8 @@ Update local database with an official but ugly source.
 Currently using unofficial sources until we get better API access.
 """
 
-import time
-from collections import OrderedDict
+import logging
+from datetime import timedelta
 
 from fastapi import HTTPException
 
@@ -12,12 +12,14 @@ from app.plan.validation.curriculum.tree import (
     Curriculum,
     CurriculumSpec,
 )
+from app.redis import get_redis
 from app.settings import settings
 from app.sync.database import curriculum_storage
 from app.sync.siding import translate as siding_translate
 from app.user.auth import UserKey, allow_force_login
 from app.user.info import StudentInfo
-from app.user.key import Rut
+
+log = logging.getLogger("sync")
 
 
 async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
@@ -52,31 +54,52 @@ async def get_curriculum(spec: CurriculumSpec) -> Curriculum:
     return out
 
 
-# TODO: Move this to redis
-_student_context_cache: OrderedDict[Rut, tuple[StudentInfo, float]] = OrderedDict()
+async def get_student_info(user: UserKey) -> StudentInfo:
+    lock_key = f"student-lock:{user.rut}"
+    data_key = f"student-data:{user.rut}"
+
+    async with get_redis() as redis:
+        lock = redis.lock(
+            lock_key,
+            # Just for safety
+            # If the machine crashes while the lock is held, we don't want the user to
+            # be permanently locked out of Planner
+            timeout=60,
+        )
+        async with lock:
+            # Use the data in redis if available
+            data = await redis.get(data_key)
+            if data is not None:
+                return StudentInfo.parse_raw(data)
+
+            # Data not in cache, fetch it while we hold the lock
+            info = await _fetch_student_data(user)
+
+            # Store the info in the redis db, with an expiry time
+            await redis.set(
+                data_key,
+                info.json(),
+                ex=timedelta(seconds=settings.student_info_expire),
+            )
+
+            return info
 
 
-async def get_student_data(user: UserKey) -> StudentInfo:
-    # Use entries in cache
-    if user.rut in _student_context_cache:
-        return _student_context_cache[user.rut][0]
+async def _fetch_student_data(user: UserKey) -> StudentInfo:
+    """
+    Fetch the student info for a user.
+    Always hits the SIDING service.
+    Handles the special case of mods without SIDING info trying to log in.
+    """
 
-    # Delete old entries from cache
-    now = time.monotonic()
-    while _student_context_cache:
-        rut, (_ctx, expiration) = next(iter(_student_context_cache.items()))
-        if now <= expiration:
-            break
-        _student_context_cache.pop(rut)
-
-    # Request user context from SIDING
-    print(f"fetching user data for student {user.rut} from SIDING...")
+    log.info("fetching user data for student %s from SIDING", user.rut)
     try:
-        info = await siding_translate.fetch_student_info(user.rut)
+        return await siding_translate.fetch_student_info(user.rut)
     except siding_translate.InvalidStudentError as err:
         if await allow_force_login(user):
-            # Allow moderators and admins to login anyway, even with incomplete info
-            info = StudentInfo(
+            # Allow moderators and admins to login anyway, even with incomplete
+            # info
+            return StudentInfo(
                 full_name=str(user.rut),
                 cyear="?",
                 is_cyear_supported=False,
@@ -93,10 +116,3 @@ async def get_student_data(user: UserKey) -> StudentInfo:
                 403,
                 "User is not a valid engineering student.",
             ) from err
-
-    # Add to cache and return
-    _student_context_cache[user.rut] = (
-        info,
-        time.monotonic() + settings.student_info_expire,
-    )
-    return info

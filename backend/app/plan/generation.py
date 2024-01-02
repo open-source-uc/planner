@@ -574,7 +574,7 @@ async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
             title=None,
         )
     else:
-        student = await sync.get_student_data(user)
+        student = await sync.get_student_info(user)
         cyear = cyear_from_str(student.cyear)
         if cyear is None:
             # Just plow forward, after all the validation endpoint will generate an
