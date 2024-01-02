@@ -27,6 +27,18 @@
             prompt: "Ingresar contraseña de SIDING"
           register: prompt_siding_password
           when: siding_password_default == "default_password"
+        
+        - name: Prompt for logging IP
+          pause:
+            prompt: "Ingresar la IP para enviar logs de Docker"
+          register: prompt_logging_ip
+          when: logging_ip_default == "" and ansible_run_tags | intersect(['manual']) | length > 0
+
+        - name: Prompt for logging port
+          pause:
+            prompt: "Ingresar el puerto para enviar logs de Docker"
+          register: prompt_logging_port
+          when: logging_port_default == "" and ansible_run_tags | intersect(['manual']) | length > 0
 
       when: ansible_run_tags | intersect(['manual']) | length > 0
 
@@ -34,6 +46,9 @@
         admin_rut: "{{ prompt_admin_rut.user_input | default(admin_rut_default) }}"
         siding_username: "{{ prompt_siding_username.user_input | default(siding_username_default) }}"
         siding_password: "{{ prompt_siding_password.user_input | default(siding_password_default) }}"
+        logging_ip: "{{ prompt_logging_ip.user_input | default(logging_ip_default) }}"
+        logging_port: "{{ prompt_logging_port.user_input | default(logging_port_default) }}"
+
     - name: Check that we're running Rocky Linux 9
       ansible.builtin.assert:
         that: ansible_distribution == 'Rocky' and ansible_distribution_major_version == '9'
@@ -222,12 +237,12 @@
           {
             "log-driver": "syslog",
             "log-opts": {
-              # USE ENV VARS TO OBTAIN IP AND PORT
-              "syslog-address": "udp://<ip>:<port>"
+              "syslog-address": "udp://{{ logging_ip }}:{{ logging_port }}"
             }
           }
         backup: true
       notify: restart docker
+      when: logging_ip | length > 0 and logging_port | length > 0
 
   handlers:
     - name: restart docker
