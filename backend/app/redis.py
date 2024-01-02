@@ -1,5 +1,4 @@
-from __future__ import annotations
-
+import contextlib
 from typing import Any
 
 from app.settings import settings
@@ -18,10 +17,12 @@ def init_redis_pool() -> BlockingConnectionPool:
 connection_pool = init_redis_pool()
 
 
-# FastAPI dependable for Redis
+@contextlib.asynccontextmanager
 async def get_redis():
     """
     Get a Redis connection from the pool.
+
+    Use with `async with` in order to close the connection at the end of the scope.
     """
     redis: Redis[Any] = Redis(
         connection_pool=connection_pool,

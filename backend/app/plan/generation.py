@@ -1,5 +1,8 @@
+import logging
+import time
 from collections import OrderedDict, defaultdict
 from collections.abc import Iterable
+from types import TracebackType
 
 from app import sync
 from app.plan.course import (
@@ -26,9 +29,11 @@ from app.plan.validation.courses.logic import (
     ReqLevel,
     ReqProgram,
     ReqSchool,
+    create_op,
+    hash_expr,
     map_atoms,
 )
-from app.plan.validation.courses.simplify import as_dnf
+from app.plan.validation.courses.simplify import as_dnf, simplify
 from app.plan.validation.courses.validate import CourseInstance, ValidationContext
 from app.plan.validation.curriculum.solve import (
     SolvedCurriculum,
@@ -44,6 +49,8 @@ from app.plan.validation.curriculum.tree import (
 from app.sync import get_curriculum
 from app.sync.database import course_info
 from app.user.auth import UserKey
+
+log = logging.getLogger("plan-gen")
 
 RECOMMENDED_CREDITS_PER_SEMESTER = 50
 
@@ -140,72 +147,174 @@ def _is_satisfiable(plan: ValidatablePlan, ready: set[str], expr: Expr) -> bool:
     return expr.value
 
 
+class Collapser:
+    atom_counts: dict[bytes, int]
+    expands_to: dict[bytes, list[Atom]]
+    collapsed: Expr
+
+    def __init__(self, expr: Expr) -> None:
+        self.atom_counts = {}
+        self._count_atoms(expr)
+        self.expands_to = {}
+        self.collapsed = self._collapse(expr)
+
+    def _count_atoms(self, expr: Expr):
+        if isinstance(expr, Operator):
+            for child in expr.children:
+                self._count_atoms(child)
+        else:
+            self.atom_counts[hash_expr(expr)] = (
+                self.atom_counts.get(hash_expr(expr), 0) + 1
+            )
+
+    def _collapse(self, expr: Expr) -> Expr:
+        if isinstance(expr, Operator):
+            new_children: list[Expr] = []
+            representative: Atom | None = None
+            for child in expr.children:
+                child = self._collapse(child)
+                if (
+                    isinstance(child, Atom)
+                    and self.atom_counts.get(hash_expr(child), 1) == 1
+                ):
+                    if representative is None:
+                        if isinstance(expr, And):
+                            representative = ReqCourse(
+                                code=str(len(self.expands_to)),
+                                coreq=False,
+                            )
+                            self.expands_to[hash_expr(representative)] = self.expand(
+                                child,
+                            )
+                        else:
+                            representative = child
+                    else:
+                        if isinstance(expr, And):
+                            self.expands_to[hash_expr(representative)].extend(
+                                self.expand(child),
+                            )
+                        else:
+                            if self._weight_of(child) < self._weight_of(representative):
+                                representative = child
+                else:
+                    new_children.append(child)
+            if representative is not None:
+                new_children.append(representative)
+            if len(new_children) == 1:
+                return new_children[0]
+            else:
+                return create_op(expr.neutral, tuple(new_children))
+        else:
+            return expr
+
+    def _weight_of(self, atom: Atom) -> int:
+        if hash_expr(atom) in self.expands_to:
+            return len(self.expands_to[hash_expr(atom)])
+        else:
+            return 1
+
+    def expand(
+        self,
+        atom: Atom,
+    ) -> list[Atom]:
+        if hash_expr(atom) in self.expands_to:
+            return self.expands_to[hash_expr(atom)]
+        else:
+            return [atom]
+
+
 def _find_hidden_requirements(
     courseinfo: CourseInfo,
     passed: ValidatablePlan,
     courses_to_pass: OrderedDict[int, PseudoCourse],
-) -> list[list[str]]:
+) -> list[str]:
     """
     Take the list of courses to pass and compute which necessary requirements are
     missing.
-    Returns a list of options: each with a set of hidden requirements.
-    The options are sorted by best to worst (where best is the option with least
-    courses).
+    Computes all possible ways to complete the hidden requirements, and returns one of
+    the shortest (arbitrarily).
     """
 
+    b = Benchmark("hidden requirements")
+
     # Compute a big list of taken and to-be-passed courses
-    all_courses: list[CourseDetails] = []
-    for sem in passed.classes:
-        for course in sem:
+    with b.section("collect courses"):
+        all_courses: list[CourseDetails] = []
+        for sem in passed.classes:
+            for course in sem:
+                info = courseinfo.try_course(course.code)
+                if info is not None:
+                    all_courses.append(info)
+        for course in courses_to_pass.values():
             info = courseinfo.try_course(course.code)
             if info is not None:
                 all_courses.append(info)
-    for course in courses_to_pass.values():
-        info = courseinfo.try_course(course.code)
-        if info is not None:
-            all_courses.append(info)
 
-    # Compute which courses are considered taken
-    ready: set[str] = {course.code for course in all_courses}
+        # Compute which courses are considered taken
+        ready: set[str] = {course.code for course in all_courses}
 
     # Find courses with missing requirements, and add them here
-    missing: list[Expr] = []
-    for course in all_courses:
-        if _is_satisfiable(passed, ready, course.deps):
-            continue
+    with b.section("collect requirements"):
+        missing: list[Expr] = []
+        for course in all_courses:
+            if _is_satisfiable(passed, ready, course.deps):
+                continue
 
-        # Something missing!
-        def map(atom: Atom) -> Atom:
-            if _is_satisfiable(passed, ready, atom):
-                # Already satisfiable, don't worry about it
-                return Const(value=True)
-            if isinstance(atom, ReqCourse):
-                # We *could* satisfy this atom by adding a course
-                return atom
-            # Not satisfiable by adding a course
-            # Consider this impossible
-            return Const(value=False)
+            # Something missing!
+            def map(atom: Atom) -> Atom:
+                if _is_satisfiable(passed, ready, atom):
+                    # Already satisfiable, don't worry about it
+                    return Const(value=True)
+                if isinstance(atom, ReqCourse):
+                    # We *could* satisfy this atom by adding a course
+                    # Ignore corequirements for simplicity
+                    return ReqCourse(code=atom.code, coreq=False)
+                # Not satisfiable by adding a course
+                # Consider this impossible
+                return Const(value=False)
 
-        missing.append(map_atoms(course.deps, map))
+            missing.append(map_atoms(course.deps, map))
 
-    # Good case: there is nothing missing
-    # Exit early to avoid some computations
-    if not missing:
-        return []
+        # Good case: there is nothing missing
+        # Exit early to avoid some computations
+        if not missing:
+            return []
+
+    # Apply some domain-specific heuristics
+    # In particular, recognize courses that are equivalent, and consider them as 1
+    # pseudo-course
+    with b.section("simplify"):
+        missing_expr = And(children=tuple(missing))
+        missing_expr = simplify(missing_expr)
+
+    with b.section("collapse"):
+        collapser = Collapser(missing_expr)
+        missing_expr = collapser.collapsed
 
     # Normalize the resulting expression to DNF:
     # (IIC1000 y IIC1001) o (IIC1000 y IIC1002) o (IIC2000 y IIC1002)
     # (ie. an OR of ANDs)
-    dnf = as_dnf(And(children=tuple(missing)))
-    print(f"dnfized missing expression: {dnf}")
-    options = [
-        [atom.code for atom in clause.children if isinstance(atom, ReqCourse)]
-        for clause in dnf.children
-    ]
-    for option_courses in options:
-        option_courses.sort()
-    options.sort(key=len)
-    return options
+    with b.section("dnfize"):
+        missing_dnf = as_dnf(missing_expr)
+
+    with b.section("expand"):
+        to_fill = min(
+            (
+                [
+                    expanded_atom.code
+                    for pseudoatom in clause.children
+                    for expanded_atom in collapser.expand(pseudoatom)
+                    if isinstance(expanded_atom, ReqCourse)
+                ]
+                for clause in missing_dnf.children
+            ),
+            key=lambda opt: len(opt),
+        )
+
+    with b.section("debug printing"):
+        print(f"consider-as-passed: {to_fill}")
+
+    return to_fill
 
 
 def _reselect_equivs(
@@ -287,7 +396,6 @@ def _compute_courses_to_pass(
     # Find out which requirements are missing from the plan
     extra_reqs = _find_hidden_requirements(courseinfo, passed, courses_to_pass)
 
-    # Ignore the extra requirements
     # TODO: Automatically place the extra courses
     # This has at least 3 problems:
     # 1. It becomes very obvious that the plan generation algorithm is not optimal in
@@ -302,7 +410,7 @@ def _compute_courses_to_pass(
     #   This could be taken into account, for example by first finding hidden
     #   requirements and then solving the curriculum, but that would have the effect of
     #   automatically choosing equivalences, worsening problem #2.
-    consider_as_passed = extra_reqs[0] if extra_reqs else []
+    consider_as_passed = extra_reqs
 
     return courses_to_pass, consider_as_passed
 
@@ -466,7 +574,7 @@ async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
             title=None,
         )
     else:
-        student = await sync.get_student_data(user)
+        student = await sync.get_student_info(user)
         cyear = cyear_from_str(student.cyear)
         if cyear is None:
             # Just plow forward, after all the validation endpoint will generate an
@@ -490,6 +598,33 @@ async def generate_empty_plan(user: UserKey | None = None) -> ValidatablePlan:
     )
 
 
+class Benchmark:
+    start: float
+    name: str
+
+    def __init__(self, bigname: str) -> None:
+        log.debug("%s:", bigname)
+        self.name = "?"
+        self.start = 0
+
+    def section(self, name: str) -> "Benchmark":
+        self.name = name
+        return self
+
+    def __enter__(self) -> None:
+        self.start = time.monotonic()
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        exc_trace: TracebackType | None,
+    ) -> None:
+        end = time.monotonic()
+        t = end - self.start
+        log.debug("  %s: %sms", self.name, round(1000 * t, 2))
+
+
 async def generate_recommended_plan(
     passed: ValidatablePlan,
     reference: ValidatablePlan | None = None,
@@ -500,34 +635,35 @@ async def generate_recommended_plan(
 
     NOTE: This function modifies `passed`.
     """
-    from time import monotonic as t
+    b = Benchmark("plan generation")
 
-    t0 = t()
-    courseinfo = await course_info()
-    curriculum = await get_curriculum(passed.curriculum)
-    t1 = t()
+    with b.section("resource lookup"):
+        courseinfo = await course_info()
+        curriculum = await get_curriculum(passed.curriculum)
 
     # Re-select courses from equivalences using reference plan
-    if reference is not None:
-        _reselect_equivs(courseinfo, curriculum, reference)
+    with b.section("ref reselect"):
+        if reference is not None:
+            _reselect_equivs(courseinfo, curriculum, reference)
 
     # Solve the curriculum to determine which courses have not been passed yet (and need
     # to be passed)
-    g = solve_curriculum(
-        courseinfo,
-        passed.curriculum,
-        curriculum,
-        passed.classes,
-        len(passed.classes),
-    )
+    with b.section("solve"):
+        g = solve_curriculum(
+            courseinfo,
+            passed.curriculum,
+            curriculum,
+            passed.classes,
+            len(passed.classes),
+        )
 
     # Flat list of all curriculum courses left to pass
-    courses_to_pass, ignore_reqs = _compute_courses_to_pass(
-        courseinfo,
-        g,
-        passed,
-    )
-    t2 = t()
+    with b.section("courses to pass"):
+        courses_to_pass, ignore_reqs = _compute_courses_to_pass(
+            courseinfo,
+            g,
+            passed,
+        )
 
     plan_ctx = ValidationContext(courseinfo, passed.copy(deep=True), user_ctx=None)
     for ignore in ignore_reqs:
@@ -535,90 +671,83 @@ async def generate_recommended_plan(
     plan_ctx.append_semester()
 
     # Precompute corequirements for courses
-    coreq_components = _find_mutual_coreqs(courseinfo, courses_to_pass)
-    t21 = t()
+    with b.section("coreq"):
+        coreq_components = _find_mutual_coreqs(courseinfo, courses_to_pass)
 
-    while courses_to_pass:
-        # Attempt to add a single course at the end of the last semester
+    with b.section("placement"):
+        while courses_to_pass:
+            # Attempt to add a single course at the end of the last semester
 
-        # Go in order, attempting to add each course to the semester
-        added_course = False
-        for idx in courses_to_pass:
-            course_group = coreq_components[idx]
+            # Go in order, attempting to add each course to the semester
+            added_course = False
+            for idx in courses_to_pass:
+                course_group = coreq_components[idx]
 
-            could_add = _try_add_course_group(
-                courseinfo,
-                plan_ctx,
-                courses_to_pass,
-                course_group,
-            )
-            if could_add:
-                # Successfully added a course, finish
-                added_course = True
+                could_add = _try_add_course_group(
+                    courseinfo,
+                    plan_ctx,
+                    courses_to_pass,
+                    course_group,
+                )
+                if could_add:
+                    # Successfully added a course, finish
+                    added_course = True
+                    break
+
+            if added_course:
+                # Made some progress!
+                # Continue adding courses
+                continue
+
+            # We could not add any course, try adding another semester
+            # However, we do not want to enter an infinite loop if nothing can be added,
+            # so only do this if we cannot add courses for 2 empty semesters
+            if (
+                len(plan_ctx.plan.classes) >= 2
+                and not plan_ctx.plan.classes[-1]
+                and not plan_ctx.plan.classes[-2]
+            ):
+                # Stuck :(
                 break
 
-        if added_course:
-            # Made some progress!
-            # Continue adding courses
-            continue
+            # Maybe some requirements are not met, maybe the semestrality is wrong,
+            # maybe we reached the credit limit for this semester
+            # Anyway, if we are stuck let's try adding a new semester and see if it
+            # helps
+            plan_ctx.append_semester()
 
-        # We could not add any course, try adding another semester
-        # However, we do not want to enter an infinite loop if nothing can be added, so
-        # only do this if we cannot add courses for 2 empty semesters
-        if (
-            len(plan_ctx.plan.classes) >= 2
-            and not plan_ctx.plan.classes[-1]
-            and not plan_ctx.plan.classes[-2]
-        ):
-            # Stuck :(
-            break
+        # Unwrap plan
+        plan = plan_ctx.plan
 
-        # Maybe some requirements are not met, maybe the semestrality is wrong, maybe
-        # we reached the credit limit for this semester
-        # Anyway, if we are stuck let's try adding a new semester and see if it helps
-        plan_ctx.append_semester()
+        # Remove empty semesters at the end (if any)
+        while plan.classes and not plan.classes[-1]:
+            plan.classes.pop()
 
-    # Unwrap plan
-    plan = plan_ctx.plan
-
-    # Remove empty semesters at the end (if any)
-    while plan.classes and not plan.classes[-1]:
-        plan.classes.pop()
-
-    # If any courses simply could not be added, add them now
-    # TODO: Do something about courses with missing requirements
-    if courses_to_pass:
-        print(f"WARNING: could not add courses {list(courses_to_pass.values())}")
-        plan.classes.append(list(courses_to_pass.values()))
-
-    t3 = t()
-
-    def p(t: float):
-        return f"{round(t*1000, 2)}ms"
-
-    print(f"generation: {p(t3-t0)}")
-    print(f"  resource lookup: {p(t1-t0)}")
-    print(f"  solve: {p(t2-t1)}")
-    print(f"  coreq: {p(t21-t2)}")
-    print(f"  insert: {p(t3-t21)}")
+        # If any courses simply could not be added, add them now
+        # TODO: Do something about courses with missing requirements
+        if courses_to_pass:
+            print(f"WARNING: could not add courses {list(courses_to_pass.values())}")
+            plan.classes.append(list(courses_to_pass.values()))
 
     # Assign blocks to courses based on the current solution
-    g.execute_recolors(plan.classes)
+    with b.section("recolor"):
+        g.execute_recolors(plan.classes)
 
     # Order courses by their color (ie. superblock assignment)
-    repetition_counter: defaultdict[str, int] = defaultdict(lambda: 0)
-    plan.classes = [
-        [
-            c
-            for _order, c in sorted(
-                (
-                    (_get_course_color_order(g, repetition_counter, c.code), c)
-                    for c in sem
-                ),
-                key=lambda pair: pair[0],
-            )
+    with b.section("reorder"):
+        repetition_counter: defaultdict[str, int] = defaultdict(lambda: 0)
+        plan.classes = [
+            [
+                c
+                for _order, c in sorted(
+                    (
+                        (_get_course_color_order(g, repetition_counter, c.code), c)
+                        for c in sem
+                    ),
+                    key=lambda pair: pair[0],
+                )
+            ]
+            for sem in plan.classes
         ]
-        for sem in plan.classes
-    ]
 
     return plan

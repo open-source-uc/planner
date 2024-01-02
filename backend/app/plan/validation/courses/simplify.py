@@ -49,6 +49,66 @@ def simplify(expr: Expr) -> Expr:
     return expr
 
 
+def dnfize_distribute_and(expr: And) -> list[AndClause]:
+    # The general structure is:
+    # (A & B | C & D) & (E & F | G) & (C & J)
+    # We refer to the first level (the entire expression) as the "top"
+    # We refer to the second level (eg. A & B | C & D) as an "orclause"
+    # We refer to the third level (eg. A & B) as an "andclause", which belongs to an
+    # "orclause"
+    #
+    # The output structure is:
+    # (A & B) | (C & D & E) | (A & D)
+    # The first level is called "out top"
+    # The second level (eg. A & B) is called an "out andclause" or "out clause"
+
+    orclauses: list[DnfExpr] = [as_dnf(subexpr) for subexpr in expr.children]
+
+    if any(len(orclause.children) == 0 for orclause in orclauses):
+        return []
+
+    out_clauses: list[tuple[AndClause, set[bytes]]] = []
+    choices: list[int] = [0 for _orclause in orclauses]
+    while True:
+        # Pick choices[i] for every orclause i
+        atom_hashes: set[bytes] = set()
+        out_atoms: list[Atom] = []
+        for i, choice in enumerate(choices):
+            andclause = orclauses[i].children[choice]
+            for atom in andclause.children:
+                if hash_expr(atom) not in atom_hashes:
+                    atom_hashes.add(hash_expr(atom))
+                    out_atoms.append(atom)
+
+        # Only add if it is not duplicated
+        if all(
+            atom_hashes != other_atom_hashes
+            for _other_clause, other_atom_hashes in out_clauses
+        ):
+            out_clause = AndClause(children=tuple(out_atoms))
+            out_clauses.append((out_clause, atom_hashes))
+
+        # Advance to the next possible choice
+        for i in range(len(choices)):
+            choices[i] += 1
+            if choices[i] < len(orclauses[i].children):
+                break
+            choices[i] = 0
+        else:
+            # Visited all possible choices
+            break
+
+    # Remove redundant out andclauses
+    return [
+        clause
+        for clause, atom_hashes in out_clauses
+        if not any(
+            atom_hashes.issuperset(other_atom_hashes) and other_clause is not clause
+            for other_clause, other_atom_hashes in out_clauses
+        )
+    ]
+
+
 def as_dnf(expr: Expr) -> DnfExpr:
     """
     Convert an expression to Disjunctive-Normal-Form.
@@ -59,40 +119,25 @@ def as_dnf(expr: Expr) -> DnfExpr:
     Useful because then we have several possible "scenarios", each of them being a set
     of assumptions.
     """
-    # Start by simplifying the entire expression
-    expr = simplify(expr)
 
-    # Now go step by step expanding the expression
-    while True:
-        # Try to simplify using all available methods
-        previous = expr
-        for method in dnf_methods:
-            if not isinstance(expr, Operator):
-                break
-            expr = method(expr)
-        # Finish simplifying if no progress is made
-        if expr is previous:
-            break
+    # We will naively apply distribution:
+    # (A | B) & (C | D) <-> A & B | A & C | B & C | B & D
+    # Afterwards, we will deduplicate the resulting logical expression
+    # Note that for example A | A & B <-> A, so deduplication is not just removing
+    # identical clauses
 
-    # Fit into the `DnfExpr` format
-    conjunctions: list[AndClause] = []
-    if not isinstance(expr, Or):
-        expr = Or(children=(expr,))
-    for subexpr in expr.children:
-        if not isinstance(subexpr, Atom):
-            if isinstance(subexpr, And):
-                subsubatoms: list[Atom] = []
-                for subsubatom in subexpr.children:
-                    if not isinstance(subsubatom, Atom):
-                        raise Exception(f"dnf simplification failed: {expr}")
-                    subsubatoms.append(subsubatom)
-                conjunctions.append(AndClause(children=tuple(subsubatoms)))
-            else:
-                # This can never happen, because it would be an Or within an Or and
-                # there are simplification rules that take care of that
-                raise Exception(f"dnf simplification failed: {expr}")
-        else:
-            conjunctions.append(AndClause(children=(subexpr,)))
+    # Repeatedly flatten the expression
+    conjunctions: list[AndClause]
+    if isinstance(expr, Or):
+        # Simplify inner expressions until they are `or`s and then flatten
+        conjunctions = []
+        for subexpr in expr.children:
+            conjunctions.extend(as_dnf(subexpr).children)
+    elif isinstance(expr, And):
+        conjunctions = dnfize_distribute_and(expr)
+    else:
+        # Just an atom, fit into something like or{and{atom}}
+        return DnfExpr(children=(AndClause(children=(expr,)),))
 
     return DnfExpr(children=tuple(conjunctions))
 
@@ -133,24 +178,6 @@ def apply_simplification(
             new_children.append(child)
     # Make sure that if no changes are made, the exact same object is returned
     return create_op(expr.neutral, tuple(new_children)) if changed else expr
-
-
-def _dnfize_chilren_rule(ctx: None, op: Operator, new: list[Expr], child: Expr) -> bool:
-    if isinstance(child, And):
-        new_child = defactor(child)
-        if new_child is not child:
-            # Child was defactores
-            new.append(new_child)
-            return True
-    return False
-
-
-def dnfize_children(expr: Operator) -> Expr:
-    """
-    Defactorize any children `And` operators.
-    This makes it so that no `And` has an `Or` clause as a child.
-    """
-    return apply_simplification(expr, None, _dnfize_chilren_rule)
 
 
 def _simplify_children_rule(
@@ -433,17 +460,4 @@ simplification_methods = [
     absorp,
     degen,
     factor,
-]
-
-# A list of techniques to try when doing DNF
-dnf_methods = [
-    simplify_children,
-    dnfize_children,
-    assoc,
-    anihil,
-    ident,
-    idem,
-    absorp,
-    degen,
-    defactor_and,
 ]

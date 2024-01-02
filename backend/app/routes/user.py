@@ -59,7 +59,7 @@ async def get_student_info(user: UserKey = Depends(require_authentication)):
     Requires authentication (!)
     This forwards a request to the SIDING service.
     """
-    return await sync.get_student_data(user)
+    return await sync.get_student_info(user)
 
 
 @router.get("/info_for_any_user", response_model=StudentInfo)
@@ -72,4 +72,4 @@ async def get_student_info_for_any_user(
     their RUT with `user_rut`.
     Moderator access is required.
     """
-    return await sync.get_student_data(mod.as_any_user(user_rut))
+    return await sync.get_student_info(mod.as_any_user(user_rut))

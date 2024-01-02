@@ -86,7 +86,7 @@ async def validate_plan_for_user(
     Includes diagnostics tailored for the given user and skips diagnostics that do not
     apply to the particular student.
     """
-    user_ctx = await sync.get_student_data(user)
+    user_ctx = await sync.get_student_info(user)
     return await diagnose_plan(plan, user_ctx)
 
 
@@ -101,7 +101,7 @@ async def validate_plan_for_any_user(
     their RUT with `user_rut`.
     Moderator access is required.
     """
-    user_ctx = await sync.get_student_data(mod.as_any_user(user_rut))
+    user_ctx = await sync.get_student_info(mod.as_any_user(user_rut))
     return await diagnose_plan(plan, user_ctx)
 
 
