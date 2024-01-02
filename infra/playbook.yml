@@ -1,55 +1,236 @@
 ---
 - name: Deploy Planner
-  hosts: all
+  hosts: localhost
   become: true
 
+  vars:
+    admin_rut_default: ""
+    siding_username_default: "default_username"
+    siding_password_default: "default_password"
+
   tasks:
-    - name: Update all packages
-      dnf:
+    - block:
+        - name: Prompt for admin RUT
+          pause:
+            prompt: "[Opcional] Ingresar RUT del administrador (si se deja vacío no existirá administrador)"
+          register: prompt_admin_rut
+          when: admin_rut_default == ""
+
+        - name: Prompt for SIDING username
+          pause:
+            prompt: "Ingresar usuario de SIDING"
+          register: prompt_siding_username
+          when: siding_username_default == "default_username"
+
+        - name: Prompt for SIDING password
+          pause:
+            prompt: "Ingresar contraseña de SIDING"
+          register: prompt_siding_password
+          when: siding_password_default == "default_password"
+
+      when: ansible_run_tags | intersect(['manual']) | length > 0
+
+    - set_fact:
+        admin_rut: "{{ prompt_admin_rut.user_input | default(admin_rut_default) }}"
+        siding_username: "{{ prompt_siding_username.user_input | default(siding_username_default) }}"
+        siding_password: "{{ prompt_siding_password.user_input | default(siding_password_default) }}"
+    - name: Check that we're running Rocky Linux 9
+      ansible.builtin.assert:
+        that: ansible_distribution == 'Rocky' and ansible_distribution_major_version == '9'
+        fail_msg: "This playbook is only for Rocky Linux 9"
+
+    - name: Install EPEL repo
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+
+    - name: Install Docker repo
+      ansible.builtin.command:
+        cmd: dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+        creates: /etc/yum.repos.d/docker-ce.repo
+
+    - name: Upgrade all packages
+      ansible.builtin.dnf:
         name: "*"
         state: latest
+        update_only: true
+      failed_when: false
 
-    - name: Add Docker repository
-      ansible.builtin.dnf_repository:
-        name: docker
-        description: Docker Repository
-        baseurl: https://download.docker.com/linux/centos/docker-ce.repo
-        gpgcheck: true
-
-    - name: Install Docker
-      dnf:
+    - name: Install packages
+      ansible.builtin.dnf:
         name:
+          # Docker
           - docker-ce
           - docker-ce-cli
           - containerd.io
+          - docker-compose-plugin
+
+          # Automatic updates
+          - dnf-automatic
+
         state: present
 
-    - name: Start and enable Docker service
+    - name: Enable memory overcommit (for Redis)
+      ansible.posix.sysctl:
+        name: vm.overcommit_memory
+        value: 1
+        state: present
+
+    - name: Check if Transparent Huge Pages are disabled
+      ansible.builtin.command:
+        cmd: cat /sys/kernel/mm/transparent_hugepage/enabled
+      register: tph_check
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Disable Transparent Huge Pages (for Redis)
+      ansible.builtin.shell:
+        cmd: echo never > /sys/kernel/mm/transparent_hugepage/enabled
+      when: tph_check.stdout != 'never'
+      changed_when: true
+
+    - name: Check if there is enough disk space (10 GB)
+      ansible.builtin.assert:
+        that: (ansible_mounts|selectattr("mount", "equalto", "/")|list)[0].size_available > 10 * 1024 * 1024 * 1024
+      vars:
+        fail_msg: "Not enough disk space to continue"
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Check that swap is enabled
+      ansible.builtin.command:
+        cmd: swapon --show
+      register: swap_check
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Enable swap
+      ansible.builtin.command:
+        cmd:
+          # Allocate a 4 GB swapfile
+          - fallocate -l 4G /swapfile
+          - chmod 600 /swapfile
+          # Mark as swap
+          - mkswap /swapfile
+          # Enable the swapfile
+          - swapon /swapfile
+        creates: /swapfile
+      when: swap_check.rc != 0
+
+    - name: Configure automatic security updates
+      community.general.ini_file:
+        path: /etc/dnf/automatic.conf
+        section: commands
+        option: upgrade_type
+        value: security
+        mode: "0644"
+
+    - name: Enable automatic updates
+      ansible.builtin.service:
+        name: dnf-automatic-install.timer
+        enabled: true
+        state: started
+
+    - name: Configure timezone
+      community.general.timezone:
+        name: America/Santiago
+
+    - name: Set Docker to start on boot
+      ansible.builtin.service:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Create backend .env
+      ansible.builtin.copy:
+        src: /opt/planner/backend/.env.production.template
+        dest: /opt/planner/backend/.env
+        mode: "0644"
+        force: false
+        remote_src: true
+
+    - name: Configure admin RUT
+      ansible.builtin.lineinfile:
+        path: /opt/planner/backend/.env
+        regexp: "^ADMIN_RUT"
+        line: "ADMIN_RUT={{ admin_rut }}"
+        state: present
+        insertafter: "^# ADMIN_RUT"
+        firstmatch: true
+      when: admin_rut | length > 0
+
+    - name: Configure SIDING username
+      ansible.builtin.lineinfile:
+        path: /opt/planner/backend/.env
+        regexp: "^SIDING_USERNAME"
+        line: "SIDING_USERNAME={{ siding_username }}"
+        state: present
+        insertafter: "^# SIDING_USERNAME"
+        firstmatch: true
+      when: siding_username | length > 0
+
+    - name: Configure SIDING password
+      ansible.builtin.lineinfile:
+        path: /opt/planner/backend/.env
+        regexp: "^SIDING_PASSWORD"
+        line: "SIDING_PASSWORD={{ siding_password }}"
+        state: present
+        insertafter: "^# SIDING_PASSWORD"
+        firstmatch: true
+      when: siding_password | length > 0
+
+    - name: Check if JWT secret is already configured
+      ansible.builtin.command:
+        cmd: grep -q '^JWT_SECRET' /opt/planner/backend/.env
+      register: jwt_secret_check
+      check_mode: false
+      changed_when: false
+      failed_when: false
+
+    - name: Configure JWT secret
+      ansible.builtin.lineinfile:
+        path: /opt/planner/backend/.env
+        regexp: "^JWT_SECRET"
+        line: "JWT_SECRET={{ lookup('community.general.random_string', length=64, base64=True) }}"
+        state: present
+        insertafter: "^# JWT_SECRET"
+        firstmatch: true
+      when: jwt_secret_check.rc != 0
+
+    - name: Create caddy_data volume
+      ansible.builtin.command:
+        cmd: docker volume create caddy_data
+        creates: /var/lib/docker/volumes/caddy_data/
+      become: true
+
+    - name: Build and start containers
+      ansible.builtin.command:
+        cmd: docker compose up --build --remove-orphans --force-recreate --detach --wait-timeout 300 --wait planner
+        chdir: /opt/planner
+      environment:
+        DOCKER_BUILDKIT: 1
+      changed_when: true
+      become: true
+
+    - name: Configure Docker to send logs to syslog server
+      copy:
+        dest: /etc/docker/daemon.json
+        content: |
+          {
+            "log-driver": "syslog",
+            "log-opts": {
+              # USE ENV VARS TO OBTAIN IP AND PORT
+              "syslog-address": "udp://<ip>:<port>"
+            }
+          }
+        backup: true
+      notify: restart docker
+
+  handlers:
+    - name: restart docker
       systemd:
         name: docker
-        state: started
-        enabled: true
-
-    - name: Install Docker Compose
-      dnf:
-        name: docker-compose-plugin
-        state: present
-
-    - name: Create Docker volume for Caddy
-      community.docker.docker_volume:
-        name: caddy_data
-        state: present
-
-    - name: Build and run Docker containers
-      # https://docs.ansible.com/ansible/latest/collections/community/docker/docker_compose_module.html
-      community.docker.docker_compose:
-        project_src: /opt/planner
-        state: present
-        build: true
-        recreate: always
-        remove_orphans: true
-        restarted: true
-        pull: true
-        timeout: 300
-        services:
-          - planner
+        state: restarted
