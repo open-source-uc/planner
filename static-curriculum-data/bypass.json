@@ -3685,6 +3685,19 @@
                                 }
                             },
                             {
+                                "debug_name": "Ética para Ingeniería",
+                                "name": "Ética para Ingeniería",
+                                "credits": 10,
+                                "codes": [
+                                    "ETI188"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        200
+                                    ]
+                                }
+                            },
+                            {
                                 "debug_name": "Matemática Discretas",
                                 "name": "Matemática Discretas",
                                 "credits": 10,
@@ -3989,6 +4002,19 @@
                                 "filler": {
                                     "order": [
                                         201
+                                    ]
+                                }
+                            },
+                            {
+                                "debug_name": "Ética para Ingeniería",
+                                "name": "Ética para Ingeniería",
+                                "credits": 10,
+                                "codes": [
+                                    "ETI188"
+                                ],
+                                "filler": {
+                                    "order": [
+                                        200
                                     ]
                                 }
                             },
