@@ -71,7 +71,7 @@ def add_eti188(
     # En caso de querer realizarlo dentro de la Licenciatura este puede ser
     # reconocido como Optativo de Fundamentos o bien dentro de los creditos libres
     # del plan de formacion general."
-    scrape.blocks.append(
+    scrape.blocks.insert(0,
         ScrapedBlock(
             name=None,
             creds=None,
