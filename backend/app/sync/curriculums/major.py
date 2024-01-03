@@ -300,8 +300,37 @@ def _c2022_defer_free_area_ofg(curriculum: Curriculum):
                 filler.cost_offset -= 1
 
 
+def _patch_eti188(
+    courses: dict[str, CourseDetails],
+    out: CurriculumStorage,
+    curr: Curriculum,
+):
+    # El curso ETI188 cuenta como Optativo de Fundamentos y OFG de Area Libre para C2022
+    # (según ODOC)
+    # Sin embargo, SIDING no lo reporta así (hace falta desesperadamente un repositorio
+    # central, público y con un sistema para presentar reclamos/sugerencias con la
+    # definición de las mallas)
+
+    area_libre = "MAJOR-LIST-C10351"
+    eti = "ETI188"
+
+    # Agregar ETI188 a la lista de OFGs de Area Libre
+    if eti not in out.lists[area_libre].courses:
+        out.lists[area_libre].courses.insert(0, eti)
+
+    # Agregar ETI188 como optativo de fundamentos
+    for equiv_code in curr.collect_equivalences():
+        equiv = out.lists[equiv_code]
+        if (
+            "optativo de fundamentos" in unidecode(equiv.name).lower()
+            and eti not in equiv.courses
+        ):
+            equiv.courses.insert(0, eti)
+
+
 def patch_major(
     courses: dict[str, CourseDetails],
+    out: CurriculumStorage,
     spec: CurriculumSpec,
     curr: Curriculum,
 ) -> Curriculum:
@@ -324,10 +353,12 @@ def patch_major(
             # especial.
             _c2022_defer_free_area_ofg(curr)
             _allow_selection_duplication(courses, curr)
+            _patch_eti188(courses, out, curr)
 
-    # TODO: Marcar termodinamica, electromagnetismo y optimizacion como equivalencias
-    # homogeneas.
-    # TODO: Marcar los OFGs y los teologicos como equivalencias no esenciales.
+    # NOTE: Termodinamica, electromagnetismo y optimizacion se marcan como equivalencias
+    # homogeneas en `collate.py`.
+    # NOTE: Los OFGs y los teologicos se marcan como equivalencias no esenciales en
+    # `collate.py`.
 
     return curr
 
@@ -346,7 +377,7 @@ def translate_major(
     curr = translate_siding(courses, out, spec, spec_id, siding, raw_blocks)
 
     # Completar los detalles faltantes
-    curr = patch_major(courses, spec, curr)
+    curr = patch_major(courses, out, spec, curr)
 
     # Agregar al set de curriculums
     out.set_major(spec, curr)

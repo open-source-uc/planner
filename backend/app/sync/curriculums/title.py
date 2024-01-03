@@ -8,6 +8,7 @@ from app.plan.validation.curriculum.tree import (
     Leaf,
     TitleCode,
 )
+from app.sync.curriculums.scrape.common import ScrapedBlock
 from app.sync.curriculums.scrape.minor import ScrapedProgram
 from app.sync.curriculums.scrape.translate import ProgramType, translate_scrape
 from app.sync.curriculums.siding import SidingInfo
@@ -33,12 +34,15 @@ def translate_title(
     siding: list[BloqueMalla],
     scrape: ScrapedProgram,
 ):
-    # TODO: Agregar el curso ETI188
-    # "El curso ETI188 - Etica para Ingenieria se incorpora al plan de estudios como un
-    # requisito necesario para obtener el titulo profesional.
-    # En caso de querer realizarlo dentro de la Licenciatura este puede ser reconocido
-    # como Optativo de Fundamentos o bien dentro de los creditos libres del plan de
-    # formacion general."
+    match spec.cyear:
+        case "C2020":
+            add_eti = False
+        case "C2022":
+            add_eti = True
+    if add_eti and not any("ETI188" in block.options for block in scrape.blocks):
+        # Agregar ETI188 al plan
+        scrape = scrape.copy(deep=True)
+        add_eti188(scrape)
 
     # Traducir desde los datos scrapeados
     curr = translate_scrape(
@@ -57,6 +61,25 @@ def translate_title(
 
     # Agregar el titulo al listado
     out.set_title(spec, curr)
+
+
+def add_eti188(
+    scrape: ScrapedProgram,
+):
+    # "El curso ETI188 - Etica para Ingenieria se incorpora al plan de estudios como
+    # un requisito necesario para obtener el titulo profesional.
+    # En caso de querer realizarlo dentro de la Licenciatura este puede ser
+    # reconocido como Optativo de Fundamentos o bien dentro de los creditos libres
+    # del plan de formacion general."
+    scrape.blocks.append(
+        ScrapedBlock(
+            name=None,
+            creds=None,
+            options=["ETI188"],
+            complementary=False,
+            nonexclusive=False,
+        ),
+    )
 
 
 OPI_NAME = "Optativos de Ingeniería (OPI)"
