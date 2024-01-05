@@ -3,9 +3,8 @@ import warnings
 from pathlib import Path
 from typing import Literal
 
-from pydantic import AnyHttpUrl, BaseSettings, Field, RedisDsn, SecretStr
 from dotenv import load_dotenv
-
+from pydantic import AnyHttpUrl, BaseSettings, Field, RedisDsn, SecretStr
 
 # Load default and then environment-specific variables
 load_dotenv(".env.default", override=False, encoding="utf8")
