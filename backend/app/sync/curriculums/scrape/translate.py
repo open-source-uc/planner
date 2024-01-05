@@ -216,6 +216,43 @@ class ListBuilder:
         return self.minimum_idx
 
 
+def get_credits_of_block(
+    courses: dict[str, CourseDetails],
+    block: ScrapedBlock,
+    spec: CurriculumSpec,
+    name: str,
+):
+    credits = None
+    for code in block.options:
+        if code not in courses:
+            log.warn(
+                "program %s defines the amount of credits of block %s"
+                " based on unknown course %s",
+                spec,
+                name,
+                code,
+            )
+            continue
+        if credits is None:
+            credits = courses[code].credits
+        elif credits != courses[code].credits:
+            log.warn(
+                "inconsistent amount of credits for block %s of program %s:"
+                " %s != %s",
+                name,
+                spec,
+                credits,
+                courses[code].credits,
+            )
+    if credits is None:
+        log.error(
+            "program %s contains block %s with no known course options ?!",
+            spec,
+            name,
+        )
+    return credits
+
+
 def translate_scrape(
     kind: ProgramType,
     courses: dict[str, CourseDetails],
@@ -240,10 +277,12 @@ def translate_scrape(
             if block.creds is not None:
                 # Un optativo con un creditaje fijo
                 exclusive_credits += block.creds
-            elif len(block.options) == 1 and block.options[0] in courses:
-                # Un ramo unico
-                info = courses[block.options[0]]
-                exclusive_credits += info.credits
+            else:
+                # La cantidad de creditos viene dada implicitamente por el ramo
+                credits = get_credits_of_block(courses, block, spec, name)
+                if credits is not None:
+                    exclusive_credits += credits
+
     else:
         # Una cantidad fija de creditos exclusivos (ie. el titulo)
         exclusive_credits = kind.exclusive_credits
