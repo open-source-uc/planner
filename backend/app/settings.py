@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 
 
 # Load default and then environment-specific variables
-load_dotenv('.env.default', override=False, encoding='utf8')
-load_dotenv('.env', override=True, encoding='utf8')
+load_dotenv(".env.default", override=False, encoding="utf8")
+load_dotenv(".env", override=True, encoding="utf8")
 
 
 def generate_random_jwt_secret():
