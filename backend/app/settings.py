@@ -134,4 +134,8 @@ class Settings(BaseSettings):
 
 
 # Load settings and allow global app access to them
-settings = Settings()
+# NOTE: Pyright reports this line (rightfully) as an error because there are missing
+# arguments.
+# However, we actually want this to fail if there are missing environment variables, so
+# it's ok to ignore.
+settings = Settings()  # type: ignore
