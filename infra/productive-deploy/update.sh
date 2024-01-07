@@ -7,19 +7,16 @@ REPO_DIR=/opt/planner
 cd "$REPO_DIR"
 
 # Actualizar la rama main del repositorio
-# git fetch origin main
-git fetch origin prepare-deploy
+git fetch origin main
 
 # Obtener el hash del commit local y el remoto
 LOCAL=$(git rev-parse HEAD)
-# REMOTE=$(git rev-parse origin/main)
-REMOTE=$(git rev-parse origin/prepare-deploy)
+REMOTE=$(git rev-parse origin/main)
 
 # Si se detectan cambios, ejecutar run_deploy.sh
 if [ "$LOCAL" != "$REMOTE" ]; then
     echo "Changes detected. Running deploy script..."
-    # git checkout origin/main
-    git checkout origin/prepare-deploy
+    git checkout origin/main
     chmod +x ./run_deploy.sh
     ./run_deploy.sh
 else
