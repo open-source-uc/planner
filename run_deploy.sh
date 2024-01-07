@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Notas sobre este archivo:
+# 1. Este archivo solamente debe ser usado para generar despliegues del planner en la máquina de producción.
+# 2. NO se debe usar este archivo en ambientes de desarrollo.
+# 3. Este archivo puede ser modificado, y debería actualizarse automáticamente en la máquina de producción.
+
 # Instalar Ansible si no está presente
 if ! command -v ansible >/dev/null; then
     echo "Ansible no está instalado. Instalando Ansible..."
