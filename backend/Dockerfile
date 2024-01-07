@@ -42,12 +42,10 @@ COPY --from=requirements-stage /tmp/requirements.txt /app/requirements.txt
 # Install deps from the requirements-stage
 RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
 
-# Copy the application code
+# TODO: copy only the necessary files
+# Copy the application code, including config and env files
 COPY ./ /app
 WORKDIR /app
-
-# Copy the .env file
-COPY .env /app/.env
 
 # Generate the Prisma client
 RUN prisma generate
