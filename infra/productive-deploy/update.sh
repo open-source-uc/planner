@@ -17,6 +17,7 @@ REMOTE=$(git rev-parse origin/main)
 if [ "$LOCAL" != "$REMOTE" ]; then
     echo "Changes detected. Running deploy script..."
     git checkout origin/main
+    chmod +x ./run_deploy.sh
     ./run_deploy.sh
 else
     echo "No changes detected. No action needed."

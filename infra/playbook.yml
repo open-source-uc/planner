@@ -15,7 +15,7 @@
     - block:
         - name: Configurar variables de entorno. Primero RUT del admin
           pause:
-            prompt: "Ingresar RUT del administrador (si se deja vacío no existirá administrador)"
+            prompt: "Ingresar RUT del administrador sin puntos y con guión (si se deja vacío no existirá administrador)"
           register: prompt_admin_rut
           when: admin_rut_default == ""
 

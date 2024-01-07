@@ -9,15 +9,19 @@ Estas instrucciones están pensadas para configurar por primera vez la máquina 
 1. Actualizar paquetes de la máquina (`dnf update`).
 2. Instalar git.
 3. Clonar el **repositorio de producción** del proyecto nuevo planner (`git clone`).
-4. Correr la primera instancia de deploy usando el playbook de _ansible_ de forma manual.
+4. Desplegar por primera vez el proyecto usando el playbook de _ansible_ de forma manual (`ansible-playbook playbook.yml -e "playbook_run_mode=manual"`).
 5. Agregar a la máquina el archivo `update.sh`, dar permisos de ejecución con el comando `chmod` y crear _cronjob_ que lo ejecute recurrentemente.
 
 ### Detalles
 
-1. Actualizar paquetes de la máquina. Para el caso de Rocky Linux se puede usar `sudo dnf check-update` y `sudo dnf update`.
-2. Instalar git. En la siguiente sección [Informacion de los archivos](informacion-de-los-archivos) se muestra como _ansible_ instalará el resto de dependencias necesarias, tales como Docker.
-3. Clonar el **repositorio de producción** del proyecto nuevo planner usando `git clone`. Este repositorio se encontrará en Github controlado exclusivamente por la **Subdirección de Desarrollo** (más detalles en la sección [Flujo 2: Actualizaciones recurrentes](flujo-2:-actualizaciones-recurrentes)). El comando debería quedar como: `git clone https://github.com/<nombre organizacion>/planner`.
-4. Para correr la primera instancia de deploy de forma manual, primero es necesario instalar _ansible_ con "`sudo dnf install epel-release`" y "`sudo dnf install ansible`". Luego, usar el comando "`ansible-playbook playbook.yml -e "playbook_run_mode=manual"`". Esto va a solicitar algunos valores en la consola, para configurar el archivo `backend/.env`, además de aplicar otras configuraciones a la máquina para correr el proyecto de forma óptima. Finalmente, se van a construir e iniciar los contenedores de forma automática (esto podría tomar bastante tiempo, aunque parezca que se quedó pegado realmente solo está cargando).
+1. Actualizar paquetes de la máquina. Para el caso de Rocky Linux 9 se puede usar "`sudo dnf check-update`" y "`sudo dnf update`".
+2. Instalar git. Para Rocky Linux 9 se puede usar "`sudo dnf install git`". En la siguiente sección [Informacion de los archivos](informacion-de-los-archivos) se muestra como _ansible_ instalará el resto de dependencias necesarias, tales como Docker.
+3. Clonar el **repositorio de producción** del proyecto nuevo planner usando "`git clone`". Este repositorio se encuentra en Github controlado exclusivamente por la **Subdirección de Desarrollo** (más detalles en la sección [Flujo 2: Actualizaciones recurrentes](flujo-2:-actualizaciones-recurrentes)). Se recomienda instalar en la carpeta `/opt` de la máquina. Los comandos finales deberían quedar como: "`cd /opt`" y luego "`sudo git clone https://github.com/<nombre-organizacion>/planner.git`".
+4. Para desplegar por primera vez el proyecto de forma manual:
+- primero es necesario instalar _ansible_ con "`sudo dnf install epel-release`" y "`sudo dnf install ansible`".
+- Luego, se ejecutan las instrucciones del playbook de forma manual, entrando a la carpeta infra del proyecto con "`cd /opt/planner/infra`", y usando el comando "`ansible-playbook playbook.yml -e "playbook_run_mode=manual"`". Se va a solicitar al usuario ingresar algunos valores en la consola, para así configurar las variables de entorno en un nuevo archivo "`/opt/planner/backend/.env`", además de aplicar otras configuraciones a la máquina para ejecutar el proyecto de forma óptima.
+- Finalmente, se van a construir e iniciar los contenedores de la aplicación de forma automática (esto podría tomar bastante tiempo, ya que está descargando por primera vez todas las dependencias necesarias para correr el proyecto). Va a aparecer un mensaje del estilo "TASK [Build and start containers] ************", solamente hay que esperar a que esté listo.
+- Una vez que haya completado exitosamente el lanzamiento, se puede ver los logs de todos los contenedores con el comando `sudo docker compose logs -f` para verificar que no hayan ocurrido problemas inesperados.
 5. Para permitir las actualizaciones recurrentes del proyecto, es necesario agregar a la maquina el archivo `update.sh`, luego darle permisos de ejecución con el comando `chmod +x update.sh`, y luego crear el _cronjob_ que lo ejecute recurrentemente con el comando `crontab -e`. Se recomienda una frecuencia no tan baja, para que las actualizaciones ocurran de forma más inmediata. Por ejemplo, cada media hora agregando la línea: "`*/30 * * * * /opt/planner/infra/productive-deploy/update.sh`". De esta forma, hay un rango máximo de 30 minutos desde que se hizo el merge a main hasta que se ejecuta el deploy en la máquina.
    Otra alternativa puede ser todos los días a las 5AM con la línea: "`0 5 * * * /opt/planner/infra/productive-deploy/update.sh`". La desventaja es que si algo sale mal nadie estará supervisando.
 
