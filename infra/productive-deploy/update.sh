@@ -23,5 +23,6 @@ if [ "$LOCAL" != "$REMOTE" ]; then
     chmod +x ./run_deploy.sh
     ./run_deploy.sh
 else
-    echo "No changes detected. No action needed."
+    # No se detectaron cambios
+    # echo "No changes detected. No action needed."
 fi
