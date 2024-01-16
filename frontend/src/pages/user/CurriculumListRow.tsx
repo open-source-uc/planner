@@ -1,7 +1,7 @@
 import { type LowDetailPlanView } from '../../client'
 import { Link } from '@tanstack/react-router'
 
-const CurriculumListRow = ({ curriculum, handleDelete, impersonateRut }: { curriculum: LowDetailPlanView, handleDelete?: Function, impersonateRut?: string }): JSX.Element => {
+const CurriculumListRow = ({ curriculum, handleDelete, handleFavourite, impersonateRut }: { curriculum: LowDetailPlanView, handleDelete?: Function, handleFavourite?: Function, impersonateRut?: string }): JSX.Element => {
   function getDateString (date: string): string {
     const mydate = date.split('T')[0].split('-').reverse().join('-')
     return mydate
@@ -9,6 +9,11 @@ const CurriculumListRow = ({ curriculum, handleDelete, impersonateRut }: { curri
 
   return (
         <tr className='bg-white border-b  hover:bg-gray-50 '>
+          <td className='px-6 py-4'>
+          {handleFavourite !== undefined &&
+            <button className='text-green-600' onClick={() => handleFavourite(curriculum.id, curriculum.name, curriculum.is_favorite)}>{curriculum.is_favorite ? 'fav' : 'no'}</button>
+          }
+          </td>
             <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
               {impersonateRut !== undefined
                 ? <Link
