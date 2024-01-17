@@ -2,6 +2,7 @@ import { type LowDetailPlanView } from '../../client'
 import { Link } from '@tanstack/react-router'
 import { ReactComponent as StarFull } from '../../assets/starFull.svg'
 import { ReactComponent as StarOutline } from '../../assets/starOutline.svg'
+import { ReactComponent as EditIcon } from '../../assets/editBlue.svg'
 
 interface RowProps {
   curriculum: LowDetailPlanView
@@ -35,7 +36,7 @@ const CurriculumListRow = ({ curriculum, handleDelete, handleFavourite, openPlan
                   }}
                 >{curriculum.name}
                 </Link>
-                : <Link
+                : <div className='flex flex-row'><Link
                   className='text-blue-600'
                   to="/planner/$plannerId"
                   params={{
@@ -43,6 +44,11 @@ const CurriculumListRow = ({ curriculum, handleDelete, handleFavourite, openPlan
                   }}
                 >{curriculum.name}
                 </Link>
+                <div className="hover-text">
+                  <button className='pl-3' onClick={() => openPlanNameModal(curriculum.id) }><EditIcon/></button>
+                  <span className="tooltip-text font-thin">Editar nombre</span>
+                </div>
+                </div>
               }
               </th>
             <td className='px-6 py-4'>{getDateString(curriculum.created_at)}</td>
@@ -70,7 +76,6 @@ const CurriculumListRow = ({ curriculum, handleDelete, handleFavourite, openPlan
               {handleDelete !== undefined &&
                 <button className='text-red-600' onClick={() => handleDelete(curriculum.id)}>Eliminar</button>
               }
-              <button className='text-green-600' onClick={() => openPlanNameModal(curriculum.id) }>Cambiar Nombre</button>
             </div></td>
         </tr>
   )

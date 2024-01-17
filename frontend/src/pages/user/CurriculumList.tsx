@@ -125,7 +125,7 @@ const CurriculumList = (): JSX.Element => {
                 <table className="w-full text-sm text-left text-gray-500">
                   <thead className="text-xs text-gray-700 uppercase bg-gray-50 ">
                     <tr className="border-b-4 border-gray-600">
-                        <th scope="col" className="px-6 py-3">Fav</th>
+                        <th scope="col" className="px-6 py-3"><span className="sr-only">Fav</span></th>
                         <th scope="col" className="px-6 py-3">Nombre</th>
                         <th scope="col" className="px-6 py-3">Fecha Creación</th>
                         <th scope="col" className="px-6 py-3">Fecha Modificación</th>
