@@ -7,6 +7,9 @@ import { Spinner } from '../../components/Spinner'
 import { toast } from 'react-toastify'
 import AlertModal from '../../components/AlertModal'
 
+import SavePlanModal from '../planner/dialogs/SavePlanModal'
+import useDummyModal from '../../utils/useDummyModal'
+
 const isApiError = (err: any): err is ApiError => {
   return err.status !== undefined
 }
@@ -15,6 +18,10 @@ const CurriculumList = (): JSX.Element => {
   const [plans, setPlans] = useState <LowDetailPlanView[]>([])
   const [loading, setLoading] = useState <boolean>(true)
   const [popUpAlert, setPopUpAlert] = useState({ isOpen: false, id: '' })
+
+  const [currentEditedId, setCurrentEditedId] = useState <string>('')
+
+  const { isModalOpen: isSavePlanModalOpen, openModal: openSavePlanModal, closeModal: closeSavePlanModal } = useDummyModal()
 
   const readPlans = async (): Promise<void> => {
     const response = await DefaultService.readPlans()
@@ -34,7 +41,8 @@ const CurriculumList = (): JSX.Element => {
     })
   }, [])
 
-  async function handleFavourite (id: string, name: string, fav: boolean): Promise<void> {
+  async function handleFavourite (id: string, planName: string, fav: boolean): Promise<void> {
+    console.log(id, fav)
     try {
       await DefaultService.updatePlanMetadata(id, undefined, !fav)
       await readPlans()
@@ -47,6 +55,29 @@ const CurriculumList = (): JSX.Element => {
         toast.error('Token invalido. Redireccionando a pagina de inicio...')
       }
     }
+  }
+
+  function openEditModal (id: string): void {
+    openSavePlanModal()
+    setCurrentEditedId(id)
+  }
+
+  async function editPlanName (planName: string): Promise<void> {
+    if (planName === null || planName === '') return
+    try {
+      await DefaultService.updatePlanMetadata(currentEditedId, planName, undefined)
+      await readPlans()
+      console.log('plan updated')
+      toast.success('Malla actualizada exitosamente')
+    } catch (err) {
+      console.log(err)
+      if (isApiError(err) && err.status === 401) {
+        console.log('token invalid or expired, loading re-login page')
+        toast.error('Token invalido. Redireccionando a pagina de inicio...')
+      }
+    }
+    closeSavePlanModal()
+    setCurrentEditedId('')
   }
 
   async function handleDelete (id: string): Promise<void> {
@@ -73,6 +104,7 @@ const CurriculumList = (): JSX.Element => {
 
   return (
       <div className="flex mb-4 h-full w-full">
+        <SavePlanModal isOpen={isSavePlanModalOpen} onClose={closeSavePlanModal} savePlan={editPlanName}/>
         <AlertModal title={'Eliminar malla'} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}>{'¿Estás seguro/a de que deseas eliminar esta malla? Esta accion es irreversible'}</AlertModal>
           <div className="m-3 w-full">
                 <div className="flex gap-4 items-center">
@@ -104,7 +136,13 @@ const CurriculumList = (): JSX.Element => {
                   <tbody className='bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'>
                     {plans?.map((plan: LowDetailPlanView) => {
                       return (
-                              <CurriculumListRow key={plan.id} handleDelete={(id: string) => { setPopUpAlert({ isOpen: true, id }) }} curriculum={plan} handleFavourite ={handleFavourite}/>
+                              <CurriculumListRow
+                                key={plan.id}
+                                handleDelete={(id: string) => { setPopUpAlert({ isOpen: true, id }) }}
+                                curriculum={plan}
+                                handleFavourite ={handleFavourite}
+                                openPlanNameModal={openEditModal}
+                              />
                       )
                     })}
                   </tbody>

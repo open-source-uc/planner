@@ -1,7 +1,15 @@
 import { type LowDetailPlanView } from '../../client'
 import { Link } from '@tanstack/react-router'
 
-const CurriculumListRow = ({ curriculum, handleDelete, handleFavourite, impersonateRut }: { curriculum: LowDetailPlanView, handleDelete?: Function, handleFavourite?: Function, impersonateRut?: string }): JSX.Element => {
+interface RowProps {
+  curriculum: LowDetailPlanView
+  handleDelete?: Function
+  handleFavourite?: Function
+  openPlanNameModal: Function
+  impersonateRut?: string
+}
+
+const CurriculumListRow = ({ curriculum, handleDelete, handleFavourite, openPlanNameModal, impersonateRut }: RowProps): JSX.Element => {
   function getDateString (date: string): string {
     const mydate = date.split('T')[0].split('-').reverse().join('-')
     return mydate
@@ -60,6 +68,7 @@ const CurriculumListRow = ({ curriculum, handleDelete, handleFavourite, imperson
               {handleDelete !== undefined &&
                 <button className='text-red-600' onClick={() => handleDelete(curriculum.id)}>Eliminar</button>
               }
+              <button className='text-green-600' onClick={() => openPlanNameModal(curriculum.id) }>Cambiar Nombre</button>
             </div></td>
         </tr>
   )
