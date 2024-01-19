@@ -23,8 +23,35 @@ const CurriculumList = (): JSX.Element => {
 
   const { isModalOpen: isSavePlanModalOpen, openModal: openSavePlanModal, closeModal: closeSavePlanModal } = useDummyModal()
 
+  function compare (a: LowDetailPlanView, b: LowDetailPlanView): number {
+    const timestampA = Date.parse(a.updated_at)
+    const timestampB = Date.parse(b.updated_at)
+    if (timestampA < timestampB) {
+      return -1
+    }
+    if (timestampA > timestampB) {
+      return 1
+    }
+    return 0
+  }
+
+  function arrayMove (arr: any[], oldIndex: number, newIndex: number): void {
+    if (newIndex >= arr.length) {
+      let k = newIndex - arr.length + 1
+      while ((k--) !== 0) {
+        arr.push(undefined)
+      }
+    }
+    arr.splice(newIndex, 0, arr.splice(oldIndex, 1)[0])
+  };
+
   const readPlans = async (): Promise<void> => {
     const response = await DefaultService.readPlans()
+    response.sort(compare).reverse()
+    const index = response.findIndex((plan) => plan.is_favorite)
+    if (index !== -1) {
+      arrayMove(response, index, 0)
+    }
     setPlans(response)
     setLoading(false)
   }
@@ -42,7 +69,6 @@ const CurriculumList = (): JSX.Element => {
   }, [])
 
   async function handleFavourite (id: string, planName: string, fav: boolean): Promise<void> {
-    console.log(id, fav)
     try {
       await DefaultService.updatePlanMetadata(id, undefined, !fav)
       await readPlans()
