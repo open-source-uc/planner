@@ -73,7 +73,6 @@ const CurriculumList = (): JSX.Element => {
       await DefaultService.updatePlanMetadata(id, undefined, !fav)
       await readPlans()
       console.log('plan updated')
-      toast.success('Malla actualizada exitosamente')
     } catch (err) {
       console.log(err)
       if (isApiError(err) && err.status === 401) {
