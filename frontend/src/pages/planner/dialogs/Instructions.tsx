@@ -7,6 +7,9 @@ import selectorDelete from '../../../assets/instructions/selector_delete.jpg'
 import editIcon from '../../../assets/editBlack.svg'
 import courseSelector from '../../../assets/instructions/courseSelector.jpg'
 import courseSelectorNoFilter from '../../../assets/instructions/courseSelector_nofilter.jpg'
+import contextMore from '../../../assets/instructions/contextMenu_mas.jpg'
+import contextAsign from '../../../assets/instructions/contextMenu_asignar.jpg'
+import quickFix from '../../../assets/instructions/quickFix.jpg'
 
 const Text = ({ text }: { text: string }): JSX.Element => {
   return (
@@ -69,7 +72,7 @@ const Instructions = (): JSX.Element => {
           <Subtitle text='Eliminar curso' />
           <Text text='En cursos no pertenecientes a los bloques de la malla, existe la posibilidad de eliminarlos. Para ello, simplemente hacer click en la X que aparece
             en la esquina superior derecha de la tarjeta al hacer hover con el mouse.'/>
-          <Text text='Los cursos en semestres ya cursados o en curso no se pueden eliminar.'/>
+            {/* <Text text='No se pueden eliminar cursos de semestres cursados o en curso.'/> */}
         </div>
 
         <div className="my-2">
@@ -85,6 +88,20 @@ const Instructions = (): JSX.Element => {
           <Text text='Para mover un curso, arrastrarlo y soltarlo en la posición deseada.'/>
           <Text text='Al arrastrar un curso, se muestan 2 columnas de semestres extra en la que se puede posicionar cursos.'/>
           <Text text='Los cursos de semestres ya cursados o en curso no se pueden mover.'/>
+        </div>
+
+        <div className="my-2">
+          <Subtitle text='Otras acciones (Botón Derecho)' />
+          <Text text='Al hacer click en curso con el botón derecho del mouse se abrirá un menú con varias opciones.'/>
+          <Text text='Al poner el mouse sobre "Más información", se mostrarán 3 opciones que dirigen al sitio oficial del curso.'/>
+          <img className="w-1/3 m-1 mb-3 mx-auto h-auto" alt="context menu más información" src={contextMore}></img>
+
+          <Text text='Al poner el mouse sobre "Asignar como", se mostrarán aquellos bloques a los que el curso puede ser asignado, mostrando con ✔ aquel bloque actualmente asignado,
+          o ❗ si existe algun problema con la asignación.'/>
+          <img className="w-1/3 m-1 mb-3 mx-auto h-auto" alt="context menu asignar como" src={contextAsign}></img>
+
+          <Text text='Además, en cursos en semetres en curso o futuros, también se puede eliminar el curso seleccionado.'/>
+
         </div>
       </div>
 
@@ -120,6 +137,8 @@ const Instructions = (): JSX.Element => {
       <div className='mb-4'>
         <SectionTitle text='Bandeja errores y advertencias' />
         <Text text='Muestra los errores y advertencias relacionadas a los cursos o al plan en general.'/>
+        <Text text='Algunos muestran botones que permiten realizar arreglos de forma automática.'/>
+        <img className="w-1/3 m-1 mb-3 mx-auto h-auto" alt="quick fix" src={quickFix}></img>
         <Text text='Lo errores se muestran en la parte superior de la bandeja, seguidos por las advertencias.'/>
         <Text text='Si no existen errores, la bandeja se puede minimizar.'/>
       </div>
