@@ -1,10 +1,14 @@
-import { memo, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import TextInputModal from '../../../components/TextInputModal'
 
-const SavePlanModal = ({ isOpen, onClose, savePlan }: { isOpen: boolean, onClose: Function, savePlan: Function }): JSX.Element => {
+const SavePlanModal = ({ isOpen, onClose, savePlan, defaultValue = '' }: { isOpen: boolean, onClose: Function, savePlan: Function, defaultValue?: string }): JSX.Element => {
   const [planName, setPlanName] = useState<string>('')
 
   const isSaveButtonDisabled: boolean = planName === ''
+
+  useEffect(() => {
+    setPlanName(defaultValue)
+  }, [defaultValue])
 
   return (
     <TextInputModal
