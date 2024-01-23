@@ -20,6 +20,7 @@ const CurriculumList = (): JSX.Element => {
   const [popUpAlert, setPopUpAlert] = useState({ isOpen: false, id: '' })
 
   const [currentEditedId, setCurrentEditedId] = useState <string>('')
+  const [currentEditedName, setCurrentEditedName] = useState <string>('')
 
   const { isModalOpen: isSavePlanModalOpen, openModal: openSavePlanModal, closeModal: closeSavePlanModal } = useDummyModal()
 
@@ -82,9 +83,10 @@ const CurriculumList = (): JSX.Element => {
     }
   }
 
-  function openEditModal (id: string): void {
+  function openEditModal (id: string, name: string): void {
     openSavePlanModal()
     setCurrentEditedId(id)
+    setCurrentEditedName(name)
   }
 
   async function editPlanName (planName: string): Promise<void> {
@@ -103,6 +105,7 @@ const CurriculumList = (): JSX.Element => {
     }
     closeSavePlanModal()
     setCurrentEditedId('')
+    setCurrentEditedName('')
   }
 
   async function handleDelete (id: string): Promise<void> {
@@ -129,7 +132,7 @@ const CurriculumList = (): JSX.Element => {
 
   return (
       <div className="flex mb-4 h-full w-full">
-        <SavePlanModal isOpen={isSavePlanModalOpen} onClose={closeSavePlanModal} savePlan={editPlanName}/>
+        <SavePlanModal isOpen={isSavePlanModalOpen} onClose={closeSavePlanModal} savePlan={editPlanName} defaultValue={currentEditedName}/>
         <AlertModal title={'Eliminar malla'} isOpen={popUpAlert.isOpen} close={handlePopUpAlert}>{'¿Estás seguro/a de que deseas eliminar esta malla? Esta accion es irreversible'}</AlertModal>
           <div className="m-3 w-full">
                 <div className="flex gap-4 items-center">

@@ -45,7 +45,7 @@ const CurriculumListRow = ({ curriculum, handleDelete, handleFavourite, openPlan
                 >{curriculum.name}
                 </Link>
                 <div className="hover-text">
-                  <button className='pl-3' onClick={() => openPlanNameModal(curriculum.id) }><EditIcon/></button>
+                  <button className='pl-3' onClick={() => openPlanNameModal(curriculum.id, curriculum.name) }><EditIcon/></button>
                   <span className="tooltip-text font-thin">Editar nombre</span>
                 </div>
                 </div>
