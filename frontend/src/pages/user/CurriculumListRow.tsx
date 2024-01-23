@@ -53,30 +53,32 @@ const CurriculumListRow = ({ curriculum, handleDelete, handleFavourite, openPlan
               </th>
             <td className='px-6 py-4'>{getDateString(curriculum.created_at)}</td>
             <td className='px-6 py-4'>{getDateString(curriculum.updated_at)}</td>
-            <td className='px-6 py-4 text-right'><div className='space-x-4 items-center'>
-              {impersonateRut !== undefined
-                ? <Link
-                  className='text-blue-600'
-                  to="/mod/planner/$userRut/$plannerId"
-                  params={{
-                    userRut: impersonateRut,
-                    plannerId: curriculum.id
-                  }}
-                >Editar
-              </Link>
-                : <Link
-                  className='text-blue-600'
-                  to="/planner/$plannerId"
-                  params={{
-                    plannerId: curriculum.id
-                  }}
-                >Editar
-              </Link>
-              }
-              {handleDelete !== undefined &&
-                <button className='text-red-600' onClick={() => handleDelete(curriculum.id)}>Eliminar</button>
-              }
-            </div></td>
+            <td className='px-6 py-4 text-right'>
+              <div className='flex space-x-4 items-center'>
+                {impersonateRut !== undefined
+                  ? <Link
+                    className='text-blue-600'
+                    to="/mod/planner/$userRut/$plannerId"
+                    params={{
+                      userRut: impersonateRut,
+                      plannerId: curriculum.id
+                    }}
+                  >Editar
+                </Link>
+                  : <Link
+                    className='text-blue-600'
+                    to="/planner/$plannerId"
+                    params={{
+                      plannerId: curriculum.id
+                    }}
+                  >Editar
+                </Link>
+                }
+                {handleDelete !== undefined &&
+                  <button className='text-red-600' onClick={() => handleDelete(curriculum.id)}>Eliminar</button>
+                }
+              </div>
+            </td>
         </tr>
   )
 }
