@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import SemesterColumn from './SemesterColumn'
 import { type PseudoCourseId, type PseudoCourseDetail, type ValidationDigest, type PlanDigest } from '../utils/Types'
 import { useDndScrolling, createVerticalStrength, createHorizontalStrength } from 'react-dnd-scrolling'
@@ -31,6 +31,8 @@ const PlanBoard = ({ classesGrid = [], authState, planDigest, classesDetails, mo
   const boardRef = useRef(null)
   useDndScrolling(boardRef, { horizontalStrength: hStrength, verticalStrength: vStrength })
 
+  const [downloading, setDownloading] = useState <boolean>(false)
+
   const { toPDF, targetRef } = usePDF({
     filename: 'malla.pdf',
     page: {
@@ -38,9 +40,20 @@ const PlanBoard = ({ classesGrid = [], authState, planDigest, classesDetails, mo
     }
   })
 
+  useEffect(() => {
+    if (downloading) {
+      toPDF()
+      setDownloading(false)
+    }
+  }, [downloading, toPDF])
+
+  function handleDownload (): void {
+    setDownloading(true)
+  }
+
   return (
     <div>
-      <button onClick={() => { toPDF() }}>Download PDF</button>
+      <button onClick={() => { handleDownload() }}>Download PDF</button>
       <div ref={boardRef} className= {'overflow-auto grid'}>
         <div ref={targetRef} className='grid  grid-rows-[fit-content] grid-flow-col justify-start'>
           {classesGrid.map((classes: PseudoCourseId[], semester: number) => (
@@ -57,27 +70,30 @@ const PlanBoard = ({ classesGrid = [], authState, planDigest, classesDetails, mo
                 authState={authState}
                 validationCourses={validationDigest.courses[semester]}
                 validationSemester={validationDigest.semesters[semester]}
-                isDragging={active !== null}
+                isDragging={active !== null || downloading}
                 activeIndex={(active !== null && active.semester === semester) ? active.index : null}
                 setActive={setActive}
               />
           ))}
-          {[0, 1].map(off => (
-            <SemesterColumn
-              key={classesGrid.length + off}
-              semester={classesGrid.length + off}
-              addCourse={addCourse}
-              moveCourse={moveCourse}
-              remCourse={remCourse}
-              openModal={openModal}
-              classesDetails={classesDetails}
-              authState={authState}
-              validationSemester={null}
-              isDragging={active !== null}
-              activeIndex={(active !== null && active.semester === classesGrid.length + off) ? active.index : null}
-              setActive={setActive}
-            />
-          ))}
+          {(downloading)
+            ? null
+            : [0, 1].map(off => (
+              <SemesterColumn
+                key={classesGrid.length + off}
+                semester={classesGrid.length + off}
+                addCourse={addCourse}
+                moveCourse={moveCourse}
+                remCourse={remCourse}
+                openModal={openModal}
+                classesDetails={classesDetails}
+                authState={authState}
+                validationSemester={null}
+                isDragging={active !== null}
+                activeIndex={(active !== null && active.semester === classesGrid.length + off) ? active.index : null}
+                setActive={setActive}
+              />
+              ))
+          }
         </div>
       </div>
     </div>
