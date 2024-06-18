@@ -120,11 +120,17 @@ Para actualizar el servicio expuesto a internet y aplicar parches de seguridad.
 
 ### Forzar Actualizaciones Manualmente
 
-Tal como se mencionó al comienzo, hay un archivo llamado `update.sh` que está programado para ejecutarse recurrentemente con un _cronjob_ en la máquina. En el flujo normal de actualizaciones, solamente debería ser necesario modificar el código de la rama principal _main_ en el **repositorio de producción** para hacer cambios al proyecto. Pero en el caso de una emergencia, es posible ejecutar manualmente el archivo `update.sh` para forzar una actualización ahora, sin tener que esperar al _cronjob_. La ejecución de este archivo debería ser suficiente.
+Tal como se mencionó al comienzo, hay un archivo llamado `update.sh` que está programado para ejecutarse recurrentemente con un _cron job_ en la máquina. En el flujo normal de actualizaciones, solamente debería ser necesario modificar el código de la rama principal _main_ en el **repositorio de producción** para hacer cambios al proyecto. Pero en el caso de una emergencia, es posible ejecutar manualmente el archivo `~/update.sh` para forzar una actualización inmediatamente, sin tener que esperar al _cron job_ recurrente. La ejecución de este archivo debería ser suficiente.
 
-En caso de tener problemas con las actualizaciones recurrentes, se puede revisar el _cronjob_ usando el siguiente comando:
+❓ Aclaración: El archivo `update.sh` se encuentra en una ubicación definida por la **Subdirección de Desarrollo**, que podría ser *home* del usuario asignado (`~`).
+
+En caso de tener problemas con las actualizaciones recurrentes, se puede revisar el _cron job_ usando el siguiente comando:
 
 > crontab -e
+
+Además, el siguiente comando sirve para revisar los últimos logs de *cron*:
+
+> tail -100 /var/log/cron
 
 ## Nuevas Incidencias
 

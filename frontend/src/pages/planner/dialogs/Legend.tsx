@@ -24,7 +24,7 @@ const Legend = (): JSX.Element => {
             <div className='m-3 card h-10 w-5/6 leading-8 group bg-block-T'>Título</div>
             <div className='m-3 card h-10 w-5/6 leading-8 group bg-block-FG text-white'>Formación General</div>
             <div className='m-3 card h-10 w-5/6 leading-8 group bg-block-'>Curso no aporta al avance curricular</div>
-            {/* <div className='m-3 card h-10 w-5/6 leading-8 group bg-red-500 text-white'>Curso reprobado</div> */}
+            <div className='m-3 card h-10 w-5/6 leading-8 group bg-block- line-through'>Curso reprobado</div>
         </div>
         <div className="w-1/2">
             <SectionTitle text='Símbolos'/>
@@ -39,7 +39,7 @@ const Legend = (): JSX.Element => {
             <div className='flex my-3'><div className='w-5 text-center text-sm opacity-75'>T</div><Description text={'Curso perteneciente al bloque Título'} /></div>
             <div className='flex my-3'><div className='w-5 text-center text-sm opacity-75'>FG</div><Description text={'Curso perteneciente al bloque Formación General'} /></div>
             <div className='flex my-3'><div className="w-5 h-5 text-center leading-4 bg-block- rounded-md">+</div><Description text={'Agregar nuevo curso al semestre'} /></div>
-            <div className='flex my-3'><div className='text-center text-sm line-through'>Cálculo</div><Description text={'Curso reprobado'} /></div>
+            {/* <div className='flex my-3'><div className='text-center text-sm line-through'>Cálculo</div><Description text={'Curso reprobado'} /></div> */}
         </div>
     </div>
   )

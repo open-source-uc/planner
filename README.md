@@ -59,15 +59,15 @@ Sigue en la sección [Desarrollo general](#desarrollo-general).
 
 Una vez listo, podrás entrar a la app en [http://localhost:3000](http://localhost:3000) 🎉
 
-
-Necesitaras un nombre de usuario para acceder a CAS. Puedes acceder con `testuser` o con otros usuarios definidos en `cas-mock-users.json`. 
-
+Necesitaras un nombre de usuario para acceder a CAS. Puedes acceder con `testuser` o con otros usuarios definidos en `cas-mock-users.json`.
 
 Para realizar acciones sobre el repositorio (migraciones, generación de código, etc) puedes usar:
+
 - el task runner de VSCode (<kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> -> _"Tasks: Run Task"_).
 - `just` en la linea de comandos. Para ver comandos disponibles, corre `just` desde cualquier carpeta.
 
 Es importante que cuando:
+
 - Cambias la estructura de la API, corras la tarea _"Generate client"_ (también disponible en modo watch).
 - Cambies el esquema de la base de datos, corras la tarea _"Create/apply migrations"_ para que los cambios se reflejen en la base de datos.
 
@@ -89,6 +89,7 @@ El proyecto se integra con dos servicios externos: SIDING (para acceder a mallas
 ## Deployment
 
 ### Deployment automático
+
 Para deployments a producción, se provee un playbook de [Ansible](https://docs.ansible.com/ansible/latest/index.html)
 que permite levantar la app completa de principio a fin, pensado para su uso en un entorno de producción, en particular
 en un servidor corriendo [Rocky Linux 9](https://rockylinux.org/).
@@ -102,12 +103,12 @@ $ ansible-playbook infra/playbook.yml -i <IP>, -u <USUARIO>
 Asumiendo que ya se tenga una llave SSH al servidor. El playbook es completamente idempotente, por lo que
 también puede ser utilizado para corregir configuration drift en un servidor de producción.
 
-El playbook opcionalmente provee prompts para entregar credenciales de Tailscale, Netdata y SIDING. Por defecto 
+El playbook opcionalmente provee prompts para entregar credenciales de Tailscale, Netdata y SIDING. Por defecto
 el playbook no levanta un mock de CAS, que es necesario para instalaciones sin acceso al SSO UC.
 
 También se provee un script más ligero en [just](./justfile), que principalmente está pensado para su uso en
 junto al sistema de [Continuous Deployment](./.github/workflows/deploy.yml) del repositorio. Sin embargo,
-dado un entorno ya configurado de Docker Compose, este puede ser utilizado para levantar un servidor independiente, 
+dado un entorno ya configurado de Docker Compose, este puede ser utilizado para levantar un servidor independiente,
 incluyendo uno que utilice un SSO mock.
 
 Abajo se entregan instrucciones manuales de deploy.
@@ -117,6 +118,7 @@ Abajo se entregan instrucciones manuales de deploy.
 El ambiente de staging está diseñado para testear las nuevas versiones del planner en un ambiente real antes de pasar a producción.
 
 En primer lugar, es necesario generar manualmente los archivos `.env` y reemplazar los valores según corresponda para cada servicio utilizando los ejemplos ubicados en cada carpeta:
+
 - _API_ → `backend/.env.staging.template`
 - _servidor web_ → `frontend/.env.staging.template`
 - _base de datos_ → `database/.env.staging.template`
@@ -124,10 +126,12 @@ En primer lugar, es necesario generar manualmente los archivos `.env` y reemplaz
 Luego, se debe crear el volumen de Caddy con `docker volume create caddy_data`.
 
 Ahora, para correr la aplicación utilizando un servidor mock de **CAS externo** se debe:
+
 1. Definir las variables `CAS_SERVER_URL` y `CAS_LOGIN_REDIRECTION_URL` en `backend/.env` con la URL del servidor externo.
 2. Levantar los contenedores con `docker compose up planner -d --build` desde la raíz del repositorio.
 
 Alternativamente, para correr la aplicación utilizando un servidor mock de **CAS local**:
+
 1. Dejar las variables `CAS_SERVER_URL` y `CAS_LOGIN_REDIRECTION_URL` en `backend/.env` con los valores predeterminados del archivo de ejemplo `.env.staging.template`.
 2. Luego, es necesario generar el archivo `cas-mock-users.json` en `cas-mock/data` a partir del ejemplo `cas-mock-users.json.example`.
 3. Levantar los contenedores con `docker compose up -d --build` desde la raíz del repositorio.
@@ -137,22 +141,24 @@ Finalmente, se puede detener la app con `docker compose down` desde la raíz del
 ### Deployment manual: Producción
 
 El ambiente de producción es manejado por la universidad de forma interna, por lo que aquí se detallan las **instrucciones para desplegar el planner** de forma manual:
-1. Se deben crear tres archivos `.env`, uno por cada servicio y dentro de su respectiva carpeta:
-- `backend/.env` a partir del ejemplo `backend/.env.production.template` (_API_)
-- `frontend/.env` a partir del ejemplo `frontend/.env.production.template` (_servidor web_).
-- `database/.env` a partir del ejemplo `database/.env.production.template` (_base de datos_).
+
+1. Se debe crear el archivo `.env` para la API. En particular, crear `backend/.env` a partir del ejemplo `backend/.env.production.template`.
+
 2. Reemplazar los valores de las variables de entorno según corresponda en todos los archivos `.env` creados. **IMPORTANTE:** no olvidar modificar la variable `JWT_SECRET` en `backend/.env` y otras variables que puedan contener secretos para evitar vulnerabilidades de seguridad.
+
 - Para generar una clave `JWT_SECRET` segura y aleatoria se puede utilizar el comando `openssl rand -base64 32`.
+
 3. Se debe crear el volumen donde Caddy guardará los certificados SSL con `docker volume create caddy_data`.
 4. Levantar los contenedores con `docker compose up planner -d --build` desde la raíz del repositorio. Requiere _Docker_ y _Docker Compose_ instalados en la máquina.
 5. Revisar el estado de los contenedores con `docker ps` o `docker container ls`.
 6. Finalmente, se puede detener la app con `docker compose down` desde la misma ubicación.
 
-Nota: los comandos podrían variar ligeramente dependiendo del sistema operativo y versión de *Docker Compose*. En particular, podría ser necesario utilizar `docker-compose` en vez de `docker compose` y `sudo docker compose` en vez de `docker compose`.
+Nota: los comandos podrían variar ligeramente dependiendo del sistema operativo y versión de _Docker Compose_. En particular, podría ser necesario utilizar `docker-compose` en vez de `docker compose` y `sudo docker compose` en vez de `docker compose`.
 
 ---
 
 ## Equipo
+
 <table>
   <tbody>
     <tr>
@@ -164,7 +170,6 @@ Nota: los comandos podrían variar ligeramente dependiendo del sistema operativo
     </tr>
   </tbody>
 </table>
-
 
 Además del equipo núcleo, nos apoyan los contribuidores al proyecto. Puedes ver [la lista completa de contribuidores aquí.](contributors.md)
 
