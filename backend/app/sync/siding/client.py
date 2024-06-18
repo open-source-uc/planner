@@ -3,8 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from decimal import Decimal
-from pathlib import Path
-from typing import Annotated, Any, Final, Generic, Literal, TypeVar
+from typing import TYPE_CHECKING, Annotated, Any, Final, Generic, Literal, TypeVar
 
 import httpx
 import zeep
@@ -15,6 +14,9 @@ from zeep.transports import AsyncTransport
 from app.plan.validation.curriculum.tree import MajorCode, MinorCode, TitleCode
 from app.settings import settings
 from app.user.key import Rut
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class StringArrayInner(BaseModel):
