@@ -17,6 +17,14 @@ from app.plan.course import EquivalenceId, PseudoCourse
 from app.plan.validation.courses.logic import Expr
 
 
+class ExprRedefine(BaseModel):
+    """
+    Type adapter. When we update to Pydantic 2, use `TypeAdapter` instead.
+    """
+
+    __root__: Expr
+
+
 class CourseDetails(BaseModel):
     # The unique code identifying this course.
     code: str
@@ -51,12 +59,12 @@ class CourseDetails(BaseModel):
     @staticmethod
     def from_db(db: Course) -> "CourseDetails":
         # Parse and validate dep json
-        deps = pydantic.parse_raw_as(Expr, db.deps)
+        deps = pydantic.parse_raw_as(ExprRedefine, db.deps)
         return CourseDetails(
             code=db.code,
             name=db.name,
             credits=db.credits,
-            deps=deps,
+            deps=deps.__root__,
             banner_equivs=db.banner_equivs,
             canonical_equiv=db.canonical_equiv,
             program=db.program,

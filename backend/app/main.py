@@ -1,13 +1,12 @@
 import asyncio
 import logging
 import random
-from typing import TYPE_CHECKING, Annotated, Literal
+from typing import Literal
 
 import sentry_sdk
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.params import Depends
 from fastapi.routing import APIRoute
 from pydantic import BaseModel, Field
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
@@ -20,11 +19,6 @@ from app.settings import settings
 from app.sync.database import load_packed_data_from_db
 from app.sync.siding.client import client as siding_soap_client
 from app.sync.siding.client import get_titles
-
-if TYPE_CHECKING:
-    from typing import Any
-
-    from redis.asyncio import Redis
 
 
 # Set up operation IDs for OpenAPI
@@ -128,7 +122,7 @@ class HealthResponse(BaseModel):
 
 
 @app.get("/health")
-async def health(redis: Annotated["Redis[Any]", Depends(get_redis)]) -> HealthResponse:
+async def health() -> HealthResponse:
     response = HealthResponse()
 
     try:
@@ -139,9 +133,10 @@ async def health(redis: Annotated["Redis[Any]", Depends(get_redis)]) -> HealthRe
         logging.error(f"Database error detected: {e}")
 
     try:
-        # Check Redis connection
-        await redis.ping()
-        response.detail["redis"] = "healthy"
+        async with get_redis() as redis:
+            # Check Redis connection
+            await redis.ping()
+            response.detail["redis"] = "healthy"
     except Exception as e:  # noqa: BLE001
         logging.error(f"Redis error detected: {e}")
 

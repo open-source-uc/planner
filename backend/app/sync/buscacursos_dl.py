@@ -311,12 +311,16 @@ def _translate_courses(data: BcData) -> list[CourseCreateWithoutRelationsInput]:
                     "canonical_equiv": code,
                     "program": c.program,
                     "school": c.school,
-                    "area": c.instances[max(c.instances)].area or None
-                    if c.instances
-                    else None,
-                    "category": c.instances[max(c.instances)].category or None
-                    if c.instances
-                    else None,
+                    "area": (
+                        c.instances[max(c.instances)].area or None
+                        if c.instances
+                        else None
+                    ),
+                    "category": (
+                        c.instances[max(c.instances)].category or None
+                        if c.instances
+                        else None
+                    ),
                     "is_relevant": c.relevance == "Vigente",
                     "is_available": any(available_in_semester),
                     "semestrality_first": available_in_semester[0],
@@ -348,7 +352,7 @@ async def fetch_to_database():
     dl_url = settings.buscacursos_dl_url
     print(f"  downloading course data from {dl_url}...")
     # TODO: Use an async HTTP client
-    resp = requests.request("GET", dl_url)
+    resp = requests.request("GET", dl_url, timeout=60)
     resp.raise_for_status()
 
     # Decompress

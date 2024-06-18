@@ -25,8 +25,7 @@ sentry-sdk = {extras = ["fastapi"], version = "^1.28.1"}
 rich = "^13.4.2"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.0.275"
-black = "^23.3.0"
+ruff = "^0.4.9"
 tomli = "^2.0.1"
 pyright = "^1.1.315"
 pytest = "^7.4.0"
@@ -47,6 +46,9 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 src = ["app"]
+extend-exclude = ["typings/"]
+
+[tool.ruff.lint]
 select = [
     "F",
     "E",
@@ -82,18 +84,12 @@ ignore = [
     "ANN201",
     "ANN202", # "Missing return type annotation" (sometimes return types are too complex)
     "S101",   # "Use of `assert` detected" (debug assertions are useful)
-    "TCH001" # Pydantic relies heavily on runtime type reflection
+    "TCH001", # Pydantic relies heavily on runtime type reflection
+    "RET505", # Redundant else and return many times helps readability
+    "COM812", # Conflict with formatter
+    "ISC001"  # Conflict with formatter
 ]
-
-extend-exclude = ["typings/"]
-
-[tool.black]
-extend-exclude = """
-^/typings
-"""
-
-[tool.ruff.mccabe]
-max-complexity = 15
+mccabe.max-complexity = 15
 
 [tool.pyright]
 pythonVersion = "3.11"

@@ -4,7 +4,6 @@ These validations are all optional and should be more "informative" than "normat
 since guests (with no associated user context) can also validate plans.
 """
 
-
 from app.plan.course import EquivalenceId, PseudoCourse, pseudocourse_with_equivalence
 from app.plan.courseinfo import CourseInfo
 from app.plan.plan import ValidatablePlan
