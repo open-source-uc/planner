@@ -28,6 +28,7 @@ from app.plan.validation.curriculum.tree import (
 )
 from app.sync.siding import client
 from app.sync.siding.client import (
+    CursoHecho,
     InfoEstudiante,
     StringArray,
 )
@@ -44,7 +45,9 @@ def _decode_curriculum_versions(input: StringArray | None) -> list[str]:
     if input is None:
         # Curriculum lists are currently empty for some SIDING reason
         # We are currently patching through the mock
-        # TODO: Once this is fixed remove patching code
+        # TODO: This no longer happens!
+        # Although we should probably not depend on SIDING for curriculums, the data is
+        # too unreliable
         logging.warning("null curriculum version list")
         return []
     return input.strings.string
@@ -169,6 +172,8 @@ async def _fetch_meta(rut: Rut) -> InfoEstudiante:
 
 
 async def _fetch_done_courses(rut: Rut) -> CursosHechos:
+    # TODO: Use new webservice
+
     raw = await client.get_student_done_courses(rut)
     semesters: list[list[PseudoCourse]] = []
     in_course: list[list[bool]] = []
@@ -183,11 +188,11 @@ async def _fetch_done_courses(rut: Rut) -> CursosHechos:
                 semesters.append([])
             while len(in_course) <= sem:
                 in_course.append([])
-            if c.Estado.startswith("2"):
+            if c.Estado == CursoHecho.ESTADO_REPROBADO:
                 # Failed course
                 course = ConcreteId(code="FAILED", equivalence=None, failed=c.Sigla)
             else:
-                # Approved course
+                # Approved course (or something else?)
                 course = ConcreteId(code=c.Sigla, equivalence=None)
             semesters[sem].append(course)
             currently_coursing = c.Estado.startswith("3")
