@@ -8,9 +8,7 @@ import {
   QueryClientProvider
 } from '@tanstack/react-query'
 import { OpenAPI } from './client'
-
 import { toastConfig } from './utils/toastConfig'
-
 import App from './app'
 
 if (import.meta.env.MODE !== 'development') {

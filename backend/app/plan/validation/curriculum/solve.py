@@ -240,6 +240,7 @@ class SolvedCurriculum:
     def __init__(self) -> None:
         # OPTIMIZE: Use a pool for solver objects
         self.model = lmip.Solver.CreateSolver("SCIP")
+        self.model.SetTimeLimit(round(SOLVE_TIMELIMIT * 1000))
         self.usable = {}
         self.usable_keys = set()
         self.superblocks = {}
@@ -503,7 +504,7 @@ def _fill_usable(
                 curriculum,
                 g,
                 (sem_i, idx),
-                filler_cap[c.code] if c.code in filler_cap else INFINITY,
+                filler_cap.get(c.code, INFINITY),
                 c,
             )
     for code, fillers in curriculum.fillers.items():
@@ -702,11 +703,15 @@ _solver_status_to_name: dict[int, str] = {
 
 
 SOLVE_PARAMETERS = lmip.MPSolverParameters()
+
 # NOTE: SCIP has a known issue where it fails to find the optimal solution sometimes,
 # and the primal tolerance must set to some custom small value to fix it.
 # This doesn't seem to be necessary for now, but further experimentation would not hurt.
 # https://stackoverflow.com/questions/65244692/non-optimal-result-from-mip-program-in-google-or-tools/65244914#65244914
 # SOLVE_PARAMETERS.SetDoubleParam(lmip.MPSolverParameters.PRIMAL_TOLERANCE, 1e-3)
+
+# Limit the solving time, since some plans take a loooooong time for some reason
+SOLVE_TIMELIMIT = 1.5
 
 
 def solve_curriculum(

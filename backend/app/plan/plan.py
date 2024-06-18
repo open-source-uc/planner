@@ -1,6 +1,9 @@
 from typing import Literal, Self
 
-from pydantic import BaseModel, validator
+from pydantic import (
+    BaseModel,
+    validator,  # type: ignore
+)
 
 from app.plan.course import PseudoCourse
 from app.plan.validation.curriculum.tree import CurriculumSpec
@@ -43,7 +46,7 @@ class ValidatablePlan(BaseModel):
     # Validate the plan against this curriculum
     curriculum: CurriculumSpec
 
-    @validator("classes")
+    @validator("classes")  # type: ignore
     @classmethod
     def validate_limits(
         cls: type[Self],

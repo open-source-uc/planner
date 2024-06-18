@@ -2,7 +2,6 @@
 Transform the Siding format into something usable.
 """
 
-
 import logging
 from dataclasses import dataclass
 
