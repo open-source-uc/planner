@@ -1,9 +1,8 @@
 import contextlib
 from typing import Any
 
-from redis.asyncio import ConnectionPool, Redis
-
 from app.settings import settings
+from redis.asyncio import ConnectionPool, Redis
 
 
 def init_redis_pool() -> ConnectionPool:  # type: ignore
