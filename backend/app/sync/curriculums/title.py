@@ -34,6 +34,8 @@ def translate_title(
     siding: list[BloqueMalla],
     scrape: ScrapedProgram,
 ):
+    # TODO: Add ETI188 after translation, so that it can be added to bypassed titles too
+    # (ie. 40023)
     match spec.cyear:
         case "C2020":
             add_eti = False
@@ -57,6 +59,7 @@ def translate_title(
     )
 
     # Agregar los OPIs a mano
+    # TODO: Asegurarse que esto corra para los programas bypasseados (ie. 40023)
     add_opi_to_title(courses, out, spec, curr)
 
     # Agregar el titulo al listado
