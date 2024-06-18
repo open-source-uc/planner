@@ -20,6 +20,14 @@ _low_detail_attributes = [
 ]
 
 
+class StorablePlanRedefine(BaseModel):
+    """
+    Type adapter. When updating to Pydantic V2, replace this by `TypeAdapter`.
+    """
+
+    __root__: StorablePlan
+
+
 class PlanView(BaseModel):
     """
     Detailed, typed view of a plan in the database.
@@ -47,9 +55,9 @@ class PlanView(BaseModel):
             user_rut=Rut(db.user_rut),
             validatable_plan=await migrate_plan(
                 pydantic.parse_raw_as(
-                    StorablePlan,
+                    StorablePlanRedefine,
                     db.validatable_plan,
-                ),
+                ).__root__,
             ),
         )
 

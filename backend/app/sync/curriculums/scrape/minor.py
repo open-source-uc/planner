@@ -16,7 +16,6 @@ Estos PDFs son de 2 columnas, por lo que requieren mayor intervencion manual par
 scrapearlos correctamente.
 """
 
-
 import logging
 import re
 from pathlib import Path

@@ -504,7 +504,7 @@ def _fill_usable(
                 curriculum,
                 g,
                 (sem_i, idx),
-                filler_cap[c.code] if c.code in filler_cap else INFINITY,
+                filler_cap.get(c.code, INFINITY),
                 c,
             )
     for code, fillers in curriculum.fillers.items():

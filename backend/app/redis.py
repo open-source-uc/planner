@@ -2,16 +2,15 @@ import contextlib
 from typing import Any
 
 from app.settings import settings
-from redis.asyncio import BlockingConnectionPool, Redis
+from redis.asyncio import ConnectionPool, Redis
 
 
-def init_redis_pool() -> BlockingConnectionPool:
-    pool: BlockingConnectionPool = BlockingConnectionPool.from_url(  # type: ignore
+def init_redis_pool() -> ConnectionPool[Any]:
+    return ConnectionPool.from_url(  # type: ignore
         settings.redis_uri,
         decode_responses=True,
         encoding="utf-8",
     )
-    return pool
 
 
 connection_pool = init_redis_pool()

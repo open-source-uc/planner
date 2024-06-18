@@ -2,7 +2,6 @@
 Implements logical expressions in the context of course requirements.
 """
 
-
 from collections.abc import Callable
 from hashlib import blake2b as good_hash
 from typing import Annotated, Any, ClassVar, Literal
