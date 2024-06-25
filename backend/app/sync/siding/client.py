@@ -3,20 +3,20 @@ from __future__ import annotations
 import json
 import logging
 from decimal import Decimal
-from typing import TYPE_CHECKING, Annotated, Any, Final, Generic, Literal, TypeVar
+from io import BytesIO
+from pathlib import Path
+from typing import Annotated, Any, Final, Generic, Literal, TypeVar
 
 import httpx
 import zeep
 from pydantic import BaseModel, ConstrainedStr, Field, parse_obj_as
+from pydantic.generics import GenericModel
 from zeep import AsyncClient
 from zeep.transports import AsyncTransport
 
 from app.plan.validation.curriculum.tree import MajorCode, MinorCode, TitleCode
 from app.settings import settings
 from app.user.key import Rut
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 class StringArrayInner(BaseModel):
@@ -210,7 +210,7 @@ class SeleccionEstudiante(BaseModel):
 T = TypeVar("T")
 
 
-class NullableList(BaseModel, Generic[T]):
+class NullableList(GenericModel, Generic[T]):
     """
     SIDING has the horrible tendency to return `None` instead of empty lists.
     This patches that.
@@ -269,8 +269,12 @@ class SoapClient:
                 self.mock_db = {}
 
         # Connect to SIDING webservice
-        if settings.siding_url != "":
-            wsdl_url = settings.siding_url
+        if settings.siding_host_base != "":
+            # Load SIDING WebService definition
+            wsdl_path = Path(__file__).with_name("ServiciosPlanner.wsdl")
+            raw_wsdl_text = wsdl_path.read_text(encoding="utf-8")
+            wsdl_text = raw_wsdl_text.replace("SITIO_SIDING", settings.siding_host_base)
+
             http_client = httpx.AsyncClient(
                 auth=httpx.DigestAuth(
                     settings.siding_username,
@@ -278,7 +282,7 @@ class SoapClient:
                 ),
             )
             self.soap_client = AsyncClient(
-                wsdl_url,
+                BytesIO(wsdl_text.encode()),
                 transport=AsyncTransport(http_client),
             )
             logging.info("Connected to live SIDING webservice")
