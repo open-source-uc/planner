@@ -254,7 +254,7 @@ async def login_cas(
         ) = _get_cas_client().verify_ticket(  # pyright: ignore
             ticket,
         )
-    except Exception as e:  # noqa: BLE001 (CAS lib is untyped)
+    except Exception as e:  # (CAS lib is untyped)
         traceback.print_exc()
         raise HTTPException(status_code=502, detail="Error verifying CAS ticket") from e
 

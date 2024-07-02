@@ -3,7 +3,6 @@ Algunos curriculums tienen reglas tan unicas que es mejor especificarlos a mano
 directamente en el formato universal.
 """
 
-
 from dataclasses import dataclass, field
 
 from pydantic import BaseModel, Field
