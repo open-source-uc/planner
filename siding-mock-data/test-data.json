@@ -59,16 +59,7 @@
                 "Sigla": "FIL188",
                 "Nombre": "Ética para Ingenieros",
                 "Creditos": 10,
-                "Estado": "12",
-                "Periodo": "2020-1",
-                "TipoCurso": null,
-                "UnidadAcademica": null
-            },
-            {
-                "Sigla": "ING1001",
-                "Nombre": "Práctica I",
-                "Creditos": 0,
-                "Estado": "31",
+                "Estado": "Aprobado",
                 "Periodo": "2020-1",
                 "TipoCurso": null,
                 "UnidadAcademica": null
@@ -77,7 +68,7 @@
                 "Sigla": "ING1004",
                 "Nombre": "Desafíos de la Ingeniería",
                 "Creditos": 10,
-                "Estado": "12",
+                "Estado": "Aprobado",
                 "Periodo": "2020-1",
                 "TipoCurso": null,
                 "UnidadAcademica": null
@@ -86,7 +77,7 @@
                 "Sigla": "MAT1203",
                 "Nombre": "Álgebra Lineal",
                 "Creditos": 10,
-                "Estado": "12",
+                "Estado": "Aprobado",
                 "Periodo": "2020-1",
                 "TipoCurso": null,
                 "UnidadAcademica": null
@@ -95,7 +86,7 @@
                 "Sigla": "MAT1610",
                 "Nombre": "Cálculo I",
                 "Creditos": 10,
-                "Estado": "12",
+                "Estado": "Aprobado",
                 "Periodo": "2020-1",
                 "TipoCurso": null,
                 "UnidadAcademica": null
@@ -104,7 +95,7 @@
                 "Sigla": "QIM100E",
                 "Nombre": "Química para Ingeniería",
                 "Creditos": 10,
-                "Estado": "12",
+                "Estado": "Aprobado",
                 "Periodo": "2020-1",
                 "TipoCurso": null,
                 "UnidadAcademica": null
@@ -113,7 +104,7 @@
                 "Sigla": "FIS0154",
                 "Nombre": "Laboratorio de Dinámica",
                 "Creditos": 0,
-                "Estado": "12",
+                "Estado": "Aprobado",
                 "Periodo": "2020-2",
                 "TipoCurso": null,
                 "UnidadAcademica": null
@@ -122,7 +113,7 @@
                 "Sigla": "ICE1514",
                 "Nombre": "Dinámica",
                 "Creditos": 10,
-                "Estado": "12",
+                "Estado": "Aprobado",
                 "Periodo": "2020-2",
                 "TipoCurso": null,
                 "UnidadAcademica": null
@@ -131,7 +122,7 @@
                 "Sigla": "ICS1513",
                 "Nombre": "Introducción a la Economía",
                 "Creditos": 10,
-                "Estado": "12",
+                "Estado": "Aprobado",
                 "Periodo": "2020-2",
                 "TipoCurso": null,
                 "UnidadAcademica": null
@@ -140,7 +131,7 @@
                 "Sigla": "IIC1103",
                 "Nombre": "Introducción a la Programación",
                 "Creditos": 10,
-                "Estado": "12",
+                "Estado": "Aprobado",
                 "Periodo": "2020-2",
                 "TipoCurso": null,
                 "UnidadAcademica": null
@@ -149,7 +140,7 @@
                 "Sigla": "LET0003",
                 "Nombre": "Desarrollo de Habilidades Comunicativas para Ingenieros",
                 "Creditos": 10,
-                "Estado": "12",
+                "Estado": "Aprobado",
                 "Periodo": "2020-2",
                 "TipoCurso": null,
                 "UnidadAcademica": null
@@ -158,7 +149,7 @@
                 "Sigla": "MAT1620",
                 "Nombre": "Cálculo II",
                 "Creditos": 10,
-                "Estado": "20",
+                "Estado": "Reprobado",
                 "Periodo": "2020-2",
                 "TipoCurso": null,
                 "UnidadAcademica": null
@@ -167,16 +158,22 @@
                 "Sigla": "VRA3010",
                 "Nombre": "English Test (Sufficiency Alte 3)",
                 "Creditos": 0,
-                "Estado": "11",
+                "Estado": "Aprobado",
                 "Periodo": "2020-2",
                 "TipoCurso": null,
                 "UnidadAcademica": null
-            },
+            }
+        ],
+        "{\"rut\": \"2019-9\"}": [],
+        "{\"rut\": \"2021-1\"}": [],
+        "{\"rut\": \"2022-2\"}": []
+    },
+    "getCargaAcademica": {
+        "{\"rut\": \"12345678-K\"}": [
             {
                 "Sigla": "MAT1620",
                 "Nombre": "Cálculo II",
                 "Creditos": 10,
-                "Estado": "30",
                 "Periodo": "2021-1",
                 "TipoCurso": null,
                 "UnidadAcademica": null
@@ -185,7 +182,6 @@
                 "Sigla": "FIS1523",
                 "Nombre": "Termodinámica",
                 "Creditos": 10,
-                "Estado": "30",
                 "Periodo": "2021-1",
                 "TipoCurso": null,
                 "UnidadAcademica": null
@@ -194,7 +190,6 @@
                 "Sigla": "FIS0152",
                 "Nombre": "Laboratorio de Termodinámica",
                 "Creditos": 10,
-                "Estado": "30",
                 "Periodo": "2021-1",
                 "TipoCurso": null,
                 "UnidadAcademica": null
@@ -203,7 +198,6 @@
                 "Sigla": "IMT1001",
                 "Nombre": "Introducción a la Ingeniería Matemática",
                 "Creditos": 10,
-                "Estado": "30",
                 "Periodo": "2021-1",
                 "TipoCurso": null,
                 "UnidadAcademica": null
@@ -212,7 +206,6 @@
                 "Sigla": "TTF027",
                 "Nombre": "Jesus: Distintas Comprensiones",
                 "Creditos": 10,
-                "Estado": "30",
                 "Periodo": "2021-1",
                 "TipoCurso": null,
                 "UnidadAcademica": null
@@ -221,7 +214,6 @@
                 "Sigla": "IIC1253",
                 "Nombre": "Matemáticas Discretas",
                 "Creditos": 10,
-                "Estado": "30",
                 "Periodo": "2021-1",
                 "TipoCurso": null,
                 "UnidadAcademica": null

@@ -75,9 +75,12 @@ class Settings(BaseSettings):
     # Time to expire JWT tokens in seconds.
     jwt_expire: float = 18_000
 
+    # Siding base URL to patch the SOAP WebService definition with.
+    # If "", the app will not attempt to connect to the SIDING webservice at all,
+    # relying only on the mock responses.
+    siding_host_base: str = ""
+
     # Siding SOAP WebService access username.
-    # If "", it does not connect to the SIDING webservice and relies solely on the mock
-    # responses.
     siding_username: str = ""
 
     # Siding SOAP WebService access password.
