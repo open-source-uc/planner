@@ -3,7 +3,6 @@
         "ms-vscode-remote.remote-containers",
         "kokakiwi.vscode-just",
         "ms-python.python",
-        "ms-python.black-formatter",
         "charliermarsh.ruff",
         "prisma.prisma",
         "bradlc.vscode-tailwindcss",

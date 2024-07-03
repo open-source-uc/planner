@@ -1,51 +1,61 @@
 ---
-- name: Deploy planner
-  hosts: all
+- name: Deploy Planner
+  hosts: localhost
   become: true
-  gather_facts: true
-  connection: ssh
-  vars_prompt:
-    - name: "machine_name"
-      prompt: "Desired machine name (e.g. staging, optional)"
-      private: false
-    - name: "env_mode"
-      prompt: "Environment mode (production or staging)"
-      private: false
-      default: "production"
-    - name: "planner_domain"
-      prompt: "Planner domain (e.g. planner.example.com, optional)"
-      private: false
-      default: "mallastest.ing.uc.cl"
-    - name: "cas_server_url"
-      prompt: "CAS URL (optional)"
-      private: false
-      default: "https://sso.uc.cl/cas"
-    - name: "admin_rut"
-      prompt: "Admin RUT (e.g. 12345678-9, optional)"
-      private: false
-    - name: "siding_username"
-      prompt: "SIDING username (e.g. admin, optional)"
-      private: false
-    - name: "siding_password"
-      prompt: "SIDING password (optional)"
-    - name: "netdata_token"
-      prompt: "Netdata Claim Token (optional)"
-    - name: "netdata_room_id"
-      prompt: "Netdata Room ID (optional)"
-    - name: "tailscale_authkey"
-      prompt: "Tailscale Authkey (optional)"
+
+  vars:
+    admin_rut_default: ""
+    siding_username_default: ""
+    siding_password_default: ""
+    logging_ip_default: ""
+    logging_port_default: ""
+    run_mode: "{{ playbook_run_mode | default('automatic') }}"
+
   tasks:
+    - block:
+        - name: Configurar variables de entorno. Primero RUT del admin
+          pause:
+            prompt: "Ingresar RUT del administrador sin puntos y con guión (si se deja vacío no existirá administrador)"
+          register: prompt_admin_rut
+          when: admin_rut_default == ""
+
+        - name: Luego nombre de usuario para usar el Webservice de SIDING
+          pause:
+            prompt: "Ingresar usuario de SIDING"
+          register: prompt_siding_username
+          when: siding_username_default == ""
+
+        - name: Luego la clave para usar el Webservice de SIDING
+          pause:
+            prompt: "Ingresar contraseña de SIDING"
+          register: prompt_siding_password
+          when: siding_password_default == ""
+
+        - name: Por ultimo la IP para logging
+          pause:
+            prompt: "Ingresar la IP para enviar logs de Docker"
+          register: prompt_logging_ip
+          when: logging_ip_default == ""
+
+        - name: Y el puerto para logging
+          pause:
+            prompt: "Ingresar el puerto para enviar logs de Docker"
+          register: prompt_logging_port
+          when: logging_port_default == ""
+
+      when: run_mode == 'manual'
+
+    - set_fact:
+        admin_rut: "{{ prompt_admin_rut.user_input | default(admin_rut_default) }}"
+        siding_username: "{{ prompt_siding_username.user_input | default(siding_username_default) }}"
+        siding_password: "{{ prompt_siding_password.user_input | default(siding_password_default) }}"
+        logging_ip: "{{ prompt_logging_ip.user_input | default(logging_ip_default) }}"
+        logging_port: "{{ prompt_logging_port.user_input | default(logging_port_default) }}"
+
     - name: Check that we're running Rocky Linux 9
       ansible.builtin.assert:
         that: ansible_distribution == 'Rocky' and ansible_distribution_major_version == '9'
         fail_msg: "This playbook is only for Rocky Linux 9"
-
-    - name: Configure hostname
-      ansible.builtin.hostname:
-        name: "planner-{{ machine_name }}"
-      when: machine_name | length > 0
-      notify:
-        - Configure /etc/hosts
 
     - name: Install EPEL repo
       ansible.builtin.dnf:
@@ -67,173 +77,15 @@
     - name: Install packages
       ansible.builtin.dnf:
         name:
-          # Basics
-          - sudo
-          - wget
-          - git
-          - python3
-          - python3-pip
-          - tar
-          - unzip
-          - tree
-          - traceroute
-          - ca-certificates
-          - net-tools
-          - bind-utils
-          - nmap
-          - btop
-          - nano
-
           # Docker
           - docker-ce
           - docker-ce-cli
           - containerd.io
           - docker-compose-plugin
 
-          # To make DNF management simpler
-          - dnf-plugins-core
-          # To replace iptables
-          - firewalld
           # Automatic updates
           - dnf-automatic
-          # NTS-compatible NTP client
-          - chrony
-          # For the tailscale selinux policy
-          - selinux-policy-devel
-          # For installing the just command runner
-          - snapd
 
-          # Misc
-          - fish
-          - fortune-mod
-          - neofetch
-          - cowsay
-
-        state: present
-
-    - name: Install and configure the micro editor # noqa: risky-shell-pipe command-instead-of-module
-      ansible.builtin.shell:
-        cmd: curl https://getmic.ro/r | bash
-        creates: /usr/bin/micro
-        chdir: /usr/bin
-
-    - name: Enable snapd
-      ansible.builtin.service:
-        name: snapd.socket
-        enabled: true
-        state: started
-
-    - name: Wait for snapd to finish seeding (snap wait system seed.loaded)
-      ansible.builtin.command:
-        cmd: snap wait system seed.loaded
-      check_mode: false
-      changed_when: false
-      failed_when: false
-
-
-    - name: Enable classic snap support
-      ansible.builtin.command:
-        cmd: ln -s /var/lib/snapd/snap /snap
-        creates: /snap
-
-    - name: Install the just command runner
-      ansible.builtin.command:
-        cmd: snap install just --classic --edge
-        creates: /snap/bin/just
-
-    - name: Install the magic wormhole
-      ansible.builtin.command:
-        cmd: snap install wormhole
-        creates: /snap/bin/wormhole
-
-    - name: Enable selinux
-      ansible.posix.selinux:
-        policy: targeted
-        state: enforcing
-
-    - name: Install and connect to Tailscale network
-      ansible.builtin.include_role:
-        name: artis3n.tailscale
-      vars:
-        tailscale_args: "--ssh"
-        tailscale_up_skip: "{{ tailscale_authkey | length == 0 }}"
-      register: tailscale_role
-
-    - name: Notify Tailscale changes # noqa: no-handler
-      ansible.builtin.debug:
-        msg: "Tailscale changed, notifying handlers"
-      when: tailscale_role.changed
-      notify:
-        - Clone Tailscale selinux policy
-        - Compile Tailscale selinux policy
-        - Stop tailscale
-        - Load Tailscale selinux policy
-        - Start tailscale
-
-    - name: Use higher default receive buffer
-      ansible.posix.sysctl:
-        name: net.core.rmem_default
-        value: 31457280
-        state: present
-
-    - name: Increase maximum receive buffer
-      ansible.posix.sysctl:
-        name: net.core.rmem_max
-        value: 12582912
-        state: present
-
-    - name: Use higher default send buffer
-      ansible.posix.sysctl:
-        name: net.core.wmem_default
-        value: 31457280
-        state: present
-
-    - name: Increase maximum send buffer size
-      ansible.posix.sysctl:
-        name: net.core.wmem_max
-        value: 12582912
-        state: present
-
-    - name: Increase TCP buffer space
-      ansible.posix.sysctl:
-        name: net.ipv4.tcp_mem
-        value: 65536 131072 262144
-        state: present
-
-    - name: Increase UDP buffer space
-      ansible.posix.sysctl:
-        name: net.ipv4.udp_mem
-        value: 65536 131072 262144
-        state: present
-
-    - name: Increase TCP read buffer
-      ansible.posix.sysctl:
-        name: net.ipv4.tcp_rmem
-        value: 8192 87380 16777216
-        state: present
-
-    - name: Increase TCP write buffer
-      ansible.posix.sysctl:
-        name: net.ipv4.tcp_wmem
-        value: 8192 65536 16777216
-        state: present
-
-    - name: Increase UDP read buffer
-      ansible.posix.sysctl:
-        name: net.ipv4.udp_rmem_min
-        value: 16384
-        state: present
-
-    - name: Increase UDP write buffer
-      ansible.posix.sysctl:
-        name: net.ipv4.udp_wmem_min
-        value: 16384
-        state: present
-
-    - name: Increase somaxconn
-      ansible.posix.sysctl:
-        name: net.core.somaxconn
-        value: 4096
         state: present
 
     - name: Enable memory overcommit (for Redis)
@@ -304,205 +156,53 @@
       community.general.timezone:
         name: America/Santiago
 
-    - name: Configure NTP to use Cloudflare Time Services
-      ansible.builtin.lineinfile:
-        path: /etc/chrony.conf
-        regexp: '^pool'
-        line: 'pool time.cloudflare.com iburst nts'
-        state: present
-        validate: 'chronyd -p -f %s'
-        insertafter: '^# Please consider joining the pool'
-        firstmatch: true
-      notify: Restart (and enable) chronyd
-
     - name: Set Docker to start on boot
       ansible.builtin.service:
         name: docker
         enabled: true
         state: started
 
-    - name: Check if netdata is installed
-      ansible.builtin.command:
-        cmd: netdata -v
-      register: netdata_installed
-      changed_when: false
-      failed_when: false
-      check_mode: false
-
-    - name: Download netdata kickstart
-      ansible.builtin.get_url:
-        url: https://my-netdata.io/kickstart.sh
-        dest: /tmp/netdata-kickstart.sh
-        mode: '0755'
-      when: netdata_installed.rc != 0 and (netdata_token | length > 0) and (netdata_room_id | length > 0)
-
-    - name: Install and claim Netdata
-      ansible.builtin.command:
-        cmd: sh /tmp/netdata-kickstart.sh {{ i_args }}
-        creates: /sbin/netdata
-      when: netdata_installed.rc != 0 and (netdata_token | length > 0) and (netdata_room_id | length > 0)
-      vars:
-        i_args: "--claim-token {{ netdata_token }} --claim-rooms {{ netdata_room_id }} --non-interactive --stable-channel --disable-telemetry"
-
-    - name: Start and enable Netdata
-      ansible.builtin.service:
-        name: netdata
-        enabled: true
-        state: started
-
-    - name: Get location of fish
-      ansible.builtin.command:
-        cmd: which fish
-      register: fish_location
-      changed_when: false
-      failed_when: false
-      check_mode: false
-
-    - name: Add fish to /etc/shells
-      ansible.builtin.lineinfile:
-        path: /etc/shells
-        line: "{{ fish_location.stdout }}"
-        state: present
-        create: true
-        mode: "0644"
-
-    - name: Create "planner" user
-      ansible.builtin.user:
-        name: planner
-        shell: "{{ fish_location.stdout }}"
-        createhome: true
-        home: /home/planner
-        groups:
-          - docker
-        state: present
-
-    - name: Clone the planner repo # noqa: latest
-      ansible.builtin.git:
-        repo: "https://github.com/open-source-uc/planner.git"
-        dest: /home/planner/planner/
-        update: false
-      become: true
-      become_user: planner
-
-    - name: Update the planner repo # noqa: command-instead-of-module
-      ansible.builtin.shell:
-        cmd: |
-          git config advice.detachedHead false
-          git fetch --all
-          git checkout --force origin/main
-        chdir: /home/planner/planner/
-      become: true
-      become_user: planner
-      changed_when: true
-
     - name: Create backend .env
       ansible.builtin.copy:
-        src: /home/planner/planner/backend/.env.{{ env_mode }}.template
-        dest: /home/planner/planner/backend/.env
-        owner: planner
-        group: planner
+        src: /opt/planner/backend/.env.production.template
+        dest: /opt/planner/backend/.env
         mode: "0644"
         force: false
         remote_src: true
-
-    - name: Create frontend .env
-      ansible.builtin.copy:
-        src: /home/planner/planner/frontend/.env.{{ env_mode }}.template
-        dest: /home/planner/planner/frontend/.env
-        owner: planner
-        group: planner
-        mode: "0644"
-        force: false
-        remote_src: true
-
-    - name: Create database .env
-      ansible.builtin.copy:
-        src: /home/planner/planner/database/.env.{{ env_mode }}.template
-        dest: /home/planner/planner/database/.env
-        owner: planner
-        group: planner
-        mode: "0644"
-        force: false
-        remote_src: true
-
-    - name: Set planner_url
-      ansible.builtin.set_fact:
-        planner_url: "https://{{ planner_domain }}"
-      when: planner_domain | length > 0
-
-    - name: Configure back-end mode
-      ansible.builtin.lineinfile:
-        path: /home/planner/planner/backend/.env
-        regexp: '^PYTHON_ENV'
-        line: 'PYTHON_ENV={{ env_mode }}'
-        state: present
-        insertafter: '^# PYTHON_ENV'
-        firstmatch: true
-      when: env_mode | length > 0
-
-    - name: Configure front-end mode
-      ansible.builtin.lineinfile:
-        path: /home/planner/planner/frontend/.env
-        regexp: '^NODE_ENV'
-        line: 'NODE_ENV={{ env_mode }}'
-        state: present
-        insertafter: '^# NODE_ENV'
-        firstmatch: true
-      when: env_mode | length > 0
-
-    - name: Configure back-end URL
-      ansible.builtin.lineinfile:
-        path: /home/planner/planner/backend/.env
-        regexp: '^PLANNER_URL'
-        line: 'PLANNER_URL={{ planner_url }}'
-        state: present
-        insertafter: '^# PLANNER_URL'
-        firstmatch: true
-      when: planner_domain | length > 0
-
-    - name: Configure CAS URL
-      ansible.builtin.lineinfile:
-        path: /home/planner/planner/backend/.env
-        regexp: '^CAS_SERVER_URL'
-        line: 'CAS_SERVER_URL={{ cas_server_url }}'
-        state: present
-        insertafter: '^# CAS_SERVER_URL'
-        firstmatch: true
-      when: cas_server_url | length > 0
 
     - name: Configure admin RUT
       ansible.builtin.lineinfile:
-        path: /home/planner/planner/backend/.env
-        regexp: '^ADMIN_RUT'
-        line: 'ADMIN_RUT={{ admin_rut }}'
+        path: /opt/planner/backend/.env
+        regexp: "^ADMIN_RUT"
+        line: "ADMIN_RUT={{ admin_rut }}"
         state: present
-        insertafter: '^# ADMIN_RUT'
+        insertafter: "^# ADMIN_RUT"
         firstmatch: true
       when: admin_rut | length > 0
 
     - name: Configure SIDING username
       ansible.builtin.lineinfile:
-        path: /home/planner/planner/backend/.env
-        regexp: '^SIDING_USERNAME'
-        line: 'SIDING_USERNAME={{ siding_username }}'
+        path: /opt/planner/backend/.env
+        regexp: "^SIDING_USERNAME"
+        line: "SIDING_USERNAME={{ siding_username }}"
         state: present
-        insertafter: '^# SIDING_USERNAME'
+        insertafter: "^# SIDING_USERNAME"
         firstmatch: true
       when: siding_username | length > 0
 
     - name: Configure SIDING password
       ansible.builtin.lineinfile:
-        path: /home/planner/planner/backend/.env
-        regexp: '^SIDING_PASSWORD'
-        line: 'SIDING_PASSWORD={{ siding_password }}'
+        path: /opt/planner/backend/.env
+        regexp: "^SIDING_PASSWORD"
+        line: "SIDING_PASSWORD={{ siding_password }}"
         state: present
-        insertafter: '^# SIDING_PASSWORD'
+        insertafter: "^# SIDING_PASSWORD"
         firstmatch: true
       when: siding_password | length > 0
 
     - name: Check if JWT secret is already configured
       ansible.builtin.command:
-        cmd: grep -q '^JWT_SECRET' /home/planner/planner/backend/.env
+        cmd: grep -q '^JWT_SECRET' /opt/planner/backend/.env
       register: jwt_secret_check
       check_mode: false
       changed_when: false
@@ -510,84 +210,45 @@
 
     - name: Configure JWT secret
       ansible.builtin.lineinfile:
-        path: /home/planner/planner/backend/.env
-        regexp: '^JWT_SECRET'
+        path: /opt/planner/backend/.env
+        regexp: "^JWT_SECRET"
         line: "JWT_SECRET={{ lookup('community.general.random_string', length=64, base64=True) }}"
         state: present
-        insertafter: '^# JWT_SECRET'
+        insertafter: "^# JWT_SECRET"
         firstmatch: true
       when: jwt_secret_check.rc != 0
-
-    - name: Configure front-end URL
-      ansible.builtin.lineinfile:
-        path: /home/planner/planner/frontend/.env
-        regexp: '^PLANNER_URL'
-        line: 'PLANNER_URL={{ planner_url }}'
-        state: present
-      when: planner_domain | length > 0
 
     - name: Create caddy_data volume
       ansible.builtin.command:
         cmd: docker volume create caddy_data
         creates: /var/lib/docker/volumes/caddy_data/
       become: true
-      become_user: planner
 
     - name: Build and start containers
       ansible.builtin.command:
         cmd: docker compose up --build --remove-orphans --force-recreate --detach --wait-timeout 300 --wait planner
-        chdir: /home/planner/planner/
+        chdir: /opt/planner
       environment:
         DOCKER_BUILDKIT: 1
       changed_when: true
       become: true
-      become_user: planner
+
+    - name: Configure Docker to send logs to syslog server
+      copy:
+        dest: /etc/docker/daemon.json
+        content: |
+          {
+            "log-driver": "syslog",
+            "log-opts": {
+              "syslog-address": "udp://{{ logging_ip }}:{{ logging_port }}"
+            }
+          }
+        backup: true
+      notify: restart docker
+      when: logging_ip | length > 0 and logging_port | length > 0
 
   handlers:
-    - name: Restart (and enable) chronyd
-      ansible.builtin.service:
-        name: chronyd
+    - name: restart docker
+      systemd:
+        name: docker
         state: restarted
-
-    - name: Configure /etc/hosts
-      ansible.builtin.template:
-        src: templates/hosts.j2
-        dest: /etc/hosts
-        owner: root
-        group: root
-        mode: "0644"
-      when: machine_name | length > 0
-
-    - name: Clone Tailscale selinux policy
-      ansible.builtin.git:
-        repo: "git@github.com:abhiseksanyal/tailscale-selinux-policy.git"
-        dest: /usr/share/selinux/devel/tailscale
-        version: "83c908e4c2bb6521054afd03390ebbc20ab9e9e7"
-
-    - name: Compile Tailscale selinux policy
-      ansible.builtin.command:
-        cmd:
-          - make -f ../Makefile tailscaled.pp
-        creates: /usr/share/selinux/devel/tailscale/tailscale.pp
-        chdir: /usr/share/selinux/devel/tailscale
-
-    - name: Stop tailscale
-      ansible.builtin.service:
-        name: tailscaled
-        state: stopped
-
-    - name: Load Tailscale selinux policy
-      ansible.builtin.command:
-        cmd:
-          - semodule -i tailscaled.pp
-          - restorecon /usr/sbin/tailscaled
-          - restorecon /lib/systemd/system/tailscaled.service
-          - restorecon -R /var/lib/tailscale
-          - restorecon -R /var/run/tailscale
-        chdir: /usr/share/selinux/devel/tailscale
-      changed_when: true
-
-    - name: Start tailscale
-      ansible.builtin.service:
-        name: tailscaled
-        state: started

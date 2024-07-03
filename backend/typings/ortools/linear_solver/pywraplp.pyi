@@ -486,7 +486,7 @@ class Solver:
     @staticmethod
     def Infinity():
         return _pywraplp.Solver_Infinity()
-    def SetTimeLimit(self, x):
+    def SetTimeLimit(self, x: int) -> None:
         return _pywraplp.Solver_SetTimeLimit(self, x)
     def WallTime(self):
         return _pywraplp.Solver_WallTime(self)

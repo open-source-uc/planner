@@ -39,16 +39,12 @@ jobs:
           poetry install
           poetry run prisma generate
 
-      - name: Run black
-        uses: wearerequired/lint-action@v2
+      - name: Run ruff formatter
+        uses: chartboost/ruff-action@v1
         with:
-          github_token: ${{ secrets.github_token }}
-          auto_fix: ${{ github.event_name == 'pull_request' }}
-          black: true
-          black_dir: backend
-          black_command_prefix: poetry run
-          black_auto_fix: true
-      
+          args: "format --diff"
+          src: "./backend"
+
       - name: Run ruff
         uses: chartboost/ruff-action@v1
         with:

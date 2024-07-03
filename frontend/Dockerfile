@@ -11,14 +11,12 @@ FROM node:16-alpine as app-builder
 # Set the working directory
 WORKDIR /tmp
 
-# Copy package.json and package-lock.json to the working directory
-COPY package*.json .
+# TODO: copy only the necessary files
+# Copy the application code, including config and env files
+COPY . .
 
 # Install dependencies
 RUN npm ci
-
-# Copy other files to the working directory
-COPY . .
 
 # Build the application
 RUN npm run build

@@ -4,6 +4,7 @@ networks:
   caddy:
   api:
 
+
 services:
   planner:
     build: ./frontend
@@ -17,7 +18,7 @@ services:
     depends_on:
       - api
     env_file:
-      - ./frontend/.env
+      - ./frontend/.env.production
     volumes:
       - caddy_data:/data
       - caddy_config:/config
@@ -39,7 +40,9 @@ services:
       - ./siding-mock-data:/siding-mock-data
       - ./static-curriculum-data:/static-curriculum-data
     env_file:
+      - ./backend/.env.default
       - ./backend/.env
+
   db:
     image: postgres:15
     container_name: planner-db
@@ -48,10 +51,12 @@ services:
       - api
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    env_file:
-      - ./database/.env
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: postgres
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
 
   redis:
     image: redis:7
@@ -63,7 +68,7 @@ services:
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      test: [ "CMD-SHELL", "redis-cli ping | grep -q PONG" ]
 
   cas_mock_server:
     # Run a local cas mock server container for developing purposes.

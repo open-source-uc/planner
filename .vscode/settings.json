@@ -42,14 +42,12 @@
     // Black + Ruff
     "python.formatting.provider": "none",
     "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.defaultFormatter": "charliermarsh.ruff",
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
             "source.fixAll": "explicit",
             "source.organizeImports": "explicit"
-        },
-        // Prevents ruff-vscode#128
-        "source.organizeImports.isort": true,
+        }
     },
     "ruff.args": [
         "--config=/workspaces/planner/backend/pyproject.toml"

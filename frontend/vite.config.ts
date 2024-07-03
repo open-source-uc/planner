@@ -1,5 +1,5 @@
 import { defineConfig, loadEnv } from 'vite'
-import { sentryVitePlugin } from "@sentry/vite-plugin";
+import { sentryVitePlugin } from "@sentry/vite-plugin"
 import react from '@vitejs/plugin-react'
 import eslintPlugin from '@nabla/vite-plugin-eslint'
 import svgr from 'vite-plugin-svgr'
@@ -28,10 +28,15 @@ export default defineConfig(({ command, mode }) => {
         usePolling: true
       }
     },
-    plugins: [react(), eslintPlugin(), svgr(), sentryVitePlugin({
-      authToken: process.env.SENTRY_AUTH_TOKEN,
-      org: "planner-ing-uc",
-      project: "planner-frontend",
-    })],
+    plugins: [
+      react(), 
+      eslintPlugin(), 
+      svgr(), 
+      sentryVitePlugin({
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+        org: "planner-ing-uc",
+        project: "planner-frontend",
+      })
+    ],
   }
 })

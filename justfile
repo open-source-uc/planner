@@ -50,7 +50,7 @@ lint-front:
 
 lint-back:
     @echo "{{ info_prefix }} \e[1mLinting back-end...\e[0m"
-    cd backend && poetry run black --diff .
+    cd backend && poetry run ruff format --diff .
     cd backend && poetry run ruff check .
     cd backend && poetry run pyright
 
@@ -62,7 +62,7 @@ format-front:
 
 format-back:
     @echo "{{ info_prefix }} \e[1mFormatting back-end...\e[0m"
-    cd backend && poetry run black .
+    cd backend && poetry run ruff format .
 
 format: format-front format-back
 
@@ -73,7 +73,7 @@ lint-fix-front:
 
 lint-fix-back:
     @echo "{{ info_prefix }} \e[1mChecking & fixing back-end...\e[0m"
-    cd backend && poetry run black .
+    cd backend && poetry run ruff format .
     cd backend && poetry run ruff check . --fix
     cd backend && poetry run pyright
     cd backend && poetry run pytest
@@ -105,6 +105,10 @@ db-reset:
 db-generate:
     @echo "{{ info_prefix }} \e[1mGenerating Prisma client...\e[0m"
     cd backend && poetry run prisma generate
+
+run:
+    @echo "{{ info_prefix }} \e[1mRunning backend + frontend + CAS mock\e[0m"
+    (npx --yes cas-server-mock --database=$PWD/cas-mock/data/cas-mock-users.json) & (cd frontend && npm run dev) & (cd backend && poetry run uvicorn app.main:app) && fg
 
 set positional-arguments := true
 default_environment := "development"
