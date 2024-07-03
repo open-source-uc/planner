@@ -25,7 +25,4 @@ if [ "$LOCAL" != "$REMOTE" ]; then
     git checkout origin/main
     chmod +x ./run_deploy.sh
     ./run_deploy.sh
-else
-    # No se detectaron cambios
-    # echo "No changes detected. No action needed."
 fi
