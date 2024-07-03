@@ -106,10 +106,6 @@ db-generate:
     @echo "{{ info_prefix }} \e[1mGenerating Prisma client...\e[0m"
     cd backend && poetry run prisma generate
 
-run:
-    @echo "{{ info_prefix }} \e[1mRunning backend + frontend + CAS mock\e[0m"
-    (npx --yes cas-server-mock --database=$PWD/cas-mock/data/cas-mock-users.json) & (cd frontend && npm run dev) & (cd backend && poetry run uvicorn app.main:app) && fg
-
 set positional-arguments := true
 default_environment := "development"
 deploy environment=default_environment:

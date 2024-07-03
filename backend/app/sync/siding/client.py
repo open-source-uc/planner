@@ -3,12 +3,14 @@ from __future__ import annotations
 import json
 import logging
 from decimal import Decimal
+from io import BytesIO
 from pathlib import Path
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Final, Generic, Literal, TypeVar
 
 import httpx
 import zeep
 from pydantic import BaseModel, ConstrainedStr, Field, parse_obj_as
+from pydantic.generics import GenericModel
 from zeep import AsyncClient
 from zeep.transports import AsyncTransport
 
@@ -31,7 +33,8 @@ class Major(BaseModel):
     VersionMajor: str
     # For some reason after a SIDING update majors stopped having associated
     # curriculums
-    # TODO: Learn why and what to do about it
+    # TODO: This no longer happens with the new version of the webservice
+    # Do something about this?
     Curriculum: StringArray | None
 
 
@@ -45,7 +48,8 @@ class Minor(BaseModel):
     VersionMinor: str | None
     # For some reason after a SIDING update minors stopped having associated
     # curriculums
-    # TODO: Learn why and what to do about it
+    # TODO: This no longer happens with the new version of the webservice
+    # Do something about this?
     Curriculum: StringArray | None
 
 
@@ -56,7 +60,8 @@ class Titulo(BaseModel):
     VersionTitulo: str | None
     # For some reason after a SIDING update titles stopped having associated
     # curriculums
-    # TODO: Learn why and what to do about it
+    # TODO: This no longer happens with the new version of the webservice
+    # Do something about this?
     Curriculum: StringArray | None
 
 
@@ -143,6 +148,9 @@ class InfoEstudiante(BaseModel):
     # Semester in which the student joined the university.
     # For example, '2012-2' for the second semester of 2012.
     PeriodoAdmision: AcademicPeriod | None
+    # Number of semesters coursed?
+    # Not sure what are the exact semantics around skipped semesters.
+    SemestresCursados: int | None = None
 
     # Average student grades
     # Since this is somewhat sensitive data and we don't use it, it's best to ignore it
@@ -157,19 +165,61 @@ class CursoHecho(BaseModel):
     Nombre: str
     Creditos: int
     # Approval status of the course.
-    # Codified as a string, with different strings representing different statuses.
-    # For example, '12' seems to be "approved".
+    # See the `ESTADO_*` associated constants.
     # TODO: Find out all the codes.
     Estado: str
     # When was the course taken.
     # E.g. "2020-2" for the second semester of the year 2020
     Periodo: AcademicPeriod
     # Not sure, but probably whether the course is catedra or lab.
-    # Seems to be `None`
+    # Unused
     TipoCurso: str | None
     # Academic unit, probably.
-    # Seems to be `None`
+    # Unused
     UnidadAcademica: str | None
+
+    ESTADO_APROBADO: Final[str] = "Aprobado"
+    ESTADO_REPROBADO: Final[str] = "Reprobado"
+
+
+class CursoInscrito(BaseModel):
+    Sigla: str
+    Nombre: str
+    Creditos: int
+    # When was the course taken.
+    # E.g. "2020-2" for the second semester of the year 2020
+    Periodo: AcademicPeriod
+    # Not sure, but probably whether the course is catedra or lab.
+    # Unused
+    TipoCurso: str | None
+    # Academic unit, probably.
+    # Unused
+    UnidadAcademica: str | None
+
+
+class SeleccionEstudiante(BaseModel):
+    # Codename of the selection.
+    # Examples: 'biologico', 'fundamentos', 'exploratorio'
+    Selector: str
+    # Course code of the selection.
+    # I don't know whether empty selections are represented by an empty string or a
+    # `None` value.
+    Valor: str | None
+
+
+T = TypeVar("T")
+
+
+class NullableList(GenericModel, Generic[T]):
+    """
+    SIDING has the horrible tendency to return `None` instead of empty lists.
+    This patches that.
+    """
+
+    __root__: list[T] | None
+
+    def to_list(self) -> list[T]:
+        return [] if self.__root__ is None else self.__root__
 
 
 def decode_cyears(cyears: StringArray | None) -> list[str]:
@@ -219,8 +269,12 @@ class SoapClient:
                 self.mock_db = {}
 
         # Connect to SIDING webservice
-        if settings.siding_username != "":
-            wsdl_url = Path(__file__).with_name("ServiciosPlanner.wsdl").as_posix()
+        if settings.siding_host_base != "":
+            # Load SIDING WebService definition
+            wsdl_path = Path(__file__).with_name("ServiciosPlanner.wsdl")
+            raw_wsdl_text = wsdl_path.read_text(encoding="utf-8")
+            wsdl_text = raw_wsdl_text.replace("SITIO_SIDING", settings.siding_host_base)
+
             http_client = httpx.AsyncClient(
                 auth=httpx.DigestAuth(
                     settings.siding_username,
@@ -228,7 +282,7 @@ class SoapClient:
                 ),
             )
             self.soap_client = AsyncClient(
-                wsdl_url,
+                BytesIO(wsdl_text.encode()),
                 transport=AsyncTransport(http_client),
             )
             logging.info("Connected to live SIDING webservice")
@@ -253,9 +307,14 @@ class SoapClient:
                 f"mock data not found for SIDING request {name}({args_str})",
             )
 
+        # Pack arguments
+        args_raw: dict[str, Any] = {}
+        if args:
+            args_raw["request"] = args
+
         # Carry out request to SIDING webservice backend
         response: Any = zeep.helpers.serialize_object(  # type: ignore
-            await self.soap_client.service[name](**args),
+            await self.soap_client.service[name](**args_raw),
         )
 
         # Record response if enabled
@@ -298,9 +357,9 @@ async def get_majors() -> list[Major]:
     #         print(resp.content, file=f)
 
     return parse_obj_as(
-        list[Major],
+        NullableList[Major],
         await client.call_endpoint("getListadoMajor", {}),
-    )
+    ).to_list()
 
 
 async def get_minors() -> list[Minor]:
@@ -308,9 +367,9 @@ async def get_minors() -> list[Minor]:
     Obtain a global list of all minors.
     """
     return parse_obj_as(
-        list[Minor],
+        NullableList[Minor],
         await client.call_endpoint("getListadoMinor", {}),
-    )
+    ).to_list()
 
 
 async def get_titles() -> list[Titulo]:
@@ -318,9 +377,9 @@ async def get_titles() -> list[Titulo]:
     Obtain a global list of all titles.
     """
     return parse_obj_as(
-        list[Titulo],
+        NullableList[Titulo],
         await client.call_endpoint("getListadoTitulo", {}),
-    )
+    ).to_list()
 
 
 async def get_minors_for_major(major_code: str) -> list[Minor]:
@@ -338,12 +397,12 @@ async def get_courses_for_spec(study_spec: PlanEstudios) -> list[Curso]:
     Get pretty much all the courses that are available to a certain study spec.
     """
     return parse_obj_as(
-        list[Curso],
+        NullableList[Curso],
         await client.call_endpoint(
             "getConcentracionCursos",
             study_spec.dict(),
         ),
-    )
+    ).to_list()
 
 
 async def get_curriculum_for_spec(study_spec: PlanEstudios) -> list[BloqueMalla]:
@@ -351,12 +410,12 @@ async def get_curriculum_for_spec(study_spec: PlanEstudios) -> list[BloqueMalla]
     Get a list of curriculum blocks for the given spec.
     """
     return parse_obj_as(
-        list[BloqueMalla],
+        NullableList[BloqueMalla],
         await client.call_endpoint(
             "getMallaSugerida",
             study_spec.dict(),
         ),
-    )
+    ).to_list()
 
 
 async def get_equivalencies(course_code: str, study_spec: PlanEstudios) -> list[Curso]:
@@ -371,7 +430,7 @@ async def get_equivalencies(course_code: str, study_spec: PlanEstudios) -> list[
     However, 'ICE1514' has zero equivalencies.
     """
     return parse_obj_as(
-        list[Curso],
+        NullableList[Curso],
         await client.call_endpoint(
             "getCursoEquivalente",
             {
@@ -379,7 +438,7 @@ async def get_equivalencies(course_code: str, study_spec: PlanEstudios) -> list[
             }
             | study_spec.dict(),
         ),
-    )
+    ).to_list()
 
 
 async def get_requirements(course_code: str, study_spec: PlanEstudios) -> list[Curso]:
@@ -390,7 +449,7 @@ async def get_requirements(course_code: str, study_spec: PlanEstudios) -> list[C
     These requirements are only a heuristic.
     """
     return parse_obj_as(
-        list[Curso],
+        NullableList[Curso],
         await client.call_endpoint(
             "getRequisito",
             {
@@ -398,7 +457,7 @@ async def get_requirements(course_code: str, study_spec: PlanEstudios) -> list[C
             }
             | study_spec.dict(),
         ),
-    )
+    ).to_list()
 
 
 async def get_restrictions(
@@ -411,7 +470,7 @@ async def get_restrictions(
     expression and not as a list.
     """
     return parse_obj_as(
-        list[Restriccion],
+        NullableList[Restriccion],
         await client.call_endpoint(
             "getRestriccion",
             {
@@ -419,23 +478,24 @@ async def get_restrictions(
             }
             | study_spec.dict(),
         ),
-    )
+    ).to_list()
 
 
 async def get_predefined_list(list_code: str) -> list[Curso]:
     """
     Get a global named list of courses.
+    Returns `null` if the list is empty.
     """
+
     return parse_obj_as(
-        list[Curso],
+        NullableList[Curso],
         await client.call_endpoint("getListaPredefinida", {"CodLista": list_code}),
-    )
+    ).to_list()
 
 
 async def get_student_info(rut: Rut) -> InfoEstudiante:
     """
     Get the information associated with the given student, by RUT.
-    The RUT must be in the format "011222333-K", the same format used by CAS.
     """
     return parse_obj_as(
         InfoEstudiante,
@@ -446,11 +506,46 @@ async def get_student_info(rut: Rut) -> InfoEstudiante:
 async def get_student_done_courses(rut: Rut) -> list[CursoHecho]:
     """
     Get the information associated with the given student, by RUT.
-    The RUT must be in the format "011222333-K", the same format used by CAS.
     """
     return parse_obj_as(
-        list[CursoHecho],
+        NullableList[CursoHecho],
         await client.call_endpoint("getCursosHechos", {"rut": rut}),
+    ).to_list()
+
+
+async def get_student_current_courses(rut: Rut) -> list[CursoInscrito]:
+    """
+    Get the courses that the given student is currently coursing, by RUT.
+
+    Not sure when exactly are current courses converted into past courses.
+    """
+    return parse_obj_as(
+        NullableList[CursoInscrito],
+        await client.call_endpoint("getCargaAcademica", {"rut": rut}),
+    ).to_list()
+
+
+async def get_student_selections(rut: Rut) -> list[SeleccionEstudiante]:
+    """
+    Get the courses that the given student is currently coursing, by RUT.
+
+    Not sure when exactly are current courses converted into past courses.
+    """
+    return parse_obj_as(
+        NullableList[SeleccionEstudiante],
+        await client.call_endpoint("getSeleccionesEstudiante", {"rut": rut}),
+    ).to_list()
+
+
+async def get_current_period() -> AcademicPeriod:
+    """
+    Get the current academic period.
+
+    NOTE: Not sure what happens when in between academic periods.
+    This function may error out.
+    """
+    return parse_obj_as(
+        AcademicPeriod, await client.call_endpoint("getPeriodoAcademicoActual", {})
     )
 
 

@@ -1,849 +1,1359 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
-	xmlns:tns="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/"
+<wsdl:definitions
+	xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+	xmlns:tns="https://SITIO_SIDING/ws/ServiciosPlanner/"
 	xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
-	xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="ServiciosPlanner" targetNamespace="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/">
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="ServiciosPlanner"
+	targetNamespace="https://SITIO_SIDING/ws/ServiciosPlanner/">
 	<wsdl:types>
-		<xsd:schema targetNamespace="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/">
-			<xsd:element name="getInfoEstudianteRequest" type="tns:Rut">
-			</xsd:element>
-			<xsd:element name="getInfoEstudianteResponse" type="tns:InfoEstudiante">
-			</xsd:element>
-			<xsd:element name="getInfoEstudianteFault">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="getInfoEstudianteFault" type="xsd:string">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="fault" type="xsd:string"></xsd:element>
-			<xsd:element name="getCursosHechosRequest" type="tns:Rut">
-			</xsd:element>
-			<xsd:element name="getCursosHechosResponse">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="CursosHechos" type="tns:CursoHecho" maxOccurs="unbounded" minOccurs="0">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:complexType name="InfoEstudiante">
-				<xsd:all>
-					<xsd:element name="Nombre" type="xsd:string" maxOccurs="1" minOccurs="1" />
-					<xsd:element name="Sexo" type="xsd:string" maxOccurs="1" minOccurs="1">
+		<xsd:schema targetNamespace="https://SITIO_SIDING/ws/ServiciosPlanner/">
+			<xsd:complexType name="Rut">
+				<xsd:sequence>
+					<xsd:element name="rut" maxOccurs="1" minOccurs="1"
+						type="xsd:string">
+                        <xsd:annotation>
+                        	<xsd:documentation>RUT en formato nnnnnnnn-v.
+</xsd:documentation>
+                        </xsd:annotation>
 					</xsd:element>
-					<xsd:element name="Curriculo" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="PPA" type="xsd:decimal" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="Estado" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="MajorInscrito" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="MinorInscrito" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="TituloInscrito" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="Codigo" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="Carrera" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="PeriodoAdmision" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-				</xsd:all>
+				</xsd:sequence>
 			</xsd:complexType>
-			<xsd:complexType name="CursoHecho">
-				<xsd:all>
-					<xsd:element name="Sigla" type="xsd:string" maxOccurs="1" minOccurs="1">
+			<xsd:complexType name="InfoEstudiante">
+				<xsd:sequence>
+					<xsd:element name="Nombre" type="xsd:string"
+						maxOccurs="1" minOccurs="1" >
+						<xsd:annotation>
+							<xsd:documentation>Nombre del estudiante.
+</xsd:documentation>
+						</xsd:annotation></xsd:element>
+					<xsd:element name="Sexo" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Sexo del estudiante.
+</xsd:documentation>
+                        </xsd:annotation>
 					</xsd:element>
-					<xsd:element name="Nombre" type="xsd:string" maxOccurs="1" minOccurs="1">
+					<xsd:element name="Curriculo" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Código del plan de estudios del estudiante.
+</xsd:documentation>
+                        </xsd:annotation>
 					</xsd:element>
-					<xsd:element name="Creditos" type="xsd:int" maxOccurs="1" minOccurs="1">
+					<xsd:element name="PPA" type="xsd:decimal"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>PPA del estudiante.
+</xsd:documentation>
+                        </xsd:annotation>
 					</xsd:element>
-					<xsd:element name="Estado" type="xsd:string" maxOccurs="1" minOccurs="1">
+					<xsd:element name="Estado" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Situación académica del estudiante.
+</xsd:documentation>
+                        </xsd:annotation>
 					</xsd:element>
-					<xsd:element name="Periodo" type="xsd:string" maxOccurs="1" minOccurs="1">
+					<xsd:element name="MajorInscrito" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Código del Major inscrito o seguido por el estudiante.
+</xsd:documentation>
+                        </xsd:annotation>
 					</xsd:element>
-					<xsd:element name="TipoCurso" type="xsd:string" maxOccurs="1" minOccurs="1">
+					<xsd:element name="MinorInscrito" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Código del Minor inscrito o seguido por el estudiante.
+</xsd:documentation>
+                        </xsd:annotation>
 					</xsd:element>
-					<xsd:element name="UnidadAcademica" type="xsd:string" maxOccurs="1" minOccurs="1">
+					<xsd:element name="TituloInscrito" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Código del Título inscrito o seguido por el estudiante.
+</xsd:documentation>
+                        </xsd:annotation>
 					</xsd:element>
-				</xsd:all>
+					<xsd:element name="Codigo" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Código de currículum del plan común seguido poe el estudiante.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Carrera" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Nombre de la carrera seguida por el estudiante.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="PeriodoAdmision" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Periodo de admisión del estudiante, en formato AAAA-S.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="SemestresCursados" type="xsd:int"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Total de semestres completos cursados.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
 			</xsd:complexType>
 			<xsd:complexType name="Curso">
 				<xsd:sequence>
-					<xsd:element name="Sigla" type="xsd:string" maxOccurs="1" minOccurs="1">
+					<xsd:element name="Sigla" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Sigla del curso.
+</xsd:documentation>
+                        </xsd:annotation>
 					</xsd:element>
-					<xsd:element name="Nombre" type="xsd:string" maxOccurs="1" minOccurs="1">
+					<xsd:element name="Nombre" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Nombre del curso.
+</xsd:documentation>
+                        </xsd:annotation>
 					</xsd:element>
-					<xsd:element name="Semestralidad" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="Creditos" type="xsd:int" maxOccurs="1" minOccurs="1">
+					<xsd:element name="Creditos" type="xsd:int"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Créditos que da el curso.
+</xsd:documentation>
+                        </xsd:annotation>
 					</xsd:element>
 				</xsd:sequence>
 			</xsd:complexType>
-			<xsd:element name="getCursosHechosFault">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="getCursosHechosFault" type="xsd:string">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getListadoMajorResponse">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="Majors" type="tns:Major" maxOccurs="unbounded" minOccurs="0">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getListadoMajorFault">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="getListadoMajorFault" type="xsd:string">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getOfertaMajorRequest" type="tns:Rut">
-			</xsd:element>
-			<xsd:element name="getOfertaMajorResponse">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="Majors" type="tns:Major" maxOccurs="unbounded" minOccurs="0"></xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getOfertaMajorFault">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="getOfertaMajorFault" type="xsd:string">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getListadoMinorResponse">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="Minors" type="tns:Minor" maxOccurs="unbounded" minOccurs="0">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getListadoMinorFault">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="getListadoMinorFault" type="xsd:string">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getOfertaMinorRequest" type="tns:Rut">
-			</xsd:element>
-			<xsd:element name="getOfertaMinorResponse">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="Minors" type="tns:Minor" maxOccurs="unbounded" minOccurs="0"></xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getOfertaMinorFault">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="getOfertaMinorFault" type="xsd:string">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getListadoTitulo">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="in" type="xsd:string"></xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getListadoTituloResponse">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="Titulos" type="tns:Titulo" maxOccurs="unbounded" minOccurs="0"></xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getListadoTituloFault">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="getListadoTituloFault" type="xsd:string">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getOfertaTituloRequest" type="tns:Rut">
-			</xsd:element>
-			<xsd:element name="getOfertaTituloResponse">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="Titulos" type="tns:Titulo" maxOccurs="unbounded" minOccurs="0"></xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getOfertaTituloFault">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="getOfertaTituloFault" type="xsd:string">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getMajorMinorAsociadoRequest">
-				<xsd:complexType>
-					<xsd:all>
-						<xsd:element name="CodMajor" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-					</xsd:all>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getMajorMinorAsociadoResponse">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="Minors" type="tns:Minor" maxOccurs="unbounded" minOccurs="0"></xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getMajorMinorAsociadoFault">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="getMajorMinorAsociadoFault" type="xsd:string">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getConcentracionCursosRequest" type="tns:PlanEstudios">
-			</xsd:element>
-			<xsd:element name="getConcentracionCursosResponse">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="Cursos" type="tns:Curso" maxOccurs="unbounded" minOccurs="0"></xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getConcentracionCursosFault">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="getConcentracionCursosFault" type="xsd:string">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getMallaSugeridaRequest" type="tns:PlanEstudios">
-			</xsd:element>
-			<xsd:element name="getMallaSugeridaResponse">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="BloquesMalla" type="tns:BloqueMalla" maxOccurs="unbounded" minOccurs="0"></xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getMallaSugeridaFault">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="getMallaSugeridaFault" type="xsd:string">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getCursoEquivalenteRequest" type="tns:CursoPlanEstudios">
-			</xsd:element>
-			<xsd:element name="getCursoEquivalenteResponse">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="Cursos" type="tns:Curso" maxOccurs="unbounded" minOccurs="0"></xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getCursoEquivalenteFault">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="getCursoEquivalenteFault" type="xsd:string">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getRequisitoRequest" type="tns:CursoPlanEstudios">
-			</xsd:element>
-			<xsd:element name="getRequisitoResponse">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="Cursos" type="tns:CursoRequisito" maxOccurs="unbounded" minOccurs="0"></xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getRequisitoFault">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="getRequisitosFault" type="xsd:string">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getRestriccionRequest" type="tns:CursoPlanEstudios">
-			</xsd:element>
-			<xsd:element name="getRestriccionResponse">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="Restricciones" type="tns:Restriccion" maxOccurs="unbounded" minOccurs="0"></xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getRestriccionFault">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="getRestriccionFault" type="xsd:string">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getListaPredefinidaRequest">
-				<xsd:complexType>
-					<xsd:all maxOccurs="1" minOccurs="1">
-						<xsd:element name="CodLista" type="xsd:string"></xsd:element>
-					</xsd:all>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getListaPredefinidaResponse">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="Cursos" type="tns:Curso" maxOccurs="unbounded" minOccurs="0"></xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:element name="getListaPredefinidaFault">
-				<xsd:complexType>
-					<xsd:sequence>
-						<xsd:element name="getListaPredefinidaFault" type="xsd:string">
-						</xsd:element>
-					</xsd:sequence>
-				</xsd:complexType>
-			</xsd:element>
-			<xsd:complexType name="Major">
-				<xsd:all>
-					<xsd:element name="CodMajor" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="Nombre" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="VersionMajor" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="Curriculum" maxOccurs="1" minOccurs="1" type="tns:stringArray">
-					</xsd:element>
-				</xsd:all>
-			</xsd:complexType>
-			<xsd:complexType name="Minor">
-				<xsd:all>
-					<xsd:element name="CodMinor" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="Nombre" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="TipoMinor" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="VersionMinor" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="Curriculum" maxOccurs="1" minOccurs="1" type="tns:stringArray">
-					</xsd:element>
-				</xsd:all>
-			</xsd:complexType>
-			<xsd:complexType name="Titulo">
-				<xsd:all>
-					<xsd:element name="CodTitulo" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="Nombre" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="TipoTitulo" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="VersionTitulo" type="xsd:string" maxOccurs="1" minOccurs="1">
-					</xsd:element>
-					<xsd:element name="Curriculum" maxOccurs="1" minOccurs="1" type="tns:stringArray">
-					</xsd:element>
-				</xsd:all>
-			</xsd:complexType>
-			<xsd:complexType name="PlanEstudios">
-				<xsd:all>
-					<xsd:element name="CodCurriculum" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-					<xsd:element name="CodMajor" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-					<xsd:element name="CodMinor" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-					<xsd:element name="CodTitulo" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-				</xsd:all>
-			</xsd:complexType>
-			<xsd:complexType name="CursoPlanEstudios">
-				<xsd:all>
-					<xsd:element name="Sigla" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-					<xsd:element name="CodCurriculum" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-					<xsd:element name="CodMajor" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-					<xsd:element name="CodMinor" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-					<xsd:element name="CodTitulo" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-				</xsd:all>
-			</xsd:complexType>
-			<xsd:complexType name="BloqueMalla">
-				<xsd:all>
-					<xsd:element name="Nombre" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-					<xsd:element name="CodSigla" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-					<xsd:element name="CodLista" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-					<xsd:element name="Programa" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-					<xsd:element name="Creditos" type="xsd:int" maxOccurs="1" minOccurs="1"></xsd:element>
-					<xsd:element name="SemestreBloque" type="xsd:int" maxOccurs="1" minOccurs="1"></xsd:element>
-					<xsd:element name="OrdenSemestre" type="xsd:int" maxOccurs="1" minOccurs="1"></xsd:element>
-					<xsd:element name="Equivalencias" maxOccurs="1" minOccurs="1">
-						<xsd:complexType>
-							<xsd:sequence>
-								<xsd:element name="Cursos" type="tns:Curso" maxOccurs="unbounded" minOccurs="0">
-								</xsd:element>
-							</xsd:sequence>
-						</xsd:complexType>
-					</xsd:element>
-					<xsd:element name="Restricciones" maxOccurs="1" minOccurs="1">
-						<xsd:complexType>
-							<xsd:sequence>
-								<xsd:element name="Restricciones" type="tns:Restriccion" maxOccurs="unbounded" minOccurs="0">
-								</xsd:element>
-							</xsd:sequence>
-						</xsd:complexType>
-					</xsd:element>
-					<xsd:element name="Requisitos" maxOccurs="1" minOccurs="1">
-						<xsd:complexType>
-							<xsd:sequence>
-								<xsd:element name="Cursos" type="tns:CursoRequisito" maxOccurs="unbounded" minOccurs="0">
-								</xsd:element>
-							</xsd:sequence>
-						</xsd:complexType>
-					</xsd:element>
-					<xsd:element name="Tipocurso" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-					<xsd:element name="BloqueAcademico" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-				</xsd:all>
-			</xsd:complexType>
-			<xsd:complexType name="Restriccion">
-				<xsd:sequence>
-					<xsd:element name="Nombre" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-					<xsd:element name="CreditoMin" type="xsd:int" maxOccurs="1" minOccurs="1"></xsd:element>
-				</xsd:sequence>
-			</xsd:complexType>
-			<xsd:complexType name="Void"></xsd:complexType>
-			<xsd:element name="getListadoMinorRequest" type="tns:Void">
-			</xsd:element>
-			<xsd:element name="getListadoMajorRequest" type="tns:Void">
-			</xsd:element>
-			<xsd:element name="getListadoTituloRequest" type="tns:Void">
-			</xsd:element>
-			<xsd:complexType name="Rut">
-				<xsd:all>
-					<xsd:element name="rut" maxOccurs="1" minOccurs="1" type="xsd:string">
-					</xsd:element>
-				</xsd:all>
-			</xsd:complexType>
-			<xsd:complexType name="CursoRequisito">
+			<xsd:complexType name="CursoHecho">
 				<xsd:complexContent>
 					<xsd:extension base="tns:Curso">
 						<xsd:sequence>
-							<xsd:element name="TipoRequisito" type="xsd:string" maxOccurs="1" minOccurs="1">
+							<xsd:element name="Estado" type="xsd:string" maxOccurs="1" minOccurs="1">
+                                <xsd:annotation>
+                                	<xsd:documentation>Estado del curso.
+</xsd:documentation>
+                                </xsd:annotation>
+							</xsd:element>
+							<xsd:element name="Periodo" type="xsd:string" maxOccurs="1" minOccurs="1">
+                                <xsd:annotation>
+                                	<xsd:documentation>Periodo en que se hizo el curso, en formato AAAA-S.
+</xsd:documentation>
+                                </xsd:annotation>
+							</xsd:element>
+							<xsd:element name="TipoCurso" type="xsd:string" maxOccurs="1" minOccurs="1">
+                                <xsd:annotation>
+                                	<xsd:documentation>Tipo de Curso.
+</xsd:documentation>
+                                </xsd:annotation>
+							</xsd:element>
+							<xsd:element name="UnidadAcademica" type="xsd:string" maxOccurs="1" minOccurs="1">
+                                <xsd:annotation>
+                                	<xsd:documentation>Unidad Académica responsable del curso.
+</xsd:documentation>
+                                </xsd:annotation>
 							</xsd:element>
 						</xsd:sequence>
 					</xsd:extension>
 				</xsd:complexContent>
 			</xsd:complexType>
-			<xsd:complexType name="stringArray">
+			<xsd:complexType name="CursoHechoArray">
 				<xsd:sequence>
-					<xsd:element name="String" type="xsd:string" maxOccurs="unbounded" minOccurs="0"></xsd:element>
+					<xsd:element name="CursosHechos" type="tns:CursoHecho"
+						maxOccurs="unbounded" minOccurs="0">
+                        <xsd:annotation>
+                        	<xsd:documentation>Arreglo de cursos hechos.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
 				</xsd:sequence>
 			</xsd:complexType>
+			<xsd:complexType name="CursoInscrito">
+				<xsd:complexContent>
+					<xsd:extension base="tns:Curso">
+						<xsd:sequence>
+							<xsd:element name="Periodo" type="xsd:string" maxOccurs="1" minOccurs="1">
+                                <xsd:annotation>
+                                	<xsd:documentation>Periodo en que se inscribió el curso, en formato AAAA-S.
+</xsd:documentation>
+                                </xsd:annotation>
+							</xsd:element>
+							<xsd:element name="TipoCurso" type="xsd:string" maxOccurs="1" minOccurs="1">
+                                <xsd:annotation>
+                                	<xsd:documentation>Tipo de Curso.
+</xsd:documentation>
+                                </xsd:annotation>
+							</xsd:element>
+							<xsd:element name="UnidadAcademica" type="xsd:string" maxOccurs="1" minOccurs="1">
+                                <xsd:annotation>
+                                	<xsd:documentation>Unidad Académica responsable del curso.
+</xsd:documentation>
+                                </xsd:annotation>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:extension>
+				</xsd:complexContent>
+			</xsd:complexType>
+			<xsd:complexType name="CursoInscritoArray">
+				<xsd:sequence>
+					<xsd:element name="CursosInscritos" type="tns:CursoInscrito"
+						maxOccurs="unbounded" minOccurs="0">
+                        <xsd:annotation>
+                        	<xsd:documentation>Arreglo de cursos inscritos.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="SeleccionEstudiante">
+				<xsd:sequence>
+					<xsd:element name="Selector" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Identificador del selector.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Valor" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Valor seleccionado.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="SeleccionEstudianteArray">
+				<xsd:sequence>
+					<xsd:element name="SeleccionesEstudiante" type="tns:SeleccionEstudiante"
+						maxOccurs="unbounded" minOccurs="0">
+                        <xsd:annotation>
+                        	<xsd:documentation>Arreglo de selecciones del estudiante.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="StringArray">
+				<xsd:sequence>
+					<xsd:element name="strings" type="xsd:string"
+						maxOccurs="unbounded" minOccurs="0">
+                        <xsd:annotation>
+                        	<xsd:documentation>Lista de strings.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="Major">
+				<xsd:sequence>
+					<xsd:element name="CodMajor" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Código del Major.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Nombre" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Nombre del Major.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="VersionMajor" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Versión del Major.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Curriculum" maxOccurs="1"
+						minOccurs="1" type="tns:StringArray">
+                        <xsd:annotation>
+                        	<xsd:documentation>Arreglo de planes de estudios para los cuales es válido el Major.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="MajorArray">
+				<xsd:sequence>
+					<xsd:element name="Majors" type="tns:Major"
+						maxOccurs="unbounded" minOccurs="0">
+                        <xsd:annotation>
+                        	<xsd:documentation>Arreglo de Majors.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="Minor">
+				<xsd:sequence>
+					<xsd:element name="CodMinor" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Código del Minor.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Nombre" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Nombre del Minor.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="TipoMinor" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Tipo del Minor.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="VersionMinor" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Versión del Minor.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Curriculum" maxOccurs="1"
+						minOccurs="1" type="tns:StringArray">
+                        <xsd:annotation>
+                        	<xsd:documentation>Arreglo de planes de estudios para los cuales es válido el Minor.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="MinorArray">
+				<xsd:sequence>
+					<xsd:element name="Minors" type="tns:Minor"
+						maxOccurs="unbounded" minOccurs="0">
+                        <xsd:annotation>
+                        	<xsd:documentation>Arreglo de Minors.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="Titulo">
+				<xsd:sequence>
+					<xsd:element name="CodTitulo" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Código del Título.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Nombre" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Nombre del Título.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="TipoTitulo" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Tipo del Título.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="VersionTitulo" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Versión del Título.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Curriculum" maxOccurs="1"
+						minOccurs="1" type="tns:StringArray">
+                        <xsd:annotation>
+                        	<xsd:documentation>Arreglo de planes de estudios para los cuales es válido el Título.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="TituloArray">
+				<xsd:sequence>
+					<xsd:element name="Titulos" type="tns:Titulo"
+						maxOccurs="unbounded" minOccurs="0">
+                        <xsd:annotation>
+                        	<xsd:documentation>Arreglo de Títulos.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="IdMajor">
+				<xsd:sequence>
+					<xsd:element name="CodMajor" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Código del Major.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="IdPlanEstudios">
+				<xsd:sequence>
+					<xsd:element name="CodCurriculum" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+						<xsd:annotation>
+							<xsd:documentation>Código del Plan de Estudios.</xsd:documentation></xsd:annotation></xsd:element>
+					<xsd:element name="CodMajor" type="xsd:string"
+						maxOccurs="1" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Código del Major.</xsd:documentation></xsd:annotation></xsd:element>
+					<xsd:element name="CodMinor" type="xsd:string"
+						maxOccurs="1" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Código del Minor.
+</xsd:documentation>
+						</xsd:annotation></xsd:element>
+					<xsd:element name="CodTitulo" type="xsd:string"
+						maxOccurs="1" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Código del Título.
+</xsd:documentation>
+						</xsd:annotation></xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="CursoPlan">
+				<xsd:complexContent>
+					<xsd:extension base="tns:Curso">
+						<xsd:sequence>
+							<xsd:element name="Semestralidad"
+								type="xsd:string" maxOccurs="1" minOccurs="1">
+                                <xsd:annotation>
+                                	<xsd:documentation>Senestralidad del curso.
+</xsd:documentation>
+                                </xsd:annotation>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:extension>
+				</xsd:complexContent>
+			</xsd:complexType>
+			<xsd:complexType name="CursoPlanArray">
+				<xsd:sequence>
+					<xsd:element name="CursosPlan" type="tns:CursoPlan"
+						maxOccurs="unbounded" minOccurs="0">
+                        <xsd:annotation>
+                        	<xsd:documentation>Arreglo de cursos del Plan.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="CursoRequisito">
+				<xsd:complexContent>
+					<xsd:extension base="tns:CursoPlan">
+						<xsd:sequence>
+							<xsd:element name="TipoRequisito" type="xsd:string"
+								maxOccurs="1" minOccurs="1">
+                                <xsd:annotation>
+                                	<xsd:documentation>Tipo de requisito.
+</xsd:documentation>
+                                </xsd:annotation>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:extension>
+				</xsd:complexContent>
+			</xsd:complexType>
+			<xsd:complexType name="OpcionRequisitos">
+				<xsd:sequence>
+					<xsd:element name="CursosRequisitos" type="tns:CursoRequisito"
+						maxOccurs="unbounded" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Arreglo de cursos de esta opción de requisitos.
+</xsd:documentation>
+						</xsd:annotation></xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="OpcionRequisitosArray">
+				<xsd:sequence>
+					<xsd:element name="OpcionesRequisitos"
+						type="tns:OpcionRequisitos" maxOccurs="unbounded" minOccurs="0">
+                        <xsd:annotation>
+                        	<xsd:documentation>Arreglo de opciones de requisitos.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="Restriccion">
+				<xsd:sequence>
+					<xsd:element name="Nombre" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+						<xsd:annotation>
+							<xsd:documentation>Nombre de la restricción.</xsd:documentation></xsd:annotation></xsd:element>
+					<xsd:element name="CreditoMin" type="xsd:int"
+						maxOccurs="1" minOccurs="1">
+						<xsd:annotation>
+							<xsd:documentation>Mínimo de créditos que impone la restricción.
+</xsd:documentation>
+						</xsd:annotation></xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="OpcionRestricciones">
+				<xsd:sequence>
+					<xsd:element name="Restricciones" type="tns:Restriccion"
+						maxOccurs="unbounded" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Arreglo de restricciones.
+</xsd:documentation>
+						</xsd:annotation></xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="OpcionRestriccionesArray">
+				<xsd:sequence>
+					<xsd:element name="OpcionesRestricciones"
+						type="tns:OpcionRestricciones" maxOccurs="unbounded" minOccurs="0">
+                        <xsd:annotation>
+                        	<xsd:documentation>Arreglo de opciones de restricciones.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="BloqueMalla">
+				<xsd:sequence>
+					<xsd:element name="Nombre" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Nombre del bloque.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="CodSigla" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Sigla de un curso específico asociado al bloque.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="CodLista" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>ID de una lista de cursos asociada al bloque.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Programa" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Programa en el cual se aloja el curso.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Creditos" type="xsd:int"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Créditos que entrega el bloque.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="SemestreBloque" type="xsd:int"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Semestre del bloque.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="OrdenSemestre" type="xsd:int"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Posición del bloque dentro del semestre.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Equivalencias" maxOccurs="1"
+						minOccurs="1" type="tns:CursoPlanArray">
+                        <xsd:annotation>
+                        	<xsd:documentation>Equivalencias de un curso específico asociado al bloque.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Restricciones" maxOccurs="1"
+						minOccurs="1" type="tns:OpcionRestriccionesArray">
+                        <xsd:annotation>
+                        	<xsd:documentation>Restricciones adicionales de un curso específico asociado al bloque.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Requisitos" maxOccurs="1"
+						minOccurs="1" type="tns:OpcionRequisitosArray">
+                        <xsd:annotation>
+                        	<xsd:documentation>Requisitos de un curso específico asociado al bloque.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="Tipocurso" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Tipo del curso.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="BloqueAcademico"
+						type="xsd:string" maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Sección de la malla en el cual se encuentra este bloque.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+					<xsd:element name="IdPlan" type="xsd:int" maxOccurs="1" minOccurs="1">
+						<xsd:annotation>
+							<xsd:documentation>Identificador interno del plan de estudios que contiene este bloque.
+</xsd:documentation>
+						</xsd:annotation></xsd:element>
+					<xsd:element name="NroPuntoPlan" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+                        <xsd:annotation>
+                        	<xsd:documentation>Número del punto que contiene este bloque dentro del plan de estudios.
+</xsd:documentation>
+                        </xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="BloqueMallaArray">
+				<xsd:sequence>
+					<xsd:element name="BloquesMalla"
+						type="tns:BloqueMalla" maxOccurs="unbounded" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Arreglo de bloques que conforman la malla.
+</xsd:documentation>
+						</xsd:annotation></xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="IdCurso">
+				<xsd:sequence>
+					<xsd:element name="Sigla" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+						<xsd:annotation>
+							<xsd:documentation>Sigla del curso.
+</xsd:documentation>
+						</xsd:annotation></xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="IdCursoPlanEstudios">
+				<xsd:complexContent>
+					<xsd:extension base="tns:IdCurso">
+						<xsd:sequence>
+							<xsd:element name="CodCurriculum" type="xsd:string"
+								maxOccurs="1" minOccurs="1">
+								<xsd:annotation>
+									<xsd:documentation>Código del Plan de Estudios.
+</xsd:documentation>
+								</xsd:annotation></xsd:element>
+							<xsd:element name="CodMajor" type="xsd:string"
+								maxOccurs="1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Código del Major.
+</xsd:documentation>
+								</xsd:annotation></xsd:element>
+							<xsd:element name="CodMinor" type="xsd:string"
+								maxOccurs="1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Código del Minor.
+</xsd:documentation>
+								</xsd:annotation></xsd:element>
+							<xsd:element name="CodTitulo" type="xsd:string"
+								maxOccurs="1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Código del Título.
+</xsd:documentation>
+								</xsd:annotation></xsd:element>
+						</xsd:sequence>
+					</xsd:extension>
+				</xsd:complexContent>
+			</xsd:complexType>
+			<xsd:complexType name="IdLista">
+				<xsd:sequence>
+					<xsd:element name="CodLista" type="xsd:string"
+						maxOccurs="1" minOccurs="1">
+						<xsd:annotation>
+							<xsd:documentation>Código de la lista.
+</xsd:documentation>
+						</xsd:annotation></xsd:element>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:element name="fault" type="xsd:string"></xsd:element>
 		</xsd:schema>
 	</wsdl:types>
+	<wsdl:message name="getPeriodoAcademicoActualRequest">
+	</wsdl:message>
+	<wsdl:message name="getPeriodoAcademicoActualResponse">
+		<wsdl:part name="response" type="xsd:string"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="getPeriodoAcademicoActualFault">
+		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
+	</wsdl:message>
 	<wsdl:message name="getInfoEstudianteRequest">
-		<wsdl:part name="request" element="tns:getInfoEstudianteRequest" />
+		<wsdl:part name="request" type="tns:Rut"/>
 	</wsdl:message>
 	<wsdl:message name="getInfoEstudianteResponse">
-		<wsdl:part element="tns:getInfoEstudianteResponse" name="response"></wsdl:part>
+		<wsdl:part name="response" type="tns:InfoEstudiante"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getInfoEstudianteFault">
 		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getCursosHechosRequest">
-		<wsdl:part name="request" element="tns:getCursosHechosRequest"></wsdl:part>
+		<wsdl:part name="request" type="tns:Rut"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getCursosHechosResponse">
-		<wsdl:part name="response" element="tns:getCursosHechosResponse"></wsdl:part>
+		<wsdl:part name="response" type="tns:CursoHechoArray"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getCursosHechosFault">
 		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
 	</wsdl:message>
+	<wsdl:message name="getCargaAcademicaRequest">
+		<wsdl:part name="request" type="tns:Rut"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="getCargaAcademicaResponse">
+		<wsdl:part name="response" type="tns:CursoInscritoArray"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="getCargaAcademicaFault">
+		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="getSeleccionesEstudianteRequest">
+		<wsdl:part name="request" type="tns:Rut"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="getSeleccionesEstudianteResponse">
+		<wsdl:part name="response" type="tns:SeleccionEstudianteArray"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="getSeleccionesEstudianteFault">
+		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
+	</wsdl:message>
 	<wsdl:message name="getListadoMajorRequest">
-		<wsdl:part name="request" element="tns:getListadoMajorRequest"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getListadoMajorResponse">
-		<wsdl:part name="response" element="tns:getListadoMajorResponse"></wsdl:part>
+		<wsdl:part name="response" type="tns:MajorArray"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getListadoMajorFault">
 		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getOfertaMajorRequest">
-		<wsdl:part name="request" element="tns:getOfertaMajorRequest"></wsdl:part>
+		<wsdl:part name="request" type="tns:Rut"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getOfertaMajorResponse">
-		<wsdl:part name="response" element="tns:getOfertaMajorResponse"></wsdl:part>
+		<wsdl:part name="response" type="tns:MajorArray"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getOfertaMajorFault">
 		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getListadoMinorRequest">
-		<wsdl:part name="request" element="tns:getListadoMinorRequest"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getListadoMinorResponse">
-		<wsdl:part name="response" element="tns:getListadoMinorResponse"></wsdl:part>
+		<wsdl:part name="response" type="tns:MinorArray"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getListadoMinorFault">
 		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getOfertaMinorRequest">
-		<wsdl:part name="request" element="tns:getOfertaMinorRequest"></wsdl:part>
+		<wsdl:part name="request" type="tns:Rut"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getOfertaMinorResponse">
-		<wsdl:part name="response" element="tns:getOfertaMinorResponse"></wsdl:part>
+		<wsdl:part name="response" type="tns:MinorArray"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getOfertaMinorFault">
 		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getListadoTituloRequest">
-		<wsdl:part name="request" element="tns:getListadoTituloRequest"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getListadoTituloResponse">
-		<wsdl:part name="response" element="tns:getListadoTituloResponse"></wsdl:part>
+		<wsdl:part name="response" type="tns:TituloArray"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getListadoTituloFault">
 		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getOfertaTituloRequest">
-		<wsdl:part name="request" element="tns:getOfertaTituloRequest"></wsdl:part>
+		<wsdl:part name="request" type="tns:Rut"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getOfertaTituloResponse">
-		<wsdl:part name="response" element="tns:getOfertaTituloResponse"></wsdl:part>
+		<wsdl:part name="response" type="tns:TituloArray"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getOfertaTituloFault">
 		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getMajorMinorAsociadoRequest">
-		<wsdl:part name="request" element="tns:getMajorMinorAsociadoRequest"></wsdl:part>
+		<wsdl:part name="request" type="tns:IdMajor"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getMajorMinorAsociadoResponse">
-		<wsdl:part name="response" element="tns:getMajorMinorAsociadoResponse"></wsdl:part>
+		<wsdl:part name="response" type="tns:MinorArray"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getMajorMinorAsociadoFault">
 		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getConcentracionCursosRequest">
-		<wsdl:part name="request" element="tns:getConcentracionCursosRequest"></wsdl:part>
+		<wsdl:part name="request" type="tns:IdPlanEstudios"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getConcentracionCursosResponse">
-		<wsdl:part name="response" element="tns:getConcentracionCursosResponse"></wsdl:part>
+		<wsdl:part name="response" type="tns:CursoPlanArray"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getConcentracionCursosFault">
 		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getMallaSugeridaRequest">
-		<wsdl:part name="request" element="tns:getMallaSugeridaRequest"></wsdl:part>
+		<wsdl:part name="request" type="tns:IdPlanEstudios"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getMallaSugeridaResponse">
-		<wsdl:part name="response" element="tns:getMallaSugeridaResponse"></wsdl:part>
+		<wsdl:part name="response" type="tns:BloqueMallaArray"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getMallaSugeridaFault">
 		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getCursoEquivalenteRequest">
-		<wsdl:part name="request" element="tns:getCursoEquivalenteRequest"></wsdl:part>
+		<wsdl:part name="request" type="tns:IdCursoPlanEstudios"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getCursoEquivalenteResponse">
-		<wsdl:part name="parameters" element="tns:getCursoEquivalenteResponse"></wsdl:part>
+		<wsdl:part name="response" type="tns:CursoPlanArray"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getCursoEquivalenteFault">
 		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
 	</wsdl:message>
+	<wsdl:message name="getCursoEquivalenteUCRequest">
+		<wsdl:part name="request" type="tns:IdCurso"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="getCursoEquivalenteUCResponse">
+		<wsdl:part name="response" type="tns:CursoPlanArray"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="getCursoEquivalenteUCFault">
+		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
+	</wsdl:message>
 	<wsdl:message name="getRequisitoRequest">
-		<wsdl:part name="request" element="tns:getRequisitoRequest"></wsdl:part>
+		<wsdl:part name="request" type="tns:IdCursoPlanEstudios"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getRequisitoResponse">
-		<wsdl:part name="parameters" element="tns:getRequisitoResponse"></wsdl:part>
+		<wsdl:part name="response" type="tns:OpcionRequisitosArray"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getRequisitoFault">
 		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getRestriccionRequest">
-		<wsdl:part name="request" element="tns:getRestriccionRequest"></wsdl:part>
+		<wsdl:part name="request" type="tns:IdCursoPlanEstudios"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getRestriccionResponse">
-		<wsdl:part name="parameters" element="tns:getRestriccionResponse"></wsdl:part>
+		<wsdl:part name="response" type="tns:OpcionRestriccionesArray"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getRestriccionFault">
 		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getListaPredefinidaRequest">
-		<wsdl:part name="request" element="tns:getListaPredefinidaRequest"></wsdl:part>
+		<wsdl:part name="request" type="tns:IdLista"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getListaPredefinidaResponse">
-		<wsdl:part name="parameters" element="tns:getListaPredefinidaResponse"></wsdl:part>
+		<wsdl:part name="response" type="tns:CursoPlanArray"></wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="getListaPredefinidaFault">
 		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
 	</wsdl:message>
+	<wsdl:message name="getCatalogoCursosIngRequest">
+	</wsdl:message>
+	<wsdl:message name="getCatalogoCursosIngResponse">
+		<wsdl:part name="response" type="tns:CursoPlanArray"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="getCatalogoCursosIngFault">
+		<wsdl:part name="fault" element="tns:fault"></wsdl:part>
+	</wsdl:message>
 	<wsdl:portType name="ServiciosPlanner">
+		<wsdl:operation name="getPeriodoAcademicoActual">
+			<wsdl:documentation>Retorna el periodo académico actual UC.</wsdl:documentation>
+			<wsdl:input message="tns:getPeriodoAcademicoActualRequest" />
+			<wsdl:output message="tns:getPeriodoAcademicoActualResponse" >
+				<wsdl:documentation>Periodo Académico actual, en formato AAAA-S.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault"
+				message="tns:getPeriodoAcademicoActualFault">
+				<wsdl:documentation>Si no se puede obtenr esta información por cualquier motivo.</wsdl:documentation></wsdl:fault>
+		</wsdl:operation>
 		<wsdl:operation name="getInfoEstudiante">
-			<wsdl:input message="tns:getInfoEstudianteRequest" />
-			<wsdl:output message="tns:getInfoEstudianteResponse" />
-			<wsdl:fault name="fault" message="tns:getInfoEstudianteFault"></wsdl:fault>
+			<wsdl:documentation>Retorna la información del estudiante de Pregrado especificado.
+</wsdl:documentation>
+			<wsdl:input message="tns:getInfoEstudianteRequest" >
+				<wsdl:documentation>Objeto con el atributo &quot;rut&quot; del estudiante, en formato nnnnnnnn-v.</wsdl:documentation></wsdl:input>
+			<wsdl:output message="tns:getInfoEstudianteResponse" >
+				<wsdl:documentation>Objeto con datos del estudiante.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault"
+				message="tns:getInfoEstudianteFault">
+				<wsdl:documentation>Si el RUN no es válido o no corresponde a un estudiante de Pregrado.</wsdl:documentation></wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getCursosHechos">
-			<wsdl:input message="tns:getCursosHechosRequest"></wsdl:input>
-			<wsdl:output message="tns:getCursosHechosResponse"></wsdl:output>
-			<wsdl:fault name="fault" message="tns:getCursosHechosFault"></wsdl:fault>
+			<wsdl:documentation>Retorna la lista de cursos hechos por un estudiante de Pregrado.</wsdl:documentation>
+			<wsdl:input message="tns:getCursosHechosRequest">
+				<wsdl:documentation>Objeto con el atributo &quot;rut&quot; del estudiante, en formato nnnnnnnn-v.</wsdl:documentation></wsdl:input>
+			<wsdl:output message="tns:getCursosHechosResponse">
+				<wsdl:documentation>Objeto con lista de 0 o más cursos hechos.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault"
+				message="tns:getCursosHechosFault">
+				<wsdl:documentation>Si el RUN no es válido o no corresponde a un estudiante de Pregrado.</wsdl:documentation></wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="getCargaAcademica">
+			<wsdl:documentation>Retorna la carga académica actual de un estudiante de Pregrado.</wsdl:documentation>
+			<wsdl:input message="tns:getCargaAcademicaRequest">
+				<wsdl:documentation>Objeto con el atributo &quot;rut&quot; del estudiante, en formato nnnnnnnn-v.</wsdl:documentation></wsdl:input>
+			<wsdl:output message="tns:getCargaAcademicaResponse">
+				<wsdl:documentation>Objeto con lista de 0 o más cursos inscritos que forman la carga académica del estudiante.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault"
+				message="tns:getCargaAcademicaFault">
+				<wsdl:documentation>Si el RUN no es válido o no corresponde a un estudiante de Pregrado.</wsdl:documentation></wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="getSeleccionesEstudiante">
+			<wsdl:documentation>Retorna las selecciones realizadas por el estudiante para completar su seguimiento curricular.</wsdl:documentation>
+			<wsdl:input message="tns:getSeleccionesEstudianteRequest">
+				<wsdl:documentation>Objeto con el atributo &quot;rut&quot; del estudiante, en formato nnnnnnnn-v.</wsdl:documentation></wsdl:input>
+			<wsdl:output message="tns:getSeleccionesEstudianteResponse">
+				<wsdl:documentation>Objeto con lista de 0 o más selecciones realizadas por el estudiante.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault"
+				message="tns:getSeleccionesEstudianteFault">
+				<wsdl:documentation>Si el RUN no es válido o no corresponde a un estudiante de Pregrado.</wsdl:documentation></wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getListadoMajor">
+			<wsdl:documentation>Retorna la lista de Majors disponibles.</wsdl:documentation>
 			<wsdl:input message="tns:getListadoMajorRequest"></wsdl:input>
-			<wsdl:output message="tns:getListadoMajorResponse"></wsdl:output>
-			<wsdl:fault name="fault" message="tns:getListadoMajorFault"></wsdl:fault>
+			<wsdl:output message="tns:getListadoMajorResponse">
+				<wsdl:documentation>Objeto con lista de majors encontrada.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault"
+				message="tns:getListadoMajorFault"></wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getOfertaMajor">
-			<wsdl:input message="tns:getOfertaMajorRequest"></wsdl:input>
-			<wsdl:output message="tns:getOfertaMajorResponse"></wsdl:output>
-			<wsdl:fault name="fault" message="tns:getOfertaMajorFault"></wsdl:fault>
+			<wsdl:documentation>Retorna la oferta de Majors a un estudiante específico.</wsdl:documentation>
+			<wsdl:input message="tns:getOfertaMajorRequest">
+				<wsdl:documentation>Objeto con el atributo &quot;rut&quot; del estudiante, en formato nnnnnnnn-v.</wsdl:documentation></wsdl:input>
+			<wsdl:output message="tns:getOfertaMajorResponse">
+				<wsdl:documentation>Objeto con oferta de majors encontrada.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault" message="tns:getOfertaMajorFault">
+				<wsdl:documentation>Si el RUN no es válido o no corresponde a un estudiante de Pregrado.</wsdl:documentation></wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getListadoMinor">
+			<wsdl:documentation>Retorna la lista de Minors disponibles.</wsdl:documentation>
 			<wsdl:input message="tns:getListadoMinorRequest"></wsdl:input>
-			<wsdl:output message="tns:getListadoMinorResponse"></wsdl:output>
-			<wsdl:fault name="fault" message="tns:getListadoMinorFault"></wsdl:fault>
+			<wsdl:output message="tns:getListadoMinorResponse">
+				<wsdl:documentation>Objeto con lista de minors encontrada.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault"
+				message="tns:getListadoMinorFault"></wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getOfertaMinor">
-			<wsdl:input message="tns:getOfertaMinorRequest"></wsdl:input>
-			<wsdl:output message="tns:getOfertaMinorResponse"></wsdl:output>
-			<wsdl:fault name="fault" message="tns:getOfertaMinorFault"></wsdl:fault>
+			<wsdl:documentation>Retorna la oferta de Minors a un estudiante específico.</wsdl:documentation>
+			<wsdl:input message="tns:getOfertaMinorRequest">
+				<wsdl:documentation>Objeto con el atributo &quot;rut&quot; del estudiante, en formato nnnnnnnn-v.</wsdl:documentation></wsdl:input>
+			<wsdl:output message="tns:getOfertaMinorResponse">
+				<wsdl:documentation>Objeto con oferta de minors encontrada.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault" message="tns:getOfertaMinorFault">
+				<wsdl:documentation>Si el RUN no es válido o no corresponde a un estudiante de Pregrado.</wsdl:documentation></wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getListadoTitulo">
+			<wsdl:documentation>Retorna la lista de Títulos disponibles.</wsdl:documentation>
 			<wsdl:input message="tns:getListadoTituloRequest"></wsdl:input>
-			<wsdl:output message="tns:getListadoTituloResponse"></wsdl:output>
-			<wsdl:fault name="fault" message="tns:getListadoTituloFault"></wsdl:fault>
+			<wsdl:output message="tns:getListadoTituloResponse">
+				<wsdl:documentation>Objeto con lista de títulos encontrada.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault"
+				message="tns:getListadoTituloFault"></wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getOfertaTitulo">
-			<wsdl:input message="tns:getOfertaTituloRequest"></wsdl:input>
-			<wsdl:output message="tns:getOfertaTituloResponse"></wsdl:output>
-			<wsdl:fault name="fault" message="tns:getOfertaTituloFault"></wsdl:fault>
+			<wsdl:documentation>Retorna la oferta de Títulos a un estudiante específico.</wsdl:documentation>
+			<wsdl:input message="tns:getOfertaTituloRequest">
+				<wsdl:documentation>Objeto con el atributo &quot;rut&quot; del estudiante, en formato nnnnnnnn-v.</wsdl:documentation></wsdl:input>
+			<wsdl:output message="tns:getOfertaTituloResponse">
+				<wsdl:documentation>Objeto con oferta de títulos encontrada.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault"
+				message="tns:getOfertaTituloFault">
+				<wsdl:documentation>Si el RUN no es válido o no corresponde a un estudiante de Pregrado.</wsdl:documentation></wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getMajorMinorAsociado">
-			<wsdl:input message="tns:getMajorMinorAsociadoRequest"></wsdl:input>
-			<wsdl:output message="tns:getMajorMinorAsociadoResponse"></wsdl:output>
-			<wsdl:fault name="fault" message="tns:getMajorMinorAsociadoFault"></wsdl:fault>
+			<wsdl:documentation>Retorna la lista de Minors asociados a un Major específico.</wsdl:documentation>
+			<wsdl:input message="tns:getMajorMinorAsociadoRequest">
+				<wsdl:documentation>Objeto con el atributo &quot;codMajor&quot; que identifica al Major.</wsdl:documentation></wsdl:input>
+			<wsdl:output message="tns:getMajorMinorAsociadoResponse">
+				<wsdl:documentation>Objeto con lista de minors asociados encontrada.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault"
+				message="tns:getMajorMinorAsociadoFault">
+				<wsdl:documentation>Si el parámetro dado no es válido.</wsdl:documentation></wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getConcentracionCursos">
-			<wsdl:input message="tns:getConcentracionCursosRequest"></wsdl:input>
-			<wsdl:output message="tns:getConcentracionCursosResponse"></wsdl:output>
-			<wsdl:fault name="fault" message="tns:getConcentracionCursosFault"></wsdl:fault>
+			<wsdl:documentation>Retorna la concentración de cursos del plan de estudios especificado.</wsdl:documentation>
+			<wsdl:input message="tns:getConcentracionCursosRequest">
+				<wsdl:documentation>Objeto con la especificación del plan de estudio.</wsdl:documentation></wsdl:input>
+			<wsdl:output message="tns:getConcentracionCursosResponse">
+				<wsdl:documentation>Objeto con lista de cursos de la concentración.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault"
+				message="tns:getConcentracionCursosFault">
+				<wsdl:documentation>Si el parámetro dado no es válido.</wsdl:documentation></wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getMallaSugerida">
-			<wsdl:input message="tns:getMallaSugeridaRequest"></wsdl:input>
-			<wsdl:output message="tns:getMallaSugeridaResponse"></wsdl:output>
-			<wsdl:fault name="fault" message="tns:getMallaSugeridaFault"></wsdl:fault>
+			<wsdl:documentation>Retorna la malla sugerida del plan de estudios especificado.</wsdl:documentation>
+			<wsdl:input message="tns:getMallaSugeridaRequest">
+				<wsdl:documentation>Objeto con la especificación del plan de estudios.</wsdl:documentation></wsdl:input>
+			<wsdl:output message="tns:getMallaSugeridaResponse">
+				<wsdl:documentation>Objeto con lista de bloques de la malla.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault"
+				message="tns:getMallaSugeridaFault">
+				<wsdl:documentation>Si el parámetro dado no es válido.</wsdl:documentation></wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getCursoEquivalente">
-			<wsdl:input message="tns:getCursoEquivalenteRequest"></wsdl:input>
-			<wsdl:output message="tns:getCursoEquivalenteResponse"></wsdl:output>
-			<wsdl:fault name="fault" message="tns:getCursoEquivalenteFault"></wsdl:fault>
+			<wsdl:documentation>Retorna las equivalencias de cierto curso en el plan de estudios especificado.</wsdl:documentation>
+			<wsdl:input message="tns:getCursoEquivalenteRequest">
+				<wsdl:documentation>Objeto con la especificación del curso y plan de estudios.</wsdl:documentation></wsdl:input>
+			<wsdl:output message="tns:getCursoEquivalenteResponse">
+				<wsdl:documentation>Objeto con lista de cursos equivalentes.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault"
+				message="tns:getCursoEquivalenteFault">
+				<wsdl:documentation>Si el parámetro dado no es válido.</wsdl:documentation></wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="getCursoEquivalenteUC">
+			<wsdl:documentation>Retorna las equivalencias UC de cierto curso.</wsdl:documentation>
+			<wsdl:input message="tns:getCursoEquivalenteUCRequest">
+				<wsdl:documentation>Objeto con la especificación del curso.</wsdl:documentation></wsdl:input>
+			<wsdl:output message="tns:getCursoEquivalenteUCResponse">
+				<wsdl:documentation>Objeto con lista de cursos UC equivalentes.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault"
+				message="tns:getCursoEquivalenteUCFault">
+				<wsdl:documentation>Si el parámetro dado no es válido.</wsdl:documentation></wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getRequisito">
-			<wsdl:input message="tns:getRequisitoRequest"></wsdl:input>
-			<wsdl:output message="tns:getRequisitoResponse"></wsdl:output>
-			<wsdl:fault name="fault" message="tns:getRequisitoFault"></wsdl:fault>
+			<wsdl:documentation>Retorna los requisitos de cierto curso en el plan de estudios especificado.</wsdl:documentation>
+			<wsdl:input message="tns:getRequisitoRequest">
+				<wsdl:documentation>Objeto con la especificación del curso y plan de estudios.</wsdl:documentation></wsdl:input>
+			<wsdl:output message="tns:getRequisitoResponse">
+				<wsdl:documentation>Objeto con lista de opciones de requisitos para el curso dado.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault" message="tns:getRequisitoFault">
+				<wsdl:documentation>Si el parámetro dado no es válido.</wsdl:documentation></wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getRestriccion">
-			<wsdl:input message="tns:getRestriccionRequest"></wsdl:input>
-			<wsdl:output message="tns:getRestriccionResponse"></wsdl:output>
-			<wsdl:fault name="fault" message="tns:getRestriccionFault"></wsdl:fault>
+			<wsdl:documentation>Retorna las restricciones de cierto curso en el plan de estudios especificado.</wsdl:documentation>
+			<wsdl:input message="tns:getRestriccionRequest">
+				<wsdl:documentation>Objeto con la especificación del curso y plan de estudios.</wsdl:documentation></wsdl:input>
+			<wsdl:output message="tns:getRestriccionResponse">
+				<wsdl:documentation>Objeto con lista de opciones de restricciones para el curso dado.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault" message="tns:getRestriccionFault">
+				<wsdl:documentation>Si el parámetro dado no es válido.</wsdl:documentation></wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getListaPredefinida">
-			<wsdl:input message="tns:getListaPredefinidaRequest"></wsdl:input>
-			<wsdl:output message="tns:getListaPredefinidaResponse"></wsdl:output>
-			<wsdl:fault name="fault" message="tns:getListaPredefinidaFault"></wsdl:fault>
+			<wsdl:documentation>Retorna la lista de cursos que conforman la lista predefinida especificada.</wsdl:documentation>
+			<wsdl:input message="tns:getListaPredefinidaRequest">
+				<wsdl:documentation>Objeto con la especificación de la lista predefinida.</wsdl:documentation></wsdl:input>
+			<wsdl:output message="tns:getListaPredefinidaResponse">
+				<wsdl:documentation>Objeto con lista de cursos de la lista.</wsdl:documentation></wsdl:output>
+			<wsdl:fault name="fault"
+				message="tns:getListaPredefinidaFault">
+				<wsdl:documentation>Si el parámetro dado no es válido.</wsdl:documentation></wsdl:fault>
 		</wsdl:operation>
+		<wsdl:operation name="getCatalogoCursosIng">
+			<wsdl:documentation>Retorna el catálogo de cursos de la Escuela.</wsdl:documentation>
+			<wsdl:input message="tns:getCatalogoCursosIngRequest"></wsdl:input>
+			<wsdl:output message="tns:getCatalogoCursosIngResponse">
+				<wsdl:documentation>Objeto con lista de cursos del catálogo.</wsdl:documentation></wsdl:output>
+            <wsdl:fault name="fault" message="tns:getCatalogoCursosIngFault">
+            	<wsdl:documentation>Si se produce algún error al obtenerse el catálogo de cursos.</wsdl:documentation></wsdl:fault>
+        </wsdl:operation>
 	</wsdl:portType>
-	<wsdl:binding name="ServiciosPlannerBind" type="tns:ServiciosPlanner">
-		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http" />
+	<wsdl:binding name="ServiciosPlannerBind"
+		type="tns:ServiciosPlanner">
+		<soap:binding style="rpc"
+			transport="http://schemas.xmlsoap.org/soap/http" />
 		<wsdl:operation name="getInfoEstudiante">
-			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getInfoEstudiante" />
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getInfoEstudiante" />
 			<wsdl:input>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:input>
 			<wsdl:output>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getCursosHechos">
-			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getCursosHechos" />
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getCursosHechos" />
 			<wsdl:input>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:input>
 			<wsdl:output>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getListadoMajor">
-			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getListadoMajor" />
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getListadoMajor" />
 			<wsdl:input>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:input>
 			<wsdl:output>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getOfertaMajor">
-			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getOfertaMajor" />
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getOfertaMajor" />
 			<wsdl:input>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:input>
 			<wsdl:output>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getListadoMinor">
-			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getListadoMinor" />
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getListadoMinor" />
 			<wsdl:input>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:input>
 			<wsdl:output>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getOfertaMinor">
-			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getOfertaMinor" />
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getOfertaMinor" />
 			<wsdl:input>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:input>
 			<wsdl:output>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getListadoTitulo">
-			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getListadoTitulo" />
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getListadoTitulo" />
 			<wsdl:input>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:input>
 			<wsdl:output>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getOfertaTitulo">
-			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getOfertaTitulo" />
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getOfertaTitulo" />
 			<wsdl:input>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:input>
 			<wsdl:output>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getMajorMinorAsociado">
-			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getMajorMinorAsociado" />
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getMajorMinorAsociado" />
 			<wsdl:input>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:input>
 			<wsdl:output>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getConcentracionCursos">
-			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getConcentracionCursos" />
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getConcentracionCursos" />
 			<wsdl:input>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:input>
 			<wsdl:output>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getMallaSugerida">
-			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getMallaSugerida" />
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getMallaSugerida" />
 			<wsdl:input>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:input>
 			<wsdl:output>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getCursoEquivalente">
-			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getCursoEquivalente" />
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getCursoEquivalente" />
 			<wsdl:input>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:input>
 			<wsdl:output>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
+			</wsdl:output>
+			<wsdl:fault name="fault">
+				<soap:fault use="literal" name="fault" />
+			</wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="getCursoEquivalenteUC">
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getCursoEquivalenteUC" />
+			<wsdl:input>
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getRequisito">
-			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getRequisito" />
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getRequisito" />
 			<wsdl:input>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:input>
 			<wsdl:output>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getRestriccion">
-			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getRestriccion" />
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getRestriccion" />
 			<wsdl:input>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:input>
 			<wsdl:output>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
 				<soap:fault use="literal" name="fault" />
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="getListaPredefinida">
-			<soap:operation soapAction="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/getListaPredefinida" />
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getListaPredefinida" />
 			<wsdl:input>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:input>
 			<wsdl:output>
-				<soap:body use="literal" />
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
+			</wsdl:output>
+			<wsdl:fault name="fault">
+				<soap:fault use="literal" name="fault" />
+			</wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="getCargaAcademica">
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getCargaAcademica" />
+			<wsdl:input>
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
+			</wsdl:output>
+			<wsdl:fault name="fault">
+				<soap:fault use="literal" name="fault" />
+			</wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="getPeriodoAcademicoActual">
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getPeriodoAcademicoActual" />
+			<wsdl:input>
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
+			</wsdl:output>
+			<wsdl:fault name="fault">
+				<soap:fault use="literal" name="fault" />
+			</wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="getSeleccionesEstudiante">
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getSeleccionesEstudiante" />
+			<wsdl:input>
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
+			</wsdl:output>
+			<wsdl:fault name="fault">
+				<soap:fault use="literal" name="fault" />
+			</wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="getCatalogoCursosIng">
+			<soap:operation
+				soapAction="https://SITIO_SIDING/ws/ServiciosPlanner/getCatalogoCursosIng" />
+			<wsdl:input>
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"
+					namespace="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 			</wsdl:output>
 			<wsdl:fault name="fault">
 				<soap:fault use="literal" name="fault" />
@@ -851,8 +1361,10 @@
 		</wsdl:operation>
 	</wsdl:binding>
 	<wsdl:service name="ServiciosPlanner">
-		<wsdl:port binding="tns:ServiciosPlannerBind" name="ServiciosPlannerSOAP">
-			<soap:address location="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/" />
+		<wsdl:port binding="tns:ServiciosPlannerBind"
+			name="ServiciosPlannerSOAP">
+			<soap:address
+				location="https://SITIO_SIDING/ws/ServiciosPlanner/" />
 		</wsdl:port>
 	</wsdl:service>
 </wsdl:definitions>
