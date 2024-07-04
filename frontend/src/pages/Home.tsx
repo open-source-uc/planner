@@ -33,7 +33,7 @@ const Home = (): JSX.Element => {
       >
         <div className="prose text-md">
           <p className="mb-0">
-            Planner es todavía una plataforma experimental.
+            Planner puede cometer errores.
           </p>
           <ul className="list-disc pl-5 mt-0">
             <li>
@@ -42,9 +42,6 @@ const Home = (): JSX.Element => {
                 <li>Revisa manualmente que la malla haga sentido.</li>
                 <li>Recuerda que SIDING es la referencia oficial.</li>
               </ul>
-            </li>
-            <li>
-              <span className='font-bold'>Se agregaron la mayoría de las mallas faltantes</span> 🎊. También hemos arreglado muchos de los problemas y hecho varias mejoras. ¡Prueba haciendo click derecho en tus cursos! 🖱️
             </li>
             {
               hideLogin &&
