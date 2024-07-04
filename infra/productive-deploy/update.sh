@@ -22,6 +22,7 @@ REMOTE=$(git rev-parse origin/main)
 # Si se detectan cambios, ejecutar run_deploy.sh
 if [ "$LOCAL" != "$REMOTE" ]; then
     echo "Changes detected. Running deploy script..."
+    git restore .
     git checkout origin/main
     chmod +x ./run_deploy.sh
     ./run_deploy.sh
