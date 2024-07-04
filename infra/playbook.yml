@@ -117,26 +117,26 @@
       failed_when: false
       check_mode: false
 
-    - name: Check that swap is enabled
-      ansible.builtin.command:
-        cmd: swapon --show
-      register: swap_check
-      changed_when: false
-      failed_when: false
-      check_mode: false
-
-    - name: Enable swap
-      ansible.builtin.command:
-        cmd:
-          # Allocate a 4 GB swapfile
-          - fallocate -l 4G /swapfile
-          - chmod 600 /swapfile
-          # Mark as swap
-          - mkswap /swapfile
-          # Enable the swapfile
-          - swapon /swapfile
-        creates: /swapfile
-      when: swap_check.rc != 0
+#    - name: Check that swap is enabled
+#      ansible.builtin.command:
+#        cmd: swapon --show
+#      register: swap_check
+#      changed_when: false
+#      failed_when: false
+#      check_mode: false
+#
+#    - name: Enable swap
+#      ansible.builtin.command:
+#        cmd:
+#          # Allocate a 4 GB swapfile
+#          - fallocate -l 4G /swapfile
+#          - chmod 600 /swapfile
+#          # Mark as swap
+#          - mkswap /swapfile
+#          # Enable the swapfile
+#          - swapon /swapfile
+#        creates: /swapfile
+#      when: swap_check.rc != 0
 
     - name: Configure automatic security updates
       community.general.ini_file:
