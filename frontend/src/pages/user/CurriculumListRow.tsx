@@ -8,7 +8,7 @@ interface RowProps {
   curriculum: LowDetailPlanView
   handleDelete?: Function
   handleFavourite?: Function
-  openPlanNameModal: Function
+  openPlanNameModal?: Function
   impersonateRut?: string
 }
 
@@ -44,10 +44,12 @@ const CurriculumListRow = ({ curriculum, handleDelete, handleFavourite, openPlan
                   }}
                 >{curriculum.name}
                 </Link>
+                {openPlanNameModal !== undefined &&
                 <div className="hover-text">
                   <button className='pl-3' onClick={() => openPlanNameModal(curriculum.id, curriculum.name) }><EditIcon/></button>
                   <span className="tooltip-text font-thin">Editar nombre</span>
                 </div>
+                }
                 </div>
               }
               </th>
