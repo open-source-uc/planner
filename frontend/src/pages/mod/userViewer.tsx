@@ -37,7 +37,7 @@ const UserViewer = (): JSX.Element => {
   const { status: studentDataStatus, error: studentDataError, data: studentInfo } = useQuery({
     queryKey: ['studentInfo', userRut],
     retry: false,
-    onSuccess: (data) => {
+    onSuccess: (data: Student | null) => {
       if (data !== undefined && data !== null) {
         setSearchingPlanModalIsOpen(false)
         if (authState?.setStudent !== null) {
