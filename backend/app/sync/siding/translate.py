@@ -28,6 +28,8 @@ from app.plan.validation.curriculum.tree import (
 )
 from app.sync.siding import client
 from app.sync.siding.client import (
+    CursoHecho,
+    CursoInscrito,
     InfoEstudiante,
     StringArray,
 )
@@ -44,7 +46,9 @@ def _decode_curriculum_versions(input: StringArray | None) -> list[str]:
     if input is None:
         # Curriculum lists are currently empty for some SIDING reason
         # We are currently patching through the mock
-        # TODO: Once this is fixed remove patching code
+        # TODO: This no longer happens!
+        # Although we should probably not depend on SIDING for curriculums, the data is
+        # too unreliable
         logging.warning("null curriculum version list")
         return []
     return input.strings.string
@@ -169,32 +173,36 @@ async def _fetch_meta(rut: Rut) -> InfoEstudiante:
 
 
 async def _fetch_done_courses(rut: Rut) -> CursosHechos:
-    raw = await client.get_student_done_courses(rut)
+    raw_prev = await client.get_student_done_courses(rut)
+    raw_curr = await client.get_student_current_courses(rut)
+    raw: list[CursoHecho | CursoInscrito] = raw_prev + raw_curr
+
     semesters: list[list[PseudoCourse]] = []
-    in_course: list[list[bool]] = []
-    # Make sure semester 1 is always odd, adding an empty semester if necessary
     start_period = None
+    last_semester_in_course = False
     if raw:
+        # Make sure semester 1 is always odd, adding an empty semester if necessary
         start_year = int(raw[0].Periodo.split("-")[0])
         start_period = (start_year, 1)
         for c in raw:
             sem = _semesters_elapsed(start_period, _decode_period(c.Periodo))
             while len(semesters) <= sem:
                 semesters.append([])
-            while len(in_course) <= sem:
-                in_course.append([])
-            if c.Estado.startswith("2"):
-                # Failed course
-                course = ConcreteId(code="FAILED", equivalence=None, failed=c.Sigla)
+            if isinstance(c, CursoHecho):
+                if c.Estado == CursoHecho.ESTADO_REPROBADO:
+                    # Failed course
+                    course = ConcreteId(code="FAILED", equivalence=None, failed=c.Sigla)
+                else:
+                    # Approved course (or something else?)
+                    course = ConcreteId(code=c.Sigla, equivalence=None)
             else:
-                # Approved course
+                # Course in progress
                 course = ConcreteId(code=c.Sigla, equivalence=None)
-            semesters[sem].append(course)
-            currently_coursing = c.Estado.startswith("3")
-            in_course[sem].append(currently_coursing)
+                # Assume that if there is at least 1 course in progress, the entire last
+                # semester (and only the last semester) is in progress
+                last_semester_in_course = True
 
-    # Check if the last semester is currently being coursed
-    last_semester_in_course = bool(in_course and in_course[-1] and all(in_course[-1]))
+            semesters[sem].append(course)
 
     return CursosHechos(
         cursos=semesters,

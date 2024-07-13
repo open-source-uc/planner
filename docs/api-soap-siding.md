@@ -4,37 +4,15 @@
 ## Overview
 
 La API de Siding es un webservice SOAP.
-En primer lugar, esto significa que la interfaz esta definida en buena parte por un archivo `.wsdl`,
-actualmente disponible en https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1.wsdl.
-
-Tomar en cuenta que el `_test1` probablemente significa que el URL cambiara en algun momento.
-
-Para hacer que el servicio sea robusto, descargue un snapshot de este archivo y esta embeddeado en
-el planner mismo.
-En un futuro, seria bueno comparar la copia hardcodeada con la copia remota, para detectar cambios en
-la API remota.
-
-## Correcciones al spec `.wsdl`
-
-El archivo `.wsdl` tal como es proveido no funciona con otro cliente que no sea `SoapClient` de PHP.
-
-Actualmente, solo hay 1 problema, que en teoria esta en proceso de ser arreglado:
-
-- El atributo `location` del servicio esta mal definido, le falta un `/`:
-
-Original:
-
-```xml
-<soap:address location="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1" />
-```
-
-Arreglado:
-
-```xml
-<soap:address location="https://intrawww.ing.puc.cl/siding/ws/ServiciosPlanner_test1/" />
-```
+Esto significa que la interfaz es definida por un archivo `.wsdl`.
+El URL de este archivo se entrega a Planner a través de variables de entorno en producción, y los desarrolladores con acceso al webservice pueden ingresarlo también en el ambiente de desarrollo.
 
 ## Observaciones de la API
+
+- Cuando el webservice entrega una lista vacía, muchas veces entrega un valor nulo en lugar de la lista vacía.
+- Los planes de estudio están bastante incompletos, hay muchas reglas no representables en el formato utilizado.
+
+Estas observaciones posiblemente están desactualizadas:
 
 - El endpoint `getConcentracionCursos` lanza un XML invalido para combinaciones invalidas de major-minor-titulo (pero arroja status 200 OK). Tambien lo lanza para algunas combinaciones validas (eg. `C2020-M073-N206-40006`).
 - Faltan muchos datos.
