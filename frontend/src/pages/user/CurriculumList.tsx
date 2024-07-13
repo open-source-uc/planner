@@ -67,7 +67,7 @@ const CurriculumList = (): JSX.Element => {
         })
       }
     })
-  }, [])
+  })
 
   async function handleFavourite (id: string, planName: string, fav: boolean): Promise<void> {
     try {
