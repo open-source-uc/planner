@@ -242,9 +242,7 @@ def _anihil_rule(
         new.clear()
         new.append(Const(value=not op.neutral))
         anihilate[0] = True
-    if anihilate[0]:
-        return True
-    return False
+    return bool(anihilate[0])
 
 
 def anihil(expr: Operator) -> Expr:
@@ -255,10 +253,8 @@ def anihil(expr: Operator) -> Expr:
 
 
 def _ident_rule(ctx: None, op: Operator, new: list[Expr], child: Expr) -> bool:
-    if isinstance(child, Const) and child.value == op.neutral:
-        # Skip this child, since it adds nothing to the expression
-        return True
-    return False
+    # Skip this child, since it adds nothing to the expression
+    return isinstance(child, Const) and child.value == op.neutral
 
 
 def ident(expr: Operator) -> Expr:

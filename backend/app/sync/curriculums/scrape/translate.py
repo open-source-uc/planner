@@ -66,7 +66,7 @@ class ListBuilder:
             if bloque.CodSigla is not None:
                 equivalents: list[str] = [bloque.CodSigla]
                 if bloque.Equivalencias is not None:
-                    for equivalent in bloque.Equivalencias.Cursos:
+                    for equivalent in bloque.Equivalencias.Cursos or []:
                         if equivalent.Sigla is not None:
                             equivalents.append(equivalent.Sigla)
                 if len(equivalents) > 1:
