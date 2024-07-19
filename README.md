@@ -27,6 +27,16 @@ Este es el hogar para el desarrollo del nuevo Planner de Ingeniería UC, hecho p
 
 Tras varios años en ideación, este proyecto se lanzó como [una propuesta conjunta](https://drive.google.com/file/d/1IxAJ8cCzDkayPwnju5kgc2oKc7g9fvwf/view) entre la Consejería Académica de Ingeniería y Open Source UC, con el propósito de reemplazar el [actual planner de Ingeniería](https://planner.ing.puc.cl/). La propuesta, tras ser aprobada por la Escuela de Ingeniería, dió comienzo al proyecto en modalidad de marcha blanca. A principios del 2023, y con un MVP listo, la Dirección de Pregrado oficialmente aprobó la continuación del desarrollo del proyecto.
 
+## ¿Cómo agregar funcionalidades o modificar Mallas ING?
+
+1. **Hacer un fork** de este repositorio.
+2. Realizar los cambios en tu repo forkeado, trabajando en la rama `dev`.
+3. **Crear un Pull Request (PR)** desde la rama `dev` de tu repo hacia la rama `dev` de este repo.
+4. Esperar a que el equipo del Nuevo Planner + OSUC acepte tu solicitud.
+5. Una vez aceptado, el equipo del Nuevo Planner + OSUC abre un **PR** desde `dev` hacia `main` en este mismo repositorio.
+6. Luego, el equipo del Nuevo Planner + OSUC podrá hacer un **PR** desde `main` hacia `main` del repositorio controlado por la universidad: [spavea/mallas.ing.uc.cl](https://github.com/spavea/mallas.ing.uc.cl).
+7. Finalmente, solo queda esperar a que la universidad apruebe los cambios. El deploy se hará automáticamente al recibir la aprobación 🚀
+
 ## Instalación y desarrollo
 
 El proyecto está configurado para ser desarrollado en [Visual Studio Code](https://code.visualstudio.com/) con [Dev Containers](https://code.visualstudio.com/docs/remote/containers). Puedes [instalar VSCode aquí](https://code.visualstudio.com/download). Existen 2 maneras de correr Dev Containers: GitHub Codespaces y localmente.
