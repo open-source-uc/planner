@@ -34,8 +34,8 @@ const LegendModal = ({ open, onClose }: { open: boolean, onClose: Function }): J
               <Tab.Panels className="mt-2 h-[45vh] overflow-auto">
                 <Tab.Panel className='rounded-xl bg-white p-3 min-h-full'>
                   <p className="text-sm text-justify text-gray-500">Esta malla curricular es la recomendada y está sujeta a modificaciones conforme a la planificación académica vigente al momento de inscribir cursos.</p>
-                  <p className="text-sm text-justify text-gray-500 my-8">Los requisitos y planificación de los cursos pueden ir variando semestre a semestre. Por lo que el Nuevo Planner puede tener algunas variaciones. La información oficial de los requisitos y planificación de los cursos se encuentra disponible en el catálogo de cursos (http://catalogo.uc.cl/) y el libro de cursos (http://buscacursos.uc.cl/).</p>
-                  <p className="text-sm text-justify text-gray-500">Es responsabilidad del alumno verificar que el avance curricular determinado por Nuevo Planner sea el correcto. Los Planes de Estudios publicados en Siding corresponden a la información oficial y actualizada.</p>
+                  <p className="text-sm text-justify text-gray-500 my-8">Los requisitos y planificación de los cursos pueden ir variando semestre a semestre. Por lo que Mallas ING puede tener algunas variaciones. La información oficial de los requisitos y planificación de los cursos se encuentra disponible en el catálogo de cursos (http://catalogo.uc.cl/) y el libro de cursos (http://buscacursos.uc.cl/).</p>
+                  <p className="text-sm text-justify text-gray-500">Es responsabilidad del alumno verificar que el avance curricular determinado por Mallas ING sea el correcto. Los Planes de Estudios publicados en Siding corresponden a la información oficial y actualizada.</p>
                 </Tab.Panel>
                 <Tab.Panel className='rounded-xl bg-white p-3 min-h-full'><Legend /></Tab.Panel>
                 <Tab.Panel className='rounded-xl bg-white p-3 min-h-full'><Instructions /></Tab.Panel>

@@ -5,12 +5,11 @@ import logging
 from decimal import Decimal
 from io import BytesIO
 from pathlib import Path
-from typing import Annotated, Any, Final, Generic, Literal, TypeVar
+from typing import Annotated, Any, Final, Literal, TypeVar
 
 import httpx
 import zeep
 from pydantic import BaseModel, ConstrainedStr, Field, parse_obj_as
-from pydantic.generics import GenericModel
 from zeep import AsyncClient
 from zeep.transports import AsyncTransport
 
@@ -20,7 +19,7 @@ from app.user.key import Rut
 
 
 class StringArrayInner(BaseModel):
-    string: list[str]
+    string: list[str] | None
 
 
 class StringArray(BaseModel):
@@ -80,7 +79,7 @@ class Curso(BaseModel):
 
 
 class ListaCursos(BaseModel):
-    Cursos: list[Curso]
+    Cursos: list[Curso] | None
 
 
 class Restriccion(BaseModel):
@@ -89,11 +88,11 @@ class Restriccion(BaseModel):
 
 
 class ListaRestricciones(BaseModel):
-    Restricciones: list[Restriccion]
+    Restricciones: list[Restriccion] | None
 
 
 class ListaRequisitos(BaseModel):
-    Cursos: list[Curso]
+    Cursos: list[Curso] | None
 
 
 class BloqueMalla(BaseModel):
@@ -210,22 +209,19 @@ class SeleccionEstudiante(BaseModel):
 T = TypeVar("T")
 
 
-class NullableList(GenericModel, Generic[T]):
-    """
-    SIDING has the horrible tendency to return `None` instead of empty lists.
-    This patches that.
-    """
-
-    __root__: list[T] | None
-
-    def to_list(self) -> list[T]:
-        return [] if self.__root__ is None else self.__root__
+def parse_nullable_list(ty: type[T], value: Any) -> list[T]:  # noqa: ANN401
+    if value is None:
+        return []
+    return parse_obj_as(
+        list[ty],
+        value,
+    )
 
 
 def decode_cyears(cyears: StringArray | None) -> list[str]:
     if cyears is None:
         return []
-    return cyears.strings.string
+    return cyears.strings.string or []
 
 
 class SoapClient:
@@ -356,38 +352,38 @@ async def get_majors() -> list[Major]:
     #     with open("log.txt", "a") as f:
     #         print(resp.content, file=f)
 
-    return parse_obj_as(
-        NullableList[Major],
+    return parse_nullable_list(
+        Major,
         await client.call_endpoint("getListadoMajor", {}),
-    ).to_list()
+    )
 
 
 async def get_minors() -> list[Minor]:
     """
     Obtain a global list of all minors.
     """
-    return parse_obj_as(
-        NullableList[Minor],
+    return parse_nullable_list(
+        Minor,
         await client.call_endpoint("getListadoMinor", {}),
-    ).to_list()
+    )
 
 
 async def get_titles() -> list[Titulo]:
     """
     Obtain a global list of all titles.
     """
-    return parse_obj_as(
-        NullableList[Titulo],
+    return parse_nullable_list(
+        Titulo,
         await client.call_endpoint("getListadoTitulo", {}),
-    ).to_list()
+    )
 
 
 async def get_minors_for_major(major_code: str) -> list[Minor]:
     """
     Obtain a list of minors that are a valid choice for each major.
     """
-    return parse_obj_as(
-        list[Minor],
+    return parse_nullable_list(
+        Minor,
         await client.call_endpoint("getMajorMinorAsociado", {"CodMajor": major_code}),
     )
 
@@ -396,26 +392,26 @@ async def get_courses_for_spec(study_spec: PlanEstudios) -> list[Curso]:
     """
     Get pretty much all the courses that are available to a certain study spec.
     """
-    return parse_obj_as(
-        NullableList[Curso],
+    return parse_nullable_list(
+        Curso,
         await client.call_endpoint(
             "getConcentracionCursos",
             study_spec.dict(),
         ),
-    ).to_list()
+    )
 
 
 async def get_curriculum_for_spec(study_spec: PlanEstudios) -> list[BloqueMalla]:
     """
     Get a list of curriculum blocks for the given spec.
     """
-    return parse_obj_as(
-        NullableList[BloqueMalla],
+    return parse_nullable_list(
+        BloqueMalla,
         await client.call_endpoint(
             "getMallaSugerida",
             study_spec.dict(),
         ),
-    ).to_list()
+    )
 
 
 async def get_equivalencies(course_code: str, study_spec: PlanEstudios) -> list[Curso]:
@@ -429,8 +425,8 @@ async def get_equivalencies(course_code: str, study_spec: PlanEstudios) -> list[
     For example, 'FIS1514' has 3 equivalencies, including 'ICE1514'.
     However, 'ICE1514' has zero equivalencies.
     """
-    return parse_obj_as(
-        NullableList[Curso],
+    return parse_nullable_list(
+        Curso,
         await client.call_endpoint(
             "getCursoEquivalente",
             {
@@ -438,7 +434,7 @@ async def get_equivalencies(course_code: str, study_spec: PlanEstudios) -> list[
             }
             | study_spec.dict(),
         ),
-    ).to_list()
+    )
 
 
 async def get_requirements(course_code: str, study_spec: PlanEstudios) -> list[Curso]:
@@ -448,8 +444,8 @@ async def get_requirements(course_code: str, study_spec: PlanEstudios) -> list[C
     represented as a logical expression and not as a list.
     These requirements are only a heuristic.
     """
-    return parse_obj_as(
-        NullableList[Curso],
+    return parse_nullable_list(
+        Curso,
         await client.call_endpoint(
             "getRequisito",
             {
@@ -457,7 +453,7 @@ async def get_requirements(course_code: str, study_spec: PlanEstudios) -> list[C
             }
             | study_spec.dict(),
         ),
-    ).to_list()
+    )
 
 
 async def get_restrictions(
@@ -469,8 +465,8 @@ async def get_restrictions(
     This is actually broken, Banner restrictions are represented as a logical
     expression and not as a list.
     """
-    return parse_obj_as(
-        NullableList[Restriccion],
+    return parse_nullable_list(
+        Restriccion,
         await client.call_endpoint(
             "getRestriccion",
             {
@@ -478,7 +474,7 @@ async def get_restrictions(
             }
             | study_spec.dict(),
         ),
-    ).to_list()
+    )
 
 
 async def get_predefined_list(list_code: str) -> list[Curso]:
@@ -487,10 +483,10 @@ async def get_predefined_list(list_code: str) -> list[Curso]:
     Returns `null` if the list is empty.
     """
 
-    return parse_obj_as(
-        NullableList[Curso],
+    return parse_nullable_list(
+        Curso,
         await client.call_endpoint("getListaPredefinida", {"CodLista": list_code}),
-    ).to_list()
+    )
 
 
 async def get_student_info(rut: Rut) -> InfoEstudiante:
@@ -507,10 +503,10 @@ async def get_student_done_courses(rut: Rut) -> list[CursoHecho]:
     """
     Get the information associated with the given student, by RUT.
     """
-    return parse_obj_as(
-        NullableList[CursoHecho],
+    return parse_nullable_list(
+        CursoHecho,
         await client.call_endpoint("getCursosHechos", {"rut": rut}),
-    ).to_list()
+    )
 
 
 async def get_student_current_courses(rut: Rut) -> list[CursoInscrito]:
@@ -519,10 +515,10 @@ async def get_student_current_courses(rut: Rut) -> list[CursoInscrito]:
 
     Not sure when exactly are current courses converted into past courses.
     """
-    return parse_obj_as(
-        NullableList[CursoInscrito],
+    return parse_nullable_list(
+        CursoInscrito,
         await client.call_endpoint("getCargaAcademica", {"rut": rut}),
-    ).to_list()
+    )
 
 
 async def get_student_selections(rut: Rut) -> list[SeleccionEstudiante]:
@@ -531,10 +527,10 @@ async def get_student_selections(rut: Rut) -> list[SeleccionEstudiante]:
 
     Not sure when exactly are current courses converted into past courses.
     """
-    return parse_obj_as(
-        NullableList[SeleccionEstudiante],
+    return parse_nullable_list(
+        SeleccionEstudiante,
         await client.call_endpoint("getSeleccionesEstudiante", {"rut": rut}),
-    ).to_list()
+    )
 
 
 async def get_current_period() -> AcademicPeriod:

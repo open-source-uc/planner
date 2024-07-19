@@ -553,6 +553,4 @@ def is_course_indirectly_available(courseinfo: CourseInfo, code: str):
     info = courseinfo.try_course(code)
     if info is None:
         return False
-    if courseinfo.is_available(info.canonical_equiv):
-        return True
-    return False
+    return courseinfo.is_available(info.canonical_equiv)

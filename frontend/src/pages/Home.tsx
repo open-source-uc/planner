@@ -58,7 +58,7 @@ const Home = (): JSX.Element => {
       <div className="max-w-3xl mx-auto mt-8 center">
         <AlertMobileUssage />
         <h1 className="text-white text-center text-4xl mb-8 font-medium">
-          Bienvenido al Nuevo Planner, el lugar donde puedes planificar tu
+          Bienvenido a Mallas ING, el lugar donde puedes planificar tu
           carrera universitaria
         </h1>
         <div className="flex justify-evenly">

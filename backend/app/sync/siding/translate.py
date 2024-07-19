@@ -51,7 +51,7 @@ def _decode_curriculum_versions(input: StringArray | None) -> list[str]:
         # too unreliable
         logging.warning("null curriculum version list")
         return []
-    return input.strings.string
+    return input.strings.string or []
 
 
 def _decode_period(period: str) -> tuple[int, int]:
